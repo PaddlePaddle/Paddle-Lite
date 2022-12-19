@@ -1,4 +1,4 @@
-# Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ class TestUniqueOp(AutoScanTest):
         host_places = [
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
-        self.enable_testing_on_place(places=host_places, thread=[1,4])
+        self.enable_testing_on_place(places=host_places, thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -41,48 +41,46 @@ class TestUniqueOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
-            st.lists(
-                st.integers(
-                    min_value=2, max_value=100),
-                min_size=1,
-                max_size=1))
-        print(in_shape)
-        in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
-                
-        def generate_X_data():
-            t = np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
-            print(t)
-            return t
-
-        dtype = draw(st.sampled_from([2,3]))
+        dtype = draw(st.sampled_from([2, 3]))
         is_sorted = draw(st.booleans())
         return_index = draw(st.booleans())
         return_inverse = draw(st.sampled_from([True]))
         return_counts = draw(st.booleans())
 
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=2, max_value=10), min_size=1, max_size=8))
+
         if is_sorted == False:
             return_index = False
+            return_inverse = True
             return_counts = False
+            in_shape = draw(
+                st.lists(
+                    st.integers(
+                        min_value=2, max_value=10),
+                    min_size=1,
+                    max_size=1))
+
+        in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
+
+        def generate_X_data():
+            return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
         param_is_sorted = is_sorted
         param_return_index = return_index
         param_return_inverse = return_inverse
         param_return_counts = return_counts
-  
-        axis = draw(st.sampled_from([[2], [1], [0], []]))
-        while len(axis) > 0 and axis[0] >= len(in_shape):
-            axis[0] = axis[0] - 1       
 
-        outputs = [
-            "Out_data"
-        ]
-        outputs_config = {
-            "Out": ["Out_data"]
-        }
-        outputs_dtype = {
-            "Out_data": in_dtype
-        }
+        axis = draw(
+            st.sampled_from([[], [0], [1], [2], [3], [4], [5], [6], [7], [8]]))
+        while len(axis) > 0 and axis[0] >= len(in_shape):
+            axis[0] = axis[0] - 1
+
+        outputs = ["Out_data"]
+        outputs_config = {"Out": ["Out_data"]}
+        outputs_dtype = {"Out_data": in_dtype}
         if return_inverse:
             outputs.append("Index_data")
             outputs_config["Index"] = ["Index_data"]
@@ -93,13 +91,13 @@ class TestUniqueOp(AutoScanTest):
             outputs_dtype["Indices_data"] = np.int32
         if return_counts:
             outputs.append("Counts_data")
-            outputs_config["Counts"] = ["Counts_data"] 
+            outputs_config["Counts"] = ["Counts_data"]
             outputs_dtype["Counts_data"] = np.int32
 
         unique_op = OpConfig(
-            type = "unique",
-            inputs = {"X": ["input_data"]},
-            outputs = outputs_config,
+            type="unique",
+            inputs={"X": ["input_data"]},
+            outputs=outputs_config,
             attrs={
                 "dtype": dtype,
                 "return_index": param_return_index,
@@ -107,8 +105,7 @@ class TestUniqueOp(AutoScanTest):
                 "return_counts": param_return_counts,
                 "axis": axis,
                 "is_sorted": is_sorted
-            }
-        )
+            })
 
         unique_op.outputs_dtype = outputs_dtype
 
@@ -118,8 +115,7 @@ class TestUniqueOp(AutoScanTest):
             inputs={
                 "input_data": TensorConfig(data_gen=partial(generate_X_data))
             },
-            outputs=outputs
-        )
+            outputs=outputs)
         return program_config
 
     def sample_predictor_configs(self):
@@ -129,7 +125,8 @@ class TestUniqueOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
+
 
 if __name__ == "__main__":
-    unittest.main(argv=[''])    
+    unittest.main(argv=[''])

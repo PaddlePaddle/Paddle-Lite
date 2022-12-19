@@ -35,6 +35,8 @@ void Index_selectCompute<T>::Run() {
   auto index_ddim = index->dims();
   auto output_ddim = output->dims();
 
+  if (param.dim < 0) param.dim += input_ddim.size();
+
   int left = input_ddim.count(0, param.dim);
   int middle = input_ddim[param.dim];
   int right = input_ddim.count(param.dim + 1, input_ddim.size());

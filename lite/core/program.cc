@@ -605,9 +605,27 @@ void RuntimeProgram::Run() {
 #ifdef LITE_WITH_OPENCL
     // delegate flush judgement to specify target , it is too heavy for Inst
     inst.Flush(idx);
+#if defined(LITE_WITH_PROFILE) || defined(LITE_WITH_PRECISION_PROFILE)
+    VLOG(4) << "kernel name " << idx << " " << inst.kernel()->name();
+    const auto* op_info = inst.op()->op_info();
+    auto var_in_names = op_info->input_names();
+    for (int i = 0; i < var_in_names.size(); i++) {
+      VLOG(4) << "input var_in_names: " << var_in_names[i];
+    }
+    auto var_out_names = op_info->output_names();
+    for (int i = 0; i < var_out_names.size(); i++) {
+      VLOG(4) << "output var_out_names: " << var_out_names[i];
+    }
+#endif
 #endif
 
     inst.Run();
+#ifdef LITE_WITH_PRECISION_PROFILE
+    if (inst.op()->Type() != "while") {
+      precision_profiler_summary +=
+          inst_precision_profiler.GetInstPrecision(&inst);
+    }
+#endif  // LITE_WITH_PRECISION_PROFILE
   }
 
 #ifdef LITE_WITH_METAL
@@ -796,231 +814,6 @@ void Instruction::Run() {
   op_->InferShape();
   kernel_->Launch();
   has_run_ = true;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if 0
-  // clang-format off
-  /*
-  time_t t;
-  struct tm* timeinfo;
-  time(&t);
-  timeinfo = localtime(&t);
-  std::cout << "time: " << asctime(timeinfo) << std::endl;
-  */
-  std::cout << "***-----------------------------******-----------------------------***" << std::endl;
-  // get precision
-  std::string op_name = op_->op_info()->Type();
-  std::cout << "op_type: " << op_name << std::endl;
-  if ((op_->op_info()->Type() != "fetch") &&
-      (op_->op_info()->Type() != "while") &&
-      (op_->op_info()->Type() != "conditional_block")) {
-    auto op_scope = op_->scope();
-    auto out_names = op_->op_info()->output_names();
-    auto in_names = op_->op_info()->input_names();
-    for (auto& out_name : in_names) {
-      std::string out_arg_name;
-      op_->op_info()->GetInputArgname(out_name, &out_arg_name);
-      //auto type = kernel_->GetInputDeclType(out_arg_name);
-       // if (type->IsTensor()) {
-      auto tmp = op_scope->FindVar(out_name);
-      if (tmp->IsType<Tensor>()) {
-        const Tensor* tout = op_scope->FindVar(out_name)->GetMutable<Tensor>();
-        if (tout->IsInitialized()) {
-          auto size = tout->numel();
-          auto dim = tout->dims();
-          double sum = 0.0;
-          if (tout->precision() == PrecisionType::kFloat) {
-            const float* dout = tout->data<float>();
-            for (int i = 0; i < size; i++) {
-              sum += dout[i];
-            }
-          } else if (tout->precision() == PrecisionType::kFP16) {
-            const float16_t* dout = tout->data<float16_t>();
-            for (int i = 0; i < size; i++) {
-              sum += static_cast<double>(dout[i]);
-            }
-          } else if (tout->precision() == PrecisionType::kInt32) {
-            const int32_t* dout = tout->data<int32_t>();
-            for (int i = 0; i < size; i++) {
-              sum += static_cast<double>(dout[i]);
-            }
-          } else if (tout->precision() == PrecisionType::kInt64) {
-            const int64_t* dout = tout->data<int64_t>();
-            for (int i = 0; i < size; i++) {
-              sum += static_cast<double>(dout[i]);
-            }
-          } else if (tout->precision() == PrecisionType::kInt8) {
-            const int8_t* dout = tout->data<int8_t>();
-            for (int i = 0; i < size; i++) {
-              sum += static_cast<double>(dout[i]);
-            }
-          } else {
-            std::cout << "This data_type is not support: "
-                      << PrecisionToStr(tout->precision()) << std::endl;
-          }
-          double avg = sum / static_cast<double>(size);
-          std::cout << "in_name: " << out_name
-                    << ", type: " << PrecisionToStr(tout->precision())
-                    << ", size: " << size << ", input avg: " << avg;
-         
-          std::cout<<", dim size:"<< dim.size() << "[";
-          for(int i = 0; i < dim.size(); i++)
-            std::cout << dim[i] << ",";
-          std::cout<<"]\n";
-        } else {
-          std::cout << out_name << " is not inited." << std::endl;
-        }
-      } else if (tmp->IsType<std::vector<Tensor>>()) {
-        auto touts =
-            op_scope->FindVar(out_name)->GetMutable<std::vector<Tensor>>();
-        for (auto t : *touts) {
-          const Tensor* tout = &t;
-          if (tout->IsInitialized()) {
-            auto size = tout->numel();
-            const float* dout = tout->data<float>();
-            double sum = 0.0;
-            for (int i = 0; i < size; i++) {
-              sum += dout[i];
-            }
-            double avg = sum / static_cast<double>(size);
-            std::cout << "op_type: " << op_name << ", input avg: " << avg
-                      << std::endl;
-          } else {
-            std::cout << out_name << " is not inited." << std::endl;
-          }
-        }
-      }
-    }
-    for (auto& out_name : out_names) {
-      std::string out_arg_name;
-      op_->op_info()->GetOutputArgname(out_name, &out_arg_name);
-      //auto type = kernel_->GetOutputDeclType(out_arg_name);
-      std::string op_name = op_->op_info()->Type();
-      //if (type->IsTensor()) {
-      auto tmp = op_scope->FindVar(out_name);
-      if (tmp->IsType<Tensor>()) {
-        const Tensor* tout = op_scope->FindVar(out_name)->GetMutable<Tensor>();
-        if (tout->IsInitialized()) {
-          auto size = tout->numel();
-          auto dim = tout->dims();
-          double sum = 0.0;
-          if (tout->precision() == PrecisionType::kFloat) {
-            const float* dout = tout->data<float>();
-            for (int i = 0; i < size; i++) {
-              sum += dout[i];
-            }
-          } else if (tout->precision() == PrecisionType::kFP16) {
-            const float16_t* dout = tout->data<float16_t>();
-            for (int i = 0; i < size; i++) {
-              sum += static_cast<double>(dout[i]);
-            }
-          } else if (tout->precision() == PrecisionType::kInt32) {
-            const int32_t* dout = tout->data<int32_t>();
-            for (int i = 0; i < size; i++) {
-              sum += static_cast<double>(dout[i]);
-            }
-          } else if (tout->precision() == PrecisionType::kInt64) {
-            const int64_t* dout = tout->data<int64_t>();
-            for (int i = 0; i < size; i++) {
-              sum += static_cast<double>(dout[i]);
-            }
-          } else if (tout->precision() == PrecisionType::kInt8) {
-            const int8_t* dout = tout->data<int8_t>();
-            for (int i = 0; i < size; i++) {
-              sum += static_cast<double>(dout[i]);
-            }
-          } else {
-            std::cout << "This data_type is not support: "
-                      << PrecisionToStr(tout->precision()) << std::endl;
-          }
-            double avg = sum / static_cast<double>(size);
-          std::cout << "out_name: " << out_name
-                    << ", type: " << PrecisionToStr(tout->precision())
-                    << ", sum: " << sum << ", output avg: " << avg;
-          std::cout<<", dim size:"<< dim.size() << "[";
-          for(int i = 0; i < dim.size(); i++)
-            std::cout << dim[i] << ",";
-          std::cout<<"]\n";
-        } else {
-          std::cout << out_name << " is not inited." << std::endl;
-        }
-      } else if (tmp->IsType<std::vector<Tensor>>()) {
-        auto touts =
-            op_scope->FindVar(out_name)->GetMutable<std::vector<Tensor>>();
-        for (auto t : *touts) {
-          const Tensor* tout = &t;
-          if (tout->IsInitialized()) {
-            auto size = tout->numel();
-            double sum = 0.0;
-            if (tout->precision() == PrecisionType::kFloat) {
-              const float* dout = tout->data<float>();
-              for (int i = 0; i < size; i++) {
-                sum += dout[i];
-                std::cout << dout[i] << ", ";
-              }
-            } else if (tout->precision() == PrecisionType::kFP16) {
-              const float16_t* dout = tout->data<float16_t>();
-              for (int i = 0; i < size; i++) {
-                sum += static_cast<double>(dout[i]);
-                std::cout << dout[i] << ", ";
-              }
-            } else if (tout->precision() == PrecisionType::kInt32) {
-              const int32_t* dout = tout->data<int32_t>();
-              for (int i = 0; i < size; i++) {
-              sum += static_cast<double>(dout[i]);
-                std::cout << dout[i] << ", ";
-              }
-            } else if (tout->precision() == PrecisionType::kInt64) {
-              const int64_t* dout = tout->data<int64_t>();
-              for (int i = 0; i < size; i++) {
-              sum += static_cast<double>(dout[i]);
-                std::cout << dout[i] << ", ";
-              }
-            } else {
-              std::cout << "This data_type is not support: "
-                        << PrecisionToStr(tout->precision()) << std::endl;
-            }
-            double avg = sum / static_cast<double>(size);
-            std::cout << std::endl;
-            std::cout << "op_type: " << op_name << out_name
-                      << ", type: " << PrecisionToStr(tout->precision())
-                      << ", output avg: " << avg << std::endl;
-          } else {
-            std::cout << out_name << " is not inited." << std::endl;
-          }
-        }
-      }
-    }
-    std::cout << "***-----------------------------******-----------------------------***" << std::endl;
-  }
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #ifdef LITE_WITH_PROFILE
   if (first_epoch_for_profiler_) {

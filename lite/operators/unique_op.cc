@@ -14,6 +14,7 @@
 
 #include "lite/operators/unique_op.h"
 #include "lite/core/op_registry.h"
+
 namespace paddle {
 namespace lite {
 namespace operators {
@@ -63,8 +64,7 @@ bool UniqueOp::InferShapeImpl() const {
   return true;
 }
 
-bool UniqueOp::AttachImpl(const cpp::OpDesc &opdesc,
-                                    lite::Scope *scope) {
+bool UniqueOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   CHECK(param_.X) << "Input(X) of UniqueOp should not be null.";
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
@@ -81,7 +81,7 @@ bool UniqueOp::AttachImpl(const cpp::OpDesc &opdesc,
     param_.Counts = scope->FindMutableTensor(opdesc.Output("Counts").front());
     CHECK(param_.Counts) << "Output(Counts) of UniqueOp should not be null.";
   }
-  
+
   if (opdesc.HasAttr("dtype")) {
     param_.dtype = opdesc.GetAttr<int>("dtype");
   }
@@ -97,7 +97,7 @@ bool UniqueOp::AttachImpl(const cpp::OpDesc &opdesc,
   param_.axis = opdesc.GetAttr<std::vector<int>>("axis");
   if (opdesc.HasAttr("is_sorted")) {
     param_.is_sorted = opdesc.GetAttr<bool>("is_sorted");
-  } 
+  }
 
   return true;
 }
