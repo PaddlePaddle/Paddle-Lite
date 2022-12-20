@@ -285,13 +285,6 @@ using FloordivFloat16 = xpu::ElementwiseCompute<float16,
 
 using FloordivInt32 =
     xpu::ElementwiseCompute<int, xpu::FloordivFunctor<int>, PRECISION(kFloat)>;
-using PowFloat32 =
-    xpu::ElementwiseCompute<float, xpu::PowFunctor<float>, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(elementwise_pow, kXPU, kFloat, kNCHW, PowFloat32, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .Finalize();
 
 using PowFloat32 =
     xpu::ElementwiseCompute<float, xpu::PowFunctor<float>, PRECISION(kFloat)>;
