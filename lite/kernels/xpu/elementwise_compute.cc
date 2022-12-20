@@ -30,18 +30,6 @@ namespace kernels {
 namespace xpu {
 
 template <typename T>
-struct PowFunctor {
-  inline int operator()(xdnn::Context* ctx,
-                        const T* x,
-                        const T* y,
-                        T* z,
-                        const std::vector<int>& xshape,
-                        const std::vector<int>& yshape) const {
-    return xdnn::broadcast_pow<T>(ctx, x, y, z, xshape, yshape);
-  }
-};
-
-template <typename T>
 struct AddFunctor {
   inline int operator()(xdnn::Context* ctx,
                         const T* x,
