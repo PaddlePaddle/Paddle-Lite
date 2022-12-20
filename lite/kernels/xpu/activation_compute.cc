@@ -402,11 +402,11 @@ using eluFP32 =
     paddle::lite::kernels::xpu::EluCompute<float, PRECISION(kFloat)>;
 using eluFP16 =
     paddle::lite::kernels::xpu::EluCompute<float16, PRECISION(kFP16)>;
-REGISTER_LITE_KERNEL(elu, kXPU, kFloat, kNCHW, eluFP32, def)
+REGISTER_LITE_KERNEL(elu, kXPU, kFloat, kNCHW, eluFP32, DISABLE_XPU1_eluFP32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
-REGISTER_LITE_KERNEL(elu, kXPU, kFP16, kNCHW, eluFP16, eluFP16)
+REGISTER_LITE_KERNEL(elu, kXPU, kFP16, kNCHW, eluFP16, DISABLE_XPU1_eluFP16)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
