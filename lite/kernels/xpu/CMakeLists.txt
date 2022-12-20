@@ -104,6 +104,7 @@ add_kernel(shape_compute_xpu XPU extra SRCS shape_compute.cc)
 add_kernel(lod_array_length_compute_xpu XPU extra SRCS lod_array_length_compute.cc)
 add_kernel(multiclass_nms_compute_xpu XPU extra SRCS multiclass_nms_compute.cc)
 add_kernel(lod_reset_compute_xpu XPU extra SRCS lod_reset_compute.cc)
+add_kernel(deformable_conv_compute_xpu XPU extra SRCS deformable_conv_compute.cc)
 
 # extra(fused kernel)
 add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc)

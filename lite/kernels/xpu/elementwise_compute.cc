@@ -28,6 +28,18 @@ namespace kernels {
 namespace xpu {
 
 template <typename T>
+struct PowFunctor {
+  inline int operator()(xdnn::Context* ctx,
+                        const T* x,
+                        const T* y,
+                        T* z,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& yshape) const {
+    return xdnn::broadcast_pow<T>(ctx, x, y, z, xshape, yshape);
+  }
+};
+
+template <typename T>
 struct AddFunctor {
   inline int operator()(xdnn::Context* ctx,
                         const T* x,
@@ -234,6 +246,13 @@ using FloordivFloat16 = xpu::ElementwiseCompute<float16,
                                                 PRECISION(kFP16)>;
 using FloordivInt32 =
     xpu::ElementwiseCompute<int, xpu::FloordivFunctor<int>, PRECISION(kFloat)>;
+using PowFloat32 =
+    xpu::ElementwiseCompute<float, xpu::PowFunctor<float>, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(elementwise_pow, kXPU, kFloat, kNCHW, PowFloat32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_add, kXPU, kFloat, kNCHW, AddFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
