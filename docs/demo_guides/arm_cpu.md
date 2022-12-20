@@ -64,33 +64,46 @@ $ ./lite/tools/build_android.sh \
 注：编译帮助请执行: `./lite/tools/build_android.sh` help
 ```
 
-#### 针对 Lite 开发者的编译命令(有单元测试,编译产物)
-
->> 注：调用`./lite/tools/ci_build.sh` 执行编译，该命令会编译 armv7 和 armv8 的预测库。虽然有编译产物，但因编译单元测试，编译产物包体积可能较大，生产环境不推荐使用。
+### 1.3 编译 Paddle Lite ARM LINUX 库范例
 
 ```bash
 假设当前位于处于 Paddle Lite 源码根目录下
-
-导入 NDK_ROOT 变量，注意检查您的安装目录若与本示例不同
-$ export NDK_ROOT=/opt/android-ndk-r17c
 
 删除上一次 CMake 自动生成的 `.h` 文件
 $ rm ./lite/api/paddle_use_kernels.h
 $ rm ./lite/api/paddle_use_ops.h
 
-根据指定编译参数编译
-$ ./lite/tools/build.sh \
-    --arm_os=android \
-    --arm_abi=armv8 \
-    --arm_lang=clang \
-    --build_extra=on \
-    --build_cv=on \
-    test
+设置编译参数并开始编译
+For linux-armv8: cpu+cv+extra
+$ ./lite/tools/build_linux.sh \
+    --arch=armv8 \
+    --toolchain=gcc \
+    --with_log=OFF \
+    --with_extra=ON \
+    --with_cv=ON
+
+For linux-armv7: cpu+cv+extra
+$ ./lite/tools/build_linux.sh \
+    --arch=armv7 \
+    --toolchain=gcc \
+    --with_log=OFF \
+    --with_extra=ON \
+    --with_cv=ON
+
+For linux-armv7hf: cpu+cv+extra
+$ ./lite/tools/build_linux.sh \
+    --arch=armv7hf \
+    --toolchain=gcc \
+    --with_log=OFF \
+    --with_extra=ON \
+    --with_cv=ON
+
+注：编译帮助请执行: `./lite/tools/build_linux.sh` help
 ```
 
-### 1.3 编译产物说明
+### 1.4 编译产物说明
 
-编译产物位于 `build.lite.android.armv8.clang` 下的 `lite` 文件夹内。这里仅罗列关键产物：
+以ARM v8 Android为例，编译产物位于 `build.lite.android.armv8.clang` 下的 `lite` 文件夹内。这里仅罗列关键产物：
 
 - `api`: 包含了基于 API 接口和模型的各种可执行的单测文件
 - `tests`:该目录包含了多个层面的可执行的单测文件
@@ -152,6 +165,7 @@ $ ./lite/tools/build.sh \
   运行适用于 ARM CPU 的 mobilenetv1 模型
   ```shell
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
+  以armv8为例
   $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a
 
     Top1 Egyptian cat - 0.482871
@@ -163,16 +177,28 @@ $ ./lite/tools/build.sh \
     Prediction time: 33.408000 ms, avg 33.408000 ms, max 33.408000 ms, min 33.408000 ms
     Postprocess time: 4.499000 ms, avg 4.499000 ms, max 4.499000 ms, min 4.499000 ms
   ```
+  运行适用于 ARM Linux 的 mobilenetv1 模型
+  ```shell
+  $ cd PaddleLite-generic-demo/image_classification_demo/shell
+  以armv7hf为例
+  $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux armhf
+  ```
 - 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
 
 - 如果需要重新编译示例程序，直接运行
 
   ```shell
-  For armv8-a
+  For android+armv8-a
   $ ./build.sh android arm64-v8a
 
-  For armv7
+  For android+armv7
   $ ./build.sh android armeabi-v7a
+
+  For linux+armv8
+  $ ./build.sh linux arm64
+
+  For linux+armv7hf
+  $ ./build.sh linux armhf
   ```
 
 ### 更新支持Android+Arm CPU的 Paddle Lite 库
@@ -185,9 +211,9 @@ $ ./lite/tools/build.sh \
   $ git checkout develop
   ```
 
-- 编译并生成 PaddleLite+Arm for android+armv8.2, android+armv8-a and android+armv7的部署库
+- 编译并生成 PaddleLite+Arm for android+armv8.2, android+armv8-a, android+armv7, linux+armv8 and linux+armhf的部署库
 
-  - For armv8.2+fp16
+  - For android+armv8.2+fp16
 
     - tiny_publish 编译
 
@@ -205,9 +231,9 @@ $ ./lite/tools/build.sh \
       $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/include/
       
       替换 android 的 libpaddle_light_api_shared.so 动态库
-      $ cp build.lite.android.armv8.clang/inference_lite_lib/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
+      $ cp build.lite.android.armv8.clang/inference_lite_lib.android.armv8/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
       ```
-  - For armv8-a
+  - For android+armv8-a
 
     - tiny_publish 编译
 
@@ -225,9 +251,9 @@ $ ./lite/tools/build.sh \
       $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/include/
       
       替换 android 的 libpaddle_light_api_shared.so 动态库
-      $ cp build.lite.android.armv8.clang/inference_lite_lib/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
+      $ cp build.lite.android.armv8.clang/inference_lite_lib.android.armv8/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
       ```
-  - For armv7
+  - For android+armv7
 
     - tiny_publish 编译
 
@@ -245,7 +271,47 @@ $ ./lite/tools/build.sh \
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/include/
       
       替换 android 的 libpaddle_light_api_shared.so 动态库
-      $ cp build.lite.android.armv7.clang/inference_lite_lib/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
+      $ cp build.lite.android.armv7.clang/inference_lite_lib.android.armv7/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
+      ```
+  - For linux+armv8
+
+    - tiny_publish 编译
+
+      ```shell
+      $ ./lite/tools/build_linux.sh     --arch=armv8     --toolchain=gcc     --with_log=OFF     --with_extra=ON     --with_cv=ON
+      ```
+
+    - 替换头文件和库
+
+      ```shell
+      清理原有 include 目录
+      $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
+      
+      替换 include 目录
+      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
+      
+      替换 android 的 libpaddle_light_api_shared.so 动态库
+      $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
+      ```
+  - For linux+armv7hf
+
+    - tiny_publish 编译
+
+      ```shell
+      $ ./lite/tools/build_linux.sh     --arch=armv7hf     --toolchain=gcc     --with_log=OFF     --with_extra=ON     --with_cv=ON
+      ```
+
+    - 替换头文件和库
+
+      ```shell
+      清理原有 include 目录
+      $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/include/
+      
+      替换 include 目录
+      $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/include/
+      
+      替换 android 的 libpaddle_light_api_shared.so 动态库
+      $ cp build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
       ```
 ## 3. 高级特性
 
