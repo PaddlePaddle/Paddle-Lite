@@ -361,7 +361,7 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool record_info = false) override;
 
-  void SetStream(TargetType target, void* stream);
+  void SetStream(TargetType target, void* stream) override;
 
  private:
   std::shared_ptr<Predictor> raw_predictor_;
