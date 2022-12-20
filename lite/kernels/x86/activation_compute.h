@@ -408,9 +408,11 @@ class ErfCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       x_data++;
       output_data++;
     }
-    }
+  }
+
   virtual ~ErfCompute() = default;
 };
+
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite
