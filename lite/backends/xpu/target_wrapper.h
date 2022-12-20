@@ -22,10 +22,10 @@
 #include <string>
 #include <thread>  // NOLINT
 #include <vector>
+#include "lite/backends/xpu/runtime_option.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/backends/xpu/xpu_l3_cache_block.h"
 #include "lite/backends/xpu/xpu_l3_strategy.h"
-#include "lite/backends/xpu/xpu_quantizer.h"
 #include "lite/backends/xpu/xpu_scratch.h"
 #include "lite/core/dim.h"
 #include "lite/core/target_wrapper.h"
@@ -50,9 +50,9 @@ class TargetWrapper<TARGET(kXPU)> {
  public:
   static size_t num_devices() { return 1; }
   static size_t maximum_stream() { return 0; }
-  static void enable_xpu_multi_stream() { enable_multi_stream_ = true; }
-  static bool xpu_multi_stream() { return enable_multi_stream_; }
-  static void* get_xpu_stream() { return xpu_stream_.get(); }
+  static void* get_xpu_stream() {
+    return xpu_runtime_ptr->xpu_stream.GetXPUStream();
+  }
 
   static void* Malloc(size_t size) { return XPUMemory::Malloc(size); }
   static void Free(void* ptr) { XPUMemory::Free(ptr); }
@@ -73,83 +73,95 @@ class TargetWrapper<TARGET(kXPU)> {
                                                        size_t max_ptr_len);
 
   static xdnn::Context* GetRawContext() {
-    if (tls_raw_ctx_.get() == nullptr) {
-      tls_raw_ctx_.reset(xdnn::create_context(), xdnn::destroy_context);
-      CHECK(tls_raw_ctx_.get());
-      if (cluster_num != 0) {
-        tls_raw_ctx_->set_ncluster(cluster_num);
-      }
-      if (sdnn_num != 0) {
-        tls_raw_ctx_->set_nsdnn(sdnn_num);
-      }
-      if (!enable_multi_stream_) {
-        CHECK(xpu_stream_.get() == nullptr)
-            << " xpu default stream should be nullptr: " << xpu_stream_.get();
-        VLOG(3) << "all threads share the default xpu stream";
+    if (xpu_runtime_ptr->xpu_tls_raw_ctx != nullptr) {
+      return xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext();
+    }
+
+    xpu_runtime_ptr->xpu_tls_raw_ctx.reset(new XDNNContext());
+    xpu_runtime_ptr->xpu_tls_raw_ctx->CreatXDNNContext(
+        xpu_runtime_ptr->xpu_dev_num);
+    CHECK(xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext());
+
+    if (xpu_runtime_ptr->xpu_cluster_num != 0) {
+      xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()->set_ncluster(
+          xpu_runtime_ptr->xpu_cluster_num);
+    }
+
+    if (xpu_runtime_ptr->xpu_sdnn_num != 0) {
+      xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()->set_nsdnn(
+          xpu_runtime_ptr->xpu_sdnn_num);
+    }
+
+    if (!xpu_runtime_ptr->xpu_enable_multi_stream) {
+      VLOG(3) << "all threads share the default xpu stream";
+    } else {
+      // use different stream per thread
+      xpu_runtime_ptr->xpu_stream.CreatXPUStream();
+      CHECK(xpu_runtime_ptr->xpu_stream.GetXPUStream());
+    }
+
+    xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()->xpu_stream =
+        xpu_runtime_ptr->xpu_stream.GetXPUStream();
+    if (xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()->dev().type() ==
+        xdnn::kXPU1) {
+      LOG(INFO) << "running in KunLun1";
+    } else if (xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()
+                   ->dev()
+                   .type() == xdnn::kXPU2) {
+      LOG(INFO) << "running in KunLun2";
+    } else if (xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()
+                   ->dev()
+                   .type() == xdnn::kXPU3) {
+      LOG(INFO) << "running in KunLun3";
+    } else {
+      LOG(FATAL) << "running in unknown XPU device: "
+                 << static_cast<int>(
+                        xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()
+                            ->dev()
+                            .type());
+    }
+
+    if (xpu_runtime_ptr->xpu_l3_planner == nullptr) {
+      xpu_runtime_ptr->xpu_l3_planner = new XPUL3Planner;
+    }
+    CHECK(xpu_runtime_ptr->xpu_l3_planner);
+
+    int devid = -1;
+    uint64_t max_l3_size = 0;
+    XPU_CALL(xpu_current_device(&devid));
+    XPU_CALL(xpu_device_get_attr(
+        &max_l3_size, XPUDeviceAttr(XPUATTR_MEM_L3_CAPACITY), devid));
+    if (xpu_runtime_ptr->xpu_local_l3_size > max_l3_size) {
+      xpu_runtime_ptr->xpu_local_l3_size = max_l3_size;
+    }
+    CHECK_LE(shared_l3_size, max_l3_size);
+    if (xpu_runtime_ptr->xpu_local_gm_size > 0) {
+      VLOG(3) << "Try To Malloc Local GM Workspace Size is "
+              << xpu_runtime_ptr->xpu_local_gm_size;
+      void* local_gm_ptr = nullptr;
+      int ret = xpu_malloc(reinterpret_cast<void**>(&local_gm_ptr),
+                           (xpu_runtime_ptr->xpu_local_gm_size));
+      if (ret != 0 || local_gm_ptr == nullptr) {
+        VLOG(3) << "No Enough GM Workspace For Current Predictor.";
       } else {
-        // use different stream per thread
-        CHECK(xpu_stream_.get() == nullptr)
-            << " xpu stream not null before create: " << xpu_stream_.get();
-        void* tls_xpu_stream = nullptr;
-        CHECK(xpu_stream_create(&tls_xpu_stream) == 0)
-            << "xpu_stream_create failed";
-        CHECK(tls_xpu_stream != nullptr);
-        xpu_stream_.reset(tls_xpu_stream, xpu_stream_destroy);
-        CHECK(xpu_stream_.get());
-      }
-      tls_raw_ctx_.get()->xpu_stream = xpu_stream_.get();
-      if (tls_raw_ctx_.get()->dev().type() == xdnn::kXPU1) {
-        LOG(INFO) << "running in KunLun1";
-      } else if (tls_raw_ctx_.get()->dev().type() == xdnn::kXPU2) {
-        LOG(INFO) << "running in KunLun2";
-      } else if (tls_raw_ctx_.get()->dev().type() == xdnn::kXPU3) {
-        LOG(INFO) << "running in KunLun3";
-      } else {
-        LOG(FATAL) << "running in unknown XPU device: "
-                   << static_cast<int>(tls_raw_ctx_.get()->dev().type());
-      }
-      LOG(INFO) << "thread 0x" << std::hex << std::this_thread::get_id()
-                << " set context xpu stream: " << xpu_stream_.get();
-      if (l3_planner_ == nullptr) {
-        l3_planner_ = new XPUL3Planner;
-      }
-      CHECK(l3_planner_);
-      if (quantizer_.get() == nullptr) {
-        quantizer_.reset(new XPUQuantizer());
-      }
-      CHECK(quantizer_.get());
-      int devid = -1;
-      uint64_t max_l3_size = 0;
-      XPU_CALL(xpu_current_device(&devid));
-      XPU_CALL(xpu_device_get_attr(
-          &max_l3_size, XPUDeviceAttr(XPUATTR_MEM_L3_CAPACITY), devid));
-      if (local_l3_size > max_l3_size) {
-        local_l3_size = max_l3_size;
-      }
-      CHECK_LE(shared_l3_size, max_l3_size);
-      if (local_gm_size > 0) {
-        VLOG(3) << "Try To Malloc Local GM Workspace Size is " << local_gm_size;
-        void* local_gm_ptr = nullptr;
-        int ret =
-            xpu_malloc(reinterpret_cast<void**>(&local_gm_ptr), local_gm_size);
-        if (ret != 0 || local_gm_ptr == nullptr) {
-          VLOG(3) << "No Enough GM Workspace For Current Predictor.";
-        } else {
-          void* old_ptr = tls_raw_ctx_->_gm_mgr.get_ptr();
-          if (old_ptr != nullptr) {
-            TargetWrapperXPU::Free(old_ptr);
-          }
-          ret = tls_raw_ctx_->_gm_mgr.set(local_gm_ptr, local_gm_size);
-          if (ret != 0) {
-            LOG(WARNING) << "XPU GM Mgr Init Fail, Please Check Configuration.";
-            TargetWrapperXPU::Free(local_gm_ptr);
-            local_gm_ptr = nullptr;
-          }
+        void* old_ptr = xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()
+                            ->_gm_mgr.get_ptr();
+        if (old_ptr != nullptr) {
+          TargetWrapperXPU::Free(old_ptr);
+        }
+        ret = xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()->_gm_mgr.set(
+            local_gm_ptr, xpu_runtime_ptr->xpu_local_gm_size);
+        if (ret != 0) {
+          LOG(WARNING) << "XPU GM Mgr Init Fail, Please Check Configuration.";
+          TargetWrapperXPU::Free(local_gm_ptr);
+          local_gm_ptr = nullptr;
         }
       }
     }
-    return tls_raw_ctx_.get();
+
+    return xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext();
   }
+
   static void MallocL3Cache(
       const std::vector<std::vector<int64_t>>& query_shape);
   static void FreeL3Cache();
@@ -169,36 +181,25 @@ class TargetWrapper<TARGET(kXPU)> {
     XPU_CALL(xpu_set_device(dev_no));
   }
 
+  // not used in runtime
   // multi encoder config
   static LITE_THREAD_LOCAL std::string multi_encoder_precision;  // NOLINT
   static LITE_THREAD_LOCAL bool multi_encoder_adaptive_seqlen;
   static LITE_THREAD_LOCAL std::string compute_precision;  // NOLINT
   // only for R200
   static LITE_THREAD_LOCAL bool local_quant;
-  // l3 cache config
-  static LITE_THREAD_LOCAL bool need_l3_mutex;    // model level l3 size
-  static LITE_THREAD_LOCAL size_t local_l3_size;  // model level l3 size
-  static LITE_THREAD_LOCAL bool local_l3_autotune;
-  static LITE_THREAD_LOCAL size_t local_gm_size;
-  static size_t shared_l3_size;  // model level l3 size
-  static LITE_THREAD_LOCAL std::vector<XPUL3CacheBlock*>
-      l3_block_dict;  // l3 cache block used between op layers
-  static LITE_THREAD_LOCAL int cluster_num;
-  static LITE_THREAD_LOCAL int sdnn_num;
+  // TODO(quwei): refactor share l3.
+  static LITE_THREAD_LOCAL bool need_l3_mutex;  // model level l3 size
+  static size_t shared_l3_size;                 // model level l3 size
+  static LITE_THREAD_LOCAL XPURunTimeOption* xpu_runtime_ptr;
 
  private:
   static void ScatterL3Cache(
       void* l3_ptr,
       size_t l3_size,
       const std::vector<std::vector<int64_t>>& query_shape);
-  static LITE_THREAD_LOCAL std::shared_ptr<xdnn::Context> tls_raw_ctx_;
-  static LITE_THREAD_LOCAL std::shared_ptr<void> xpu_stream_;
-  static LITE_THREAD_LOCAL void* local_l3_ptr_;
   static void* shared_l3_ptr_;
   static std::mutex mutex_l3_;
-  static bool enable_multi_stream_;
-  static LITE_THREAD_LOCAL XPUL3Planner* l3_planner_;
-  static LITE_THREAD_LOCAL std::shared_ptr<XPUQuantizer> quantizer_;
 };
 
 }  // namespace lite

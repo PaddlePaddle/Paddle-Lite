@@ -176,6 +176,11 @@ TEST(Cast, precision) {
   TestCast(place, abs_error, 2, 5);
   TestCast(place, abs_error, 0, 5);
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+  TestCast(place, abs_error, 2, 5);
+  TestCast(place, abs_error, 0, 5);
+  return;
 #else
   return;
 #endif

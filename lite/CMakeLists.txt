@@ -372,6 +372,9 @@ if (LITE_WITH_X86)
         add_dependencies(publish_inference_x86_cxx_lib publish_inference_x86_cxx_demos)
         add_dependencies(publish_inference_x86_cxx_demos paddle_api_full_bundled eigen3)
 
+        if (MSVC)
+            add_dependencies(publish_inference_x86_cxx_demos dirent)
+        endif()
   else()
     add_custom_target(publish_inference_x86_cxx_lib ${TARGET}
             COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/bin"
@@ -690,7 +693,7 @@ if(LITE_WITH_NNADAPTER)
   foreach(device_name ${NNADAPTER_DEVICES})
     add_custom_target(publish_inference_nnadapter_${device_name}
       COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-      COMMAND cp -r "${PADDLE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/src/driver/${device_name}/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      COMMAND cp -r "${PADDLE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/src/driver/${device_name}/*.so*" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
       DEPENDS ${device_name}
       )
     add_dependencies(publish_inference publish_inference_nnadapter_${device_name})

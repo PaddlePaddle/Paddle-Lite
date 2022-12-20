@@ -170,6 +170,11 @@ void PoolCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       lite::arm::math::pooling5x5s1p2_max(
           POOL_IN_PARAM, paddings[1], paddings[3]);
       return;
+    } else if (ksize[0] == ksize[1] && strides[0] == 1 && strides[1] == 1 &&
+               pads_equal && paddings[0] < ksize[0] && pooling_type == "max") {
+      lite::arm::math::pooling_common_padding_s1_max(
+          POOL_IN_PARAM, ksize[0], ksize[1], paddings[1], paddings[3]);
+      return;
     }
   }
   lite::arm::math::pooling_basic(POOL_IN_PARAM,

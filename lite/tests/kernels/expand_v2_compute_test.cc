@@ -188,6 +188,13 @@ TEST(ExpandV2, precision) {
   TestExpandV2<float>(place, abs_error, {2, 1, 4}, {2, 3, 4}, true);
   TestExpandV2<float>(place, abs_error, {2, 1, 4}, {2, 2, 3, 4});
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-5;
+  TestExpandV2<float>(place, abs_error);
+  TestExpandV2<float>(place, abs_error, {1, 1, 1}, {2, 3, 4});
+  TestExpandV2<float>(place, abs_error, {2, 1, 4}, {2, 3, 4}, true);
+  TestExpandV2<float>(place, abs_error, {2, 1, 4}, {2, 2, 3, 4});
+  return;
 #else
   return;
 #endif

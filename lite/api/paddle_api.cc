@@ -24,6 +24,7 @@
 #ifdef LITE_WITH_XPU
 #include <functional>
 #include <mutex>  // NOLINT
+#include "lite/backends/xpu/runtime_option.h"
 #include "lite/backends/xpu/target_wrapper.h"
 #endif
 
@@ -266,6 +267,11 @@ ConfigBase::ConfigBase(PowerMode mode, int threads) {
   mode_ = lite::DeviceInfo::Global().mode();
   threads_ = lite::DeviceInfo::Global().threads();
 #endif
+#ifdef LITE_WITH_XPU
+  std::shared_ptr<void> runtime_option =
+      std::shared_ptr<lite::XPURunTimeOption>(new lite::XPURunTimeOption);
+  target_configs_.emplace(TARGET(kXPU), std::move(runtime_option));
+#endif
 }
 
 void ConfigBase::set_opencl_binary_path_name(const std::string &path,
@@ -478,10 +484,14 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
       CHECK(lite::TargetWrapperXPU::shared_l3_size >= l3_size)
           << "Enlarge XPU Shared L3 Cache Is Not Allowed.";
     }
-    lite::TargetWrapperXPU::local_l3_size = 0;
+    reinterpret_cast<lite::XPURunTimeOption *>(
+        target_configs()[TARGET(kXPU)].get())
+        ->xpu_local_l3_size = 0;
     lite::TargetWrapperXPU::need_l3_mutex = true;
   } else {
-    lite::TargetWrapperXPU::local_l3_size = l3_size;
+    reinterpret_cast<lite::XPURunTimeOption *>(
+        target_configs()[TARGET(kXPU)].get())
+        ->xpu_local_l3_size = l3_size;
     lite::TargetWrapperXPU::need_l3_mutex = false;
   }
 #else
@@ -493,7 +503,9 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 
 void CxxConfig::set_xpu_l3_cache_autotune(bool autotune) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::local_l3_autotune = autotune;
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_local_l3_autotune = autotune;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_l3_cache_autotune' is ignored, please "
@@ -501,9 +513,11 @@ void CxxConfig::set_xpu_l3_cache_autotune(bool autotune) {
 #endif
 }
 
-void set_xpu_gm_workspace_method(size_t gm_size) {
+void CxxConfig::set_xpu_gm_workspace_method(size_t gm_size) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::local_gm_size = gm_size;
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_local_gm_size = gm_size;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_gm_workspace_method' is ignored, please "
@@ -513,7 +527,9 @@ void set_xpu_gm_workspace_method(size_t gm_size) {
 
 void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::SetDev(dev_no);
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_dev_num = dev_no;
 #else
   LOG(WARNING) << "The invoking of the function 'set_xpu_dev_per_thread' is "
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
@@ -522,7 +538,9 @@ void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 
 void CxxConfig::enable_xpu_multi_stream() {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::enable_xpu_multi_stream();
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_enable_multi_stream = true;
 #else
   LOG(WARNING)
       << "The invoking of the function 'enable_xpu_stream_per_thread' is "
@@ -591,7 +609,9 @@ void CxxConfig::set_xpu_conv_autotune(bool autotune,
 
 void CxxConfig::set_xpu_cluster_num(const int num) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::cluster_num = num;
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_cluster_num = num;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_cluster_num' is ignored, please "
@@ -601,10 +621,36 @@ void CxxConfig::set_xpu_cluster_num(const int num) {
 
 void CxxConfig::set_xpu_sdnn_num(const int num) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::sdnn_num = num;
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_sdnn_num = num;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_sdnn_num' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_dump_tensor_path(const std::string dump_tensor_path) {
+#ifdef LITE_WITH_XPU
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_dump_tensor_path = dump_tensor_path;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_dump_tensor_path' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_dump_log_path(const std::string dump_log_path) {
+#ifdef LITE_WITH_XPU
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_dump_log_path = dump_log_path;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_dump_log_path' is ignored, please "
                   "rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }

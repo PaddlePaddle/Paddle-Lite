@@ -188,6 +188,9 @@ TEST(InstanceNorm, precision) {
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 1e-1;
   ignored_outs = {"saved_mean", "saved_variance"};
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-1;
+  ignored_outs = {"saved_mean", "saved_variance"};
 #else
   return;
 #endif

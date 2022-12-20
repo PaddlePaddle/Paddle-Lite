@@ -221,6 +221,23 @@ TEST(Compare, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+  for (auto op : std::vector<std::string>{"equal",
+                                          "not_equal",
+                                          "less_than",
+                                          "less_equal",
+                                          "greater_than",
+                                          "greater_equal"}) {
+    TestCompare<float>(place, abs_error, op, {2, 3, 4, 5}, {2, 3, 4, 5}, -1);
+    TestCompare<float>(place, abs_error, op, {2, 3, 4}, {2, 3, 4}, 0);
+  }
+
+  TestCompare<float>(place, abs_error, "equal", {2, 3, 4}, {3, 4}, 1);
+  TestCompare<float>(place, abs_error, "equal", {2, 3, 4}, {4}, 2);
+  TestCompare<float>(place, abs_error, "equal", {2, 3, 4, 5}, {5}, 3);
+  TestCompare<int32_t>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
+  return;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
   TestCompare<float>(place, abs_error, "equal", {2, 3, 4, 5}, {2, 3, 4, 5}, -1);

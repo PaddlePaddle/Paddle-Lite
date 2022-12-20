@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 namespace paddle {
 namespace lite {
 
-class ArgmaxComputeTester : public arena::TestCase {
+class ArgminComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
   std::string input_ = "x";
@@ -32,7 +32,7 @@ class ArgmaxComputeTester : public arena::TestCase {
   DDim dims_{{2, 5, 20, 30}};
 
  public:
-  ArgmaxComputeTester(const Place& place,
+  ArgminComputeTester(const Place& place,
                       const std::string& alias,
                       int axis,
                       bool keepdims,
@@ -82,7 +82,7 @@ class ArgmaxComputeTester : public arena::TestCase {
         std::partial_sort(vec.begin(),
                           vec.begin() + 1,
                           vec.end(),
-                          std::greater<std::pair<indtype, outdtype>>());
+                          std::less<std::pair<indtype, outdtype>>());
 
         // out
         auto* out_ptr = output_data + n * out_channel + k;
@@ -124,7 +124,7 @@ class ArgmaxComputeTester : public arena::TestCase {
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) override {
-    op_desc->SetType("arg_max");
+    op_desc->SetType("arg_min");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
     op_desc->SetAttr("axis", axis_);
@@ -171,7 +171,7 @@ class ArgmaxComputeTester : public arena::TestCase {
   }
 };
 
-void TestArgmax(const Place& place,
+void TestArgmin(const Place& place,
                 std::vector<std::string> aliases,
                 std::vector<int> dtype_list) {
   for (int axis : {-1, -2, 0, 2}) {
@@ -185,7 +185,7 @@ void TestArgmax(const Place& place,
           if (axis == 0 || axis == -static_cast<int>(x_shape.size())) continue;
 #endif
           for (std::string alias : aliases) {
-            std::unique_ptr<arena::TestCase> tester(new ArgmaxComputeTester(
+            std::unique_ptr<arena::TestCase> tester(new ArgminComputeTester(
                 place, alias, axis, keepdims, dtype, DDim(x_shape)));
             arena::Arena arena(std::move(tester), place, 2e-5);
             arena.TestPrecision();
@@ -196,43 +196,27 @@ void TestArgmax(const Place& place,
   }
 }
 
-TEST(Argmax, precision) {
+TEST(Argmin, precision) {
   Place place;
   std::vector<std::string> aliases{"fp32", "int64", "int32", "int16", "uint8"};
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
   aliases = {"def"};
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
-  TestArgmax(place, aliases, {2});
-  return;
-#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
-  TestArgmax(place, aliases, {2});
-  return;
-#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
-  TestArgmax(place, aliases, {2});
-  return;
-#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
-  TestArgmax(place, aliases, {2});
+  TestArgmin(place, aliases, {2});
   return;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  TestArgmax(place, aliases, {2});
+  TestArgmin(place, aliases, {2});
   return;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
-  TestArgmax(place, aliases, {2});
+  TestArgmin(place, aliases, {2});
   return;
 #else
   return;
 #endif
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#elif defined(LITE_WITH_X86)
-  place = TARGET(kHost);
 #else
   return;
 #endif
-
-  TestArgmax(place, aliases, {-1, 2, 3});
 }
 
 }  // namespace lite
