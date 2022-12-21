@@ -406,9 +406,13 @@ class XPUConv2dFuser : public FuseBase {
         float* mean_on_host = mean_t->mutable_data<float>();
         float* var_on_host = var_t->mutable_data<float>();
 
+        float epsilon = 0.00001f;
+        if (matched.at("bn")->stmt()->op_info()->HasAttr("epsilon")) {
+          epsilon =
+              matched.at("bn")->stmt()->op_info()->GetAttr<float>("epsilon");
+        }
         for (int i = 0; i < mean_len; ++i) {
-          scale_on_host[i] =
-              scale_on_host[i] / sqrtf(var_on_host[i] + 0.00001f);
+          scale_on_host[i] = scale_on_host[i] / sqrtf(var_on_host[i] + epsilon);
         }
         for (int i = 0; i < mean_len; ++i) {
           for (int j = 0; j < filter_stride; ++j) {
