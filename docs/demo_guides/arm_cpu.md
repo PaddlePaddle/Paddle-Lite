@@ -7,16 +7,13 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
 ### 已支持的芯片
 
 - 高通 888+/888/Gen1/875/865/855/845/835/625 等
+- 麒麟 810/820/985/990/990 5G/9000E/9000 等
 
 ### 已支持的设备
 
-- HUAWEI Mate 40pro 系列
-- HUAWEI Mate 40 系列
-- HUAWEI Mate 30pro 系列，P40pro 系列
 - HUAWEI Mate 30 系列，荣耀 V20 系列，nova 6 系列，P40 系列，Mate Xs
-- HUAWEI nova 7 5G，nova 7 Pro 5G，荣耀 30
-- HUAWEI nova 7 SE 5G，荣耀 30S
 - HUAWEI nova 5 系列，nova 6 SE，荣耀 9X 系列，荣耀 Play4T Pro
+- 高通 SA8295P，8295 EVK
 
 ### 已验证支持的 Paddle 模型
 
@@ -123,9 +120,6 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
             - amd64
               - include # Paddle Lite 头文件
               - lib # Paddle Lite 库文件
-                - huawei_ascend_npu # 华为昇腾 NPU CANN 库、NNAdapter 运行时库、device HAL 库
-                  - libnnadapter.so # NNAdapter 运行时库
-                  - libhuawei_ascend_npu.so # NNAdapter device HAL 库
                 - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
                 - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
             - arm64
@@ -146,9 +140,14 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
   ```shell
   运行 mobilenet_v1_fp32_224 模型
 
-  For arm64
-  (arm cpu only)
+  For Android arm64-v8a
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a
+  For Android armeabi-v7a
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test android armeabi-v7a
+  For Linux arm64
   $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64
+  For Linux armhf
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux armhf
 
     Top1 Egyptian cat - 0.482871
     Top2 tabby, tabby cat - 0.471594
@@ -160,14 +159,16 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
     Postprocess time: 4.720000 ms, avg 4.720000 ms, max 4.720000 ms, min 4.720000 ms
   ```
 
-- 如果需要更改测试模型为 resnet50，可以将 `run.sh` 里的 MODEL_NAME 改成 resnet50_fp32_224，或执行命令：
+- 如果需要更改测试模型为 resnet50，mobilenetv1，mobilenetv1_per_layer，执行命令修改为如下：
 
   ```shell
-  (arm cpu only)
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64
+  $ ./run.sh mobilenet_v1_fp32_224_per_layer imagenet_224.txt test linux arm64
   ```
 
 - 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
+
 - 如果需要重新编译示例程序，直接运行
 
   ```shell
@@ -175,7 +176,7 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
   $ ./build.sh linux arm64
   ```
 
-### 更新 arm 预测库
+### 更新 Arm 预测库
 
 - 下载 Paddle Lite 源码
 
@@ -187,15 +188,20 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
 
 - 编译并生成 armv8 and armv7 的部署库
 
-  - For armv8
+  - For Android arm64-v8a
     - tiny_publish 编译
       ```shell
-      $ ./lite/tools/build_android.sh --arch=armv8 --toolchain=clang --android_stl=c++_shared --with_extra=ON --with_log=OFF
+      $ ./lite/tools/build_android.sh --arch=armv8 --toolchain=clang --with_extra=ON --with_log=OFF --with_cv=ON
+      ```
+
+    - tiny_publish 编译（FP16）
+      ```shell
+      $ ./lite/tools/build_android.sh --arch=armv8 --toolchain=clang --with_extra=ON --with_log=OFF --with_cv=ON --with_arm82_fp16=ON
       ```
 
     - full_publish 编译
       ```shell
-      $ ./lite/tools/build_android.sh --arch=armv8 --toolchain=clang --android_stl=c++_shared --with_extra=ON --with_log=OFF full_publish
+      $ ./lite/tools/build_android.sh --arch=armv8 --toolchain=clang --with_extra=ON --with_log=OFF --with_cv=ON full_publish
       ```
 
     - 替换头文件和库
@@ -210,12 +216,17 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
       $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
       ```
 
-  - For armv7
+  - For Android armeabi-v7a
     - tiny_publish 编译
       ```shell
       $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_log=OFF --with_extra=ON --with_cv=ON
       ```
     
+    - tiny_publish 编译（FP16）
+      ```shell
+      $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_log=OFF --with_extra=ON --with_cv=ON --with_arm82_fp16=ON
+      ```
+
     - full_publish 编译
       ```shell
       $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_log=OFF --with_extra=ON --with_cv=ON full_publish
@@ -235,6 +246,54 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
   
       备注：如果运行 FP16 预测库，模型在 OPT 转换的时候需要加上 `--enable_fp16=1` 选项，这样转换的模型会选择 FP16 kernel 实现。并且，FP16 预测库和 FP16 模型只在支持 ARMv8.2 架构的手机上运行，如小米 9，华为 Meta30 等。
 
+- 编译并生成 arm64 and armhf 的部署库
+
+  - For Linux arm64
+    - tiny_publish 编译
+      ```shell
+      $ ./lite/tools/build_linux.sh --arch=armv8 --toolchain=clang --with_extra=ON --with_log=ON --with_cv=ON --with_exception=ON
+      ```
+
+    - full_publish 编译
+      ```shell
+      $ ./lite/tools/build_linux.sh --arch=armv8 --toolchain=clang --with_extra=ON --with_log=ON --with_cv=ON --with_exception=ON full_publish
+      ```
+
+    - 替换头文件和库
+      ```shell
+      替换 include 目录
+      $ cp -rf build.lite.linux.armv8.clang/inference_lite_lib.armlinux.armv8/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
+      
+      替换 libpaddle_light_api_shared.so
+      $ cp -rf build.lite.linux.armv8.clang/inference_lite_lib.armlinux.armv8/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
+      
+      替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
+      $ cp -rf build.lite.linux.armv8.clang/inference_lite_lib.armlinux.armv8/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
+      ```
+
+  - For Linux armhf
+    - tiny_publish 编译
+      ```shell
+      $ ./lite/tools/build_linux.sh --arch=armv7hf --toolchain=clang --with_extra=ON --with_log=ON --with_cv=ON --with_exception=ON
+      ```
+    
+    - full_publish 编译
+      ```shell
+      $ ./lite/tools/build_linux.sh --arch=armv7hf --toolchain=clang --with_extra=ON --with_log=ON --with_cv=ON --with_exception=ON full_publish
+      ```
+
+    - 替换头文件和库
+      ```shell
+      替换 include 目录
+      $ cp -rf build.lite.linux.armv7hf.clang/inference_lite_lib.armlinux.armv7hf/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/include/
+      
+      替换 libpaddle_light_api_shared.so
+      $ cp -rf build.lite.linux.armv7hf.clang/inference_lite_lib.armlinux.armv7hf/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
+      
+      替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
+      $ cp -rf build.lite.linux.armv7hf.clang/inference_lite_lib.armlinux.armv7hf/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
+      ```
+
 - 替换头文件后需要重新编译示例程序
 
 ## 高级特性
@@ -243,32 +302,95 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
 
   Android 平台下分析：
 
-1. 开启性能分析，会打印出每个 op 耗时信息和汇总信息
+  - 开启性能分析，会打印出每个 op 耗时信息和汇总信息
 
-```bash
-$ ./lite/tools/build.sh \
-  --arm_os=android \
-  --arm_abi=armv8 \
-  --build_extra=on \
-  --build_cv=on \
-  --arm_lang=clang \
-  --with_profile=ON \
-test
-```
-
-2. 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
-
-```bash
-# 开启性能分析，会打印出每个 op 耗时信息和汇总信息
-$ ./lite/tools/build.sh \
-  --arm_os=android \
-  --arm_abi=armv8 \
-  --build_extra=on \
-  --build_cv=on \
-  --arm_lang=clang \
-  --with_profile=ON \
-  --with_precision_profile=ON \
+  ```bash
+  $ ./lite/tools/build.sh \
+    --arm_os=android \
+    --arm_abi=armv8 \
+    --build_extra=on \
+    --build_cv=on \
+    --arm_lang=clang \
+    --with_profile=ON \
   test
-```
+  ```
 
-详细输出信息的说明可查阅 [Profiler 工具](../user_guides/profiler)。
+  - 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
+
+  ```bash
+  # 开启性能分析，会打印出每个 op 耗时信息和汇总信息
+  $ ./lite/tools/build.sh \
+    --arm_os=android \
+    --arm_abi=armv8 \
+    --build_extra=on \
+    --build_cv=on \
+    --arm_lang=clang \
+    --with_profile=ON \
+    --with_precision_profile=ON \
+    test
+  ```
+
+  详细输出信息的说明可查阅 [Profiler 工具](../user_guides/profiler)。
+
+- FP16 模型推理
+
+  - 单测编译的时候，需要添加 `--build_arm82_fp16=ON` 选项，即：
+
+  ```bash
+  $ export NDK_ROOT=/disk/android-ndk-r20b #ndk_version > 19
+  $ ./lite/tools/build.sh \
+    --arm_os=android \
+    --arm_abi=armv8 \
+    --build_extra=on \
+    --build_cv=on \
+    --arm_lang=clang \
+    --build_arm82_fp16=ON \
+    test
+  ```
+
+  - 模型在 OPT 转换的时候，需要添加 `--enable_fp16=1` 选项，完成 FP16 模型转换，即：
+
+  ```bash
+  $ ./build.opt/lite/api/opt \
+    --optimize_out_type=naive_buffer \
+    --enable_fp16=1 \
+    --optimize_out caffe_mv1_fp16 \
+    --model_dir ./caffe_mv1
+  ```
+
+  - 执行
+
+  1) 推送 OPT 转换后的模型至设备, 运行时请将 `use_optimize_nb` 设置为1
+
+  ```bash
+  将转换好的模型文件推送到 `/data/local/tmp/arm_cpu` 目录下
+  $ adb push caffe_mv1_fp16.nb /data/local/tmp/arm_cpu/
+  $ adb shell chmod +x /data/local/tmp/arm_cpu/test_mobilenetv1
+
+  $ adb shell "\
+      /data/local/tmp/arm_cpu/test_mobilenetv1 \
+      --use_optimize_nb=1 \
+      --model_dir=/data/local/tmp/arm_cpu/caffe_mv1_fp16 \
+      --input_shape=1,3,224,224 \
+      --warmup=10 \
+      --repeats=100"
+  ```
+
+  2) 推送原始模型至手机, 运行时请将 `use_optimize_nb` 设置为0， `use_fp16` 设置为1；（`use_fp16` 默认为0）
+
+  ```bash
+  将 fluid 原始模型文件推送到 `/data/local/tmp/arm_cpu` 目录下
+  $ adb push caffe_mv1 /data/local/tmp/arm_cpu/
+  $ adb shell chmod +x /data/local/tmp/arm_cpu/test_mobilenetv1
+
+  $ adb shell "export GLOG_v=1; \
+      /data/local/tmp/arm_cpu/test_mobilenetv1 \
+      --use_optimize_nb=0 \
+      --use_fp16=1 \
+      --model_dir=/data/local/tmp/arm_cpu/caffe_mv1 \
+      --input_shape=1,3,224,224 \
+      --warmup=10 \
+      --repeats=100"
+  ```
+
+  注：如果想输入真实数据，请将预处理好的输入数据用文本格式保存。在执行的时候加上 `--in_txt=./*.txt` 选项即可
