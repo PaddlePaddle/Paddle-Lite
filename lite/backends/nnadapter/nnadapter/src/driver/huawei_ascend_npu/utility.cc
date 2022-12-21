@@ -661,7 +661,7 @@ bool GetAscendCANNVersion(int* major, int* minor, int* patch) {
         return true;
       }
     }
-    NNADAPTER_LOG(FATAL) << "Unable to find the Ascend CANN installation path! "
+    NNADAPTER_LOG(WARNING) << "Unable to find the Ascend CANN installation path! "
                             "Please install the Ascend CANN and add the root "
                             "directory into LD_LIBRARY_PATH.";
     return false;
