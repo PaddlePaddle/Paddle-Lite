@@ -332,6 +332,11 @@ void pooling_basic_fp16(POOLING_PARAM,
   "ld1 {v0.8h}, [%[data_in_channel]], #16\n"          \
   "bne 2b \n"                                         \
   "3: \n"
+
+#define P2x2S2P0_INIT                  \
+  "ld2 {v0.8h-v1.8h}, [%[dr0]], #32\n" \
+  "ld2 {v2.8h-v3.8h}, [%[dr1]], #32\n"
+
 #define P3x3S2P1_INIT                  \
   "cmp %w[cnt_num], #1\n"              \
   "ld2 {v0.8h-v1.8h}, [%[dr0]], #32\n" \
@@ -348,6 +353,17 @@ void pooling_basic_fp16(POOLING_PARAM,
   "ld1 {v7.4h}, [%[dr1]]\n"            \
   "ld1 {v8.4h}, [%[dr2]]\n"            \
   "blt 0f\n"
+
+#define P2x2S2P0_MAX                                               \
+  "1: \n"                                                          \
+  "fmax  v4.8h, v0.8h, v1.8h\n"         /*  dro max */             \
+  "fmax  v5.8h, v2.8h, v3.8h\n"         /*  dr1 max */             \
+  "ld2  {v0.8h-v1.8h}, [%[dr0]], #32\n" /* load q0-q1, dr0, 0-15*/ \
+  "ld2  {v2.8h-v3.8h}, [%[dr1]], #32\n" /* load q2-q3, dr1, 0-15*/ \
+  "fmax  v6.8h, v4.8h, v5.8h\n"         /* max reduce */           \
+  "subs %w[cnt_num], %w[cnt_num], #1\n" /* subs cnt_num, #1*/      \
+  "st1  {v6.8h}, [%[dr_out]], #16\n"    /* store 8 out, dr_out */  \
+  "bne       1b\n"                      /* bne s2_max_loop_mid */
 
 #define P3x3S2P1_MAX                       \
   "fmax v9.8h, v0.8h, v1.8h\n"             \
@@ -596,6 +612,21 @@ void pooling_basic_fp16(POOLING_PARAM,
   "vld1.16 {d0, d1}, [%[data_in_channel]]!\n"         \
   "bne 2b \n"                                         \
   "3: \n"
+
+#define P2x2S2P0_INIT            \
+  "vld2.16 {d0-d3}, [%[dr0]]!\n" \
+  "vld2.16 {d4-d7}, [%[dr1]]!\n"
+
+#define P2x2S2P0_MAX                                              \
+  "1: \n"                                                         \
+  "vmax.f16  q4, q0, q1\n"             /*  dro max */             \
+  "vmax.f16  q5, q2, q3\n"             /*  dr1 max */             \
+  "vld2.16 {d0-d3}, [%[dr0]]!\n"       /* load q0-q1, dr0, 0-15*/ \
+  "vld2.16 {d4-d7}, [%[dr1]]!\n"       /* load q2-q3, dr1, 0-15*/ \
+  "vmax.f16  q6, q4, q5\n"             /* max reduce */           \
+  "subs %[cnt_num], %[cnt_num], #1\n"  /* subs cnt_num, #1*/      \
+  "vst1.f16  {d12-d13}, [%[dr_out]]\n" /* store 8 out, dr_out */  \
+  "bne       1b\n"                     /* bne s2_max_loop_mid */
 
 #define P3x3S2P0_INIT              \
   "cmp %[cnt_num], #1\n"           \
@@ -2208,7 +2239,87 @@ void pooling5x5s1p2_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
   }
 }
 
-void pooling2x2s2p0_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {}
+void pooling2x2s2p0_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
+  const int K = 2;
+  const int P = 0;
+  const int S = 2;
+  // compute loop cnt
+  int size_channel_out = wout * hout;
+  int size_channel_in = hin * win;
+  auto data_in = static_cast<const float16_t *>(din);
+  auto data_out = static_cast<float16_t *>(dout);
+  // each loop get 8 output
+  int w_unroll_size = wout >> 3;
+  if ((!(wout % 8) && (wout * 2 - win))) w_unroll_size--;
+  int w_unroll_remian = wout - w_unroll_size * 8;
+  // minval
+  float16_t minval = (float16_t)-FLT_MAX;
+  for (int n = 0; n < num; ++n) {
+    float16_t *data_out_batch = data_out + n * chout * size_channel_out;
+    const float16_t *data_in_batch = data_in + n * chin * size_channel_in;
+    LITE_PARALLEL_BEGIN(c, tid, chout) {
+      float16_t *data_out_channel = data_out_batch + c * size_channel_out;
+      const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
+      const float16_t *r0 = data_in_channel;
+      const float16_t *r1 = r0 + win;
+      for (int h = 0; h < hout; h++) {
+        float16_t *dr_out = data_out_channel;
+        auto dr0 = r0;
+        auto dr1 = r1;
+        if (h * S + K - P > hin + 1) {
+          memset(dr_out, 0.f, sizeof(float16_t) * wout);
+          data_out_channel += wout;
+          continue;
+        }
+        if (h * S + K - P > hin) {
+          dr1 = r0;
+        }
+        int cnt_num = w_unroll_size;
+        if (w_unroll_size > 0) {
+#ifdef __aarch64__
+          asm volatile(
+              P2x2S2P0_INIT P2x2S2P0_MAX
+              : [dr0] "+r"(dr0),
+                [dr1] "+r"(dr1),
+                [dr_out] "+r"(dr_out),
+                [cnt_num] "+r"(cnt_num)
+              :
+              : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6");
+#else
+          asm volatile(
+              P2x2S2P0_INIT P2x2S2P0_MAX
+              : [dr0] "+r"(dr0),
+                [dr1] "+r"(dr1),
+                [dr_out] "+r"(dr_out),
+                [cnt_num] "+r"(cnt_num)
+              :
+              : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6");
+#endif
+          dr0 -= 8;
+          dr1 -= 8;
+        }
+        // deal with right remaining
+        int rem = win - (w_unroll_size * 8) * S;
+        int wstart = 0;
+        for (int j = 0; j < w_unroll_remian; ++j) {
+          int wend = std::min(wstart + K, rem);
+          float16_t tmp = wstart < rem ? dr0[wstart] : minval;
+          for (int i = wstart; i < wend; ++i) {
+            tmp = std::max(tmp, dr0[i]);
+            tmp = std::max(tmp, dr1[i]);
+          }
+          *(dr_out++) = tmp;
+
+          wstart += S;
+        }
+        r0 = r1 + win;
+        r1 = r0 + win;
+        data_out_channel += wout;
+      }
+    }
+    LITE_PARALLEL_END();
+  }
+}
 
 void pooling_common_max_fp16(POOLING_PARAM,
                              int ksize,
@@ -2291,6 +2402,8 @@ void pooling_common_max_fp16(POOLING_PARAM,
 #undef GLOBAL_AVG
 #undef GLOBAL_MAX_REMAIN
 #undef GLOBAL_AVG_REMAIN
+#undef P2x2S2P0_INIT
+#undef P2x2S2P0_MAX
 #undef P3x3S2P1_INIT
 #undef P3x3S2P0_INIT
 #undef P3x3S2P1_MAX
