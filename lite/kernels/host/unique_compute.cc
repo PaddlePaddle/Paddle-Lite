@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include "lite/kernels/host/unique_compute.h"
-#include "lite/core/tensor.h"
-
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -23,6 +21,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
@@ -36,12 +35,9 @@ void UniqueFunc(const lite::Tensor* x,
                 lite::Tensor* count) {
   const InT* in_data = x->template data<InT>();
   IndexT* index_data = index->mutable_data<IndexT>();
-
   int64_t j = 0;
-
   std::unordered_map<InT, int64_t> dict;
   std::vector<InT> uniq;
-
   for (auto i = 0; i < x->numel(); i++) {
     auto it = dict.find(in_data[i]);
     if (it == dict.end()) {
@@ -53,7 +49,6 @@ void UniqueFunc(const lite::Tensor* x,
       index_data[i] = static_cast<IndexT>(it->second);
     }
   }
-
   if (count != nullptr) {
     // Resize the count tensor dims to allocate the memory
     count->Resize({static_cast<int64_t>(uniq.size())});
@@ -84,7 +79,6 @@ void UniqueFlattendTensorFunc(const lite::Tensor& in,
   out->Resize({static_cast<int64_t>(unique.size())});
   auto out_data = out->mutable_data<InT>();
   std::copy(unique.begin(), unique.end(), out_data);
-
   if (return_index) {
     indices->Resize({out->numel()});
     auto indices_data = indices->mutable_data<IndexT>();
@@ -98,7 +92,6 @@ void UniqueFlattendTensorFunc(const lite::Tensor& in,
       indices_data[i] = indices_map[out_data[i]];
     }
   }
-
   if (return_inverse) {
     index->Resize({in.numel()});
     auto inverse_data = index->mutable_data<IndexT>();
@@ -111,7 +104,6 @@ void UniqueFlattendTensorFunc(const lite::Tensor& in,
       inverse_data[i] = inverse_map[in_data[i]];
     }
   }
-
   if (return_counts) {
     count->Resize({out->numel()});
     auto count_data = count->mutable_data<IndexT>();
@@ -162,14 +154,11 @@ static ForwardIt UniqueDimImpl(ForwardIt first,
   if (first == last) {
     return last;
   }
-
   (*inverse_vec)[sorted_indices_vec[0]] = 0;
   (*counts_vec)[0] = 1;
   (*indices_vec)[0] = sorted_indices_vec[0];
-
   ForwardIt begin = first;
   ForwardIt result = first;
-
   while (++first != last) {
     int64_t idx_first = std::distance(begin, first);
     int64_t idx_result = std::distance(begin, result);
@@ -187,7 +176,7 @@ static ForwardIt UniqueDimImpl(ForwardIt first,
 }
 
 template <typename T>
-void TensorFromVector(const std::vector<T>& src, lite::Tensor* dst) {
+void UniqueTensorFromVector(const std::vector<T>& src, lite::Tensor* dst) {
   auto* src_ptr = static_cast<const void*>(src.data());
   dst->Resize({static_cast<int64_t>(src.size())});
   auto* dst_ptr = static_cast<void*>(dst->mutable_data<T>());
@@ -197,17 +186,15 @@ void TensorFromVector(const std::vector<T>& src, lite::Tensor* dst) {
 }
 
 template <typename T>
-void TransCompute(const Tensor& input,
-                  Tensor* output,
-                  const std::vector<int>& orders) {
+void UniqueTransCompute(const Tensor& input,
+                        Tensor* output,
+                        const std::vector<int>& orders) {
   auto in_dims = input.dims();
   auto out_dims = output->dims();
   int num_axes = in_dims.size();
   int count = in_dims.production();
-
   const T* din = input.data<T>();
   T* dout = output->mutable_data<T>();
-
   std::vector<int> old_temps;
   int temp = 1;
   for (int i = 0; i < num_axes; ++i) {
@@ -218,7 +205,6 @@ void TransCompute(const Tensor& input,
   for (int i = 0; i < num_axes; i++) {
     old_steps.push_back(old_temps[num_axes - 1 - i]);
   }
-
   std::vector<int> new_temps;
   temp = 1;
   for (int i = 0; i < num_axes; ++i) {
@@ -229,7 +215,6 @@ void TransCompute(const Tensor& input,
   for (int i = 0; i < num_axes; i++) {
     new_steps.push_back(new_temps[num_axes - 1 - i]);
   }
-
   for (int i = 0; i < count; ++i) {
     int old_idx = 0;
     int idx = i;
@@ -242,16 +227,16 @@ void TransCompute(const Tensor& input,
   }
 }
 
-lite::DDim FlattenTo2d(const lite::DDim& src, int num_col_dims) {
+lite::DDim UniqueFlattenTo2d(const lite::DDim& src, int num_col_dims) {
   return DDim(std::vector<DDim::value_type>{
       src.Slice(0, num_col_dims).production(),
       src.Slice(num_col_dims, src.size()).production()});
 }
 
 template <typename T>
-void concat_func(const std::vector<lite::Tensor>& input,
-                 const int axis,
-                 lite::Tensor* output) {
+void UniqueConcatFunc(const std::vector<lite::Tensor>& input,
+                      const int axis,
+                      lite::Tensor* output) {
   size_t num = input.size();
   auto dim_0 = input[0].dims();
   int64_t concat_input_size = 1;
@@ -262,7 +247,6 @@ void concat_func(const std::vector<lite::Tensor>& input,
   for (int i = 0; i < axis; i++) {
     num_cancats *= dim_0[i];
   }
-
   auto* dst_ptr = output->mutable_data<T>();
   const int out_concat_axis = output->dims()[axis];
   int64_t offset_concat_axis = 0;
@@ -304,9 +288,9 @@ void UniqueDimFunc(const lite::Tensor& in,
   lite::DDim in_trans_dims = DDim(in_trans_dims_vec);
   in_trans.Resize(in_trans_dims);
   in_trans.mutable_data<InT>();
-  TransCompute<InT>(in, &in_trans, permute);
+  UniqueTransCompute<InT>(in, &in_trans, permute);
   // reshape tensor: eg. [dim1, dim0, dim2] -> [dim1, dim0*dim2]
-  lite::DDim in_trans_flat_dims = FlattenTo2d(in_trans_dims, 1);
+  lite::DDim in_trans_flat_dims = UniqueFlattenTo2d(in_trans_dims, 1);
   in_trans.Resize(in_trans_flat_dims);
 
   // sort indices
@@ -328,7 +312,6 @@ void UniqueDimFunc(const lite::Tensor& in,
               }
               return false;
             });
-
   // sort tensor according to indices
   lite::Tensor input_sorted;
   input_sorted.Resize(in_trans_dims);
@@ -339,7 +322,6 @@ void UniqueDimFunc(const lite::Tensor& in,
            in_trans_data + static_cast<int64_t>(sorted_indices_vec[i]) * col,
            col * sizeof(InT));
   }
-
   std::vector<lite::Tensor> input_unbind = Unbind<InT>(input_sorted);
   std::vector<IndexT> inverse_vec(sorted_indices_vec.size(), 0);
   std::vector<IndexT> counts_vec(sorted_indices_vec.size(), 0);
@@ -355,7 +337,6 @@ void UniqueDimFunc(const lite::Tensor& in,
   counts_vec.erase(counts_vec.begin() + input_unbind.size(), counts_vec.end());
   indices_vec.erase(indices_vec.begin() + input_unbind.size(),
                     indices_vec.end());
-
   lite::Tensor out_trans;
   std::vector<int64_t> out_trans_dims_vec = in_trans_dims_vec;
   out_trans_dims_vec[0] = input_unbind.size();
@@ -364,19 +345,16 @@ void UniqueDimFunc(const lite::Tensor& in,
   std::swap(out_trans_dims_vec[0], out_trans_dims_vec[axis]);
   out->Resize(out_trans_dims_vec);
   out->mutable_data<InT>();
-  concat_func<InT>(input_unbind, 0, &out_trans);
-  TransCompute<InT>(out_trans, out, permute);
-
+  UniqueConcatFunc<InT>(input_unbind, 0, &out_trans);
+  UniqueTransCompute<InT>(out_trans, out, permute);
   if (return_inverse) {
-    TensorFromVector(inverse_vec, index);
+    UniqueTensorFromVector(inverse_vec, index);
   }
-
   if (return_counts) {
-    TensorFromVector(counts_vec, count);
+    UniqueTensorFromVector(counts_vec, count);
   }
-
   if (return_index) {
-    TensorFromVector(indices_vec, indices);
+    UniqueTensorFromVector(indices_vec, indices);
   }
 }
 
@@ -393,7 +371,6 @@ void UniqueCompute::Run() {
   bool return_counts = param.return_counts;
   auto axis_vec = param.axis;
   auto is_sorted = param.is_sorted;
-
   lite_api::PrecisionType index_type = index->precision();
   bool index_type_match =
       index_type == PRECISION(kInt32) || index_type == PRECISION(kInt64);
@@ -401,7 +378,6 @@ void UniqueCompute::Run() {
   CHECK_EQ(index_type_match, true) << "Index holds the wrong type, it holds "
                                    << static_cast<int>(type)
                                    << "but desires to be int32 or int64";
-
   if (!is_sorted) {
     if (index_type == PRECISION(kInt32)) {
       switch (type) {
@@ -438,7 +414,6 @@ void UniqueCompute::Run() {
     }
     return;
   }
-
   if (x->numel() == 0) {
     switch (type) {
       case PRECISION(kFloat):
@@ -455,7 +430,6 @@ void UniqueCompute::Run() {
                    << "input type:" << static_cast<int>(type);
         break;
     }
-
     return;
   }
   if (axis_vec.empty()) {
