@@ -190,20 +190,21 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
 
 - 进入 `PaddleLite-generic-demo/image_classification_demo/shell/`；
 
-- 执行以下命令观察 mobilenet_v1_fp32_224 模型的性能和结果；
+- 执行以下命令观察 mobilenet_v1_int8_224_per_layer 模型的性能和结果；
 
   ```shell
-  运行 mobilenet_v1_fp32_224 模型
+  运行 mobilenet_v1_int8_224_per_layer 模型
     
   For android
-  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test android opencl
+  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android opencl
   For linux
-  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux opencl
+  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux opencl
   For macos
-  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test macos opencl
+  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test macos opencl
   For windows
-  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test windows opencl
+  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test windows opencl
 
+    参考输出形式:
     Top1 Egyptian cat - 0.482870
     Top2 tabby, tabby cat - 0.471594
     Top3 tiger cat - 0.039779
