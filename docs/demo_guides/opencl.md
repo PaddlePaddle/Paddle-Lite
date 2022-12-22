@@ -197,12 +197,6 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
     
   For android
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android opencl
-  For linux
-  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux opencl
-  For macos
-  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test macos opencl
-  For windows
-  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test windows opencl
 
     参考输出形式:
     Top1 Egyptian cat - 0.482870
@@ -214,15 +208,27 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
     Prediction time: 29.534000 ms, avg 29.534000 ms, max 29.534000 ms, min 29.534000 ms
     Postprocess time: 5.343000 ms, avg 5.343000 ms, max 5.343000 ms, min 5.343000 ms
 
+  For linux
+  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux opencl
+
+  For macos
+  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test macos opencl
+
+  For windows
+  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test windows opencl
+
 - 如果需要更改测试模型为 resnet50，执行命令修改为如下：
 
   ```shell
   For android
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test android opencl
+
   For linux
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux opencl
+
   For macos
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test macos opencl
+
   For windows
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test windows opencl
   ```
@@ -233,10 +239,13 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
   ```shell
   For android arm64-v8a
   $ ./build.sh android arm64-v8a
+
   For android armeabi-v7a
   $ ./build.sh android armeabi-v7a
+
   For linux arm64
   $ ./build.sh linux arm64
+  
   For linux armhf
   $ ./build.sh linux armhf
   ```
