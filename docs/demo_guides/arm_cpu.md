@@ -63,7 +63,6 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
 - 视频分类
   - [PP-TSN](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleVideo/v2.2.0/ppTSN.tar.gz)
 
-
 ## 参考示例演示
 
 ### 测试设备(HUAWEI Mate30 5G)
@@ -72,7 +71,6 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
 ### 准备交叉编译环境
 
 - 为了保证编译环境一致，建议参考 [Docker 统一编译环境搭建](../source_compile/docker_env) 中的 Docker 开发环境进行配置。
-
 
 ### 运行图像分类示例程序
 
