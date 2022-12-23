@@ -551,7 +551,7 @@ TEST(multiclass_nms, precision) {
 #endif
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
-  alias = "DISABLE_XPU2_MulticlassNms3";
+  alias = "def";
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #else
