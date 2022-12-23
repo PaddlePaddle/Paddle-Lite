@@ -94,30 +94,30 @@ int ConvertLayerNormalization(Converter* converter,
         converter->AddOperator<ge::op::Square>(output_operand, "square");
     SET_INPUT(square_op, x, sub_operator);
     auto square_operator = MAP_OUTPUT(square_op, y, output_operand);
-    // ReduceMean for Varience:  np.mean(np.power((x - mean),2),reduce_axis,
+    // ReduceMean for variance:  np.mean(np.power((x - mean),2),reduce_axis,
     // keepdims=True)
-    auto varience_reduce_mean_op = converter->AddOperator<ge::op::ReduceMean>(
-        output_operand, "varience_reduce_mean");
-    auto varience_reduce_mean_axes_operator =
+    auto variance_reduce_mean_op = converter->AddOperator<ge::op::ReduceMean>(
+        output_operand, "variance_reduce_mean");
+    auto variance_reduce_mean_axes_operator =
         converter->AddInt32ConstantOperator(std::vector<int32_t>({1}));
-    varience_reduce_mean_op->set_attr_keep_dims(true);
-    SET_INPUT(varience_reduce_mean_op, x, square_operator);
+    variance_reduce_mean_op->set_attr_keep_dims(true);
+    SET_INPUT(variance_reduce_mean_op, x, square_operator);
     SET_INPUT(
-        varience_reduce_mean_op, axes, varience_reduce_mean_axes_operator);
-    auto varience_operator =
-        MAP_OUTPUT(varience_reduce_mean_op, y, output_operand);
+        variance_reduce_mean_op, axes, variance_reduce_mean_axes_operator);
+    auto variance_operator =
+        MAP_OUTPUT(variance_reduce_mean_op, y, output_operand);
     // Add: variance + epsilon
     auto add_op = converter->AddOperator<ge::op::Add>(output_operand, "add");
     auto epsilon_operator =
         converter->AddFloat32ConstantOperator(std::vector<float>({epsilon}));
-    SET_INPUT(add_op, x1, varience_operator);
+    SET_INPUT(add_op, x1, variance_operator);
     SET_INPUT(add_op, x2, epsilon_operator);
     auto add_operator = MAP_OUTPUT(add_op, y, output_operand);
     // Sqrt: np.sqrt(variance + epsilon)
     auto sqrt_op = converter->AddOperator<ge::op::Sqrt>(output_operand, "sqrt");
     SET_INPUT(sqrt_op, x, add_operator);
     auto sqrt_operator = MAP_OUTPUT(sqrt_op, y, output_operand);
-    // Div: (x - mean) / np.sqrt(variance + 0.epsilon)
+    // Div: (x - mean) / np.sqrt(variance + epsilon)
     auto div_op = converter->AddOperator<ge::op::Xdivy>(output_operand, "div");
     SET_INPUT(div_op, x1, sub_operator);
     SET_INPUT(div_op, x2, sqrt_operator);

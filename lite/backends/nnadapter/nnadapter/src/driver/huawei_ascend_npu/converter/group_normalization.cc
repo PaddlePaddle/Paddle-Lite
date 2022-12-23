@@ -38,13 +38,13 @@ int ConvertGroupNormalization(Converter* converter,
 
   /**
    * Use small operators to calculate, and the formula is as follows:
-   * input = reshape(input, (batch_size, groups, -1))
+   * input = reshape(input, shape=[batch_size, groups, -1])
    * mean = reduce_mean(input, axis=2, keep_dims=True)
    * var = reduce_sum(square(input - mean), axis=2, keep_dims=True) / (channel *
-   * height * width / grous)
-   * std = sqrt(var + epsilon
+   * height * width / groups)
+   * std = sqrt(var + epsilon)
    * output = (input - mean) / std
-   * output = reshape(output, (batch_size, channel, height, width))
+   * output = reshape(output, shape=[batch_size, channel, height, width])
    * output = output * scale + bias
    *
    */
@@ -86,7 +86,7 @@ int ConvertGroupNormalization(Converter* converter,
   SET_INPUT(reduce_sum_op, x, square_operator);
   SET_INPUT(reduce_sum_op, axes, reduce_sum_axes_operator);
   auto reduce_sum_operator = MAP_OUTPUT(reduce_sum_op, y, output_operand);
-  // Varience
+  // Variance
   auto div_op = converter->AddOperator<ge::op::Xdivy>(output_operand, "div");
   float block_num = input_operand->type.dimensions.data[1] *
                     input_operand->type.dimensions.data[2] *
@@ -95,25 +95,25 @@ int ConvertGroupNormalization(Converter* converter,
       converter->AddFloat32ConstantOperator(std::vector<float>({block_num}));
   SET_INPUT(div_op, x1, reduce_sum_operator);
   SET_INPUT(div_op, x2, block_num_operator);
-  auto varience_operator = MAP_OUTPUT(div_op, y, output_operand);
-  // Add:
+  auto variance_operator = MAP_OUTPUT(div_op, y, output_operand);
+  // Add
   auto add_op = converter->AddOperator<ge::op::Add>(output_operand, "add");
   auto epsilon_operator =
       converter->AddFloat32ConstantOperator(std::vector<float>({epsilon}));
-  SET_INPUT(add_op, x1, varience_operator);
+  SET_INPUT(add_op, x1, variance_operator);
   SET_INPUT(add_op, x2, epsilon_operator);
   auto add_operator = MAP_OUTPUT(add_op, y, output_operand);
   // Sqrt
   auto sqrt_op = converter->AddOperator<ge::op::Sqrt>(output_operand, "sqrt");
   SET_INPUT(sqrt_op, x, add_operator);
   auto std_operator = MAP_OUTPUT(sqrt_op, y, output_operand);
-  // Input Normlazation
-  auto input_normlazation_div_op = converter->AddOperator<ge::op::Xdivy>(
-      output_operand, "input_normlazation");
-  SET_INPUT(input_normlazation_div_op, x1, sub_operator);
-  SET_INPUT(input_normlazation_div_op, x2, std_operator);
-  auto input_normlazation_div_operator =
-      MAP_OUTPUT(input_normlazation_div_op, y, output_operand);
+  // Input Normalization
+  auto input_normalization_div_op = converter->AddOperator<ge::op::Xdivy>(
+      output_operand, "input_normalization");
+  SET_INPUT(input_normalization_div_op, x1, sub_operator);
+  SET_INPUT(input_normalization_div_op, x2, std_operator);
+  auto input_normalization_div_operator =
+      MAP_OUTPUT(input_normalization_div_op, y, output_operand);
   // Reshape output
   auto output_shape =
       std::vector<int32_t>(input_operand->type.dimensions.data,
@@ -123,7 +123,7 @@ int ConvertGroupNormalization(Converter* converter,
       converter->AddInt32ConstantOperator(output_shape);
   auto reshape_output_op =
       converter->AddOperator<ge::op::Reshape>(output_operand, "reshape_output");
-  SET_INPUT(reshape_output_op, x, input_normlazation_div_operator);
+  SET_INPUT(reshape_output_op, x, input_normalization_div_operator);
   SET_INPUT(reshape_output_op, shape, output_shape_operator);
   auto reshape_output_operator =
       MAP_OUTPUT(reshape_output_op, y, output_operand);
