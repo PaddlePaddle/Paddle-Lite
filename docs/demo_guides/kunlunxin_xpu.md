@@ -12,6 +12,7 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2
 ### 已支持的设备
 
 - K100/K200 昆仑 AI 加速卡
+- R200 昆仑芯 AI 加速卡
 
 ### 已验证支持的 Paddle 模型
 
@@ -129,142 +130,234 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2
 
 ### 运行图像分类示例程序
 
-- 下载示例程序[ PaddleLite-linux-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/baidu/PaddleLite-linux-demo.tar.gz)，解压后清单如下：
+- 下载示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz),解压后清单如下：
 
   ```shell
-  - PaddleLite-linux-demo
-    - image_classification_demo
-      - assets
-        - images
-          - tabby_cat.jpg # 测试图片
-          - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
-        - labels
-          - synset_words.txt # 1000 分类 label 文件
-        - models
-          - resnet50_fp32_224_fluid # Paddle fluid non-combined 格式的 resnet50 float32 模型
-            - __model__ # Paddle fluid 模型组网文件，可拖入 https://lutzroeder.github.io/netron/ 进行可视化显示网络结构
-            - bn2a_branch1_mean # Paddle fluid 模型参数文件
-            - bn2a_branch1_scale
+    - PaddleLite-generic-demo
+      - image_classification_demo
+        - assets
+          - configs
+            - imagenet_224.txt # config 文件
+            - synset_words.txt # 1000 分类 label 文件
+          - datasets
+            - test # dataset
+              - inputs
+                - tabby_cat.jpg # 输入图片
+              - outputs
+                - tabby_cat.jpg # 输出图片
+              - list.txt # 图片清单
+          - models
+            - resnet50_fp32_224 # Paddle non-combined 格式的 resnet50 float32 模型
+              - __model__ # Paddle fluid 模型组网文件，可拖入 https://lutzroeder.github.io/netron/ 进行可视化显示网络结构
+              - bn2a_branch1_mean # Paddle fluid 模型参数文件
+              - bn2a_branch1_scale
+              ...
+        - shell
+          - CMakeLists.txt # 示例程序 CMake 脚本
+          - build.linux.amd64 # 已编译好的，适用于 amd64
+            - demo # 已编译好的，适用于 amd64 的示例程序
+          - build.linux.arm64 # 已编译好的，适用于 arm64
+            - demo # 已编译好的，适用于 arm64 的示例程序
             ...
-      - shell
-        - CMakeLists.txt # 示例程序 CMake 脚本
-        - build
-          - image_classification_demo # 已编译好的，适用于 amd64 的示例程序
-        - image_classification_demo.cc # 示例程序源码
-        - build.sh # 示例程序编译脚本
-        - run.sh # 示例程序运行脚本
-    - libs
-      - PaddleLite
-        - amd64
-          - include # Paddle Lite 头文件
-          - lib
-            - libiomp5.so # Intel OpenMP 库
-            - libmklml_intel.so # Intel MKL 库
-            - libxpuapi.so # XPU API 库，提供设备管理和算子实现。
-            - llibxpurt.so # XPU runtime 库
-            - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
-        - arm64
-          - include # Paddle Lite 头文件
-          - lib
-            - libxpuapi.so # XPU API 库，提供设备管理和算子实现。
-            - llibxpurt.so # XPU runtime 库
-            - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
+          ...
+          - demo.cc # 示例程序源码
+          - build.sh # 示例程序编译脚本
+          - run.sh # 示例程序本地运行脚本
+          - run_with_ssh.sh # 示例程序 ssh 运行脚本
+          - run_with_adb.sh # 示例程序 adb 运行脚本
+      - libs
+        - PaddleLite
+          - android
+            - arm64-v8a
+            - armeabi-v7a
+          - linux
+            - amd64
+              - include # Paddle Lite 头文件
+              - lib # Paddle Lite 库文件
+                - cpu
+                  - libiomp5.so # Intel OpenMP 库
+                  - libmklml_intel.so # Intel MKL 库
+                  - libmklml_gnu.so # GNU MKL 库
+                - kunlunxin_xtcl # 昆仑芯 XPU API 库、XPU runtime 库
+                  - libxpuapi.so # XPU API 库，提供设备管理和算子实现。
+                  - libxpurt.so # XPU runtime 库
+                  ...
+                - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
+                - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
+            - arm64
+              - include
+              - lib
+            - armhf
+              ...
+        - OpenCV # OpenCV 预编译库
+      - object_detection_demo # 目标检测示例程序
   ```
 
-- 进入 `PaddleLite-linux-demo/image_classification_demo/shell`，直接执行 `./run.sh amd64` 即可；
+- 进入 `PaddleLite-generic-demo/image_classification_demo/shell/`；
+
+- 执行以下命令观察 mobilenet_v1_int8_224_per_layer 模型的性能和结果；
+  ```shell
+  运行 mobilenet_v1_int8_224_per_layer 模型
+
+  For amd64
+  (intel x86 cpu only)
+  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux amd64
+
+    Top1 Egyptian cat - 0.482870
+    Top2 tabby, tabby cat - 0.471594
+    Top3 tiger cat - 0.039779
+    Top4 lynx, catamount - 0.002430
+    Top5 ping-pong ball - 0.000508
+    Preprocess time: 3.133000 ms, avg 3.133000 ms, max 3.133000 ms, min 3.133000 ms
+    Prediction time: 12.594000 ms, avg 12.594000 ms, max 12.594000 ms, min 12.594000 ms
+    Postprocess time: 4.235000 ms, avg 4.235000 ms, max 4.235000 ms, min 4.235000 ms
+
+  (intel x86 cpu + kunlunxin xpu)
+  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux amd64 xpu
+
+    Top1 Egyptian cat - 0.482607
+    Top2 tabby, tabby cat - 0.471841
+    Top3 tiger cat - 0.039819
+    Top4 lynx, catamount - 0.002419
+    Top5 ping-pong ball - 0.000505
+    Preprocess time: 2.653000 ms, avg 2.653000 ms, max 2.653000 ms, min 2.653000 ms
+    Prediction time: 0.524000 ms, avg 0.524000 ms, max 0.524000 ms, min 0.524000 ms
+    Postprocess time: 4.077000 ms, avg 4.077000 ms, max 4.077000 ms, min 4.077000 ms
+
+  For arm64
+  (arm cpu only)
+  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64
+
+    Top1 Egyptian cat - 0.482871
+    Top2 tabby, tabby cat - 0.471594
+    Top3 tiger cat - 0.039779
+    Top4 lynx, catamount - 0.002430
+    Top5 ping-pong ball - 0.000508
+    Preprocess time: 8.123000 ms, avg 8.123000 ms, max 8.123000 ms, min 8.123000 ms
+    Prediction time: 78.482000 ms, avg 78.482000 ms, max 78.482000 ms, min 78.482000 ms
+    Postprocess time: 8.023000 ms, avg 8.023000 ms, max 8.023000 ms, min 8.023000 ms
+
+  (arm cpu + kunlunxin xpu)
+  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 xpu
+
+    Top1 Egyptian cat - 0.482583
+    Top2 tabby, tabby cat - 0.471810
+    Top3 tiger cat - 0.039866
+    Top4 lynx, catamount - 0.002433
+    Top5 ping-pong ball - 0.000506
+    Preprocess time: 8.135000 ms, avg 8.135000 ms, max 8.135000 ms, min 8.135000 ms
+    Prediction time: 3.223000 ms, avg 3.223000 ms, max 3.223000 ms, min 3.223000 ms
+    Postprocess time: 8.605000 ms, avg 8.605000 ms, max 8.605000 ms, min 8.605000 ms
+  ```
+  ```
+
+- 如果需要更改测试模型为 resnet50，执行命令修改为如下：
 
   ```shell
-  $ cd PaddleLite-linux-demo/image_classification_demo/shell
+  For amd64
+  (intel x86 cpu only)
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux amd64
+  (intel x86 cpu + kunlunxin xpu)
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux amd64 xpu
 
-  默认已生成 amd64 版本的 build/image_classification_demo，因此，无需重新编译示例程序就可以执行。
-  $ ./run.sh amd64
-
-  需要在 arm64(FT-2000+/64) 服务器上执行 ./build.sh arm64 后才能执行该命令。
-  $ ./run.sh arm64
-  ...
-  AUTOTUNE:(12758016, 16, 1, 2048, 7, 7, 512, 1, 1, 1, 1, 0, 0, 0) = 1by1_bsp(1, 32, 128, 128)
-  Find Best Result in 150 choices, avg-conv-op-time = 40 us
-  [INFO][XPUAPI][/home/qa_work/xpu_workspace/xpu_build_dailyjob/api_root/baidu/xpu/api/src/wrapper/conv.cpp:274] Start Tuning: (12758016, 16, 1, 512, 7, 7, 512, 3, 3, 1, 1, 1, 1, 0)
-  AUTOTUNE:(12758016, 16, 1, 512, 7, 7, 512, 3, 3, 1, 1, 1, 1, 0) = wpinned_bsp(1, 171, 16, 128)
-  Find Best Result in 144 choices, avg-conv-op-time = 79 us
-  I0502 22:34:18.176113 15876 io_copy_compute.cc:75] xpu to host, copy size 4000
-  I0502 22:34:18.176406 15876 io_copy_compute.cc:36] host to xpu, copy size 602112
-  I0502 22:34:18.176697 15876 io_copy_compute.cc:75] xpu to host, copy size 4000
-  iter 0 cost: 2.116000 ms
-  I0502 22:34:18.178530 15876 io_copy_compute.cc:36] host to xpu, copy size 602112
-  I0502 22:34:18.178792 15876 io_copy_compute.cc:75] xpu to host, copy size 4000
-  iter 1 cost: 2.101000 ms
-  I0502 22:34:18.180634 15876 io_copy_compute.cc:36] host to xpu, copy size 602112
-  I0502 22:34:18.180881 15876 io_copy_compute.cc:75] xpu to host, copy size 4000
-  iter 2 cost: 2.089000 ms
-  I0502 22:34:18.182726 15876 io_copy_compute.cc:36] host to xpu, copy size 602112
-  I0502 22:34:18.182976 15876 io_copy_compute.cc:75] xpu to host, copy size 4000
-  iter 3 cost: 2.085000 ms
-  I0502 22:34:18.184814 15876 io_copy_compute.cc:36] host to xpu, copy size 602112
-  I0502 22:34:18.185068 15876 io_copy_compute.cc:75] xpu to host, copy size 4000
-  iter 4 cost: 2.101000 ms
-  warmup: 1 repeat: 5, average: 2.098400 ms, max: 2.116000 ms, min: 2.085000 ms
-  results: 3
-  Top0  tabby, tabby cat - 0.689418
-  Top1  tiger cat - 0.190557
-  Top2  Egyptian cat - 0.112354
-  Preprocess time: 1.553000 ms
-  Prediction time: 2.098400 ms
-  Postprocess time: 0.081000 ms
-
+  For arm64
+  (arm cpu only)
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64
+  (arm cpu + kunlunxin xpu)
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 xpu
   ```
 
-- 如果需要更新模型，请参考如下方式
-
-  - 通过 Paddle 训练，或 X2Paddle 转换得到 ResNet50 float32 模型[ resnet50_fp32_224_fluid ](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224_fluid.tar.gz)；
-  - 由于 XPU 一般部署在 Server 端，因此将使用 Paddle Lite 的 `full api` 加载原始的 Paddle 模型进行预测，即采用 `CxxConfig` 配置相关参数。
-
-- 如果需要更改测试图片，请将图片拷贝到 `PaddleLite-linux-demo/image_classification_demo/assets/images` 目录下，修改并执行 `convert_to_raw_image.py` 生成相应的 RGB Raw 图像，最后修改 `run.sh` 的 IMAGE_NAME 即可；
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
 
 - 如果需要重新编译示例程序，直接运行
 
   ```shell
-  $ cd PaddleLite-linux-demo/image_classification_demo/shell
-  
   For amd64
-  $ ./build.sh amd64
-
-  For arm64(FT-2000+/64)
-  $ ./build.sh arm64 
+  $ ./build.sh linux amd64
+  
+  For arm64
+  $ ./build.sh linux arm64
   ```
 
 ### 更新支持昆仑芯 XPU 的 Paddle Lite 库
 
-- 下载 Paddle Lite 源码；
-
+- 下载 Paddle Lite 源码
   ```shell
   $ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
   $ cd Paddle-Lite
   $ git checkout <release-version-tag>
   ```
 
-- 编译 publish so for amd64 or arm64(FT-2000+/64)；
+- 编译并生成 PaddleLite + NNAdapter + kunlunxin_xpu for amd64 and arm64 的部署库
+	- For amd64
+    如果报找不到 cxx11:: 符号的编译错误，请将 gcc 切换到 4.8 版本。
+    - tiny_publish 编译
+    ```shell
+    $ ./lite/tools/build_linux.sh --arch=x86 --with_kunlunxin_xpu=ON
+    ```
+    
+	  - full_publish 编译
+    ```shell
+    $ ./lite/tools/build_linux.sh --arch=x86 --with_kunlunxin_xpu=ON full_publish
+    ```
 
-  ```shell
-  For amd64，如果报找不到 cxx11:: 符号的编译错误，请将 gcc 切换到 4.8 版本。
-  $ ./lite/tools/build_linux.sh --arch=x86 --with_kunlunxin_xpu=ON
+	  - 替换头文件和库
+    ```shell
+    清理原有 include 目录
+    $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
+      
+    替换 include 目录
+    $ cp -rf build.lite.linux.x86.gcc.kunlunxin_xpu/inference_lite_lib/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
 
-  For arm64(FT-2000+/64), arm 环境下需要设置环境变量 CC 和 CXX，分别指定 C 编译器和 C++ 编译器的路径
-  $ export CC=<path_to_your_c_compiler>
-  $ export CXX=<path_to_your_c++_compiler>
-  $ ./lite/tools/build_linux.sh --arch=armv8 --with_kunlunxin_xpu=ON
-  ```
+    替换 XPU API 库
+    $ cp build.lite.linux.x86.gcc.kunlunxin_xpu/inference_lite_lib/cxx/lib/libxpuapi.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/kunlunxin_xtcl/
 
-- 替换库文件和头文件
+    替换 XPU runtime 库
+    $ cp build.lite.linux.x86.gcc.kunlunxin_xpu/inference_lite_lib/cxx/lib/libxpurt.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/kunlunxin_xtcl/
+      
+    替换 libpaddle_light_api_shared.so
+    $ cp build.lite.linux.x86.gcc.kunlunxin_xpu/inference_lite_lib/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
 
-  ```shell
-  $ cd PaddleLite-linux-demo/image_classification_demo/shell
-  $ ./update_libs.sh <lite_inference_dir> <demo_libs_dir>
-  
-  For amd64，lite_inference_dir 一般为编译生成的 build.lite.linux.x86.gcc.kunlunxin_xpu/inference_lite_lib，demo_libs_dir 为 PaddleLite-linux-demo/libs/PaddleLite/amd64
-  
-  For arm64，lite_inference_dir一般为编译生成的 build.lite.linux.armv8.gcc.kunlunxin_xpu/inference_lite_lib.armlinux.armv8.xpu，demo_libs_dir 为 PaddleLite-linux-demo/libs/PaddleLite/amd64
-  ```
+    替换 libpaddle_full_api_shared.so(仅在 full_publish 编译方式下)
+    $ cp build.lite.linux.x86.gcc.kunlunxin_xpu/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
+      ```
+
+  - For arm64
+    arm 环境下需要设置环境变量 CC 和 CXX，分别指定 C 编译器和 C++ 编译器的路径
+	  - tiny_publish 编译
+    ```shell
+    $ export CC=<path_to_your_c_compiler>
+    $ export CXX=<path_to_your_c++_compiler>
+    $ ./lite/tools/build_linux.sh --arch=armv8 --with_kunlunxin_xpu=ON
+    ```
+    
+	  - full_publish 编译
+    ```shell
+    $ export CC=<path_to_your_c_compiler>
+    $ export CXX=<path_to_your_c++_compiler>
+    $ ./lite/tools/build_linux.sh --arch=armv8 --with_kunlunxin_xpu=ON full_publish
+    ```
+
+	  - 替换头文件和库
+    ```shell
+    清理原有 include 目录
+    $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
+    
+    替换 include 目录
+    $ cp -rf build.lite.linux.armv8.gcc.kunlunxin_xpu/inference_lite_lib.armlinux.armv8.xpu/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
+    
+    替换 XPU API 库
+    $ cp build.lite.linux.armv8.gcc.kunlunxin_xpu/inference_lite_lib.armlinux.armv8.xpu/cxx/lib/libxpuapi.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/kunlunxin_xtcl/
+
+    替换 XPU runtime 库
+    $ cp build.lite.linux.armv8.gcc.kunlunxin_xpu/inference_lite_lib.armlinux.armv8.xpu/cxx/lib/libxpurt.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/kunlunxin_xtcl/
+    
+    替换 libpaddle_light_api_shared.so
+    $ cp build.lite.linux.armv8.gcc.kunlunxin_xpu/inference_lite_lib.armlinux.armv8.xpu/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
+
+    替换 libpaddle_full_api_shared.so(仅在 full_publish 编译方式下)
+    $ cp build.lite.linux.armv8.gcc.kunlunxin_xpu/inference_lite_lib.armlinux.armv8.xpu/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
+    ```
 
 - 替换头文件后需要重新编译示例程序
 
