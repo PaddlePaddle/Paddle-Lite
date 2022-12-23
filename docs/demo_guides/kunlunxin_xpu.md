@@ -203,52 +203,55 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2
   (intel x86 cpu only)
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux amd64
 
-    Top1 Egyptian cat - 0.482870
-    Top2 tabby, tabby cat - 0.471594
-    Top3 tiger cat - 0.039779
-    Top4 lynx, catamount - 0.002430
-    Top5 ping-pong ball - 0.000508
-    Preprocess time: 3.133000 ms, avg 3.133000 ms, max 3.133000 ms, min 3.133000 ms
-    Prediction time: 12.594000 ms, avg 12.594000 ms, max 12.594000 ms, min 12.594000 ms
-    Postprocess time: 4.235000 ms, avg 4.235000 ms, max 4.235000 ms, min 4.235000 ms
+    Top1 Egyptian cat - 0.500662
+    Top2 tabby, tabby cat - 0.407661
+    Top3 tiger cat - 0.074697
+    Top4 lynx, catamount - 0.013188
+    Top5 ping-pong ball - 0.000638
+    [0] Preprocess time: 10.196000 ms Prediction time: 54.002000 ms Postprocess time: 5.197000 ms
+    Preprocess time: avg 10.196000 ms, max 10.196000 ms, min 10.196000 ms
+    Prediction time: avg 54.002000 ms, max 54.002000 ms, min 54.002000 ms
+    Postprocess time: avg 5.197000 ms, max 5.197000 ms, min 5.197000 ms
 
   (intel x86 cpu + kunlunxin xpu)
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux amd64 xpu
 
-    Top1 Egyptian cat - 0.482607
-    Top2 tabby, tabby cat - 0.471841
-    Top3 tiger cat - 0.039819
-    Top4 lynx, catamount - 0.002419
-    Top5 ping-pong ball - 0.000505
-    Preprocess time: 2.653000 ms, avg 2.653000 ms, max 2.653000 ms, min 2.653000 ms
-    Prediction time: 0.524000 ms, avg 0.524000 ms, max 0.524000 ms, min 0.524000 ms
-    Postprocess time: 4.077000 ms, avg 4.077000 ms, max 4.077000 ms, min 4.077000 ms
+    Top1 Egyptian cat - 0.471169
+    Top2 tabby, tabby cat - 0.445745
+    Top3 tiger cat - 0.070651
+    Top4 lynx, catamount - 0.008626
+    Top5 cougar, puma, catamount, mountain lion, painter, panther, Felis concolor - 0.000590
+    [0] Preprocess time: 54.025000 ms Prediction time: 2.832000 ms Postprocess time: 32.408000 ms
+    Preprocess time: avg 54.025000 ms, max 54.025000 ms, min 54.025000 ms
+    Prediction time: avg 2.832000 ms, max 2.832000 ms, min 2.832000 ms
+    Postprocess time: avg 32.408000 ms, max 32.408000 ms, min 32.408000 ms
 
   For arm64
   (arm cpu only)
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64
 
-    Top1 Egyptian cat - 0.482871
-    Top2 tabby, tabby cat - 0.471594
-    Top3 tiger cat - 0.039779
-    Top4 lynx, catamount - 0.002430
-    Top5 ping-pong ball - 0.000508
-    Preprocess time: 8.123000 ms, avg 8.123000 ms, max 8.123000 ms, min 8.123000 ms
-    Prediction time: 78.482000 ms, avg 78.482000 ms, max 78.482000 ms, min 78.482000 ms
-    Postprocess time: 8.023000 ms, avg 8.023000 ms, max 8.023000 ms, min 8.023000 ms
+    Top1 Egyptian cat - 0.503239
+    Top2 tabby, tabby cat - 0.419854
+    Top3 tiger cat - 0.065506
+    Top4 lynx, catamount - 0.007992
+    Top5 cougar, puma, catamount, mountain lion, painter, panther, Felis concolor - 0.000494
+    [0] Preprocess time: 10.734000 ms Prediction time: 65.614000 ms Postprocess time: 8.718000 ms
+    Preprocess time: avg 10.734000 ms, max 10.734000 ms, min 10.734000 ms
+    Prediction time: avg 65.614000 ms, max 65.614000 ms, min 65.614000 ms
+    Postprocess time: avg 8.718000 ms, max 8.718000 ms, min 8.718000 ms
 
   (arm cpu + kunlunxin xpu)
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 xpu
 
-    Top1 Egyptian cat - 0.482583
-    Top2 tabby, tabby cat - 0.471810
-    Top3 tiger cat - 0.039866
-    Top4 lynx, catamount - 0.002433
-    Top5 ping-pong ball - 0.000506
-    Preprocess time: 8.135000 ms, avg 8.135000 ms, max 8.135000 ms, min 8.135000 ms
-    Prediction time: 3.223000 ms, avg 3.223000 ms, max 3.223000 ms, min 3.223000 ms
-    Postprocess time: 8.605000 ms, avg 8.605000 ms, max 8.605000 ms, min 8.605000 ms
-  ```
+    Top1 Egyptian cat - 0.471169
+    Top2 tabby, tabby cat - 0.445745
+    Top3 tiger cat - 0.070651
+    Top4 lynx, catamount - 0.008626
+    Top5 cougar, puma, catamount, mountain lion, painter, panther, Felis concolor - 0.000590
+    [0] Preprocess time: 9.742000 ms Prediction time: 4.063000 ms Postprocess time: 8.097000 ms
+    Preprocess time: avg 9.742000 ms, max 9.742000 ms, min 9.742000 ms
+    Prediction time: avg 4.063000 ms, max 4.063000 ms, min 4.063000 ms
+    Postprocess time: avg 8.097000 ms, max 8.097000 ms, min 8.097000 ms
   ```
 
 - 如果需要更改测试模型为 resnet50，执行命令修改为如下：

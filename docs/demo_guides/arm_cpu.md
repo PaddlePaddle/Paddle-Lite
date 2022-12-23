@@ -142,24 +142,50 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
   For android arm64-v8a
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android arm64-v8a
 
-    参考输出形式:
-    Top1 Egyptian cat - 0.482871
-    Top2 tabby, tabby cat - 0.471594
-    Top3 tiger cat - 0.039779
-    Top4 lynx, catamount - 0.002430
-    Top5 ping-pong ball - 0.000508
-    Preprocess time: 5.275000 ms, avg 5.275000 ms, max 5.275000 ms, min 5.275000 ms
-    Prediction time: 34.873000 ms, avg 34.873000 ms, max 34.873000 ms, min 34.873000 ms
-    Postprocess time: 4.720000 ms, avg 4.720000 ms, max 4.720000 ms, min 4.720000 ms
+    Top1 Egyptian cat - 0.503239
+    Top2 tabby, tabby cat - 0.419854
+    Top3 tiger cat - 0.065506
+    Top4 lynx, catamount - 0.007992
+    Top5 cougar, puma, catamount, mountain lion, painter, panther, Felis concolor - 0.000494
+    Preprocess time: 5.699000 ms, avg 5.699000 ms, max 5.699000 ms, min 5.699000 ms
+    Prediction time: 15.554000 ms, avg 15.554000 ms, max 15.554000 ms, min 15.554000 ms
+    Postprocess time: 5.965000 ms, avg 5.965000 ms, max 5.965000 ms, min 5.965000 ms
 
   For android armeabi-v7a
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a
 
+    Top1 Egyptian cat - 0.502124
+    Top2 tabby, tabby cat - 0.413927
+    Top3 tiger cat - 0.071703
+    Top4 lynx, catamount - 0.008436
+    Top5 cougar, puma, catamount, mountain lion, painter, panther, Felis concolor - 0.000563
+    Preprocess time: 6.427000 ms, avg 6.427000 ms, max 6.427000 ms, min 6.427000 ms
+    Prediction time: 43.715000 ms, avg 43.715000 ms, max 43.715000 ms, min 43.715000 ms
+    Postprocess time: 6.015000 ms, avg 6.015000 ms, max 6.015000 ms, min 6.015000 ms
+
   For linux arm64
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64
 
+    Top1 Egyptian cat - 0.503239
+    Top2 tabby, tabby cat - 0.419854
+    Top3 tiger cat - 0.065506
+    Top4 lynx, catamount - 0.007992
+    Top5 cougar, puma, catamount, mountain lion, painter, panther, Felis concolor - 0.000494
+    Preprocess time: 12.637000 ms, avg 12.637000 ms, max 12.637000 ms, min 12.637000 ms
+    Prediction time: 78.751000 ms, avg 78.751000 ms, max 78.751000 ms, min 78.751000 ms
+    Postprocess time: 9.969000 ms, avg 9.969000 ms, max 9.969000 ms, min 9.969000 ms
+
   For linux armhf
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux armhf
+
+    Top1 Egyptian cat - 0.502124
+    Top2 tabby, tabby cat - 0.413927
+    Top3 tiger cat - 0.071703
+    Top4 lynx, catamount - 0.008436
+    Top5 cougar, puma, catamount, mountain lion, painter, panther, Felis concolor - 0.000563
+    Preprocess time: 12.541000 ms, avg 12.541000 ms, max 12.541000 ms, min 12.541000 ms
+    Prediction time: 96.863000 ms, avg 96.863000 ms, max 96.863000 ms, min 96.863000 ms
+    Postprocess time: 13.324000 ms, avg 13.324000 ms, max 13.324000 ms, min 13.324000 ms
   ```
 
 - 如果需要更改测试模型为 resnet50，执行命令修改为如下：
