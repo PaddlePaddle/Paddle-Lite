@@ -98,16 +98,15 @@ class YoloBoxComputeBuffer
       x_w_ = X->dims()[3];
       x_stride_ = x_h_ * x_w_;
       x_size_ = yolo_box_param_->downsample_ratio * x_h_;
-      x_data_ = X->mutable_data<float, cl::Buffer>();
-
+      x_data_ = const_cast<cl::Buffer*>(GET_BUFFER_GPU(X));
       // Boxes: output
       lite::Tensor* Boxes = yolo_box_param_->Boxes;
-      boxes_data_ = Boxes->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+      boxes_data_ = MUTABLE_BUFFER_GPU(Boxes);
       box_num_ = Boxes->dims()[1];
 
       // Scores: output
       lite::Tensor* Scores = yolo_box_param_->Scores;
-      scores_data_ = Scores->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+      scores_data_ = MUTABLE_BUFFER_GPU(Scores);
 
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
       auto& context = ctx_->As<OpenCLContext>();
@@ -211,7 +210,7 @@ class YoloBoxComputeBuffer
 
  private:
   std::string kernel_func_name_{"yolo_box"};
-  std::string build_options_{"-DCL_DTYPE_float"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;

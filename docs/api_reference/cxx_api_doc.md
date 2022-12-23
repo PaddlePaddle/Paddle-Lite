@@ -3,7 +3,7 @@
 
 ## CreatePaddlePredictor
 
- \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_api.h)&gt;
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_api.h)&gt;
 
 ```c++
 template <typename ConfigT>
@@ -33,7 +33,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 ## CxxConfig
 
- \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_api.h)&gt;
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_api.h)&gt;
 
 ```c++
 class CxxConfig;
@@ -252,7 +252,7 @@ int x86_math_num_threads() const;
 
 ## MobileConfig
 
- \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_api.h)&gt;
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_api.h)&gt;
 
 ```c++
 class MobileConfig;
@@ -260,7 +260,7 @@ class MobileConfig;
 
 `MobileConfig` 用来配置构建轻量级 PaddlePredictor 的配置信息，如 NaiveBuffer 格式的模型地址、模型的内存地址（从内存加载模型时使用）、能耗模式、工作线程数等等。
 
-*注意：输入的模型需要使用 [Model Optimize Tool](https://paddle-lite.readthedocs.io/zh/develop/user_guides/model_optimize_tool.html) 转化为 NaiveBuffer 格式的优化模型。*
+*注意：输入的模型需要使用 [Model Optimize Tool](../user_guides/model_optimize_tool) 转化为 NaiveBuffer 格式的优化模型。*
 
 示例：
 
@@ -503,7 +503,7 @@ bool metal_use_mps() const;
 
 ## PaddlePredictor
 
- \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_api.h)&gt;
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_api.h)&gt;
 
 ```c++
 class PaddlePredictor;
@@ -646,7 +646,7 @@ virtual std::unique_ptr<const Tensor> GetTensor(const std::string& name) const =
 
 根据名称获取输出Tensor的指针。
 
-**注意**：`GetTensor` 接口是为开发者设计的调试接口，可以输出[转化](https://paddle-lite.readthedocs.io/zh/develop/user_guides/model_optimize_tool.html)后模型中的任一节点。如果出现 `GetTensor(InputName)` 返回值为空 `Tensor`，可能原因是以该 `InputName` 命名的 Tensor 在模型转化的**子图融合**过程被融合替换了。
+**注意**：`GetTensor` 接口是为开发者设计的调试接口，可以输出[转化](../user_guides/model_optimize_tool)后模型中的任一节点。如果出现 `GetTensor(InputName)` 返回值为空 `Tensor`，可能原因是以该 `InputName` 命名的 Tensor 在模型转化的**子图融合**过程被融合替换了。
 
 
 - 参数
@@ -680,7 +680,7 @@ virtual std::string GetVersion() const = 0;
 
 ## TargetType
 
- \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_place.h)&gt;
+ \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_place.h)&gt;
 
 ```c++
 class TargetType;
@@ -691,7 +691,7 @@ class TargetType;
 
 ## PrecisionType
 
- \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_place.h)&gt;
+ \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_place.h)&gt;
 
 ```c++
 class PrecisionType;
@@ -704,7 +704,7 @@ class PrecisionType;
 
 ## DataLayoutType
 
- \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_place.h)&gt;
+ \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_place.h)&gt;
 
 ```c++
 class DataLayoutType;
@@ -717,7 +717,7 @@ class DataLayoutType;
 
 ## Place
 
- \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_place.h)&gt;
+ \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_place.h)&gt;
 
 ```C++
 struct Place;
@@ -732,7 +732,7 @@ Place{TargetType(ARM), PrecisionType(FP32), DataLayoutType(NCHW)}
 
 ## PowerMode
 
- \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_place.h)&gt;
+ \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_place.h)&gt;
 
 ```c++
 enum PowerMode;
@@ -766,7 +766,7 @@ PowerMode详细说明如下：
 
 
 ## Tensor
- \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/api/paddle_api.h)&gt;
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/api/paddle_api.h)&gt;
 
 ```c++
 struct Tensor

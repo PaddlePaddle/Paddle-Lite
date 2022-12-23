@@ -6,8 +6,8 @@
 ### 安装 Paddle Lite
 
 ```
-# 当前最新版本是 2.9
-pip install paddlelite==2.9
+# 当前最新版本是 2.12
+pip install paddlelite==2.12
 ```
 
 ![install](https://paddlelite-data.bj.bcebos.com/doc_images/opt/install.gif)
@@ -81,7 +81,7 @@ paddle_lite_opt \
     --param_file=<param_path> \
     --optimize_out_type=(protobuf|naive_buffer) \
     --optimize_out=<output_optimize_model_dir> \
-    --valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|imagination_nna|intel_fpga)\
+    --valid_targets=(arm|opencl|x86|npu|xpu|huawei_ascend_npu|imagination_nna)\
     --enable_fp16=(true|false) \
     --quant_model=(true|false) \
     --quant_type=(QUANT_INT16|QUANT_INT8) 

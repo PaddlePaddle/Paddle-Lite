@@ -1,4 +1,4 @@
-# 昆仑芯 XTCL 部署示例
+# 昆仑芯 XTCL
 
 Paddle Lite 已支持昆仑芯系列芯片及板卡 在 X86 和 ARM 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 XTCL 组网 API 进行网络构建，在线生成并执行模型。
 
@@ -119,7 +119,7 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
 ### 已支持（或部分支持）的 Paddle 算子
 
-您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
+您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
 ## 参考示例演示
 
@@ -134,11 +134,11 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 - 安装 [R200 XRE 驱动](https://baidu-kunlun-public.su.bcebos.com/paddle_lite/XRE%20%E5%AE%89%E8%A3%85%E6%89%8B%E5%86%8C_v1.0.pdf)，目前支持 Ubuntu 和 CentOS 系统，由于驱动依赖 Linux kernel 版本，请正确安装对应版本的驱动安装包。
 
 ### 准备本地编译环境
-- 为了保证编译环境一致，建议根据机器的实际情况参考[ linux(x86) 编译](../source_compile/linux_x86_compile_linux_x86.rst)或[ linux(ARM) 编译](../source_compile/arm_linux_compile_arm_linux.rst)中的``准备编译环境``进行环境配置
+- 为了保证编译环境一致，建议根据机器的实际情况参考[ Linux x86 环境下编译适用于 Linux x86 的库](../source_compile/linux_x86_compile_linux_x86)或[ ARM Linux 环境下编译适用于 ARM Linux 的库](../source_compile/arm_linux_compile_arm_linux)中的``准备编译环境``进行环境配置
 
 ### 运行图像分类示例程序
 
-- 下载示例程序[ PaddleLite-generic-demo.tar.gz ](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz),解压后清单如下：
+- 下载示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz),解压后清单如下：
 
   ```shell
     - PaddleLite-generic-demo
@@ -242,12 +242,21 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
     Top3 tiger cat - 0.039779
     Top4 lynx, catamount - 0.002430
     Top5 ping-pong ball - 0.000508
-    Preprocess time: 8.241000 ms, avg 8.241000 ms, max 8.241000 ms, min 8.241000 ms
-    Prediction time: 78.550000 ms, avg 78.550000 ms, max 78.550000 ms, min 78.550000 ms
-    Postprocess time: 8.621000 ms, avg 8.621000 ms, max 8.621000 ms, min 8.621000 ms
+    Preprocess time: 8.123000 ms, avg 8.123000 ms, max 8.123000 ms, min 8.123000 ms
+    Prediction time: 78.482000 ms, avg 78.482000 ms, max 78.482000 ms, min 78.482000 ms
+    Postprocess time: 8.023000 ms, avg 8.023000 ms, max 8.023000 ms, min 8.023000 ms
 
   (arm cpu + kunlunxin xtcl)
   $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64 kunlunxin_xtcl
+
+    Top1 Egyptian cat - 0.482583
+    Top2 tabby, tabby cat - 0.471810
+    Top3 tiger cat - 0.039866
+    Top4 lynx, catamount - 0.002433
+    Top5 ping-pong ball - 0.000506
+    Preprocess time: 8.135000 ms, avg 8.135000 ms, max 8.135000 ms, min 8.135000 ms
+    Prediction time: 3.223000 ms, avg 3.223000 ms, max 3.223000 ms, min 3.223000 ms
+    Postprocess time: 8.605000 ms, avg 8.605000 ms, max 8.605000 ms, min 8.605000 ms
   ```
 
 - 如果需要更改测试模型为 resnet50，可以将 `run.sh` 里的 MODEL_NAME 改成 resnet50_fp32_224，或执行命令：
@@ -264,9 +273,10 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 - 如果需要重新编译示例程序，直接运行
 
   ```shell
-  # amd64
+  For amd64
   $ ./build.sh linux amd64
-  # arm64
+  
+  For arm64
   $ ./build.sh linux arm64
   ```
 
@@ -283,31 +293,36 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 	- For amd64
 	    - full_publish 编译
       ```shell
-      # 默认自动从云上下载 kunlunxin_xtcl_sdk，如需指定，请使用参数--nnadapter_kunlunxin_xtcl_sdk_root
+      默认自动从云上下载 kunlunxin_xtcl_sdk，如需指定，请使用参数--nnadapter_kunlunxin_xtcl_sdk_root
       $ ./lite/tools/build_linux.sh --arch=x86 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_kunlunxin_xtcl=ON full_publish
       ```
 
 	    - 替换头文件和库
       ```shell
-      # 清理原有 include 目录
+      清理原有 include 目录
       $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-      # 替换 include 目录
+      
+      替换 include 目录
       $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/kunlunxin_xtcl/
-      # 替换 NNAdapter device HAL 库
-      $ cp build.lite.linux.x86.gcc/lite/backends/nnadapter/nnadapter/src/driver/kunlunxin_xtcl/*.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/kunlunxin_xtcl/
-      # 替换 libpaddle_full_api_shared.so
+      
+      替换 NNAdapter device HAL 库
+      $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libkunlunxin_xtcl.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/kunlunxin_xtcl/
+      
+      替换 libpaddle_full_api_shared.so
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
       ```
 
   - For arm64
 	  - full_publish 编译
     ```shell
-    # arm 环境下需要设置环境变量 CC 和 CXX，分别指定 C 编译器和 C++ 编译器的路径
-    # 默认自动从云上下载 kunlunxin_xtcl_sdk，如需指定，请使用参数--nnadapter_kunlunxin_xtcl_sdk_root
+    arm 环境下需要设置环境变量 CC 和 CXX，分别指定 C 编译器和 C++ 编译器的路径
+    默认自动从云上下载 kunlunxin_xtcl_sdk，如需指定，请使用参数--nnadapter_kunlunxin_xtcl_sdk_root
     $ export CC=<path_to_your_c_compiler>
     $ export CXX=<path_to_your_c++_compiler>
     $ ./lite/tools/build_linux.sh --arch=armv8 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_kunlunxin_xtcl=ON full_publish
@@ -315,17 +330,22 @@ XPU Tensor Compilation Library (XTCL)，即昆仑芯针对机器学习领域实�
 
 	  - 替换头文件和库
     ```shell
-    # 清理原有 include 目录
+    清理原有 include 目录
     $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-    # 替换 include 目录
+    
+    替换 include 目录
     $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-    # 替换 NNAdapter 运行时库
+    
+    替换 NNAdapter 运行时库
     $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/kunlunxin_xtcl/
-    # 替换 NNAdapter device HAL 库
+    
+    替换 NNAdapter device HAL 库
     $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libkunlunxin_xtcl.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/kunlunxin_xtcl/
-    # 替换 libpaddle_full_api_shared.so
+    
+    替换 libpaddle_full_api_shared.so
     $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
-    # 替换 libpaddle_light_api_shared.so
+    
+    替换 libpaddle_light_api_shared.so
     $ cp build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
     ```
 

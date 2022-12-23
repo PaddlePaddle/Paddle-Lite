@@ -155,6 +155,13 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   for (auto* ln_bias : param.ln_bias) {
     arg_ln_bias_.push_back(ln_bias->data<float>());
   }
+  relative_type_ = param.relative_type;
+  // prepare roformer embedding
+  if (relative_type_ == 1) {
+    for (auto* emb : param.roformer_embedding) {
+      roformer_embedding_.push_back(emb->data<float>());
+    }
+  }
   // prepare weights
   local_quant_ =
       GetBoolFromEnv("XPU_LOCAL_QUANT") || lite::TargetWrapperXPU::local_quant;
@@ -226,7 +233,13 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       param.norm_before, /*is_pre_norm*/
                                       param.per_channel);
     qkv_attn_param.quant_type_.assign(quant_types_.begin(), quant_types_.end());
-
+    if (relative_type_ == 1) {
+      qkv_attn_param.relative_type = relative_type_;
+      qkv_attn_param.max_pos_len = param.max_pos_len;
+      qkv_attn_param.relative_pos.assign(roformer_embedding_.begin(),
+                                         roformer_embedding_.end());
+    }
+    qkv_attn_param.scale_of_hidden_units = param.ffn_hidden_dim_scale;
     if (std::is_same<TGEMM, int8_t>::value) {
       CHECK_GT(fc_input_max_.size(), 0);
     }
@@ -249,7 +262,8 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
     std::vector<int64_t> mask_shape = param.mask->dims().Vectorize();
     std::vector<int> encoder_mask_shape =
         std::vector<int>(mask_shape.begin(), mask_shape.end());
-
+    CHECK_EQ(param.ffn_hidden_dim_scale, 4)
+        << "xpu don't support ffn_hidden_dim_scale!=4 when no vsl";
     xdnn::QKVAttnParam qkv_attn_param(batch,
                                       max_seqlen,
                                       param.head_num,
@@ -259,8 +273,15 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       slice_idx,
                                       true,
                                       param.hidden_dim,
-                                      param.norm_before);
+                                      param.norm_before,
+                                      param.per_channel);
     qkv_attn_param.quant_type_.assign(quant_types_.begin(), quant_types_.end());
+    if (relative_type_ == 1) {
+      qkv_attn_param.relative_type = relative_type_;
+      qkv_attn_param.max_pos_len = param.max_pos_len;
+      qkv_attn_param.relative_pos.assign(roformer_embedding_.begin(),
+                                         roformer_embedding_.end());
+    }
     int r = xdnn::transformer_encoder<T, TW, TGEMM>(
         ctx.GetRawContext(),
         in,
@@ -367,6 +388,7 @@ REGISTER_LITE_KERNEL(__xpu__multi_encoder,
     .BindInput("FCBias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("LNScale", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("LNBias", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("RoformerEmbedding", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

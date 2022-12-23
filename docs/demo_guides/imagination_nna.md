@@ -1,4 +1,4 @@
-# 颖脉 NNA 部署示例
+# 颖脉 NNA
 
 Paddle Lite 已支持 Imagination NNA 的预测部署。
 其接入原理是与之前华为 Kirin NPU 类似，即加载并分析 Paddle 模型，将 Paddle 算子转成 Imagination DNN APIs 进行网络构建，在线生成并执行模型。
@@ -44,9 +44,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 
 ### 已支持（或部分支持）的 Paddle 算子
 
-您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
-
-**不经过 NNAdapter 标准算子转换，而是直接将 Paddle 算子转换成 `Imagination NNA IR` 的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/imagination_nna.html)**。
+您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
 ## 参考示例演示
 
@@ -65,7 +63,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 ### 准备交叉编译环境
 
 - 按照以下两种方式配置交叉编译环境：
-  - Docker 交叉编译环境：由于 Roc1 运行环境为Ubuntu 18.04，且 Imagination NNA DDK 依赖高版本的 glibc，因此不能直接使用[编译环境准备](../source_compile/docker_env)中的 Docker image，而需要按照如下方式在Host机器上手动构建 Ubuntu 18.04 的 Docker image；
+  - Docker 交叉编译环境：由于 Roc1 运行环境为Ubuntu 18.04，且 Imagination NNA DDK 依赖高版本的 glibc，因此不能直接使用 [Docker 统一编译环境搭建](../source_compile/docker_env) 中的 Docker image，而需要按照如下方式在Host机器上手动构建 Ubuntu 18.04 的 Docker image；
 
     ```
     $ wget https://paddlelite-demo.bj.bcebos.com/devices/imagination/Dockerfile
@@ -77,12 +75,12 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 - 由于需要通过 `scp` 和 `ssh` 命令将交叉编译生成的 Paddle Lite 库和示例程序传输到设备上执行，因此，在进入 Docker 容器后还需要安装如下软件：
 
   ```
-  # apt-get install openssh-client sshpass
+  $ apt-get install openssh-client sshpass
   ```
 
 ### 运行图像分类示例程序
 
-- 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后目录主体结构如下：
+- 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后目录主体结构如下：
 
   ```shell
     - PaddleLite-generic-demo
@@ -178,14 +176,14 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
   1）请根据 `buid.sh` 配置正确的参数值。
   2）需在 Docker 环境中编译。
 
-  ./build.sh linux arm64
+  $ ./build.sh linux arm64
   ```
 
 
 ### 更新模型
 
 - 通过 Paddle Fluid 训练，或 X2Paddle 转换得到 MobileNetv1 foat32 模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
-- 参考[模型量化-静态离线量化](../user_guides/quant_post_static)使用 PaddleSlim 对  `float32` 模型进行量化（注意：由于 Imagination NNA 只支持 tensor-wise 的全量化模型，在启动量化脚本时请注意相关参数的设置），最终得到全量化 MobileNetV1 模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/imagination/mobilenet_v1_int8_224_fluid.tar.gz)；
+- 参考[模型量化](../user_guides/quant_aware)使用 PaddleSlim 对  `float32` 模型进行量化（注意：由于 Imagination NNA 只支持 tensor-wise 的全量化模型，在启动量化脚本时请注意相关参数的设置），最终得到全量化 MobileNetV1 模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/imagination/mobilenet_v1_int8_224_fluid.tar.gz)；
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用 opt 工具转换生成 Imagination NNA 模型，仅需要将 `valid_targets` 设置为 imagination_nna,arm 即可。
 
   ```shell
@@ -226,15 +224,19 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 
     - 替换头文件和库
       ```shell
-      # 替换 include 目录
+      替换 include 目录
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/imagination_nna/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libimagination_nna.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/imagination_nna/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
-      # 替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
+      
+      替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
       ```
 

@@ -4,7 +4,7 @@
 
 本教程提供了 Paddle Lite 执行推理的示例程序，通过输入、执行推理、打印推理结果的方式，演示了基于 Java API 接口的推理基本流程，用户能够快速了解 Paddle Lite 执行推理相关 API 的使用。
 
-本教程以 Android Studio 工程为案例，介绍 Java API 推理流程，工程文件夹为[lite/demo/java/android](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/java/android)。其中和 Java API 相关的代码在[lite/demo/java/android/PaddlePredictor/app/src/main/java/com/baidu/paddle/lite/MainActivity.java](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/java/android/PaddlePredictor/app/src/main/java/com/baidu/paddle/lite/MainActivity.java)文件中。
+本教程以 Android Studio 工程为案例，介绍 Java API 推理流程，工程文件夹为[lite/demo/java/android](https://github.com/PaddlePaddle/Paddle-Lite/tree/release/v2.12/lite/demo/java/android)。其中和 Java API 相关的代码在[lite/demo/java/android/PaddlePredictor/app/src/main/java/com/baidu/paddle/lite/MainActivity.java](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/demo/java/android/PaddlePredictor/app/src/main/java/com/baidu/paddle/lite/MainActivity.java)文件中。
 
 
 使用 Paddle Lite 执行推理主要包括以下步骤：
@@ -24,7 +24,7 @@
 其流程图如下：
 
 
-<p align=center> <img src = "https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/develop/docs/images/predict_workflow.png"/></p>
+<p align=center> <img src = "https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/release/v2.12/docs/images/predict_workflow.png"/></p>
 
 
 ## Java 应用开发说明
@@ -76,7 +76,7 @@ Tensor output = predictor.getOutput(0);
 
 ## Android Studio 工程 Java 示例程序
 
-本章节展示的所有 Android Studio 工程代码位于 [demo/java](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/java) 。下面将要下载的预测库也已经包含了上述 Android Studio 工程。
+本章节展示的所有 Android Studio 工程代码位于 [demo/java](https://github.com/PaddlePaddle/Paddle-Lite/tree/release/v2.12/lite/demo/java) 。下面将要下载的预测库也已经包含了上述 Android Studio 工程。
 
 ### 1. 环境准备
 
@@ -88,12 +88,6 @@ Tensor output = predictor.getOutput(0);
 ### 2. 下载预编译的预测库
 
 预测库下载界面位于[Lite预编译库下载](../quick_start/release_lib)，可根据您的手机型号选择合适版本。
-
-以**Android-ARMv8 架构**为例，可以下载以下版本：
-
-| Arch  |with_extra|arm_stl|with_cv|下载|
-|:-------:|:-----:|:-----:|:-----:|:-------:|
-|armv8|OFF|c++_static|OFF|[2.9-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
 
 **解压后内容结构如下：**
 
@@ -186,4 +180,4 @@ time: xxx ms
 
 该 demo 程序跑 5 个模型，第一个模型结果将真正的头两个数字输出，并在第二行附上期望的正确值。你应该要看到他们的误差小于 0.001 。后面四个模型如果你看到 `test:true` 字样，说明模型输出通过了我们在 demo 程序里对其输出的测试。time 代表该测试花费的时间。
 
->> **注意：** 在这一步中，如果遇到 Andriod Studio 编译/安装失败等问题，请参考 [Andriod 示例](../demo_guides/android_app_demo.html#android-demo)中部署方法章节的详细步骤和注意事项。
+>> **注意：** 在这一步中，如果遇到 Android Studio 编译/安装失败等问题，请参考 [Android apps](../demo_guides/android_app_demo.html#android-demo)中部署方法章节的详细步骤和注意事项。

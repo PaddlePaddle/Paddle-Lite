@@ -1,4 +1,4 @@
-# (瑞芯微/晶晨/恩智浦) 芯原 TIM-VX 部署示例
+# (瑞芯微/晶晨/恩智浦) 芯原 TIM-VX
 
 Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部署。
 其接入原理是与其他接入 Paddle Lite 的新硬件类似，即加载并分析 Paddle 模型，首先将 Paddle 算子转成 NNAdapter 标准算子，其次再通过 TIM-VX 的组网 API 进行网络构建，在线编译模型并执行模型。
@@ -88,7 +88,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
 
 ### 已支持（或部分支持）NNAdapter 的 Paddle 算子
 
-您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
+您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.12/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
 ## 参考示例演示
 
@@ -117,8 +117,8 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   - 有两种方式可以修改当前的 NPU 驱动版本及其依赖库：
     - 『方法 1』：手动替换 NPU 驱动版本及其依赖库。（**推荐**）
     - 『方法 2』：刷机，刷取 NPU 驱动版本符合要求的固件。
-  - 我们首先描述『方法 1』手动替换驱动文件和依赖库，先行下载并解压[PaddleLite-generic-demo.tar.gz](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，其中包含不同版本、不同芯片型号的 galcore.ko（既 NPU 驱动文件）和 NPU 依赖库。
-    - 下表会罗列部分市面常见开发板的情况，以及我们在 [PaddleLite-generic-demo.tar.gz](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz) 中提供的现成的驱动文件和依赖库。请照着下表格，找到自己手中对应设备的芯片、开发板、Linux Kernel 版本（可命令行输入 uname -a 查看），从而获取到真正需要的 1）galcore.ko（既 NPU 驱动文件）；2）NPU 依赖库。并且分别将 galcore.ko 上传至开发板后，insmod galcore.ko，以及输入表格中的命令刷取正确的NPU 依赖库（软链接）。更加详细易懂的使用步骤会在下表格后描述。
+  - 我们首先描述『方法 1』手动替换驱动文件和依赖库，先行下载并解压[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，其中包含不同版本、不同芯片型号的 galcore.ko（既 NPU 驱动文件）和 NPU 依赖库。
+    - 下表会罗列部分市面常见开发板的情况，以及我们在 [PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz) 中提供的现成的驱动文件和依赖库。请照着下表格，找到自己手中对应设备的芯片、开发板、Linux Kernel 版本（可命令行输入 uname -a 查看），从而获取到真正需要的 1）galcore.ko（既 NPU 驱动文件）；2）NPU 依赖库。并且分别将 galcore.ko 上传至开发板后，insmod galcore.ko，以及输入表格中的命令刷取正确的NPU 依赖库（软链接）。更加详细易懂的使用步骤会在下表格后描述。
 
 |SoC 型号 | 开发板厂家 |开发板型号|OS |推荐Linux Kernl 版本|推荐NPU驱动版本 |是否提供galcore.ko驱动文件 |galcore.ko驱动文件路径 |是否提供 NPU 依赖库|刷取 NPU 依赖库软链接命令|
 |---|---|---|---|---|---|---|---|---|---|
@@ -148,7 +148,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
       - 第三步：在表格里找到对应行中 galcore.ko 文件的路径，将 galcore.ko 其上传至开发板。
       - 第四步：登录开发板，命令行输入 `sudo rmmod galcore` 来卸载原始驱动，输入 `sudo insmod galcore.ko` 来加载传上设备的驱动。（是否需要 sudo 根据开发板实际情况，部分 adb 链接的设备请提前 adb root）。此步骤如果操作失败，请跳转至『方法 2』.
       - 第五步：在开发板中输入 `dmesg | grep Galcore` 查询 NPU 驱动版本，确定为：晶晨6.4.4.3，瑞芯微6.4.6.5，NXP 6.4.3.p1。
-      - 第六步：在表格里找到对应设备行的最后一列，在下载了[PaddleLite-generic-demo](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)的PC目录下输入表中命令，切换成对应的 NPU 依赖库软链接。
+      - 第六步：在表格里找到对应设备行的最后一列，在下载了[PaddleLite-generic-demo](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)的PC目录下输入表中命令，切换成对应的 NPU 依赖库软链接。
       - 至此，前期的环境准备就已经完成，恭喜您，可以完美复现我们需要的环境。
       - 最后，所有开发板都有开机默认加载路径，建议用户把之前上传的 galcore.ko 文件放在开发板的系统默认加载目录下（一般情况为 XXX/lib/modules/ 下，用户可以在开发板的 / 目录下 `find -name galcore.ko` 来得知应该放在哪里），如此下次开机便能自动加载我们需要的 NPU 驱动。
 
@@ -168,16 +168,16 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
 
 ### 准备交叉编译环境
 
-- 为了保证编译环境一致，建议参考[ Docker 环境准备](../source_compile/docker_environment)中的 Docker 开发环境进行配置；
+- 为了保证编译环境一致，建议参考 [Docker 统一编译环境搭建](../source_compile/docker_env) 中的 Docker 开发环境进行配置；
 - 由于有些设备只提供网络访问方式（根据开发版的实际情况），需要通过 `scp` 和 `ssh` 命令将交叉编译生成的Paddle Lite 库和示例程序传输到设备上执行，因此，在进入 Docker 容器后还需要安装如下软件：
 
   ```
-  # apt-get install openssh-client sshpass
+  $ apt-get install openssh-client sshpass
   ```
 
 ### 运行图像分类示例程序
 
-- 下载 Paddle Lite 通用示例程序[PaddleLite-generic-demo.tar.gz](http://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后目录主体结构如下（注意其中软链接为 switch_viv_sdk.sh 根据芯片型号和 NPU 驱动版本创建依赖库的软链接）：
+- 下载 Paddle Lite 通用示例程序[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_12_0.tar.gz)，解压后目录主体结构如下（注意其中软链接为 switch_viv_sdk.sh 根据芯片型号和 NPU 驱动版本创建依赖库的软链接）：
 
   ```shell
     - PaddleLite-generic-demo
@@ -361,11 +361,14 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
   
   For SSH 连接开发板的使用场景
-  #Linux arm64 命令：
+
+  Linux arm64 命令：
   $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 cpu IP地址 22 用户名 密码
-  #Linux arm32 命令：
+  
+  Linux arm32 命令：
   $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux armhf cpu IP地址 22 用户名 密码
-  #Android armeabi-v7a 命令：
+  
+  Android armeabi-v7a 命令：
   $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a cpu IP地址 22 用户名 密码
     (如下以 A311D(Linux 版) 为例，其他 SoC 也一样，仅性能有区别)
 
@@ -379,11 +382,14 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
     Postprocess time: 9.080000 ms, avg 9.080000 ms, max 9.080000 ms, min 9.080000 ms
   
   For ADB 连接开发板的使用场景
-  #Linux arm64 命令：
+
+  Linux arm64 命令：
   $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 cpu adb设备号
-  #Linux arm32 命令：
+  
+  Linux arm32 命令：
   $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux armhf cpu adb设备号
-  #Android armeabi-v7a 命令：
+  
+  Android armeabi-v7a 命令：
   $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a cpu adb设备号
     (如下以 S905D3(Android版) 为例，其他 SoC 也一样，仅性能有区别)
 
@@ -402,11 +408,14 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
   
   For SSH 连接开发板的使用场景
-  #Linux arm64 命令：
+
+  Linux arm64 命令：
   $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 verisilicon_timvx IP地址 22 用户名 密码
-  #Linux arm32 命令：
+  
+  Linux arm32 命令：
   $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux armhf verisilicon_timvx IP地址 22 用户名 密码
-  #Android armeabi-v7a 命令：
+  
+  Android armeabi-v7a 命令：
   $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a verisilicon_timvx IP地址 22 用户名 密码
     (如下以 A311D(Linux 版) 为例，其他 SoC 也一样，仅性能有区别，精度可能有细微差异)
 
@@ -420,11 +429,14 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
     Postprocess time: 10.099000 ms, avg 10.099000 ms, max 10.099000 ms, min 10.099000 ms
   
   For ADB 连接开发板的使用场景
-  #Linux arm64 命令：
+  
+  Linux arm64 命令：
   $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 verisilicon_timvx adb设备号
-  #Linux arm32 命令：
+  
+  Linux arm32 命令：
   $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux armhf verisilicon_timvx adb设备号
-  #Android armeabi-v7a 命令：
+  
+  Android armeabi-v7a 命令：
   $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a verisilicon_timvx adb设备号
     (如下以 S905D3(Android版) 为例，其他 SoC 也一样，仅性能有区别，精度可能有细微差异)
 
@@ -445,12 +457,14 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   1）请根据 `buid.sh` 配置正确的参数值。
   2）需在 Docker 环境中编译。
   
-  # 对于 Liunx 64位 系统
-  ./build.sh linux arm64
-  # 对于 Liunx 32位 系统
-  ./build.sh linux armhf
-  # 对于 Android 系统
-  ./build.sh android armeabi-v7a
+  For Linux 64
+  $ ./build.sh linux arm64
+  
+  For Linux 32
+  $ ./build.sh linux armhf
+  
+  For Android armeabi-v7a
+  $ ./build.sh android armeabi-v7a
   ```
 
 ### 更新模型
@@ -543,7 +557,7 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   $ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
   $ cd Paddle-Lite
   $ git checkout <release-version-tag>
-  # 注意：编译中依赖的 verisilicon_timvx 相关代码和依赖项会在后续编译脚本中自动下载，无需用户手动下载。
+  注意：编译中依赖的 verisilicon_timvx 相关代码和依赖项会在后续编译脚本中自动下载，无需用户手动下载。
   ```
   
 - 编译并生成 `Paddle Lite+Verisilicon_TIMVX` 的部署库
@@ -561,17 +575,22 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
       ```
     - 替换头文件和库
       ```shell
-      # 替换 include 目录
+      替换 include 目录
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libverisilicon_timvx.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/
-      # 替换 芯原 TIM-VX 库
+      
+      替换 芯原 TIM-VX 库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libtim-vx.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
-      # 替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
+      
+      替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
       ```
   
@@ -587,17 +606,22 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
       ```
     - 替换头文件和库
       ```shell
-      # 替换 include 目录
+      替换 include 目录
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/verisilicon_timvx/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libverisilicon_timvx.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/verisilicon_timvx/
-      # 替换 芯原 TIM-VX 库
+      
+      替换 芯原 TIM-VX 库
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libtim-vx.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/verisilicon_timvx/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
-      # 替换 libpaddle_full_api_shared.so(仅在 full_publish 编译方式下)
+      
+      替换 libpaddle_full_api_shared.so(仅在 full_publish 编译方式下)
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
       ```
   
@@ -614,17 +638,22 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
       ```
     - 替换头文件和库
       ```shell
-      # 替换 include 目录
+      替换 include 目录
       $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libverisilicon_timvx.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/
-      # 替换 芯原 TIM-VX 库
+      
+      替换 芯原 TIM-VX 库
       $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libtim-vx.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
-      # 替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
+      
+      替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
       ```
   - For RK1808
@@ -640,17 +669,22 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
       ```
     - 替换头文件和库
       ```shell
-      # 替换 include 目录
+      替换 include 目录
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libverisilicon_timvx.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/
-      # 替换 芯原 TIM-VX 库
+      
+      替换 芯原 TIM-VX 库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libtim-vx.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
-      # 替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
+      
+      替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
       ```
   - For NXP imx8m plus
@@ -666,17 +700,22 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
       ```
     - 替换头文件和库
       ```shell
-      # 替换 include 目录
+      替换 include 目录
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libverisilicon_timvx.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/
-      # 替换 芯原 TIM-VX 库
+      
+      替换 芯原 TIM-VX 库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libtim-vx.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
-      # 替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
+      
+      替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
       ```
 - 替换头文件后需要重新编译示例程序

@@ -605,9 +605,27 @@ void RuntimeProgram::Run() {
 #ifdef LITE_WITH_OPENCL
     // delegate flush judgement to specify target , it is too heavy for Inst
     inst.Flush(idx);
+#if defined(LITE_WITH_PROFILE) || defined(LITE_WITH_PRECISION_PROFILE)
+    VLOG(4) << "kernel name " << idx << " " << inst.kernel()->name();
+    const auto* op_info = inst.op()->op_info();
+    auto var_in_names = op_info->input_names();
+    for (int i = 0; i < var_in_names.size(); i++) {
+      VLOG(4) << "input var_in_names: " << var_in_names[i];
+    }
+    auto var_out_names = op_info->output_names();
+    for (int i = 0; i < var_out_names.size(); i++) {
+      VLOG(4) << "output var_out_names: " << var_out_names[i];
+    }
+#endif
 #endif
 
     inst.Run();
+#ifdef LITE_WITH_PRECISION_PROFILE
+    if (inst.op()->Type() != "while") {
+      precision_profiler_summary +=
+          inst_precision_profiler.GetInstPrecision(&inst);
+    }
+#endif  // LITE_WITH_PRECISION_PROFILE
   }
 
 #ifdef LITE_WITH_METAL
