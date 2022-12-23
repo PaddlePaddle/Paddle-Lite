@@ -2284,6 +2284,21 @@ struct UniqueWithCountsParam : ParamBase {
   lite::Tensor* Count{};
 };
 
+/// --------------- unique operators ---------------
+struct UniqueParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* Index{};    // the indices in the original input
+  lite::Tensor* Indices{};  // the indices in the result
+  lite::Tensor* Counts{};
+  int dtype{-1};
+  bool return_index{false};    // Indices
+  bool return_inverse{false};  // Index
+  bool return_counts{false};
+  std::vector<int> axis{};
+  bool is_sorted{false};
+};
+
 struct GaussRandomParam : ParamBase {
   const lite::Tensor* ShapeTensor{nullptr};
   std::vector<const lite::Tensor*> ShapeTensorList{};
