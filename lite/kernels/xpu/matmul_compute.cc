@@ -88,19 +88,6 @@ void MatMulCompute<TGEMM, TW, DX, DY, PType>::Run() {
 
   if (x_dims.size() >= 3 && y_dims.size() >= 3) {
     // Not support broadcast matmu in current case.
-    if (mat_dim_a.batch_size_ > 1) {
-      for (int i = 0; i < x_dims.size() - 2; i++) {
-        int64_t dim = x_dims[i];
-        CHECK(mat_dim_a.batch_size_ == dim || 1 == dim);
-      }
-    }
-
-    if (mat_dim_b.batch_size_ > 1) {
-      for (int i = 0; i < y_dims.size() - 2; i++) {
-        int64_t dim = y_dims[i];
-        CHECK(mat_dim_b.batch_size_ == dim || 1 == dim);
-      }
-    }
 
     // case1: mat_a_batch = mat_b_batch.
     if (mat_dim_a.batch_size_ > 1 && mat_dim_b.batch_size_ > 1) {
