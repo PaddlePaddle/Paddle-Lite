@@ -146,7 +146,7 @@ void act_swish<float16_t>(
     const float16_t* ptr_in_thread = din + i * nums_per_thread;
     float16_t* ptr_out_thread = dout + i * nums_per_thread;
     float16x8_t vbeta = vdupq_n_f16(beta);
-    float16x8_t vone = vdupq_n_f16(1.f16);
+    float16x8_t vone = vdupq_n_f16(1.f);
     int i = 0;
     for (; i + 31 < nums_per_thread; i += 32) {
       float16x8_t v_p0 = vld1q_f16(ptr_in_thread);
@@ -197,7 +197,7 @@ void act_swish<float16_t>(
     }
     for (; i + 3 < nums_per_thread; i += 4) {
       float16x4_t _beta = vdup_n_f16(beta);
-      float16x4_t _one = vdup_n_f16(1.f16);
+      float16x4_t _one = vdup_n_f16(1.f);
       float16x4_t v_p0 = vld1_f16(ptr_in_thread);
       v_p0 = vdiv_f16(
           v_p0, vadd_f16(_one, exp_ps_naive(vneg_f16(vmul_f16(_beta, v_p0)))));
@@ -207,7 +207,7 @@ void act_swish<float16_t>(
     }
     for (; i < nums_per_thread; i++) {
       ptr_out_thread[0] =
-          ptr_in_thread[0] / (1.f16 + expf(-ptr_in_thread[0] * beta));
+          ptr_in_thread[0] / (1.f + expf(-ptr_in_thread[0] * beta));
       ptr_in_thread++;
       ptr_out_thread++;
     }
@@ -216,7 +216,7 @@ void act_swish<float16_t>(
   const float16_t* ptr_in = din + threads * nums_per_thread;
   float16_t* ptr_out = dout + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
-    ptr_out[0] = ptr_in[0] / (1.f16 + expf(-ptr_in[0] * beta));
+    ptr_out[0] = ptr_in[0] / (1.f + expf(-ptr_in[0] * beta));
     ptr_in++;
     ptr_out++;
   }
@@ -241,7 +241,7 @@ void act_swish<float16_t>(
     }
     for (int j = 0; j < neon_loop_remain_dim8; ++j) {
       ptr_out_thread[0] =
-          ptr_in_thread[0] / (1 + expf(-ptr_in_thread[0] * beta));
+          ptr_in_thread[0] / (1.f + expf(-ptr_in_thread[0] * beta));
       ptr_in_thread++;
       ptr_out_thread++;
     }
@@ -250,7 +250,7 @@ void act_swish<float16_t>(
   float16_t* ptr_out = dout + threads * nums_per_thread;
   const float16_t* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
-    ptr_out[0] = ptr_in[0] / (1 + expf(-ptr_in[0]));
+    ptr_out[0] = ptr_in[0] / (1.f + expf(-ptr_in[0]));
     ptr_in++;
     ptr_out++;
   }
