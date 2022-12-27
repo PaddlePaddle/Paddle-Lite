@@ -310,6 +310,10 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   }
 #endif
   NNADAPTER_CHECK(model_buffer);
+  if (context_->ascend_config_params()->generate_model_cache_only == "true") {
+    NNADAPTER_VLOG(3) << "Build success.";
+    return NNADAPTER_NO_ERROR;
+  }
   // Load a CANN OM model from a buffer, and create a CANN model manager
   // client(from CANN service) for inference
   model_client_ = LoadOMModelFromBuffer(*model_buffer,
