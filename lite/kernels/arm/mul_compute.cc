@@ -192,6 +192,7 @@ void MulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              o_data,
                              nullptr,
                              false,
+                             lite::arm::math::GemmNoBias,
                              scale_one.data(),
                              act_param,
                              &ctx);

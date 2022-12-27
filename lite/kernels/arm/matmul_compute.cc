@@ -384,6 +384,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  o_data + i * out_inner,
                                  nullptr,
                                  false,
+                                 lite::arm::math::GemmNoBias,
                                  scale_one.data(),
                                  act_param,
                                  &ctx);
@@ -401,6 +402,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  o_data + i * out_inner,
                                  nullptr,
                                  false,
+                                 lite::arm::math::GemmNoBias,
                                  scale_one.data(),
                                  act_param,
                                  &ctx);
@@ -418,6 +420,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  o_data + i * out_inner,
                                  nullptr,
                                  false,
+                                 lite::arm::math::GemmNoBias,
                                  scale_one.data(),
                                  act_param,
                                  &ctx);
@@ -437,6 +440,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              o_data,
                              nullptr,
                              false,
+                             lite::arm::math::GemmNoBias,
                              scale_one.data(),
                              act_param,
                              &ctx);
@@ -453,6 +457,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              o_data,
                              nullptr,
                              false,
+                             lite::arm::math::GemmNoBias,
                              scale_one.data(),
                              act_param,
                              &ctx);
@@ -475,6 +480,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                o_data,
                                nullptr,
                                false,
+                               lite::arm::math::GemmNoBias,
                                scale_one.data(),
                                act_param,
                                &ctx);

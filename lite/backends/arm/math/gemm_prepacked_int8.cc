@@ -1050,7 +1050,8 @@ inline void gemm_sdot_int8_kernel_8x4(const int8_t* a_ptr,
                                       const float32_t* alpha,
                                       int is_relu,
                                       int k,
-                                      int rem);
+                                      int rem,
+                                      int bias_direction);
 template <typename Dtype>
 inline void gemm_sdot_int8_kernel_8x8(const int8_t* a_ptr,
                                       const int8_t*& b_ptr,  // NOLINT
@@ -1067,7 +1068,8 @@ inline void gemm_sdot_int8_kernel_8x8(const int8_t* a_ptr,
                                       const float32_t* alpha,
                                       int is_relu,
                                       int k,
-                                      int rem);
+                                      int rem,
+                                      int bias_direction);
 template <typename Dtype>
 inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                                   const int8_t*& b_ptr,  // NOLINT
@@ -1084,7 +1086,8 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                                   const float32_t* alpha,
                                   int is_relu,
                                   int k,
-                                  int rem);
+                                  int rem,
+                                  int bias_direction);
 #if 0
 // clang-format off
 #define GEMM_SDOT_INT8_KERNEL                                              \
@@ -2083,7 +2086,40 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "fmla v26.4s, v4.4s, v1.s[2]\n" /*  60, mul scale to get final result */ \
   "scvtf  v4.4s, v29.4s\n"        /*  70, convert to fp32 */               \
   "dup    v29.4s, v3.s[3]\n"      /*  fill with bias*/                     \
-  "fmla v29.4s, v4.4s,v1.s[3]\n"  /*  70, mul scale to get final result */
+  "fmla v29.4s, v4.4s,v1.s[3]\n"  /*  70, mul scale to get final result */ \
+  "9: \n"
+
+#define GEMM_SDOT_CVT_INT32_TO_FP32_8x4_N_Direction                        \
+  "cmp  %w[bias_direction],#2\n"  /* skip N_Direction  */                  \
+  "bne   8f\n"                    /* skip N_Direction  */                  \
+  "ldp  q0, q1, [%[scale]]\n"     /* load scale */                         \
+  "ldp  q2, q3, [%[bias_ptr]]\n"  /* load bias */                          \
+  "scvtf  v4.4s , v8.4s\n"        /*  00, convert to fp32 */               \
+  "mov    v8.4s,  v2.4s\n"        /*  fill with bias*/                     \
+  "fmla v8.4s, v4.4s, v0.4s\n"  /*  00, mul scale to get final result */ \
+  "scvtf  v4.4s , v11.4s\n"       /*  10, convert to fp32 */               \
+  "mov    v11.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "fmla v11.4s, v4.4s, v0.4s\n" /*  10, mul scale to get final result */ \
+  "scvtf  v4.4s , v14.4s\n"       /*  20, convert to fp32 */               \
+  "mov    v14.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "fmla v14.4s, v4.4s, v0.4s\n" /*  20, mul scale to get final result */ \
+  "scvtf  v4.4s , v17.4s\n"       /*  30, convert to fp32 */               \
+  "mov    v17.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "fmla v17.4s, v4.4s, v0.4s\n" /*  30, mul scale to get final result */ \
+  "scvtf  v4.4s , v20.4s\n"       /*  40, convert to fp32 */               \
+  "mov    v20.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "fmla v20.4s, v4.4s, v0.4s\n" /*  40, mul scale to get final result */ \
+  "scvtf  v4.4s , v23.4s\n"       /*  50, convert to fp32 */               \
+  "mov    v23.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "fmla v23.4s, v4.4s, v0.4s\n" /*  50, mul scale to get final result */ \
+  "scvtf  v4.4s , v26.4s\n"       /*  60, convert to fp32 */               \
+  "mov    v26.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "fmla v26.4s, v4.4s, v0.4s\n" /*  60, mul scale to get final result */ \
+  "scvtf  v4.4s, v29.4s\n"        /*  70, convert to fp32 */               \
+  "mov    v29.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "fmla v29.4s, v4.4s, v0.4s\n"  /*  70, mul scale to get final result */ \
+  "b 9f \n"                                                                \
+  "8: \n"
 
 #define GEMM_SDOT_CVT_INT32_TO_FP32_8x8                                    \
   "ldp  q0, q1, [%[scale]]\n"     /* load scale */                         \
@@ -2135,7 +2171,64 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "dup    v29.4s, v3.s[3]\n"      /*  fill with bias*/                     \
   "dup    v30.4s, v3.s[3]\n"      /*  fill with bias*/                     \
   "fmla v29.4s, v4.4s,v1.s[3]\n"  /*  70, mul scale to get final result */ \
-  "fmla v30.4s, v5.4s,v1.s[3]\n"  /*  71, mul scale to get final result */
+  "fmla v30.4s, v5.4s,v1.s[3]\n"  /*  71, mul scale to get final result */ \
+  "9: \n"
+
+#define GEMM_SDOT_CVT_INT32_TO_FP32_8x8_N_Direction                        \
+  "cmp %w[bias_direction],#2\n"   /* skip N_Direction  */                  \
+  "bne   8f\n"                    /* skip N_Direction  */                  \
+  "ldp  q0, q1, [%[scale]]\n"     /* load scale */                         \
+  "ldp  q2, q3, [%[bias_ptr]]\n"  /* load bias */                          \
+  "scvtf  v4.4s , v8.4s\n"        /*  00, convert to fp32 */               \
+  "scvtf  v5.4s , v9.4s\n"        /*  01, convert to fp32 */               \
+  "mov    v8.4s,  v2.4s\n"      /*  fill with bias*/                     \
+  "mov    v9.4s,  v3.4s\n"      /*  fill with bias*/                     \
+  "fmla v8.4s, v4.4s, v0.4s\n"  /*  00, mul scale to get final result */ \
+  "fmla v9.4s, v5.4s, v1.4s\n"  /*  01, mul scale to get final result */ \
+  "scvtf  v4.4s , v11.4s\n"       /*  10, convert to fp32 */               \
+  "scvtf  v5.4s , v12.4s\n"       /*  11, convert to fp32 */               \
+  "mov    v11.4s, v2.4s\n"      /*  fill with bias*/                     \
+  "mov    v12.4s, v3.4s\n"      /*  fill with bias*/                     \
+  "fmla v11.4s, v4.4s, v0.4s\n" /*  10, mul scale to get final result */ \
+  "fmla v12.4s, v5.4s, v1.4s\n" /*  11, mul scale to get final result */ \
+  "scvtf  v4.4s , v14.4s\n"       /*  20, convert to fp32 */               \
+  "scvtf  v5.4s , v15.4s\n"       /*  21, convert to fp32 */               \
+  "mov    v14.4s, v2.4s\n"      /*  fill with bias*/                     \
+  "mov    v15.4s, v3.4s\n"      /*  fill with bias*/                     \
+  "fmla v14.4s, v4.4s, v0.4s\n" /*  20, mul scale to get final result */ \
+  "fmla v15.4s, v5.4s, v1.4s\n" /*  21, mul scale to get final result */ \
+  "scvtf  v4.4s , v17.4s\n"       /*  30, convert to fp32 */               \
+  "scvtf  v5.4s , v18.4s\n"       /*  31, convert to fp32 */               \
+  "mov    v17.4s, v2.4s\n"      /*  fill with bias*/                     \
+  "mov    v18.4s, v3.4s\n"      /*  fill with bias*/                     \
+  "fmla v17.4s, v4.4s, v0.4s\n" /*  30, mul scale to get final result */ \
+  "fmla v18.4s, v5.4s, v1.4s\n" /*  31, mul scale to get final result */ \
+  "scvtf  v4.4s , v20.4s\n"       /*  40, convert to fp32 */               \
+  "scvtf  v5.4s , v21.4s\n"       /*  41, convert to fp32 */               \
+  "mov    v20.4s, v2.4s\n"      /*  fill with bias*/                     \
+  "mov    v21.4s, v3.4s\n"      /*  fill with bias*/                     \
+  "fmla v20.4s, v4.4s, v0.4s\n" /*  40, mul scale to get final result */ \
+  "fmla v21.4s, v5.4s, v1.4s\n" /*  41, mul scale to get final result */ \
+  "scvtf  v4.4s , v23.4s\n"       /*  50, convert to fp32 */               \
+  "scvtf  v5.4s , v24.4s\n"       /*  51, convert to fp32 */               \
+  "mov    v23.4s, v2.4s\n"      /*  fill with bias*/                     \
+  "mov    v24.4s, v3.4s\n"      /*  fill with bias*/                     \
+  "fmla v23.4s, v4.4s, v0.4s\n" /*  50, mul scale to get final result */ \
+  "fmla v24.4s, v5.4s, v1.4s\n" /*  51, mul scale to get final result */ \
+  "scvtf  v4.4s , v26.4s\n"       /*  60, convert to fp32 */               \
+  "scvtf  v5.4s , v27.4s\n"       /*  61, convert to fp32 */               \
+  "mov    v26.4s, v2.4s\n"      /*  fill with bias*/                     \
+  "mov    v27.4s, v3.4s\n"      /*  fill with bias*/                     \
+  "fmla v26.4s, v4.4s, v0.4s\n" /*  60, mul scale to get final result */ \
+  "fmla v27.4s, v5.4s, v1.4s\n" /*  61, mul scale to get final result */ \
+  "scvtf  v4.4s, v29.4s\n"        /*  70, convert to fp32 */               \
+  "scvtf  v5.4s, v30.4s\n"        /*  71, convert to fp32 */               \
+  "mov    v29.4s, v2.4s\n"      /*  fill with bias*/                     \
+  "mov    v30.4s, v3.4s\n"      /*  fill with bias*/                     \
+  "fmla v29.4s, v4.4s, v0.4s\n"  /*  70, mul scale to get final result */ \
+  "fmla v30.4s, v5.4s, v1.4s\n"  /*  71, mul scale to get final result */ \
+  "b 9f \n"                                                                \
+  "8: \n"
 
 #define GEMM_SDOT_CVT_INT32_TO_FP32                                        \
   "ldp  q0, q1, [%[scale]]\n"     /* load scale */                         \
@@ -2211,9 +2304,93 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "dup    v31.4s, v3.s[3]\n"      /*  fill with bias*/                     \
   "fmla v29.4s, v4.4s,v1.s[3]\n"  /*  70, mul scale to get final result */ \
   "fmla v30.4s, v5.4s,v1.s[3]\n"  /*  71, mul scale to get final result */ \
-  "fmla v31.4s, v6.4s,v1.s[3]\n"  /*  72, mul scale to get final result */
+  "fmla v31.4s, v6.4s,v1.s[3]\n"  /*  72, mul scale to get final result */ \
+  "9: \n"
+
+#define GEMM_SDOT_CVT_INT32_TO_FP32_N_Direction                            \
+  "cmp %w[bias_direction],#2\n"   /* skip N_Direction  */                  \
+  "bne   8f\n"                    /* skip N_Direction  */                  \
+  "ldp  q0, q1, [%[scale]]\n"     /* load scale */                         \
+  "ldp  q2, q3, [%[bias_ptr]]\n"  /* load bias */                          \
+  "scvtf  v4.4s , v8.4s\n"        /*  00, convert to fp32 */               \
+  "scvtf  v5.4s , v9.4s\n"        /*  01, convert to fp32 */               \
+  "mov    v8.4s,  v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v9.4s,  v3.4s\n"        /*  fill with bias*/                     \
+  "fmla v8.4s, v4.4s, v0.4s\n"    /*  00, mul scale to get final result */ \
+  "fmla v9.4s, v5.4s, v1.4s\n"    /*  01, mul scale to get final result */ \
+  "scvtf  v4.4s , v11.4s\n"       /*  10, convert to fp32 */               \
+  "scvtf  v5.4s , v12.4s\n"       /*  11, convert to fp32 */               \
+  "mov    v11.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v12.4s, v3.4s\n"        /*  fill with bias*/                     \
+  "fmla v11.4s, v4.4s, v0.4s\n"   /*  10, mul scale to get final result */ \
+  "fmla v12.4s, v5.4s, v1.4s\n"   /*  11, mul scale to get final result */ \
+  "scvtf  v4.4s , v14.4s\n"       /*  20, convert to fp32 */               \
+  "scvtf  v5.4s , v15.4s\n"       /*  21, convert to fp32 */               \
+  "mov    v14.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v15.4s, v3.4s\n"        /*  fill with bias*/                     \
+  "fmla v14.4s, v4.4s, v0.4s\n"   /*  20, mul scale to get final result */ \
+  "fmla v15.4s, v5.4s, v1.4s\n"   /*  21, mul scale to get final result */ \
+  "scvtf  v4.4s , v17.4s\n"       /*  30, convert to fp32 */               \
+  "scvtf  v5.4s , v18.4s\n"       /*  31, convert to fp32 */               \
+  "mov    v17.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v18.4s, v3.4s\n"        /*  fill with bias*/                     \
+  "fmla v17.4s, v4.4s, v0.4s\n"   /*  30, mul scale to get final result */ \
+  "fmla v18.4s, v5.4s, v1.4s\n"   /*  31, mul scale to get final result */ \
+  "scvtf  v4.4s , v20.4s\n"       /*  40, convert to fp32 */               \
+  "scvtf  v5.4s , v21.4s\n"       /*  41, convert to fp32 */               \
+  "mov    v20.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v21.4s, v3.4s\n"        /*  fill with bias*/                     \
+  "fmla v20.4s, v4.4s, v0.4s\n"   /*  40, mul scale to get final result */ \
+  "fmla v21.4s, v5.4s, v1.4s\n"   /*  41, mul scale to get final result */ \
+  "scvtf  v4.4s , v23.4s\n"       /*  50, convert to fp32 */               \
+  "scvtf  v5.4s , v24.4s\n"       /*  51, convert to fp32 */               \
+  "mov    v23.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v24.4s, v3.4s\n"        /*  fill with bias*/                     \
+  "fmla v23.4s, v4.4s, v0.4s\n"   /*  50, mul scale to get final result */ \
+  "fmla v24.4s, v5.4s, v1.4s\n"   /*  51, mul scale to get final result */ \
+  "scvtf  v4.4s , v26.4s\n"       /*  60, convert to fp32 */               \
+  "scvtf  v5.4s , v27.4s\n"       /*  61, convert to fp32 */               \
+  "mov    v26.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v27.4s, v3.4s\n"        /*  fill with bias*/                     \
+  "fmla v26.4s, v4.4s, v0.4s\n"   /*  60, mul scale to get final result */ \
+  "fmla v27.4s, v5.4s, v1.4s\n"   /*  61, mul scale to get final result */ \
+  "scvtf  v4.4s, v29.4s\n"        /*  70, convert to fp32 */               \
+  "scvtf  v5.4s, v30.4s\n"        /*  71, convert to fp32 */               \
+  "mov    v29.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v30.4s, v3.4s\n"        /*  fill with bias*/                     \
+  "fmla v29.4s, v4.4s,v0.4s\n"    /*  70, mul scale to get final result */ \
+  "fmla v30.4s, v5.4s,v1.4s\n"    /*  71, mul scale to get final result */ \
+  "ldr  q0, [%[scale], #32]\n"    /* load scale */                         \
+  "ldr  q2, [%[bias_ptr], #32]\n" /* load bias */                          \
+  "scvtf  v6.4s , v10.4s\n"       /*  02, convert to fp32 */               \
+  "mov    v10.4s,  v2.4s\n"       /*  fill with bias*/                       \
+  "fmla v10.4s, v6.4s, v0.4s\n"   /*  02, mul scale to get final result */   \
+  "scvtf  v6.4s , v13.4s\n"       /*  12, convert to fp32 */               \
+  "mov    v13.4s, v2.4s\n"        /*  fill with bias*/                       \
+  "fmla v13.4s, v6.4s, v0.4s\n"   /*  12, mul scale to get final result */   \
+  "scvtf  v6.4s , v16.4s\n"       /*  22, convert to fp32 */               \
+  "mov    v16.4s, v2.4s\n"        /*  fill with bias*/                       \
+  "fmla v16.4s, v6.4s, v0.4s\n"   /*  22, mul scale to get final result */   \
+  "scvtf  v6.4s , v19.4s\n"       /*  32, convert to fp32 */               \
+  "mov    v19.4s, v2.4s\n"        /*  fill with bias*/                       \
+  "fmla v19.4s, v6.4s, v0.4s\n"   /*  32, mul scale to get final result */   \
+  "scvtf  v6.4s , v22.4s\n"       /*  42, convert to fp32 */               \
+  "mov    v22.4s, v2.4s\n"        /*  fill with bias*/                       \
+  "fmla v22.4s, v6.4s, v0.4s\n"   /*  42, mul scale to get final result */   \
+  "scvtf  v6.4s , v25.4s\n"       /*  52, convert to fp32 */               \
+  "mov    v25.4s, v2.4s\n"        /*  fill with bias*/                       \
+  "fmla v25.4s, v6.4s, v0.4s\n"   /*  52, mul scale to get final result */   \
+  "scvtf  v6.4s , v28.4s\n"       /*  62, convert to fp32 */               \
+  "mov    v28.4s, v2.4s\n"        /*  fill with bias*/                       \
+  "fmla v28.4s, v6.4s, v0.4s\n"   /*  62, mul scale to get final result */   \
+  "scvtf  v6.4s, v31.4s\n"        /*  72, convert to fp32 */               \
+  "mov    v31.4s, v2.4s\n"        /*  fill with bias*/                       \
+  "fmla v31.4s, v6.4s,v0.4s\n"    /*  72, mul scale to get final result */   \
+  "b 9f \n"                                                                \
+  "8: \n"
 
 #define GEMM_SDOT_FP32_OUT_8x4                                \
+  GEMM_SDOT_CVT_INT32_TO_FP32_8x4_N_Direction                 \
   GEMM_SDOT_CVT_INT32_TO_FP32_8x4                             \
   GEMM_SDOT_RELU_8x4                                          \
   GEMM_SDOT_RELU6_8x4                                         \
@@ -2229,6 +2406,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "st1 {v29.4s},[%[c_ptr7]], #16\n" /* store r7 */
 
 #define GEMM_SDOT_FP32_OUT_8x8                                \
+  GEMM_SDOT_CVT_INT32_TO_FP32_8x8_N_Direction                 \
   GEMM_SDOT_CVT_INT32_TO_FP32_8x8                             \
   GEMM_SDOT_RELU_8x8                                          \
   GEMM_SDOT_RELU6_8x8                                         \
@@ -2244,6 +2422,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "st1 {v29.4s, v30.4s},[%[c_ptr7]], #32\n" /* store r7 */
 
 #define GEMM_SDOT_FP32_OUT                                         \
+  GEMM_SDOT_CVT_INT32_TO_FP32_N_Direction                          \
   GEMM_SDOT_CVT_INT32_TO_FP32                                      \
   GEMM_SDOT_RELU                                                   \
   GEMM_SDOT_RELU6                                                  \
@@ -2259,6 +2438,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "st1 {v29.4s, v30.4s, v31.4s},[%[c_ptr7]], #48\n" /* store r7 */
 
 #define GEMM_SDOT_INT8_OUT_8x4                                     \
+  GEMM_SDOT_CVT_INT32_TO_FP32_8x4_N_Direction                      \
   GEMM_SDOT_CVT_INT32_TO_FP32_8x4                                  \
   GEMM_SDOT_RELU_8x4                                               \
   GEMM_SDOT_RELU6_8x4                                              \
@@ -2323,6 +2503,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "str s7,[%[c_ptr7]], #4\n"     /* store r7 */
 
 #define GEMM_SDOT_INT8_OUT_8x8                                  \
+  GEMM_SDOT_CVT_INT32_TO_FP32_8x8_N_Direction                   \
   GEMM_SDOT_CVT_INT32_TO_FP32_8x8                               \
   GEMM_SDOT_RELU_8x8                                            \
   GEMM_SDOT_RELU6_8x8                                           \
@@ -2419,6 +2600,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "st1 {v7.8b},[%[c_ptr7]], #8\n" /* store r7 */
 
 #define GEMM_SDOT_INT8_OUT                                         \
+  GEMM_SDOT_CVT_INT32_TO_FP32_N_Direction                          \
   GEMM_SDOT_CVT_INT32_TO_FP32                                      \
   GEMM_SDOT_RELU                                                   \
   GEMM_SDOT_RELU6                                                  \
@@ -2609,7 +2791,8 @@ inline void gemm_sdot_int8_kernel_8x4(const int8_t* a_ptr,
                                       const float32_t* alpha,
                                       int is_relu,
                                       int k,
-                                      int tail) {
+                                      int tail,
+                                      int bias_direction) {
   // clang-format off
   asm volatile(  GEMM_SDOT_INT8_KERNEL_8x4
                  GEMM_SDOT_FP32_OUT_8x4
@@ -2626,7 +2809,7 @@ inline void gemm_sdot_int8_kernel_8x4(const int8_t* a_ptr,
                  [c_ptr6] "+r"(c_ptr6),
                  [c_ptr7] "+r"(c_ptr7)
                : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu),
-                  [alpha] "r"(alpha)
+                  [alpha] "r"(alpha), [bias_direction] "r"(bias_direction)
                : "cc","memory","v0","v1","v2",
                  "v3","v4","v5","v6","v7","v8","v9","v10",
                  "v11","v12","v13","v14","v15","v16","v17",
@@ -2651,7 +2834,8 @@ inline void gemm_sdot_int8_kernel_8x8(const int8_t* a_ptr,
                                       const float32_t* alpha,
                                       int is_relu,
                                       int k,
-                                      int tail) {
+                                      int tail,
+                                      int bias_direction) {
   // clang-format off
   asm volatile(GEMM_SDOT_INT8_KERNEL_8x8
                GEMM_SDOT_FP32_OUT_8x8
@@ -2668,7 +2852,7 @@ inline void gemm_sdot_int8_kernel_8x8(const int8_t* a_ptr,
                  [c_ptr6] "+r"(c_ptr6),
                  [c_ptr7] "+r"(c_ptr7)
                : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu),
-                  [alpha] "r"(alpha)
+                  [alpha] "r"(alpha), [bias_direction] "r"(bias_direction)
                : "cc","memory","v0","v1","v2",
                  "v3","v4","v5","v6","v7","v8","v9","v10",
                  "v11","v12","v13","v14","v15","v16","v17",
@@ -2692,29 +2876,30 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                                   const float32_t* alpha,
                                   int is_relu,
                                   int k,
-                                  int tail) {
+                                  int tail,
+                                  int bias_direction) {
   // clang-format off
   asm volatile(GEMM_SDOT_INT8_KERNEL
                GEMM_SDOT_FP32_OUT
-               : [a_ptr] "+r"(a_ptr),
-                 [b_ptr] "+r"(b_ptr),
-                 [k] "+r"(k),
-                 [tail] "+r"(tail),
-                 [c_ptr0] "+r"(c_ptr0),
-                 [c_ptr1] "+r"(c_ptr1),
-                 [c_ptr2] "+r"(c_ptr2),
-                 [c_ptr3] "+r"(c_ptr3),
-                 [c_ptr4] "+r"(c_ptr4),
-                 [c_ptr5] "+r"(c_ptr5),
-                 [c_ptr6] "+r"(c_ptr6),
-                 [c_ptr7] "+r"(c_ptr7)
-               : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu),
-                  [alpha] "r"(alpha)
-               : "cc","memory","v0","v1","v2",
-                 "v3","v4","v5","v6","v7","v8","v9","v10",
-                 "v11","v12","v13","v14","v15","v16","v17",
-                 "v18","v19","v20","v21","v22","v23","v24",
-                 "v25","v26","v27","v28","v29","v30","v31");
+              : [a_ptr] "+r"(a_ptr),
+                [b_ptr] "+r"(b_ptr),
+                [k] "+r"(k),
+                [tail] "+r"(tail),
+                [c_ptr0] "+r"(c_ptr0),
+                [c_ptr1] "+r"(c_ptr1),
+                [c_ptr2] "+r"(c_ptr2),
+                [c_ptr3] "+r"(c_ptr3),
+                [c_ptr4] "+r"(c_ptr4),
+                [c_ptr5] "+r"(c_ptr5),
+                [c_ptr6] "+r"(c_ptr6),
+                [c_ptr7] "+r"(c_ptr7)
+              : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu),
+                  [alpha] "r"(alpha), [bias_direction] "r"(bias_direction)
+              : "cc","memory","v0","v1","v2",
+                "v3","v4","v5","v6","v7","v8","v9","v10",
+                "v11","v12","v13","v14","v15","v16","v17",
+                "v18","v19","v20","v21","v22","v23","v24",
+                "v25","v26","v27","v28","v29","v30","v31");
   // clang-format on
 }
 
@@ -2734,7 +2919,8 @@ inline void gemm_sdot_int8_kernel_8x4(const int8_t* a_ptr,
                                       const float32_t* alpha,
                                       int is_relu,
                                       int k,
-                                      int tail) {
+                                      int tail,
+                                      int bias_direction) {
   // clang-format off
   float32_t vmax[4] = {-127.0, -127.0, -127.0, -127.0};
   asm volatile(GEMM_SDOT_INT8_KERNEL_8x4 GEMM_SDOT_INT8_OUT_8x4
@@ -2751,7 +2937,7 @@ inline void gemm_sdot_int8_kernel_8x4(const int8_t* a_ptr,
                  [c_ptr6] "+r"(c_ptr6),
                  [c_ptr7] "+r"(c_ptr7)
                : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu), [vmax] "r"(vmax),
-                 [alpha] "r"(alpha)
+                 [alpha] "r"(alpha), [bias_direction] "r"(bias_direction)
                : "cc","memory","v0","v1","v2","v3",
                  "v4","v5","v6","v7","v8","v9","v10",
                  "v11","v12","v13","v14","v15","v16","v17",
@@ -2776,7 +2962,8 @@ inline void gemm_sdot_int8_kernel_8x8(const int8_t* a_ptr,
                                       const float32_t* alpha,
                                       int is_relu,
                                       int k,
-                                      int tail) {
+                                      int tail,
+                                      int bias_direction) {
   // clang-format off
   float32_t vmax[4] = {-127.0, -127.0, -127.0, -127.0};
   asm volatile(GEMM_SDOT_INT8_KERNEL_8x8 GEMM_SDOT_INT8_OUT_8x8
@@ -2793,7 +2980,7 @@ inline void gemm_sdot_int8_kernel_8x8(const int8_t* a_ptr,
                  [c_ptr6] "+r"(c_ptr6),
                  [c_ptr7] "+r"(c_ptr7)
                : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu), [vmax] "r"(vmax),
-                 [alpha] "r"(alpha)
+                 [alpha] "r"(alpha), [bias_direction] "r"(bias_direction)
                : "cc","memory","v0","v1","v2","v3",
                  "v4","v5","v6","v7","v8","v9","v10",
                  "v11","v12","v13","v14","v15","v16","v17",
@@ -2818,7 +3005,8 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                                   const float32_t* alpha,
                                   int is_relu,
                                   int k,
-                                  int tail) {
+                                  int tail,
+                                  int bias_direction) {
   // clang-format off
   float32_t vmax[4] = {-127.0, -127.0, -127.0, -127.0};
   asm volatile(GEMM_SDOT_INT8_KERNEL GEMM_SDOT_INT8_OUT
@@ -2835,7 +3023,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                  [c_ptr6] "+r"(c_ptr6),
                  [c_ptr7] "+r"(c_ptr7)
                : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu), [vmax] "r"(vmax),
-                 [alpha] "r"(alpha)
+                 [alpha] "r"(alpha), [bias_direction] "r"(bias_direction)
                : "cc","memory","v0","v1","v2","v3",
                  "v4","v5","v6","v7","v8","v9","v10",
                  "v11","v12","v13","v14","v15","v16","v17",
@@ -2860,7 +3048,8 @@ inline void gemm_sdot_int8_kernel_8x4(const int8_t* a_ptr,
                                       const float32_t* alpha,
                                       int is_relu,
                                       int k,
-                                      int tail) {
+                                      int tail,
+                                      int bias_direction) {
   // clang-format off
   float32_t vmax[4] = {-127.0, -127.0, -127.0, -127.0};
   asm volatile(GEMM_SDOT_INT8_KERNEL_8x4 GEMM_SDOT_INT32_OUT_8x4
@@ -2902,7 +3091,8 @@ inline void gemm_sdot_int8_kernel_8x8(const int8_t* a_ptr,
                                       const float32_t* alpha,
                                       int is_relu,
                                       int k,
-                                      int tail) {
+                                      int tail,
+                                      int bias_direction) {
   // clang-format off
   float32_t vmax[4] = {-127.0, -127.0, -127.0, -127.0};
   asm volatile(GEMM_SDOT_INT8_KERNEL_8x8 GEMM_SDOT_INT32_OUT_8x8
@@ -2944,7 +3134,8 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
                                   const float32_t* alpha,
                                   int is_relu,
                                   int k,
-                                  int tail) {
+                                  int tail,
+                                  int bias_direction) {
   // clang-format off
   float32_t vmax[4] = {-127.0, -127.0, -127.0, -127.0};
   asm volatile(GEMM_SDOT_INT8_KERNEL GEMM_SDOT_INT32_OUT
@@ -3012,7 +3203,55 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vdup.32    q14,  d2[1]           \n" \
   "vdup.32    q15,  d2[1]           \n" \
   "vmla.f32   q14,  q2, d0[1]       \n" \
-  "vmla.f32   q15,  q3, d0[1]       \n"
+  "vmla.f32   q15,  q3, d0[1]       \n" \
+  "9: \n"                               \
+  "lsl %[relu], #28                 \n"
+
+#define GEMM_DOT_CVT_INT32_TO_FP32_N_Direction \
+  "cmp %[relu], #32                 \n"        \
+  "blt   8f                         \n"        \
+  "vld1.32  {d0-d1}, [%[scale]]!    \n"        \
+  "vld1.32  {d2-d3}, [%[bias_ptr]]! \n"        \
+  "vcvt.f32.s32     q2, q4          \n"        \
+  "vmov.32    q4,   q1              \n"        \
+  "vmla.f32   q4,   q2, q0          \n"        \
+  "vcvt.f32.s32     q2, q6          \n"        \
+  "vmov.32    q6,   q1              \n"        \
+  "vmla.f32   q6,   q2, q0          \n"        \
+  "vcvt.f32.s32     q2, q8          \n"        \
+  "vmov.32    q8,   q1              \n"        \
+  "vmla.f32   q8,   q2, q0          \n"        \
+  "vcvt.f32.s32     q2, q10         \n"        \
+  "vmov.32    q10,  q1              \n"        \
+  "vmla.f32   q10,  q2, q0          \n"        \
+  "vcvt.f32.s32     q2, q12         \n"        \
+  "vmov.32    q12,  q1              \n"        \
+  "vmla.f32   q12,  q2, q0          \n"        \
+  "vcvt.f32.s32     q2, q14         \n"        \
+  "vmov.32    q14,  q1              \n"        \
+  "vmla.f32   q14,  q2, q0          \n"        \
+  "vld1.32  {d0-d1}, [%[scale]]     \n"        \
+  "vld1.32  {d2-d3}, [%[bias_ptr]]  \n"        \
+  "vcvt.f32.s32     q3, q5          \n"        \
+  "vmov.32    q5,   q1              \n"        \
+  "vmla.f32   q5,   q3, q0          \n"        \
+  "vcvt.f32.s32     q3, q7          \n"        \
+  "vmov.32    q7,   q1              \n"        \
+  "vmla.f32   q7,   q3, q0          \n"        \
+  "vcvt.f32.s32     q3, q9          \n"        \
+  "vmov.32    q9,   q1              \n"        \
+  "vmla.f32   q9,   q3, q0          \n"        \
+  "vcvt.f32.s32     q3, q11         \n"        \
+  "vmov.32    q11,  q1              \n"        \
+  "vmla.f32   q11,  q3, q0          \n"        \
+  "vcvt.f32.s32     q3, q13         \n"        \
+  "vmov.32    q13,  q1              \n"        \
+  "vmla.f32   q13,  q3, q0          \n"        \
+  "vcvt.f32.s32     q3, q15         \n"        \
+  "vmov.32    q15,  q1              \n"        \
+  "vmla.f32   q15,  q3, q0          \n"        \
+  "b 9f                             \n"        \
+  "8:                               \n"
 
 #define GEMM_DOT_ST_FP32           \
   "vst1.I32 {q4}, [%[c_ptr0]]! \n" \
@@ -3357,21 +3596,15 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vst1.32    {d3}, [%[c_ptr4]]!    \n"                      \
   "vst1.32    {d4}, [%[c_ptr5]]!    \n"
 
-#define GEMM_DOT_FP32_OUT    \
-  GEMM_DOT_CVT_INT32_TO_FP32 \
-  GEMM_DOT_RELU              \
-  GEMM_DOT_RELU6             \
-  GEMM_DOT_LEAKY_RELU        \
-  GEMM_DOT_HARD_SWISH        \
-  GEMM_DOT_ST_FP32
+#define GEMM_DOT_FP32_OUT                                                  \
+  GEMM_DOT_CVT_INT32_TO_FP32_N_Direction GEMM_DOT_CVT_INT32_TO_FP32        \
+      GEMM_DOT_RELU GEMM_DOT_RELU6 GEMM_DOT_LEAKY_RELU GEMM_DOT_HARD_SWISH \
+          GEMM_DOT_ST_FP32
 
-#define GEMM_DOT_INT8_OUT    \
-  GEMM_DOT_CVT_INT32_TO_FP32 \
-  GEMM_DOT_RELU              \
-  GEMM_DOT_RELU6             \
-  GEMM_DOT_LEAKY_RELU        \
-  GEMM_DOT_HARD_SWISH        \
-  GEMM_DOT_ST_INT8
+#define GEMM_DOT_INT8_OUT                                                  \
+  GEMM_DOT_CVT_INT32_TO_FP32_N_Direction GEMM_DOT_CVT_INT32_TO_FP32        \
+      GEMM_DOT_RELU GEMM_DOT_RELU6 GEMM_DOT_LEAKY_RELU GEMM_DOT_HARD_SWISH \
+          GEMM_DOT_ST_INT8
 #define GEMM_DOT_INT32_OUT        \
   "vst1.32 {q4}, [%[c_ptr0]]! \n" \
   "vst1.32 {q6}, [%[c_ptr1]]! \n" \
@@ -3399,7 +3632,8 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
                                  const float32_t* alpha,
                                  int is_relu,
                                  int k,
-                                 int rem);
+                                 int rem,
+                                 int bias_direction);
 
 template <>
 inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
@@ -3415,7 +3649,8 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
                                  const float32_t* alpha,
                                  int is_relu,
                                  int k,
-                                 int tail) {
+                                 int tail,
+                                 int bias_direction) {
   float new_ptr[16] = {alpha[0],
                        alpha[1],
                        alpha[2],
@@ -3432,6 +3667,7 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
                        alpha[9],
                        alpha[10],
                        alpha[11]};
+  is_relu = is_relu + (bias_direction << 4);
   asm volatile(GEMM_DOT_INT8_KERNEL GEMM_DOT_FP32_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+&r"(b_ptr),
@@ -3480,7 +3716,8 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
                                  const float32_t* alpha,
                                  int is_relu,
                                  int k,
-                                 int tail) {
+                                 int tail,
+                                 int bias_direction) {
   float new_ptr[16] = {alpha[0],
                        alpha[1],
                        alpha[2],
@@ -3497,9 +3734,10 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
                        alpha[9],
                        alpha[10],
                        alpha[11]};
-
+  is_relu = is_relu + (bias_direction << 4);
   // clang-format off
-  asm volatile(GEMM_DOT_INT8_KERNEL   GEMM_DOT_INT8_OUT
+  asm volatile(GEMM_DOT_INT8_KERNEL
+               GEMM_DOT_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
                  [k] "+r"(k),
@@ -3531,7 +3769,8 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
                                  const float32_t* alpha,
                                  int is_relu,
                                  int k,
-                                 int tail) {
+                                 int tail,
+                                 int bias_direction) {
   float new_ptr[16] = {alpha[0],
                        alpha[1],
                        alpha[2],
@@ -4208,6 +4447,7 @@ void gemm_prepack_oth_int8(const int8_t* A_packed,
                            int N,
                            int K,
                            bool is_bias,
+                           GemmBiasDirection bias_direction,
                            int flag_act,
                            bool is_transB,
                            const float* scale,
@@ -5469,6 +5709,7 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
                             int N,
                             int K,
                             bool is_bias,
+                            GemmBiasDirection bias_direction,
                             int is_relu,
                             bool is_transB,
                             const float* scale,
@@ -5521,18 +5762,20 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
     LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK_INT8_DOT) {
       unsigned int ymax = y + MBLOCK_INT8_DOT;
       ymax = (ymax > M) ? M : ymax;
-      float32_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-      if (is_bias) {
-        int j = 0;
-        for (int i = y; i < ymax && j < 8; i++, j++) {
-          bias_local[j] = bias[i];
+      float32_t bias_local[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+      float32_t scale_local[12] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+      if (bias_direction != GemmNBias) {
+        if (is_bias) {
+          int j = 0;
+          for (int i = y; i < ymax && j < 8; i++, j++) {
+            bias_local[j] = bias[i];
+          }
         }
-      }
-      float32_t scale_local[8];
-      if (scale) {
-        int j = 0;
-        for (int i = y; i < ymax && j < 8; i++, j++) {
-          scale_local[j] = scale[i];
+        if (scale) {
+          int j = 0;
+          for (int i = y; i < ymax && j < 8; i++, j++) {
+            scale_local[j] = scale[i];
+          }
         }
       }
       Dtype cout0[NBLOCK_INT8_DOT];
@@ -5586,6 +5829,18 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
       const int8_t* a_ptr_l = A_packed + y * kup;
       const int8_t* b_ptr = b_pannel;
       for (int xb = 0; xb < bblocks - 1; xb++) {
+        if (bias_direction == GemmNBias) {
+          if (scale) {
+            for (int j = 0; j < NBLOCK_INT8_DOT; j++) {
+              scale_local[j] = scale[xb * NBLOCK_INT8_DOT + j + x0];
+            }
+          }
+          if (bias) {
+            for (int j = 0; j < NBLOCK_INT8_DOT; j++) {
+              bias_local[j] = bias[xb * NBLOCK_INT8_DOT + j + x0];
+            }
+          }
+        }
         if ((y + 7) >= ymax) {
           switch ((y + 7) - ymax) {
             case 6:
@@ -5624,7 +5879,8 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
                                      alpha,
                                      is_relu,
                                      k,
-                                     tail);
+                                     tail,
+                                     static_cast<int>(bias_direction));
       }
       int remain_a = remain;
       if (remain_a >= 8) {
@@ -5645,7 +5901,8 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
                                          alpha,
                                          is_relu,
                                          k,
-                                         0);
+                                         0,
+                                         static_cast<int>(bias_direction));
         remain_a -= 8;
       }
       if (remain_a >= 4) {
@@ -5666,7 +5923,8 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
                                          alpha,
                                          is_relu,
                                          k,
-                                         0);
+                                         0,
+                                         static_cast<int>(bias_direction));
         remain_a -= 4;
       }
       if (remain_a) {
@@ -5687,7 +5945,8 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
                                          alpha,
                                          is_relu,
                                          k,
-                                         0);
+                                         0,
+                                         static_cast<int>(bias_direction));
         for (int i = 0; i < remain_a; ++i) {
           *c_ptr0++ = cout0[i];
           *c_ptr1++ = cout1[i];
@@ -5838,7 +6097,8 @@ void gemm_prepack_sdot_nopack_notrans(const int8_t* A_packed,
                                    alpha,
                                    is_relu,
                                    k,
-                                   tail);
+                                   tail,
+                                   static_cast<int>(GemmMBias));
     }
     if (cnt_8 > 0) {
       const int8_t* a_ptr = a_ptr_l;
@@ -5858,7 +6118,8 @@ void gemm_prepack_sdot_nopack_notrans(const int8_t* A_packed,
                                        alpha,
                                        is_relu,
                                        k,
-                                       0);
+                                       0,
+                                       static_cast<int>(GemmMBias));
     }
     if (cnt_4 > 0) {
       const int8_t* a_ptr = a_ptr_l;
@@ -5878,7 +6139,8 @@ void gemm_prepack_sdot_nopack_notrans(const int8_t* A_packed,
                                        alpha,
                                        is_relu,
                                        k,
-                                       0);
+                                       0,
+                                       static_cast<int>(GemmMBias));
     }
     if (cnt_1_pack4 > 0) {
       const int8_t* a_ptr = a_ptr_l;
@@ -5898,7 +6160,8 @@ void gemm_prepack_sdot_nopack_notrans(const int8_t* A_packed,
                                        alpha,
                                        is_relu,
                                        k,
-                                       0);
+                                       0,
+                                       static_cast<int>(GemmMBias));
       for (int i = 0; i < remain; ++i) {
         *c_ptr0++ = cout0[i];
         *c_ptr1++ = cout1[i];
@@ -7468,6 +7731,7 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
                              int N,
                              int K,
                              bool is_bias,
+                             GemmBiasDirection bias_direction,
                              int is_relu,
                              bool is_transB,
                              const float* scale,
@@ -7517,18 +7781,20 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
         ymax = M;
       }
 
-      float32_t bias_local[6] = {0, 0, 0, 0, 0, 0};
-      if (is_bias) {
-        int j = 0;
-        for (int i = y; i < ymax && j < 6; i++, j++) {
-          bias_local[j] = bias[i];
+      float32_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0};
+      float32_t scale_local[8] = {1, 1, 1, 1, 1, 1, 1};
+      if (bias_direction != GemmNBias) {
+        if (is_bias) {
+          int j = 0;
+          for (int i = y; i < ymax && j < 6; i++, j++) {
+            bias_local[j] = bias[i];
+          }
         }
-      }
-      float32_t scale_local[6];
-      if (scale) {
-        int j = 0;
-        for (int i = y; i < ymax && j < 6; i++, j++) {
-          scale_local[j] = scale[i];
+        if (scale) {
+          int j = 0;
+          for (int i = y; i < ymax && j < 6; i++, j++) {
+            scale_local[j] = scale[i];
+          }
         }
       }
 
@@ -7556,6 +7822,18 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
       const int8_t* a_ptr_l = A_packed + y * kup;
       const int8_t* b_ptr = b_pannel;
       for (int xb = 0; xb < bblocks; xb++) {
+        if (bias_direction == GemmNBias) {
+          if (scale) {
+            for (int j = 0; j < NBLOCK_INT8_DOT; j++) {
+              scale_local[j] = scale[xb * NBLOCK_INT8_DOT + j + x0];
+            }
+          }
+          if (bias) {
+            for (int j = 0; j < NBLOCK_INT8_DOT; j++) {
+              bias_local[j] = bias[xb * NBLOCK_INT8_DOT + j + x0];
+            }
+          }
+        }
         if ((y + 5) >= ymax) {
           switch ((y + 5) - ymax) {
             case 4:
@@ -7606,7 +7884,8 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
                                     alpha,
                                     is_relu,
                                     k,
-                                    tail);
+                                    tail,
+                                    static_cast<int>(bias_direction));
         scale_ptr = scale_local;
         bias_ptr = bias_local;
 
@@ -7628,9 +7907,6 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
 #endif
 #endif  // dotprod  //NOLINT
 
-#define IN_PARAMS \
-  A_packed, B, bias, C, M, N, K, is_bias, flag_act, is_transB, scale, alpha, ctx
-
 template <typename dtype>
 void gemm_prepack_int8(const int8_t* A_packed,
                        const int8_t* B,
@@ -7640,6 +7916,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
                        int N,
                        int K,
                        bool is_bias,
+                       GemmBiasDirection bias_direction,
                        bool is_transB,
                        const float* scale,
                        const operators::ActivationParam act_param,
@@ -7675,6 +7952,9 @@ void gemm_prepack_int8(const int8_t* A_packed,
     }
   }
 
+#define IN_PARAMS                                                              \
+  A_packed, B, bias, C, M, N, K, is_bias, bias_direction, flag_act, is_transB, \
+      scale, alpha, ctx
 #ifdef __aarch64__
   if (ctx->has_dot()) {
 #ifdef WITH_ARM_DOTPROD
@@ -7704,6 +7984,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
       int N,                                      \
       int K,                                      \
       bool is_bias,                               \
+      GemmBiasDirection bias_direction,           \
       bool is_transB,                             \
       const float* scale,                         \
       const operators::ActivationParam act_param, \
@@ -7713,6 +7994,9 @@ GEMM_PREPACK_INT8(float_t);
 GEMM_PREPACK_INT8(int32_t);
 
 #if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+#define IN_PARAMS_NO_BIAS_DIRECTION                                                          \
+  A_packed, B, bias, C, M, N, K, is_bias, flag_act, is_transB, \
+      scale, alpha, ctx
 template <typename dtype>
 void gemm_prepack_int8_nopack(const int8_t* A_packed,
                               const int8_t* B,
@@ -7756,7 +8040,7 @@ void gemm_prepack_int8_nopack(const int8_t* A_packed,
       }
     }
   }
-  gemm_prepack_sdot_nopack_notrans<dtype>(IN_PARAMS);
+  gemm_prepack_sdot_nopack_notrans<dtype>(IN_PARAMS_NO_BIAS_DIRECTION);
 }
 
 #define GEMM_PREPACK_INT8_NOPACK(dtype)           \

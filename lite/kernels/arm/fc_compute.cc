@@ -74,14 +74,14 @@ template <>
 bool check_fc_use_gemm<PRECISION(kInt8), PRECISION(kFloat)>(
     int m, const std::vector<float>& scale, bool has_bias) {
   CHECK_GT(scale.size(), 0) << "Int8 FC param must has weight_scale";
-  return m > 1 && scale.size() == 1;
+  return m > 1;
 }
 
 template <>
 bool check_fc_use_gemm<PRECISION(kInt8), PRECISION(kInt8)>(
     int m, const std::vector<float>& scale, bool has_bias) {
   CHECK_GT(scale.size(), 0) << "Int8 FC param must has weight_scale";
-  return m > 1 && scale.size() == 1 && !has_bias;
+  return m > 1;
 }
 
 template <PrecisionType PType, PrecisionType OutType>
@@ -129,10 +129,10 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   auto& param = this->template Param<operators::FcParam>();
   /// update scale
   float input_scale = param.input_scale;
-  int extend_size = flag_gemm_ ? m_ : n_;
+  int extend_size = (flag_gemm_ && param.weight_scale.size() == 1) ? m_ : n_;
   scale_.resize(extend_size);
   for (int i = 0; i < extend_size; ++i) {
-    if (flag_gemm_) {
+    if (flag_gemm_ && param.weight_scale.size() == 1) {
       scale_[i] = param.weight_scale[0] * input_scale;
     } else {
       scale_[i] = param.weight_scale[i] * input_scale;
@@ -149,10 +149,10 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   scale_ = param.weight_scale;
   float input_scale = param.input_scale;
   float output_scale = param.output_scale;
-  int extend_size = flag_gemm_ ? m_ : n_;
+  int extend_size = (flag_gemm_ && param.weight_scale.size() == 1) ? m_ : n_;
   scale_.resize(extend_size);
   for (int i = 0; i < extend_size; ++i) {
-    if (flag_gemm_) {
+    if (flag_gemm_ && param.weight_scale.size() == 1) {
       scale_[i] = param.weight_scale[0] * input_scale / output_scale;
     } else {
       scale_[i] = param.weight_scale[i] * input_scale / output_scale;
@@ -275,15 +275,12 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              i_data,
                              w_data,
                              o_data,
-                             nullptr,
-                             false,
+                             b_data,
+                             true,
+                             lite::arm::math::GemmNBias,
                              scale_.data(),
                              act_param,
                              &ctx);
-    if (param.bias) {
-      CHECK_EQ(param.bias->numel(), n_);
-      lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_, &act_param);
-    }
   } else {
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;
@@ -339,6 +336,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                              o_data,
                              nullptr,
                              false,
+                             lite::arm::math::GemmNBias,
                              scale_.data(),
                              act_param,
                              &ctx);

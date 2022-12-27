@@ -117,6 +117,33 @@ struct FcParam : ParamBase {
   WITH_INT8_CONFIG
 };
 
+struct FusedAttentionParam : ParamBase {
+  lite::Tensor* input0{nullptr};
+  lite::Tensor* input1{nullptr};
+  lite::Tensor* fc_w{nullptr};
+  lite::Tensor* fc_bias{nullptr};
+  lite::Tensor* output{nullptr};
+
+  bool padding_weights{false};
+  std::vector<int> reshape_shape{};
+  int softmax_axis{-1};
+
+  // fc
+  std::string activation_type{""};
+  float alpha{6.f};
+  std::string op_type{"mul"};
+  int in_num_col_dims{1};
+
+  // for int8
+  bool enable_int8{false};
+  std::vector<float> calib0_scale{};
+  std::vector<float> calib1_scale{};
+  std::vector<float> fc0_scale{};
+  std::vector<float> fc1_scale{};
+  std::vector<float> fc2_scale{};
+  int bit_length{8};
+};
+
 struct SearchSeqFcParam : ParamBase {
   lite::Tensor* x{nullptr};
   lite::Tensor* w{nullptr};
