@@ -713,7 +713,23 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
     std::string op_type = op_info.Type();
     if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
         quant_op_types_.end()) {
-      op_info.SetAttr("enable_int8", true);
+      if (op_type == "conv2d_transpose") {
+        for (auto inlink_node : quantized_node->inlinks) {
+          if (inlink_node->IsArg() && inlink_node->AsArg().is_weight &&
+              inlink_node->inlinks.size() != 0) {
+            for (auto inlink_node_inlink : inlink_node->inlinks) {
+              if (inlink_node_inlink->IsStmt() &&
+                  inlink_node_inlink->AsStmt().op_info()->Type() ==
+                      "dequantize_linear") {
+                op_info.SetAttr("enable_int8", true);
+                break;
+              }
+            }
+          }
+        }
+      } else {
+        op_info.SetAttr("enable_int8", true);
+      }
     }
     op_info.SetInputScale(input_var_name, scales);
     for (auto op_out_var_node : quantized_node->outlinks) {
