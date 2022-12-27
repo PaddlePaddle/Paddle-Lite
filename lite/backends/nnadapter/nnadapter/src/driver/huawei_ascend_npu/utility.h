@@ -86,6 +86,9 @@ namespace huawei_ascend_npu {
 // Specify the soc name for GraphBuilder
 #define HUAWEI_ASCEND_NPU_DEVICE_SOC_NAME "HUAWEI_ASCEND_NPU_DEVICE_SOC_NAME"
 
+// Specifies whether to enable acl initialization, which is enabled by default
+#define HUAWEI_ASCEND_NPU_ENABLE_ACL_INIT "HUAWEI_ASCEND_NPU_ENABLE_ACL_INIT"
+
 #define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(   \
     major, minor, patch)                                         \
   NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION * 1000 +        \

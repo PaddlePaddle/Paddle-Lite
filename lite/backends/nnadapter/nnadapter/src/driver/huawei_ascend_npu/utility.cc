@@ -39,27 +39,34 @@ void InitializeAscendCL() {
   static bool initialized = false;
   mtx.lock();
   if (!initialized) {
+    bool enable_acl_init =
+        GetBoolFromEnv(HUAWEI_ASCEND_NPU_ENABLE_ACL_INIT, true);
+    if (!enable_acl_init) {
+      NNADAPTER_LOG(WARNING)
+          << "[WARNING] AscendCL initialization function is disabled.";
+    } else {
 #if defined(NNADAPTER_HUAWEI_ASCEND_NPU_OF_MDC) && \
     defined(NNADAPTER_HUAWEI_ASCEND_NPU_EXECUTE_ONLY)
-    int ret = halGrpAttach("DEFAULT_MEM_GROUP", 2000);
-    if (ret != DRV_ERROR_NONE) {
-      NNADAPTER_LOG(FATAL) << "Ascend hal group attach failed, error code is "
-                           << ret;
-    }
+      int ret = halGrpAttach("DEFAULT_MEM_GROUP", 2000);
+      if (ret != DRV_ERROR_NONE) {
+        NNADAPTER_LOG(FATAL) << "Ascend hal group attach failed, error code is "
+                             << ret;
+      }
 
-    BuffCfg buffcfg = {0};
-    ret = halBuffInit(&buffcfg);
-    if (ret != DRV_ERROR_NONE) {
-      NNADAPTER_LOG(FATAL) << "Ascend hal buffer init failed, error code is "
-                           << ret;
-    }
+      BuffCfg buffcfg = {0};
+      ret = halBuffInit(&buffcfg);
+      if (ret != DRV_ERROR_NONE) {
+        NNADAPTER_LOG(FATAL) << "Ascend hal buffer init failed, error code is "
+                             << ret;
+      }
 #endif
-    NNADAPTER_VLOG(5) << "Initialize AscendCL.";
-    // The following APIs can only be called once in one process
-    aclInit(NULL);
-    // Register 'FinalizeAscendCL' to be called at normal process termination
-    atexit(FinalizeAscendCL);
-    initialized = true;
+      NNADAPTER_VLOG(5) << "Initialize AscendCL.";
+      // The following APIs can only be called once in one process
+      aclInit(NULL);
+      // Register 'FinalizeAscendCL' to be called at normal process termination
+      atexit(FinalizeAscendCL);
+      initialized = true;
+    }
   }
   mtx.unlock();
 }
