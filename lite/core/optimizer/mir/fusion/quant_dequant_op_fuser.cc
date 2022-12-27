@@ -709,19 +709,27 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
     if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
         quant_op_types_.end()) {
       if (op_type == "conv2d_transpose") {
+        bool enable_int8_convt = false;
         for (auto inlink_node : quantized_node->inlinks) {
-          if (inlink_node->IsArg() && inlink_node->AsArg().is_weight &&
-              inlink_node->inlinks.size() != 0) {
+          // all input need dequantize_linear
+          if (inlink_node->IsArg() && inlink_node->inlinks.size() > 0) {
+            enable_int8_convt = true;
             for (auto inlink_node_inlink : inlink_node->inlinks) {
               if (inlink_node_inlink->IsStmt() &&
-                  inlink_node_inlink->AsStmt().op_info()->Type() ==
+                  inlink_node_inlink->stmt()->op_info()->Type() !=
                       "dequantize_linear") {
-                op_info.SetAttr("enable_int8", true);
+                enable_int8_convt = false;
                 break;
               }
             }
+            if (!enable_int8_convt)
+              break;  // input has inlink but it isn't dequantize_linear
+          } else {    // input doesn't have inlink
+            enable_int8_convt = false;
+            break;
           }
         }
+        if (enable_int8_convt) op_info.SetAttr("enable_int8", true);
       } else {
         op_info.SetAttr("enable_int8", true);
       }
