@@ -76,6 +76,11 @@ void pooling5x5s1p2_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right);
 
 void pooling2x2s2p0_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right);
 
+void pooling2x2s2p0_avg_fp16(POOLING_PARAM,
+                             bool exclusive,
+                             int pad_bottom,
+                             int pad_right);
+
 void pooling_common_max_fp16(POOLING_PARAM,
                              int ksize,
                              int stride_h,

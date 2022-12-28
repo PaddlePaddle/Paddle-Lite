@@ -303,6 +303,11 @@ void PoolCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
           POOL_IN_PARAM, paddings[1], paddings[3]);
       return;
     }
+    if (pooling_type == "avg") {
+      lite::arm::math::fp16::pooling2x2s2p0_avg_fp16(
+          POOL_IN_PARAM, exclusive, paddings[1], paddings[3]);
+      return;
+    }
   } else if (ksize[0] == ksize[1] && pooling_type == "max") {
     lite::arm::math::fp16::pooling_common_max_fp16(POOL_IN_PARAM,
                                                    ksize[0],
