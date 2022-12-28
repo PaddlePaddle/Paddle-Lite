@@ -640,7 +640,7 @@ void pooling_basic_fp16(POOLING_PARAM,
   "vld2.16 {d4-d7}, [%[dr1]]!\n"        /* load q2-q3, dr1, 0-15*/ \
   "vmax.f16  q6, q4, q5\n"              /* max reduce */           \
   "subs %[cnt_num], %[cnt_num], #1\n"   /* subs cnt_num, #1*/      \
-  "vst1.f16  {d12-d13}, [%[dr_out]]!\n" /* store 8 out, dr_out */  \
+  "vst1.16  {d12-d13}, [%[dr_out]]!\n" /* store 8 out, dr_out */  \
   "bne       1b\n"                      /* bne s2_max_loop_mid */
 
 #define P2x2S2P0_AVG                    \
