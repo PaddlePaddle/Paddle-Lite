@@ -68,6 +68,8 @@ void RemoveScale1Pass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         if (scale_node->inlinks.size() == 1 &&  // input arg of scale is 1
             scale_node->inlinks.front()->inlinks.size() ==
                 1 &&  // last node of scale is 1
+            scale_node->inlinks.front()->inlinks.front()->outlinks.size() ==
+                1 &&
             scale_node->inlinks.front()
                 ->inlinks.front()
                 ->IsStmt() &&                    // last node of scale is stmt
