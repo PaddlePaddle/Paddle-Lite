@@ -501,11 +501,15 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 #endif
 }
 
-void CxxConfig::set_xpu_l3_cache_autotune(bool autotune) {
+void CxxConfig::set_xpu_l3_cache_autotune(bool autotune, size_t num) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
       ->xpu_local_l3_autotune = autotune;
+  // limit l3 cache  block size.
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->l3_autotune_fliter_num = num;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_l3_cache_autotune' is ignored, please "

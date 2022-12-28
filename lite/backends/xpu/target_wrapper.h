@@ -126,6 +126,13 @@ class TargetWrapper<TARGET(kXPU)> {
     }
     CHECK(xpu_runtime_ptr->xpu_l3_planner);
 
+    if (xpu_runtime_ptr->l3_autotune_fliter_num > 1) {
+      LOG(INFO) << "l3 autotune fliter_num:"
+                << xpu_runtime_ptr->l3_autotune_fliter_num;
+      xpu_runtime_ptr->xpu_l3_planner->set_l3_autotune_fliter_num(
+          xpu_runtime_ptr->l3_autotune_fliter_num);
+    }
+
     int devid = -1;
     uint64_t max_l3_size = 0;
     XPU_CALL(xpu_current_device(&devid));

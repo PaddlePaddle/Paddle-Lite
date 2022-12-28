@@ -70,7 +70,7 @@ class XPUL3Planner {
       auto history_size = history.size();
       size_t score = 0;
       VLOG(3) << "Block Idx is " << block_idx;
-      if (history_size > 1) {
+      if (history_size > fliter_num_) {
         std::vector<node> block_nodes{node()};
         std::sort(history.begin(), history.end());
         for (size_t i = 0; i < history_size; i++) {
@@ -176,11 +176,14 @@ class XPUL3Planner {
     VLOG(3) << "AutoTune XPU L3 Cache Block End.";
   }
 
+  void set_l3_autotune_fliter_num(size_t num) { fliter_num_ = num; }
+
  private:
   // plans_ format: [query_shape_] : [block0 block1 ... blockn xdnn_ctx_l3_size]
   std::map<std::vector<int64_t>, std::vector<size_t>> plans_;
   // query_shape format: [shape0 shape1 ... shapen l3_size]
   std::vector<int64_t> query_shape_;
+  size_t fliter_num_{1};
 };
 
 }  // namespace lite

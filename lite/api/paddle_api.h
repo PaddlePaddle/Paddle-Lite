@@ -436,7 +436,7 @@ class LITE_API CxxConfig : public ConfigBase {
   // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
   void set_xpu_workspace_l3_size_per_thread(int l3_size = 0x4000000);
   void set_xpu_l3_cache_method(size_t l3_size, bool locked = false);
-  void set_xpu_l3_cache_autotune(bool autotune = true);
+  void set_xpu_l3_cache_autotune(bool autotune = true, size_t num = 1);
 
   void set_xpu_gm_workspace_method(size_t gm_size);
 

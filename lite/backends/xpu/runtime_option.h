@@ -139,6 +139,7 @@ struct XPURunTimeOption {
       xpu_dump_tensor_path = config->xpu_dump_tensor_path;
       need_dump_xpu_info = true;
     }
+    l3_autotune_fliter_num = config->l3_autotune_fliter_num;
     // Perdictor clone need set device.
     XPU_CALL(xpu_set_device(xpu_dev_num));
   }
@@ -151,6 +152,7 @@ struct XPURunTimeOption {
   int xpu_sdnn_num{0};
   bool xpu_enable_multi_stream{false};
   int xpu_dev_num{0};
+  size_t l3_autotune_fliter_num{1};
   // dump tensor
   std::string xpu_dump_tensor_path{""};
   std::string xpu_dump_log_path{""};
