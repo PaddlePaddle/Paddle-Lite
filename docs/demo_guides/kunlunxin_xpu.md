@@ -201,7 +201,10 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2
 
   For amd64
   (intel x86 cpu only)
+  For 登陆开发板的使用场景
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux amd64
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux amd64 cpu <IP地址> 22 <用户名> <密码>
 
     Top1 Egyptian cat - 0.500662
     Top2 tabby, tabby cat - 0.407661
@@ -214,7 +217,10 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2
     Postprocess time: avg 5.197000 ms, max 5.197000 ms, min 5.197000 ms
 
   (intel x86 cpu + kunlunxin xpu)
+  For 登陆开发板的使用场景
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux amd64 xpu
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux amd64 xpu <IP地址> 22 <用户名> <密码>
 
     Top1 Egyptian cat - 0.471169
     Top2 tabby, tabby cat - 0.445745
@@ -228,7 +234,10 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2
 
   For arm64
   (arm cpu only)
+  For 登陆开发板的使用场景
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 cpu <IP地址> 22 <用户名> <密码>
 
     Top1 Egyptian cat - 0.503239
     Top2 tabby, tabby cat - 0.419854
@@ -241,7 +250,10 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2
     Postprocess time: avg 8.718000 ms, max 8.718000 ms, min 8.718000 ms
 
   (arm cpu + kunlunxin xpu)
+  For 登陆开发板的使用场景
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 xpu
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 xpu <IP地址> 22 <用户名> <密码>
 
     Top1 Egyptian cat - 0.471169
     Top2 tabby, tabby cat - 0.445745
@@ -259,15 +271,29 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2
   ```shell
   For amd64
   (intel x86 cpu only)
+  For 登陆开发板的使用场景
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux amd64
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh resnet50_fp32_224 imagenet_224.txt test linux amd64 cpu <IP地址> 22 <用户名> <密码>
+
   (intel x86 cpu + kunlunxin xpu)
+  For 登陆开发板的使用场景
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux amd64 xpu
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh resnet50_fp32_224 imagenet_224.txt test linux amd64 xpu <IP地址> 22 <用户名> <密码>
 
   For arm64
   (arm cpu only)
+  For 登陆开发板的使用场景
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 cpu <IP地址> 22 <用户名> <密码>
+
   (arm cpu + kunlunxin xpu)
+  For 登陆开发板的使用场景
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 xpu
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 xpu <IP地址> 22 <用户名> <密码>
   ```
 
 - 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；

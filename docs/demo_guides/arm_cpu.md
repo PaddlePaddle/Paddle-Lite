@@ -140,7 +140,7 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
   运行 mobilenet_v1_int8_224_per_layer 模型
 
   For android arm64-v8a
-  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android arm64-v8a
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android arm64-v8a cpu <adb设备号>
 
     Top1 Egyptian cat - 0.503239
     Top2 tabby, tabby cat - 0.419854
@@ -152,7 +152,7 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
     Postprocess time: 5.965000 ms, avg 5.965000 ms, max 5.965000 ms, min 5.965000 ms
 
   For android armeabi-v7a
-  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a cpu <adb设备号>
 
     Top1 Egyptian cat - 0.502124
     Top2 tabby, tabby cat - 0.413927
@@ -164,7 +164,10 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
     Postprocess time: 6.015000 ms, avg 6.015000 ms, max 6.015000 ms, min 6.015000 ms
 
   For linux arm64
+  For 登陆开发板的使用场景
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 cpu <IP地址> 22 <用户名> <密码>
 
     Top1 Egyptian cat - 0.503239
     Top2 tabby, tabby cat - 0.419854
@@ -176,7 +179,10 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
     Postprocess time: 9.969000 ms, avg 9.969000 ms, max 9.969000 ms, min 9.969000 ms
 
   For linux armhf
+  For 登陆开发板的使用场景
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux armhf
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux armhf cpu <IP地址> 22 <用户名> <密码>
 
     Top1 Egyptian cat - 0.502124
     Top2 tabby, tabby cat - 0.413927
@@ -192,16 +198,22 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
 
   ```shell
   For android arm64-v8a
-  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test android arm64-v8a
+  $ ./run_with_adb.sh resnet50_fp32_224 imagenet_224.txt test android arm64-v8a cpu <adb设备号>
 
   For android armeabi-v7a
-  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test android armeabi-v7a
+  $ ./run_with_adb.sh resnet50_fp32_224 imagenet_224.txt test android armeabi-v7a cpu <adb设备号>
 
   For linux arm64
+  For 登陆开发板的使用场景
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 cpu <IP地址> 22 <用户名> <密码>
 
   For linux armhf
+  For 登陆开发板的使用场景
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux armhf
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh resnet50_fp32_224 imagenet_224.txt test linux armhf cpu <IP地址> 22 <用户名> <密码>
   ```
 
 - 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；

@@ -200,7 +200,7 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
   运行 mobilenet_v1_int8_224_per_layer 模型
     
   For android arm64-v8a
-  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android arm64-v8a opencl
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android arm64-v8a opencl <adb设备号>
 
     Top1 tray - 0.480957
     Top2 lycaenid, lycaenid butterfly - 0.151367
@@ -213,7 +213,7 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
     Postprocess time: avg 6.092000 ms, max 6.092000 ms, min 6.092000 ms
 
   For android armeabi-v7a
-  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a opencl
+  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a opencl <adb设备号>
 
     Top1 tray - 0.480957
     Top2 lycaenid, lycaenid butterfly - 0.151367
@@ -226,7 +226,10 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
     Postprocess time: avg 5.940000 ms, max 5.940000 ms, min 5.940000 ms
 
   For linux arm64
+  For 登陆开发板的使用场景
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 opencl
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 opencl <IP地址> 22 <用户名> <密码>
 
     Top1 tray - 0.480957
     Top2 lycaenid, lycaenid butterfly - 0.151367
@@ -239,22 +242,31 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
     Postprocess time: avg 9.756000 ms, max 9.756000 ms, min 9.756000 ms
 
   For linux armhf
+  For 登陆开发板的使用场景
   $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux armhf opencl
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux armhf opencl <IP地址> 22 <用户名> <密码>
 
 - 如果需要更改测试模型为 resnet50，执行命令修改为如下：
 
   ```shell
   For android arm64-v8a
-  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test android arm64-v8a opencl
+  $ ./run_with_adb.sh resnet50_fp32_224 imagenet_224.txt test android arm64-v8a opencl <adb设备号>
 
   For android armeabi-v7a
-  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test android armeabi-v7a opencl
+  $ ./run_with_adb.sh resnet50_fp32_224 imagenet_224.txt test android armeabi-v7a opencl <adb设备号>
 
   For linux arm64
+  For 登陆开发板的使用场景
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 opencl
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 opencl <IP地址> 22 <用户名> <密码>
 
   For linux armhf
+  For 登陆开发板的使用场景
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux armhf opencl
+  For SSH 连接开发板的使用场景
+  $ ./run_with_ssh.sh resnet50_fp32_224 imagenet_224.txt test linux armhf opencl <IP地址> 22 <用户名> <密码>
   ```
 
 - 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
