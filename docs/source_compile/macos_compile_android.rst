@@ -81,7 +81,15 @@ java 环境
    echo "export NDK_ROOT=~/Library/android-ndk-r17c" >> ~/.bash_profile
    source ~/.bash_profile
 
-   # 5. Install Java Environment 
+   # 5. (可选) 删除 debug 编译参数，减小二进制体积 参照 https://github.com/android/ndk/issues/243
+   # 用编辑器打开 $ANDROID_NDK/build/cmake/android.toolchain.cmake 删除 "-g" 这行
+   # 或者打开 $ANDROID_NDK/build/cmake/android-legacy.toolchain.cmake (Android NDK r23c及以上版本) 执行同样的操作
+   list(APPEND ANDROID_COMPILER_FLAGS
+     -g
+     -DANDROID
+     ...
+
+   # 6. Install Java Environment 
    brew install java
 
 了解基础编译参数
