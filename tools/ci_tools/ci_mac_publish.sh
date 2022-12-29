@@ -147,11 +147,11 @@ function publish_metal_lib {
     x86
 
   # Step2. Checking results: cplus and python inference lib.
-  build_dir=build.lite.linux.x86.gcc
-  if [ ${with_opencl} == ON ]; then
+  build_dir=build.lite.x86
+  if [ ${with_opencl} = ON ]; then
     build_dir=${build_dir}.opencl
   fi
-  if [ ${with_metal} == ON ]; then
+  if [ ${with_metal} = ON ]; then
     build_dir=${build_dir}.metal
   fi
 
