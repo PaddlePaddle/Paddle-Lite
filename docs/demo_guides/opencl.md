@@ -13,6 +13,8 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
 - Windows 64 位系统下：
   - Intel 集成显卡
   - NVIDIA/AMD 独立显卡
+- x86 Linux 系统下：
+  - NVIDIA/AMD 独立显卡
 
 ## 2. 在 Android 系统上运行
 ### 2.1 编译预测库
@@ -433,13 +435,110 @@ export GLOG_v=4
     # print_output=0 不打印模型输出 tensors 详细数据
 ```
 
-## 6. 如何在 Code 中使用
+## 6. 在 x86 Linux 系统上运行
+### 6.1 编译预测库
+Paddle Lite 支持在 x86 Linux 环境下编译试用于x86 Linux的库。
+
+重点编译命令为：
+
+```shell
+# 有 3 种编译方式，tiny_publish 方式编译，适用于实际部署；full_publish 方式编译，会生成更多编译产物; benchmark 方式编译用于使用benchmark_bin测试。
+#
+# 方式 1：tiny_publish 方式编译，适用于部署
+./lite/tools/build_linux.sh --arch=x86 --with_opencl=ON
+# 方式 2：full_publish 方式编译，会生成更多编译产物
+./lite/tools/build_linux.sh --arch=x86 --with_opencl=ON full_publish
+# 方式 3：benchmark 方式编译，生成benchmark_bin，但不会生成部署用inference_lite_lib等产物
+./lite/tools/build_linux.sh --arch=x86 --with_opencl=ON --with_benchmark=ON
+#
+# 注：
+#    编译帮助请执行: ./lite/tools/build_linux.sh help
+```
+
+部署方式编译成功后，会在`Paddle-Lite/build.lite.linux.x86.gcc.opencl/inference_lite_lib`目录下生成编译产物，主要目录结构如下：
+
+```shell
+|-- cxx                                          C++ 预测库和头文件
+|   |-- include                                  C++ 头文件
+|   |   |-- paddle_api.h
+|   |   |-- paddle_image_preprocess.h
+|   |   |-- paddle_lite_factory_helper.h
+|   |   |-- paddle_place.h
+|   |   |-- paddle_use_kernels.h
+|   |   |-- paddle_use_ops.h
+|   |   `-- paddle_use_passes.h
+|   `-- lib                                      C++ 预测库
+|       |-- libpaddle_full_api_shared.so         C++ 动态库（全量库，full_publish 编译产物）
+|       `-- libpaddle_light_api_shared.so        C++ 动态库（轻量库，tiny_publish/full_publish 编译产物）
+`-- demo                                         示例代码
+    `-- cxx                                      C++ 预测库示例
+        |-- mobilenetv1_light                    mobilenetv1 推理（tiny_publish/full_publish 编译产物）
+        `-- mobilenetv1_full                     mobilenetv1 推理（full_publish 编译产物）
+```
+
+### 6.2 运行示例
+mobilenetv1_light 示例为使用 `MobileConfig` 加载并解析 `opt` 优化过的 `.nb` 模型，执行推理预测。mobilenetv1_full 示例为使用 `CxxConfig` 直接加载并解析 Paddle 模型，在运行时进行图优化操作，执行推理预测。
+
+#### mobilenetv1_light 示例
+`opt` 工具相关文档：
+- [opt 工具的获取](../user_guides/model_optimize_tool)
+- [opt 的使用说明](../user_guides/opt/opt_bin)
+
+以宿主机为 Linux x86 环境为例，具体执行步骤如下：
+```shell
+# 1. 准备 .nb 模型
+# 使用 opt 工具手动转换
+wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
+./build.opt/lite/api/opt --model_dir=./mobilenet_v1 \
+                         --valid_targets=opencl,x86 \
+                         --optimize_out=mobilenetv1_opt_opencl
+
+# 2. 编译
+cd build.lite.linux.x86.gcc.opencl/inference_lite_lib/demo/cxx/mobilenetv1_light
+bash build.sh
+cd -
+
+# 3. 运行
+export GLOG_v=4; \
+./mobilenetv1_light_api \
+    mobilenetv1_opt_opencl.nb \
+    1,3,224,224 \
+    100 10 0 1 1 0
+    # repeats=100
+    # warmup=10
+    # power_mode=0 绑定大核
+    # thread_num=1
+    # accelerate_opencl=1 开启 opencl kernel cache & tuning，仅当模型运行在 opencl 后端时该选项才会生效
+    # print_output=0 不打印模型输出 tensors 详细数据
+```
+
+#### mobilenetv1_full 示例
+```shell
+# 1. 准备 Paddle 模型
+wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz && tar zxvf mobilenet_v1.tar.gz
+
+# 2. 编译
+cd build.lite.linux.x86.gcc.opencl/inference_lite_lib/demo/cxx/mobilenetv1_full
+bash build.sh
+cd -
+
+# 3. 运行
+export GLOG_v=4; \
+./mobilenetv1_full_api \
+    --model_dir=./mobilenet_v1 \
+    --optimized_model_dir=mobilenetv1_opt_opencl \
+    --warmup=10 \
+    --repeats=100 \
+    --use_gpu=true
+```
+
+## 7. 如何在 Code 中使用
 
 即编译产物 `demo/cxx/mobile_light` 目录下的代码，在线版参考 GitHub 仓库[ ./lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)，其中也包括判断当前设备是否支持 OpenCL 的方法;
 
 注：这里给出的链接会跳转到线上最新 develop 分支的代码，很可能与您本地的代码存在差异，建议参考自己本地位于 `lite/demo/cxx/` 目录的代码，查看如何使用。
 
-## 7. 性能分析和精度分析
+## 8. 性能分析和精度分析
 关于性能和精度分析，请详细查阅[性能测试](../performance/benchmark_tools)中的【逐层耗时和精度分析】章节。
 
 在编译预测库时，使能性能分析和精度分析功能的命令如下：
@@ -467,7 +566,7 @@ Windows x86 平台下：
 .\lite\tools\build_windows.bat with_opencl with_extra with_precision_profile
 ```
 
-## 8. 关键 API 接口
+## 9. 关键 API 接口
 ### 判断设备是否支持 OpenCL
 函数 `IsOpenCLBackendValid` 用来检查设备是否支持 OpenCL，该函数内部会依次进行 OpenCL 驱动库检查、库函数检查、精度检查，检查均通过后返回 `true`，否则返回 `false`.
 - 函数声明[ paddle_api.h ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/api/paddle_api.h)
@@ -545,7 +644,7 @@ OpenCL 的 fp16 特性是 OpenCL 标准的一个扩展，当前绝大部分移�
 - 使用示例[ mobilenetv1_light_api.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/cxx/mobile_light/mobilenetv1_light_api.cc)
 
 
-## 9. 常见问题
+## 10. 常见问题
 
 1. OpenCL 计算过程中大多以 `cl::Image2D` 的数据排布进行计算，不同 gpu 支持的最大 `cl::Image2D` 的宽度和高度有限制，模型输入的数据格式是 buffer 形式的 `NCHW` 数据排布方式。要计算你的模型是否超出最大支持（大部分手机支持的 `cl::Image2D` 最大宽度和高度均为 16384），可以通过公式 `image_h = tensor_n * tensor_h, image_w=tensor_w * (tensor_c + 3) / 4` 计算当前层 `NCHW` 排布的 Tensor 所需的 `cl::Image2D` 的宽度和高度。如果某一层的 Tensor 维度大于如上限制，则会会在日志中输出超限提示。
 2. 当前版本的 Paddle Lite OpenCL 后端不支持量化模型作为输入；支持 fp32 精度的模型作为输入，在运行时会根据运行时精度配置 API `config.set_opencl_precision()` 来设定运行时精度（fp32 或 fp16）。
