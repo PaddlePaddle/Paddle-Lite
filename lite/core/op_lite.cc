@@ -72,6 +72,11 @@ std::vector<std::unique_ptr<KernelBase>> OpLite::CreateKernels(
   auto pick_kernel = [&](const Place &place) {
     auto ks = KernelRegistry::Global().Create(
         op_type_, place.target, place.precision, place.layout);
+    std::cout << "we need "
+              << (int)place.target << " "
+              << (int)place.precision << " "
+              << (int)place.layout << " "
+              << std::endl;
     VLOG(5) << "pick kernel for " << op_type_ << " " << place.DebugString()
             << " get " << ks.size() << " kernels";
     for (auto &&it : ks) {

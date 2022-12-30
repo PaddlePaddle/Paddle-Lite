@@ -2351,6 +2351,12 @@ struct RoundParam : ParamBase {
   lite::Tensor* Out{};
 };
 
+struct HxpdyParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  lite::Tensor* Out{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

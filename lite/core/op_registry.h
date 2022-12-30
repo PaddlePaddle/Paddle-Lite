@@ -164,6 +164,14 @@ class KernelFactory {
     std::list<std::unique_ptr<KernelBase>> res;
     if (op_registry_.find(op_type) == op_registry_.end()) return res;
     auto& kernel_registry = op_registry_[op_type];
+    for(auto& kernel_iterm : kernel_registry){
+      std::tuple<TargetType, PrecisionType, DataLayoutType> temp = kernel_iterm.first;
+      std::cout << "we have "
+                << (int)std::get<0>(temp) << " "
+                << (int)std::get<1>(temp) << " "
+                << (int)std::get<2>(temp) << " "
+                << std::endl;
+    }
     auto it = kernel_registry.find(std::make_tuple(target, precision, layout));
     if (it == kernel_registry.end()) return res;
     for (auto& fun : it->second) {
