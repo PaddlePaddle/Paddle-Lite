@@ -14,6 +14,7 @@
 // limitations under the License.
 
 #pragma once
+#include <memory>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
@@ -26,9 +27,13 @@ class SequencePadCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::SequencePadParam;
 
+  void PrepareForRun() override;
   virtual void Run();
 
   virtual ~SequencePadCompute() = default;
+
+ private:
+  std::unique_ptr<int[]> lod_cpu;
 };
 
 }  // namespace xpu

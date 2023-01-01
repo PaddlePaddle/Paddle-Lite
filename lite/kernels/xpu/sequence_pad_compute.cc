@@ -24,6 +24,10 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+void SequencePadCompute::PrepareForRun() {
+  lod_cpu.reset(new int[XPU_MAX_LOD_SIZE_64]);
+}
+
 void SequencePadCompute::Run() {
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->template Param<param_t>();
@@ -41,12 +45,12 @@ void SequencePadCompute::Run() {
   auto& x_dims = x->dims();
   int dim = x->numel() / x_dims[0];
 
-  XPUScratchPadGuard x_lod_0_guard_ =
-      TargetWrapperXPU::MallocScratchPad(x_lod_0.size() * sizeof(int64_t));
-  XPU_CALL(xpu_memcpy(reinterpret_cast<int64_t*>(x_lod_0_guard_->addr_),
-                      x_lod_0.data(),
-                      x_lod_0.size() * sizeof(int64_t),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  int lod_len = x_lod_0.size();
+  CHECK_LE(lod_len, XPU_MAX_LOD_SIZE_64)
+      << "lod length is expand XPU_MAX_LOD_SIZE_64";
+  for (int i = 0; i < lod_len; ++i) {
+    lod_cpu[i] = static_cast<int>(x_lod_0[i]);
+  }
 
   auto* pad_value = param.PadValue;
   float* pad_value_ptr = const_cast<float*>(pad_value->data<float>());
@@ -57,21 +61,19 @@ void SequencePadCompute::Run() {
   float* out_ptr = out->mutable_data<float>(TARGET(kXPU));
 
   int padded_length = param.padded_length;
-  CHECK_EQ(((padded_length == -1) || (padded_length == max_seq_len)), true)
-      << "padded_length(" << padded_length << ") should be -1 or max_seq_len("
-      << max_seq_len << ") for XPU.";
+  CHECK_EQ(((padded_length == -1) || (padded_length >= max_seq_len)), true)
+      << "padded_length(" << padded_length
+      << ") should be -1 or  not less than max_seq_len(" << max_seq_len
+      << ") for XPU.";
 
-  int ret = xdnn::sequence_pad<float, int64_t>(
-      ctx.GetRawContext(),
-      x_ptr,
-      reinterpret_cast<const int64_t*>(x_lod_0_guard_->addr_),
-      out_ptr,
-      seq_num,
-      max_seq_len,
-      dim,
-      pad_value_ptr,
-      pad_value_size,
-      nullptr);
+  int ret = xdnn::sequence_pad<float, int>(ctx.GetRawContext(),
+                                           x_ptr,
+                                           out_ptr,
+                                           {lod_cpu.get(), lod_len, nullptr},
+                                           seq_num,
+                                           padded_length,
+                                           dim,
+                                           pad_value_ptr[0]);
   CHECK_EQ(ret, 0) << "call xdnn::sequence_pad failed!";
 
   auto* length = param.Length;
@@ -94,7 +96,7 @@ REGISTER_LITE_KERNEL(sequence_pad,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindInput("PadValue",
-               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindOutput("Length",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})

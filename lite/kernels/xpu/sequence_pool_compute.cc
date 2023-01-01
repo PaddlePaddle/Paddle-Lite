@@ -24,7 +24,7 @@ namespace kernels {
 namespace xpu {
 
 void XPUSequencePoolCompute::PrepareForRun() {
-  lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
+  lod_cpu.reset(new int[XPU_MAX_LOD_SIZE_256]);
 }
 
 void XPUSequencePoolCompute::Run() {
@@ -36,15 +36,21 @@ void XPUSequencePoolCompute::Run() {
   float pad_value = param.pad_value;
   std::string pool_type_str = param.pool_type;
 
+  auto* in_data = in->data<float>();
+  auto* out_data = out->template mutable_data<float>(TARGET(kXPU));
   int num_seq = out->dims()[0];
   int dim = out->numel() / num_seq;
 
   auto in_lod = in->lod()[0];
+  CHECK_LE(in_lod.size(), XPU_MAX_LOD_SIZE_256)
+      << "in_lod's size should be less than XPU_MAX_LOD_SIZE_256, current "
+         "lodsize = "
+      << in_lod.size();
   for (size_t i = 0; i < in_lod.size(); ++i) {
     lod_cpu[i] = in_lod[i];
   }
 
-  int batch_size = in_lod.size() - 1;
+  int batch_size = in->lod().size() - 1;
   std::vector<uint64_t> offset_new;
   if (in->lod().size() == 2) {
     offset_new.resize(in->lod()[0].size());
@@ -61,42 +67,38 @@ void XPUSequencePoolCompute::Run() {
   int lod_len = in_lod.size();
   int r = 0;
   if (pool_type_str == "MAX") {
-    r = xdnn::sequence_max_pool<float, int>(
-        ctx.GetRawContext(),
-        in->data<float>(),
-        out->mutable_data<float>(TARGET(kXPU)),
-        {lod_cpu.get(), lod_len, nullptr},
-        num_seq,
-        dim,
-        pad_value,
-        nullptr);
+    r = xdnn::sequence_max_pool<float, int>(ctx.GetRawContext(),
+                                            in_data,
+                                            out_data,
+                                            {lod_cpu.get(), lod_len, nullptr},
+                                            num_seq,
+                                            dim,
+                                            pad_value,
+                                            nullptr);
   } else if (pool_type_str == "SUM") {
-    r = xdnn::sequence_sum_pool<float, int>(
-        ctx.GetRawContext(),
-        in->data<float>(),
-        out->mutable_data<float>(TARGET(kXPU)),
-        {lod_cpu.get(), lod_len, nullptr},
-        num_seq,
-        dim,
-        pad_value);
+    r = xdnn::sequence_sum_pool<float, int>(ctx.GetRawContext(),
+                                            in_data,
+                                            out_data,
+                                            {lod_cpu.get(), lod_len, nullptr},
+                                            num_seq,
+                                            dim,
+                                            pad_value);
   } else if (pool_type_str == "LAST") {
-    r = xdnn::sequence_last_pool<float, int>(
-        ctx.GetRawContext(),
-        in->data<float>(),
-        out->mutable_data<float>(TARGET(kXPU)),
-        {lod_cpu.get(), lod_len, nullptr},
-        num_seq,
-        dim,
-        pad_value);
+    r = xdnn::sequence_last_pool<float, int>(ctx.GetRawContext(),
+                                             in_data,
+                                             out_data,
+                                             {lod_cpu.get(), lod_len, nullptr},
+                                             num_seq,
+                                             dim,
+                                             pad_value);
   } else if (pool_type_str == "FIRST") {
-    r = xdnn::sequence_first_pool<float, int>(
-        ctx.GetRawContext(),
-        in->data<float>(),
-        out->mutable_data<float>(TARGET(kXPU)),
-        {lod_cpu.get(), lod_len, nullptr},
-        num_seq,
-        dim,
-        pad_value);
+    r = xdnn::sequence_first_pool<float, int>(ctx.GetRawContext(),
+                                              in_data,
+                                              out_data,
+                                              {lod_cpu.get(), lod_len, nullptr},
+                                              num_seq,
+                                              dim,
+                                              pad_value);
   } else {
     CHECK(false) << " unsupported pool_type_str: " << pool_type_str;
   }

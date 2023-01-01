@@ -93,12 +93,11 @@ namespace xpu = paddle::lite::kernels::xpu;
 using DeformableConvFp32 =
     xpu::DeformableConvCompute<int, float, float, float, PRECISION(kFloat)>;
 
-// using DeformableConvFp16 =
-// xpu::DeformableConvCompute<int16_t, float16, float, float16,
-// PRECISION(kFP16)>;
+using DeformableConvFp16 = xpu::
+    DeformableConvCompute<int16_t, float, float16, float16, PRECISION(kFP16)>;
 
 REGISTER_LITE_KERNEL(
-    deformable_conv, kXPU, kFloat, kNCHW, DeformableConvFp32, fp32)
+    deformable_conv, kXPU, kFloat, kNCHW, DeformableConvFp32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -107,14 +106,13 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-// REGISTER_LITE_KERNEL(
-//    deformable_conv, kXPU, kFP16, kNCHW, DeformableConvFp16, fp16)
-//    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU),
-//    PRECISION(kFP16))})
-//    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
-//    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kXPU))})
-//    .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kXPU))})
-//    .BindInput("Offset", {LiteType::GetTensorTy(TARGET(kXPU))})
-//    .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU),
-//    PRECISION(kFP16))})
-//    .Finalize();
+REGISTER_LITE_KERNEL(
+    deformable_conv, kXPU, kFP16, kNCHW, DeformableConvFp16, fp16)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Offset", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
