@@ -83,11 +83,11 @@ void Conv2dTransposeCompute<TGEMM, TW, TX, TY, PType>::Run() {
 
   if (param.output_padding.empty()) {
     if (cur_dev_attr_ <= 1) {
-      int ret = xdnn::conv2d_transpose<TX, float, TY, TGEMM>(
+      int ret = xdnn::conv2d_transpose<float, float, float, TGEMM>(
           ctx.GetRawContext(),
-          param.x->template data<TX>(),
+          param.x->template data<float>(),
           param.filter->template data<float>(),
-          param.output->template mutable_data<TY>(TARGET(kXPU)),
+          param.output->template mutable_data<float>(TARGET(kXPU)),
           in_dims[0],
           in_dims[1],
           in_dims[2],

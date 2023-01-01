@@ -61,6 +61,7 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       if (xpu_inplace_op_.count(node->AsStmt().op_type())) {
         continue;
       }
+
       NodeInputPrecision(node, graph);
     }
 
