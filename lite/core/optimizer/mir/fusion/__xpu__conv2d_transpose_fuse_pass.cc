@@ -177,7 +177,7 @@ class XPUConv2dTransFuser : public FuseBase {
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
     auto conv_instruct = matched.at("conv2d_trans")->stmt();
     auto conv_op_desc = conv_instruct->mutable_op_info();
-    auto* scope = conv_instruct->scope();
+    auto* scope = conv_instruct->op()->scope();
 
     cpp::OpDesc op_desc;
     op_desc.SetType("conv2d_transpose");
@@ -326,7 +326,7 @@ class XPUConv2dTransFuser : public FuseBase {
 
     // new op
     auto new_conv_op = LiteOpRegistry::Global().Create("conv2d_transpose");
-    auto& valid_places = conv->valid_places();
+    auto& valid_places = conv_instruct->op()->valid_places();
     new_conv_op->Attach(op_desc, scope);
     auto* new_op_node =
         graph->GraphCreateInstructNode(new_conv_op, valid_places);
