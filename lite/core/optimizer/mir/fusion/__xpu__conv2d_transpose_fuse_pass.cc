@@ -177,11 +177,9 @@ class XPUConv2dTransFuser : public FuseBase {
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
     auto conv_instruct = matched.at("conv2d_trans")->stmt();
     auto conv_op_desc = conv_instruct->mutable_op_info();
-    auto conv = conv_instruct->op();
-    auto* scope = conv->scope();
+    auto* scope = conv_instruct->scope();
 
     cpp::OpDesc op_desc;
-
     op_desc.SetType("conv2d_transpose");
     op_desc.SetInput("Input", {matched.at("input")->arg()->name});
     // conv
@@ -198,8 +196,9 @@ class XPUConv2dTransFuser : public FuseBase {
     auto* fusion_bias_t = scope->MutableParent()->NewTensor(fusion_bias_name);
     fusion_bias_t->set_precision(paddle::lite_api::PrecisionType::kFloat);
 
+    auto groups = conv_op_desc->GetAttr<int>("groups");
     // bias's dim is same to filter's num;
-    int filter_num = conv_weight_t->dims()[0];
+    int filter_num = conv_weight_t->dims()[1] * groups;
     fusion_bias_t->Resize({filter_num});
     float* fusion_bias_ptr = fusion_bias_t->mutable_data<float>();
     for (int i = 0; i < filter_num; ++i) {
@@ -243,10 +242,7 @@ class XPUConv2dTransFuser : public FuseBase {
                            ->GetMutable<lite::Tensor>();
       auto bn_bias_d = bn_bias_t->mutable_data<float>();
       auto eps = matched.at("bn")->stmt()->op_info()->GetAttr<float>("epsilon");
-
-      auto groups = conv_op_desc->GetAttr<int>("groups");
-      CHECK_EQ(static_cast<size_t>(bn_scale_t->data_size()),
-               static_cast<size_t>(conv_weight_t->dims()[1] * groups))
+      CHECK_EQ(static_cast<int>(bn_scale_t->data_size()), filter_num)
           << "The BN bias's size should be equal to the size of the first "
           << "dim size of the conv weights";
 
