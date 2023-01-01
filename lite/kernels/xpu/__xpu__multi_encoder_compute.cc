@@ -143,9 +143,22 @@ void XPUMultiEncoderCompute::prepare_weight_max(
 void XPUMultiEncoderCompute::PrepareForRun() {
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->template Param<param_t>();
+  const int n_layers = param.fc_weight.size() / 6;
   // prepare bias
-  for (auto* fc_bias : param.fc_bias) {
-    arg_fc_bias_.push_back(fc_bias->data<float>());
+  if (param.already_qkv_fusion) {
+    // only 3 bias per layer if qkv isa already fusion.
+    CHECK_EQ((int)param.fc_bias.size(), 3 * n_layers);
+    for (int i = 0; i < n_layers; i++) {
+      // insert 3 nullptr replace q_add_y,k_add_y,v_add_y.
+      arg_fc_bias_.insert(arg_fc_bias_.end(), 3, nullptr);
+      for (int k = 0; k < 3; k++) {
+        arg_fc_bias_.push_back(param.fc_bias[3 * i + k]->data<float>());
+      }
+    }
+  } else {
+    for (auto* fc_bias : param.fc_bias) {
+      arg_fc_bias_.push_back(fc_bias->data<float>());
+    }
   }
   // prepare scale
   for (auto* ln_scale : param.ln_scale) {
@@ -176,7 +189,7 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   } else if (param.precision == "int31") {
     arg_fc_weight_fp32_ = prepare_weight<float>(param.fc_weight);
   }
-  const int n_layers = param.fc_weight.size() / 6;
+
   const int XPU_QUANT_SCALE_NUM = ctx.GetRawContext()->max_ptr_size();
   prepare_weight_max(
       param.per_channel, param.weight_max, XPU_QUANT_SCALE_NUM, fc_weight_max_);
