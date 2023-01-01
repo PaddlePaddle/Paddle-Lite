@@ -15,7 +15,9 @@
 #include <memory>
 #include <string>
 #include "lite/backends/xpu/math.h"
+#ifdef LITE_WITH_XPU
 #include "lite/backends/xpu/xpu_header_sitter.h"
+#endif
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
 
@@ -77,8 +79,10 @@ class XPUConv2dTransFuser : public FuseBase {
       auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
       int cur_dev_idx = 0;
       uint64_t cur_dev_attr_ = 0;
+#ifdef LITE_WITH_XPU
       XPU_CALL(xpu_current_device(&cur_dev_idx));
       XPU_CALL(xpu_device_get_attr(&cur_dev_attr_, XPUATTR_MODEL, cur_dev_idx));
+#endif
       bool xpu2_only = (cur_dev_attr_ >= 2 && cur_dev_attr_ <= 299);
       return (!op_desc.HasAttr("output_padding") && xpu2_only);
     };
