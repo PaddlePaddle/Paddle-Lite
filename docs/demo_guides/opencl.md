@@ -192,8 +192,6 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
       - object_detection_demo # 目标检测示例程序
   ```
 
-  
-
 - 进入 `PaddleLite-generic-demo/image_classification_demo/shell/`；
 
 - 执行以下命令观察 mobilenet_v1_fp32_224 模型的性能和结果；
@@ -204,28 +202,28 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
   For android arm64-v8a
   $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a opencl <adb设备号>
 
-    Top1 tray - 0.480957
-    Top2 lycaenid, lycaenid butterfly - 0.151367
-    Top3 jigsaw puzzle - 0.076721
-    Top4 mousetrap - 0.063599
-    Top5 spaghetti squash - 0.061157
-    [0] Preprocess time: 5.781000 ms Prediction time: 20.366000 ms Postprocess time: 6.092000 ms
-    Preprocess time: avg 5.781000 ms, max 5.781000 ms, min 5.781000 ms
-    Prediction time: avg 20.366000 ms, max 20.366000 ms, min 20.366000 ms
-    Postprocess time: avg 6.092000 ms, max 6.092000 ms, min 6.092000 ms
+    Top1 Egyptian cat - 0.481445
+    Top2 tabby, tabby cat - 0.470215
+    Top3 tiger cat - 0.042389
+    Top4 lynx, catamount - 0.002506
+    Top5 ping-pong ball - 0.000542
+    [0] Preprocess time: 10.048000 ms Prediction time: 12.671000 ms Postprocess time: 12.871000 ms
+    Preprocess time: avg 10.048000 ms, max 10.048000 ms, min 10.048000 ms
+    Prediction time: avg 12.671000 ms, max 12.671000 ms, min 12.671000 ms
+    Postprocess time: avg 12.871000 ms, max 12.871000 ms, min 12.871000 ms
 
   For android armeabi-v7a
   $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android armeabi-v7a opencl <adb设备号>
 
-    Top1 tray - 0.480957
-    Top2 lycaenid, lycaenid butterfly - 0.151367
-    Top3 jigsaw puzzle - 0.076721
-    Top4 mousetrap - 0.063599
-    Top5 spaghetti squash - 0.061157
-    [0] Preprocess time: 6.681000 ms Prediction time: 24.080000 ms Postprocess time: 5.940000 ms
-    Preprocess time: avg 6.681000 ms, max 6.681000 ms, min 6.681000 ms
-    Prediction time: avg 24.080000 ms, max 24.080000 ms, min 24.080000 ms
-    Postprocess time: avg 5.940000 ms, max 5.940000 ms, min 5.940000 ms
+    Top1 Egyptian cat - 0.481445
+    Top2 tabby, tabby cat - 0.470215
+    Top3 tiger cat - 0.042389
+    Top4 lynx, catamount - 0.002506
+    Top5 ping-pong ball - 0.000542
+    [0] Preprocess time: 10.223000 ms Prediction time: 12.882000 ms Postprocess time: 11.180000 ms
+    Preprocess time: avg 10.223000 ms, max 10.223000 ms, min 10.223000 ms
+    Prediction time: avg 12.882000 ms, max 12.882000 ms, min 12.882000 ms
+    Postprocess time: avg 11.180000 ms, max 11.180000 ms, min 11.180000 ms
 
   For linux arm64
   本地执行
@@ -233,21 +231,12 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
   通过 SSH 远程执行
   $ ./run_with_ssh.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64 opencl <IP地址> 22 <用户名> <密码>
 
-    Top1 tray - 0.480957
-    Top2 lycaenid, lycaenid butterfly - 0.151367
-    Top3 jigsaw puzzle - 0.076721
-    Top4 mousetrap - 0.063599
-    Top5 spaghetti squash - 0.061157
-    [0] Preprocess time: 10.835000 ms Prediction time: 84.467000 ms Postprocess time: 9.756000 ms
-    Preprocess time: avg 10.835000 ms, max 10.835000 ms, min 10.835000 ms
-    Prediction time: avg 84.467000 ms, max 84.467000 ms, min 84.467000 ms
-    Postprocess time: avg 9.756000 ms, max 9.756000 ms, min 9.756000 ms
-
   For linux armhf
   本地执行
   $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux armhf opencl
   通过 SSH 远程执行
   $ ./run_with_ssh.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux armhf opencl <IP地址> 22 <用户名> <密码>
+  ```
 
 - 如果需要更改测试模型为 resnet50，执行命令修改为如下：
 
