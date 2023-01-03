@@ -64,7 +64,8 @@ REGISTER_LITE_KERNEL(layer_norm, kXPU, kFloat, kNCHW, LayerNorm_FP32, def)
     .BindOutput("Variance", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(layer_norm, kXPU, kFP16, kNCHW, LayerNorm_FP16, fp16)
+REGISTER_LITE_KERNEL(
+    layer_norm, kXPU, kFP16, kNCHW, LayerNorm_FP16, DISABLE_XPU1_fp16)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
