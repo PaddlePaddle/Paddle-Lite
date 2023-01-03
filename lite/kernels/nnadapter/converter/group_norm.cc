@@ -39,9 +39,6 @@ int ConvertGroupNorm(Converter* converter, OpInfo* op, Scope* scope) {
     auto scale_tensor = scope->FindMutableTensor(scale_name);
     CHECK(scale_tensor->persistable());
     scale_operand = converter->AddConstantOperand(*scale_tensor);
-  } else {
-    scale_operand = converter->AddConstantOperand(
-        std::vector<float>(input_channel_size, 1));
   }
   // Bias operand
   NNAdapterOperand* bias_operand = nullptr;
@@ -50,9 +47,6 @@ int ConvertGroupNorm(Converter* converter, OpInfo* op, Scope* scope) {
     auto bias_tensor = scope->FindMutableTensor(bias_name);
     CHECK(bias_tensor->persistable());
     bias_operand = converter->AddConstantOperand(*bias_tensor);
-  } else {
-    bias_operand = converter->AddConstantOperand(
-        std::vector<float>(input_channel_size, 0));
   }
   // Epsilon operand
   auto epsilon = op->GetAttr<float>("epsilon");
