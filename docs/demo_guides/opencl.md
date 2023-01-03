@@ -192,8 +192,6 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
       - object_detection_demo # 目标检测示例程序
   ```
 
-  
-
 - 进入 `PaddleLite-generic-demo/image_classification_demo/shell/`；
 
 - 执行以下命令观察 mobilenet_v1_fp32_224 模型的性能和结果；
@@ -238,6 +236,7 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
   $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux armhf opencl
   通过 SSH 远程执行
   $ ./run_with_ssh.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux armhf opencl <IP地址> 22 <用户名> <密码>
+  ```
 
 - 如果需要更改测试模型为 resnet50，执行命令修改为如下：
 
