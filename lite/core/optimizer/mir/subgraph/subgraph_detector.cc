@@ -510,11 +510,28 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
   }
   subgraph_op_desc.SetInput("Inputs", input_var_names);
   subgraph_op_desc.SetOutput("Outputs", output_var_names);
+
+  auto any_op = (*subgraph_nodes.begin())->AsStmt().op();
+  auto scope = any_op->scope();
+  auto input_descs = Context<TargetType::kHost>::InputDesc(scope);
+  std::string nnadapter_input_quant_info;
+  for (auto iter : input_descs) {
+    auto name = iter.first;
+    auto input_desc = iter.second;
+    if (input_desc.precision == PRECISION(kUInt8)) {
+      nnadapter_input_quant_info +=
+          std::string_format("%s,%f,%d;",
+                             name,
+                             input_desc.quant_scale,
+                             input_desc.quant_zero_point);
+    }
+  }
+  subgraph_op_desc.SetAttr("input_descs", nnadapter_input_quant_info);
+
   auto subgraph_op = LiteOpRegistry::Global().Create("subgraph");
   static_cast<operators::SubgraphOp *>(subgraph_op.get())
       ->SetProgramDesc(sub_program_desc);
-  auto any_op = (*subgraph_nodes.begin())->AsStmt().op();
-  subgraph_op->Attach(subgraph_op_desc, any_op->scope());
+  subgraph_op->Attach(subgraph_op_desc, scope);
 
   // Export the scale values of the input/output var nodes of the inner op nodes
   // only for type_precision_cast_pass.

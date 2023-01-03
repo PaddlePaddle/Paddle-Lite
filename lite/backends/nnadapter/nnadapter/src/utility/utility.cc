@@ -545,6 +545,7 @@ NNADAPTER_EXPORT std::map<std::string, std::string> GetKeyValues(
   auto sections = string_split(properties, delimiter);
   for (auto section : sections) {
     auto tokens = string_split(section, assignment);
+    if (tokens.empty()) continue;
     NNADAPTER_CHECK_EQ(tokens.size(), 2);
     auto key = tokens[0];
     auto value = tokens[1];

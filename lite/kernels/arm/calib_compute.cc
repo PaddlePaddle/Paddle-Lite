@@ -27,8 +27,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <DataLayoutType DLType>
-void CalibComputeFp32ToInt8<DLType>::Run() {
+void CalibComputeFp32ToInt8::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   std::vector<float> scale = {param.scale};
   const auto* din = param.input->template data<float>();
@@ -37,8 +36,7 @@ void CalibComputeFp32ToInt8<DLType>::Run() {
       din, dout, scale.data(), 1, 1, param.input->numel());
 }
 
-template <DataLayoutType DLType>
-void CalibComputeInt64ToInt32<DLType>::Run() {
+void CalibComputeInt64ToInt32::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<int64_t>();
   auto* dout = param.output->template mutable_data<int32_t>();
@@ -47,8 +45,7 @@ void CalibComputeInt64ToInt32<DLType>::Run() {
   }
 }
 
-template <DataLayoutType DLType>
-void CalibComputeInt32ToInt64<DLType>::Run() {
+void CalibComputeInt32ToInt64::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<int32_t>();
   auto* dout = param.output->template mutable_data<int64_t>();
@@ -57,8 +54,7 @@ void CalibComputeInt32ToInt64<DLType>::Run() {
   }
 }
 
-template <DataLayoutType DLType>
-void CalibComputeInt8ToFp32<DLType>::Run() {
+void CalibComputeInt8ToFp32::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<signed char>();
   std::vector<float> scale = {param.scale};
@@ -67,8 +63,7 @@ void CalibComputeInt8ToFp32<DLType>::Run() {
       din, dout, scale.data(), 1, 1, param.input->numel());
 }
 
-template <DataLayoutType DLType>
-void CalibComputeInt32ToFp32<DLType>::Run() {
+void CalibComputeInt32ToFp32::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<int32_t>();
   auto* dout = param.output->template mutable_data<float>();
@@ -77,8 +72,7 @@ void CalibComputeInt32ToFp32<DLType>::Run() {
   }
 }
 
-template <DataLayoutType DLType>
-void CalibComputeFp32ToInt32<DLType>::Run() {
+void CalibComputeFp32ToInt32::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<float>();
   auto* dout = param.output->template mutable_data<int32_t>();
@@ -87,8 +81,7 @@ void CalibComputeFp32ToInt32<DLType>::Run() {
   }
 }
 
-template <DataLayoutType DLType>
-void CalibComputeFp32ToInt64<DLType>::Run() {
+void CalibComputeFp32ToInt64::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<float>();
   auto* dout = param.output->template mutable_data<int64_t>();
@@ -97,8 +90,7 @@ void CalibComputeFp32ToInt64<DLType>::Run() {
   }
 }
 
-template <DataLayoutType DLType>
-void CalibComputeInt64ToFp32<DLType>::Run() {
+void CalibComputeInt64ToFp32::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<int64_t>();
   auto* dout = param.output->template mutable_data<float>();
@@ -108,15 +100,15 @@ void CalibComputeInt64ToFp32<DLType>::Run() {
 }
 
 #ifdef ENABLE_ARM_FP16
-template <DataLayoutType DLType>
-void CalibComputeFp16ToFp32<DLType>::Run() {
+
+void CalibComputeFp16ToFp32::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<float16_t>();
   auto* dout = param.output->template mutable_data<float>();
   lite::arm::math::fp16::fp16_to_fp32(din, dout, param.input->numel());
 }
-template <DataLayoutType DLType>
-void CalibComputeFp32ToFp16<DLType>::Run() {
+
+void CalibComputeFp32ToFp16::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<float>();
   auto* dout = param.output->template mutable_data<float16_t>();
@@ -130,47 +122,43 @@ void CalibComputeFp32ToFp16<DLType>::Run() {
 }  // namespace paddle
 
 #ifdef ENABLE_ARM_FP16
-REGISTER_LITE_KERNEL(
-    calib,
-    kARM,
-    kFP16,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeFp16ToFp32<DATALAYOUT(kNCHW)>,
-    fp16_to_fp32)
+REGISTER_LITE_KERNEL(calib,
+                     kARM,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeFp16ToFp32,
+                     fp16_to_fp32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    calib,
-    kARM,
-    kFP16,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeFp32ToFp16<DATALAYOUT(kNCHW)>,
-    fp32_to_fp16)
+REGISTER_LITE_KERNEL(calib,
+                     kARM,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeFp32ToFp16,
+                     fp32_to_fp16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    calib_once,
-    kARM,
-    kFP16,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeFp16ToFp32<DATALAYOUT(kNCHW)>,
-    fp16_to_fp32)
+REGISTER_LITE_KERNEL(calib_once,
+                     kARM,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeFp16ToFp32,
+                     fp16_to_fp32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    calib_once,
-    kARM,
-    kFP16,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeFp32ToFp16<DATALAYOUT(kNCHW)>,
-    fp32_to_fp16)
+REGISTER_LITE_KERNEL(calib_once,
+                     kARM,
+                     kFP16,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeFp32ToFp16,
+                     fp32_to_fp16)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
@@ -178,96 +166,88 @@ REGISTER_LITE_KERNEL(
 
 #endif  // ENABLE_ARM_FP16
 
-REGISTER_LITE_KERNEL(
-    calib,
-    kARM,
-    kInt8,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeFp32ToInt8<DATALAYOUT(kNCHW)>,
-    fp32_to_int8)
+REGISTER_LITE_KERNEL(calib,
+                     kARM,
+                     kInt8,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeFp32ToInt8,
+                     fp32_to_int8)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    calib,
-    kARM,
-    kInt32,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeInt32ToFp32<DATALAYOUT(kNCHW)>,
-    int32_to_fp32)
+REGISTER_LITE_KERNEL(calib,
+                     kARM,
+                     kInt32,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeInt32ToFp32,
+                     int32_to_fp32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    calib,
-    kARM,
-    kInt32,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeInt32ToInt64<DATALAYOUT(kNCHW)>,
-    int32_to_int64)
+REGISTER_LITE_KERNEL(calib,
+                     kARM,
+                     kInt32,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeInt32ToInt64,
+                     int32_to_int64)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    calib,
-    kARM,
-    kInt32,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeFp32ToInt32<DATALAYOUT(kNCHW)>,
-    fp32_to_int32)
+REGISTER_LITE_KERNEL(calib,
+                     kARM,
+                     kInt32,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeFp32ToInt32,
+                     fp32_to_int32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    calib,
-    kARM,
-    kInt64,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeInt64ToFp32<DATALAYOUT(kNCHW)>,
-    int64_to_fp32)
+REGISTER_LITE_KERNEL(calib,
+                     kARM,
+                     kInt64,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeInt64ToFp32,
+                     int64_to_fp32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    calib,
-    kARM,
-    kInt64,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeFp32ToInt64<DATALAYOUT(kNCHW)>,
-    fp32_to_int64)
+REGISTER_LITE_KERNEL(calib,
+                     kARM,
+                     kInt64,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeFp32ToInt64,
+                     fp32_to_int64)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    calib,
-    kARM,
-    kInt8,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeInt8ToFp32<DATALAYOUT(kNCHW)>,
-    int8_to_fp32)
+REGISTER_LITE_KERNEL(calib,
+                     kARM,
+                     kInt8,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeInt8ToFp32,
+                     int8_to_fp32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    calib,
-    kARM,
-    kInt64,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeInt64ToInt32<DATALAYOUT(kNCHW)>,
-    int64_to_int32)
+REGISTER_LITE_KERNEL(calib,
+                     kARM,
+                     kInt64,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeInt64ToInt32,
+                     int64_to_int32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM),
                                       PRECISION(kInt64),
@@ -278,36 +258,33 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kNCHW))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    calib_once,
-    kARM,
-    kInt8,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeFp32ToInt8<DATALAYOUT(kNCHW)>,
-    fp32_to_int8)
+REGISTER_LITE_KERNEL(calib_once,
+                     kARM,
+                     kInt8,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeFp32ToInt8,
+                     fp32_to_int8)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    calib_once,
-    kARM,
-    kInt8,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeInt8ToFp32<DATALAYOUT(kNCHW)>,
-    int8_to_fp32)
+REGISTER_LITE_KERNEL(calib_once,
+                     kARM,
+                     kInt8,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeInt8ToFp32,
+                     int8_to_fp32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    calib_once,
-    kARM,
-    kInt64,
-    kNCHW,
-    paddle::lite::kernels::arm::CalibComputeInt64ToInt32<DATALAYOUT(kNCHW)>,
-    int64_to_int32)
+REGISTER_LITE_KERNEL(calib_once,
+                     kARM,
+                     kInt64,
+                     kNCHW,
+                     paddle::lite::kernels::arm::CalibComputeInt64ToInt32,
+                     int64_to_int32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kARM),
                                       PRECISION(kInt64),

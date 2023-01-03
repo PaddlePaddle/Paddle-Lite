@@ -255,7 +255,8 @@ Engine::Engine(KernelContext* ctx,
                const std::vector<std::string>& input_names,
                const std::vector<std::string>& output_names,
                const std::vector<float>& input_scales,
-               const std::vector<float>& output_scales)
+               const std::vector<float>& output_scales,
+               const std::string& input_descs)
     : ctx_(ctx), block_desc_(block_desc), exec_scope_(exec_scope) {
   // Obtain the same order every time by sorting the input and output names,
   // because the topological order may be different each time of the partition
@@ -314,6 +315,7 @@ Engine::Engine(KernelContext* ctx,
   // Get the context properties from the scope
   auto context_properties =
       ctx->As<NNAdapterContext>().NNAdapterContextProperties(exec_scope_);
+
   VLOG(3) << "NNAdapter context_properties: " << context_properties;
   // Create a context with multiple devices
   NNAdapterContext_create_invoke(

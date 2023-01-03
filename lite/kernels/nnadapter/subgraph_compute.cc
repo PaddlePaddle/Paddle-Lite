@@ -36,7 +36,8 @@ void SubgraphCompute::PrepareForRun() {
                            param.input_data_names,
                            param.output_data_names,
                            param.input_data_scales,
-                           param.output_data_scales));
+                           param.output_data_scales,
+                           param.input_descs));
   CHECK(engine_);
 }
 

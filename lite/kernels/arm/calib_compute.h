@@ -21,9 +21,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <DataLayoutType DLType>
 class CalibComputeFp32ToInt8
-    : public KernelLite<TARGET(kARM), PRECISION(kInt8), DLType> {
+    : public KernelLite<TARGET(kARM), PRECISION(kInt8), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::CalibParam;
 
@@ -33,11 +32,12 @@ class CalibComputeFp32ToInt8
 
  private:
 };
+
 #ifdef ENABLE_ARM_FP16
 typedef __fp16 float16_t;
-template <DataLayoutType DLType>
+
 class CalibComputeFp32ToFp16
-    : public KernelLite<TARGET(kARM), PRECISION(kFP16), DLType> {
+    : public KernelLite<TARGET(kARM), PRECISION(kFP16), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::CalibParam;
 
@@ -48,9 +48,8 @@ class CalibComputeFp32ToFp16
  private:
 };
 
-template <DataLayoutType DLType>
 class CalibComputeFp16ToFp32
-    : public KernelLite<TARGET(kARM), PRECISION(kFP16), DLType> {
+    : public KernelLite<TARGET(kARM), PRECISION(kFP16), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::CalibParam;
 
@@ -62,9 +61,8 @@ class CalibComputeFp16ToFp32
 };
 #endif
 
-template <DataLayoutType DLType>
 class CalibComputeInt64ToInt32
-    : public KernelLite<TARGET(kARM), PRECISION(kInt64), DLType> {
+    : public KernelLite<TARGET(kARM), PRECISION(kInt64), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::CalibParam;
 
@@ -75,9 +73,8 @@ class CalibComputeInt64ToInt32
  private:
 };
 
-template <DataLayoutType DLType>
 class CalibComputeInt8ToFp32
-    : public KernelLite<TARGET(kARM), PRECISION(kInt8), DLType> {
+    : public KernelLite<TARGET(kARM), PRECISION(kInt8), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::CalibParam;
 
@@ -88,9 +85,8 @@ class CalibComputeInt8ToFp32
  private:
 };
 
-template <DataLayoutType DLType>
 class CalibComputeInt32ToFp32
-    : public KernelLite<TARGET(kARM), PRECISION(kInt32), DLType> {
+    : public KernelLite<TARGET(kARM), PRECISION(kInt32), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::CalibParam;
 
@@ -101,9 +97,8 @@ class CalibComputeInt32ToFp32
  private:
 };
 
-template <DataLayoutType DLType>
 class CalibComputeInt32ToInt64
-    : public KernelLite<TARGET(kARM), PRECISION(kInt32), DLType> {
+    : public KernelLite<TARGET(kARM), PRECISION(kInt32), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::CalibParam;
 
@@ -114,9 +109,8 @@ class CalibComputeInt32ToInt64
  private:
 };
 
-template <DataLayoutType DLType>
 class CalibComputeFp32ToInt32
-    : public KernelLite<TARGET(kARM), PRECISION(kInt32), DLType> {
+    : public KernelLite<TARGET(kARM), PRECISION(kInt32), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::CalibParam;
 
@@ -127,9 +121,8 @@ class CalibComputeFp32ToInt32
  private:
 };
 
-template <DataLayoutType DLType>
 class CalibComputeFp32ToInt64
-    : public KernelLite<TARGET(kARM), PRECISION(kInt64), DLType> {
+    : public KernelLite<TARGET(kARM), PRECISION(kInt64), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::CalibParam;
 
@@ -140,9 +133,8 @@ class CalibComputeFp32ToInt64
  private:
 };
 
-template <DataLayoutType DLType>
 class CalibComputeInt64ToFp32
-    : public KernelLite<TARGET(kARM), PRECISION(kInt64), DLType> {
+    : public KernelLite<TARGET(kARM), PRECISION(kInt64), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::CalibParam;
 

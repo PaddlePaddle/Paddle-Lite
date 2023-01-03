@@ -81,6 +81,9 @@ bool SubgraphOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       scale_value = op_info->GetOutputScale(scale_name, true)[0];
     param_.output_data_scales.emplace_back(scale_value);
   }
+  if (op_info->HasAttr("input_descs")) {
+    param_.input_descs = op_info->GetAttr<std::string>("input_descs");
+  }
   CHECK(param_.program_desc);
   param_.block_idx = op_desc.GetAttr<int32_t>("sub_block");
   CHECK_GE(param_.block_idx, 0);

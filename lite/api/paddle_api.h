@@ -33,6 +33,38 @@ namespace lite_api {
 using shape_t = std::vector<int64_t>;
 using lod_t = std::vector<std::vector<uint64_t>>;
 
+struct LITE_API InputDesc {
+  // Src data option
+  PrecisionType precision{PrecisionType::kFloat};
+  DataLayoutType layout{DataLayoutType::kNCHW};
+  // Valid only if precision is kInt8/kUInt8
+  float quant_scale{1.};
+  int quant_zero_point{0};
+
+  // Options for preprocessing. Only support 4 dims.
+  // The usual order is: resize -> reverse -> normalize
+  // 1. Resize option.
+  // Apply resize operation if:
+  //   a. type is "bilinear" or "nearest"
+  //   b. target_height > 0
+  //   c. target_width > 0.
+  std::string resize_type;
+  int resize_target_height{-1};
+  int resize_target_width{-1};
+  // 3. Norm option
+  // Apply norm operation on channel dim if:
+  //   a. mean.size() == shape[c]
+  //   b. std.size() == shape[c]
+  std::vector<float> norm_mean;
+  std::vector<float> norm_std;
+};
+
+struct LITE_API OutputDesc {
+  // Excepted output properties.
+  PrecisionType precision{PrecisionType::kFloat};
+  DataLayoutType layout{DataLayoutType::kNCHW};
+};
+
 enum class LiteModelType { kProtobuf = 0, kNaiveBuffer, UNK };
 // Methods for allocating L3Cache on Arm platform
 enum class L3CacheSetMethod {
@@ -396,6 +428,8 @@ class LITE_API CxxConfig : public ConfigBase {
   std::string nnadapter_subgraph_partition_config_buffer_;
   std::string mixed_precision_quantization_config_path_;
   std::string mixed_precision_quantization_config_buffer_;
+  std::map<std::string, InputDesc> input_descs_;
+  std::map<std::string, OutputDesc> output_descs_;
 
  public:
   void set_valid_places(const std::vector<Place>& x) { valid_places_ = x; }
@@ -430,6 +464,19 @@ class LITE_API CxxConfig : public ConfigBase {
   // but is_model_from_memory is recommended and `model_from_memory` will be
   // abandoned in v3.0.
   bool model_from_memory() const { return static_cast<bool>(model_buffer_); }
+
+  void set_input_descs(std::map<std::string, InputDesc> input_descs) {
+    input_descs_ = input_descs;
+  }
+  const std::map<std::string, InputDesc>& input_descs() const {
+    return input_descs_;
+  }
+  void set_output_descs(std::map<std::string, OutputDesc> output_descs) {
+    output_descs_ = output_descs;
+  }
+  const std::map<std::string, OutputDesc>& output_descs() const {
+    return output_descs_;
+  }
 
   // XPU only, set the size of the workspace memory from L3 cache for the
   // current thread.

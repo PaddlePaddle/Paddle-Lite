@@ -67,6 +67,38 @@ class Context<TargetType::kHost> {
 
   void CopySharedTo(HostContext* ctx) {}
 
+  static void SetInputDesc(
+      Scope* scope,
+      const std::map<std::string, lite_api::InputDesc>& input_desc) {
+    auto var = scope->Var("INPUT_DESC");
+    CHECK(var);
+    auto data = var->GetMutable<std::map<std::string, lite_api::InputDesc>>();
+    CHECK(data);
+    *data = input_desc;
+  }
+
+  static void SetOutputDesc(
+      Scope* scope,
+      const std::map<std::string, lite_api::OutputDesc>& output_desc) {
+    auto var = scope->Var("OUTPUT_DESC");
+    CHECK(var);
+    auto data = var->GetMutable<std::map<std::string, lite_api::OutputDesc>>();
+    CHECK(data);
+    *data = output_desc;
+  }
+
+  static std::map<std::string, lite_api::InputDesc> InputDesc(Scope* scope) {
+    auto var = scope->FindVar("INPUT_DESC");
+    if (!var) return "";
+    return var->Get<std::map<std::string, lite_api::InputDesc>>();
+  }
+
+  static std::map<std::string, lite_api::OutputDesc> OutputDesc(Scope* scope) {
+    auto var = scope->FindVar("OUTPUT_DESC");
+    if (!var) return "";
+    return var->Get<std::map<std::string, lite_api::OutputDesc>>();
+  }
+
   std::string name() const { return "HostContext"; }
 };
 

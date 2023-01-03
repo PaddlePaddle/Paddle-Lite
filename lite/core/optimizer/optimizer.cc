@@ -132,6 +132,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
   std::vector<std::string> passes_local{
       {"lite_quant_dequant_fuse_pass",
        "weight_quantization_preprocess_pass",
+       "match_input_output_desc_pass",
        "op_transformation_pass",
        "assign_value_calc_offline_pass",
        "p_norm_fill_constant_max_div_fuse_pass",

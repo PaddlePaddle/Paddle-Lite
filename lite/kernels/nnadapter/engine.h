@@ -74,7 +74,8 @@ class Engine {
          const std::vector<std::string>& input_names,
          const std::vector<std::string>& output_names,
          const std::vector<float>& input_scales,
-         const std::vector<float>& output_scales);
+         const std::vector<float>& output_scales,
+         const std::string& input_descs);
   ~Engine();
   bool Run();
 

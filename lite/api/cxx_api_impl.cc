@@ -18,6 +18,7 @@
 #include <string>
 #include "lite/api/paddle_api.h"
 #include "lite/core/device_info.h"
+#include "lite/core/optimizer/mir/match_input_output_desc_pass.h"
 #include "lite/core/optimizer/mir/pass_manager.h"
 #include "lite/core/optimizer/mir/post_quant_dynamic_pass.h"
 #include "lite/core/optimizer/mir/sparse_conv_detect_pass.h"
@@ -55,6 +56,10 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     auto places = config.valid_places();
     std::vector<std::string> passes = config.get_passes_internal();
 
+    Context<TargetType::kHost>::SetInputDesc(raw_predictor_->scope(),
+                                             config.input_descs());
+    Context<TargetType::kHost>::SetOutputDesc(raw_predictor_->scope(),
+                                              config.output_descs());
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
     // Use scope to store the model-level configuration for the subgraph kernel

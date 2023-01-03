@@ -84,14 +84,15 @@ struct CalibInplaceParam : ParamBase {
 };
 
 struct SubgraphParam : ParamBase {
-  std::vector<std::string> input_names{};
-  std::vector<std::string> output_names{};
-  std::vector<std::string> input_data_names{};
-  std::vector<std::string> output_data_names{};
-  std::vector<float> input_data_scales{};
-  std::vector<float> output_data_scales{};
+  std::vector<std::string> input_names;
+  std::vector<std::string> output_names;
+  std::vector<std::string> input_data_names;
+  std::vector<std::string> output_data_names;
+  std::vector<float> input_data_scales;
+  std::vector<float> output_data_scales;
+  std::string input_descs;
   int block_idx{-1};
-  std::shared_ptr<const cpp::ProgramDesc> program_desc{nullptr};
+  std::shared_ptr<const cpp::ProgramDesc> program_desc;
   Scope* exec_scope{nullptr};
 };
 
