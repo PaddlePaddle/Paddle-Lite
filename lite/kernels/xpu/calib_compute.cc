@@ -180,6 +180,10 @@ using xpu_calib_fp32_to_int8 =
 
 using xpu_calib_int8_to_fp32 =
     paddle::lite::kernels::xpu::CalibCompute<int8_t, float, PRECISION(kInt8)>;
+
+using xpu_calib_fp32_to_int32 =
+    paddle::lite::kernels::xpu::CalibCompute<float, int32_t, PRECISION(kFloat)>;
+
 REGISTER_LITE_KERNEL(
     calib, kXPU, kInt8, kNCHW, xpu_calib_fp32_to_int8, calib_fp32_to_int8)
     .BindInput("Input",
@@ -191,4 +195,11 @@ REGISTER_LITE_KERNEL(
     calib, kXPU, kInt8, kNCHW, xpu_calib_int8_to_fp32, calib_int8_to_fp32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib, kXPU, kFloat, kNCHW, xpu_calib_fp32_to_int32, calib_fp32_to_int32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();
