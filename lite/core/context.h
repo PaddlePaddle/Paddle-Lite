@@ -89,13 +89,13 @@ class Context<TargetType::kHost> {
 
   static std::map<std::string, lite_api::InputDesc> InputDesc(Scope* scope) {
     auto var = scope->FindVar("INPUT_DESC");
-    if (!var) return "";
+    if (!var) return std::map<std::string, lite_api::InputDesc>();
     return var->Get<std::map<std::string, lite_api::InputDesc>>();
   }
 
   static std::map<std::string, lite_api::OutputDesc> OutputDesc(Scope* scope) {
     auto var = scope->FindVar("OUTPUT_DESC");
-    if (!var) return "";
+    if (!var) return std::map<std::string, lite_api::OutputDesc>();
     return var->Get<std::map<std::string, lite_api::OutputDesc>>();
   }
 

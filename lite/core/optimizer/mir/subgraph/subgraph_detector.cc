@@ -519,11 +519,10 @@ void SubgraphFuser::InsertNewNode(SSAGraph *graph,
     auto name = iter.first;
     auto input_desc = iter.second;
     if (input_desc.precision == PRECISION(kUInt8)) {
-      nnadapter_input_quant_info +=
-          std::string_format("%s,%f,%d;",
-                             name,
-                             input_desc.quant_scale,
-                             input_desc.quant_zero_point);
+      nnadapter_input_quant_info += string_format("%s,%f,%d;",
+                                                  name.c_str(),
+                                                  input_desc.quant_scale,
+                                                  input_desc.quant_zero_point);
     }
   }
   subgraph_op_desc.SetAttr("input_descs", nnadapter_input_quant_info);

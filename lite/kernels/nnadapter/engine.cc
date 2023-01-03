@@ -315,7 +315,29 @@ Engine::Engine(KernelContext* ctx,
   // Get the context properties from the scope
   auto context_properties =
       ctx->As<NNAdapterContext>().NNAdapterContextProperties(exec_scope_);
-
+  // Generate input quant param property
+  std::string input_quant_param;
+  auto inputs_info = Split(input_descs, ";");
+  for (auto input_info : inputs_info) {
+    if (input_info.empty()) continue;
+    auto info = Split(input_info, ",");
+    CHECK_EQ(info.size(), 3);
+    auto name = info[0];
+    auto scale = info[1];
+    auto zero_point = info[2];
+    int idx = -1;
+    for (size_t i = 0; i < input_count; i++) {
+      if (input_vars_[i].name == name) {
+        idx = i;
+        break;
+      }
+    }
+    CHECK_NE(idx, -1);
+    input_quant_param +=
+        string_format("%d,%s,%s:", idx, scale.c_str(), zero_point.c_str());
+  }
+  context_properties += ";QUALCOMM_QNN_INPUT_QUANT_PARAMS=" + input_quant_param;
+  context_properties += ";QUALCOMM_QNN_SKIP_SYMM2ASYMM=1";
   VLOG(3) << "NNAdapter context_properties: " << context_properties;
   // Create a context with multiple devices
   NNAdapterContext_create_invoke(
