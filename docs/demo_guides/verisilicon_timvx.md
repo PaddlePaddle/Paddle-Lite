@@ -137,9 +137,9 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
 |Rockchip RV1126|瑞芯微|RV1126 DDR3 EVB|linux|4.19.111|6.4.6.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_6_5/1126/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_6_5 1126|
 |Rockchip RV1126|荣品|RP-RV1126 [购买链接](https://item.taobao.com/item.htm?spm=a1z10.1-c-s.w4004-23440679120.6.849147calaBS8s&id=641752963533&mt=)|linux|4.19.111|6.4.6.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_6_5/1126/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_6_5 1126|
 |Rockchip RV1126|*其他*||linux|4.19.111|6.4.6.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx/viv_sdk_6_4_6_5/1126/4.19.111|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_6_5 1126|
-|Rockchip RK1808|瑞芯微|RK1808 DDR3 EVB|linux|4.4.194|6.4.6.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_6_5/lib/rk1808/4.4.194|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_6_5 rk1808|
-|Rockchip RK1808|荣品|RP-RK1808 [购买链接](https://item.taobao.com/item.htm?spm=a1z10.5-c-s.w4002-22747001949.11.57821a67E535sj&id=615447675327)|linux|4.4.194|6.4.6.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_6_5/lib/rk1808/4.4.194|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_6_5 rk1808|
-|Rockchip RK1808|*其他*||linux|4.4.194|6.4.6.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_6_5/lib/rk1808/4.4.194|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_6_5 rk1808|
+|Rockchip RK1808|瑞芯微|RK1808 DDR3 EVB|linux|4.4.194|6.4.6.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_6_5/lib/1808/4.4.194|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_6_5 1808|
+|Rockchip RK1808|荣品|RP-RK1808 [购买链接](https://item.taobao.com/item.htm?spm=a1z10.5-c-s.w4002-22747001949.11.57821a67E535sj&id=615447675327)|linux|4.4.194|6.4.6.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_6_5/lib/1808/4.4.194|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_6_5 1808|
+|Rockchip RK1808|*其他*||linux|4.4.194|6.4.6.5|是|PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx/viv_sdk_6_4_6_5/lib/1808/4.4.194|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_6_5 1808|
 |NPX i.MX 8M Plus|*其他*||linux|5.4.70|6.4.3.p1|否|目前常见的 NPX i.MX 8M Plus 开发板的系统较为特殊，其驱动文件是 buildin 在系统中的|是|cd PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/verisilicon_timvx && ./switch_viv_sdk.sh 6_4_3_p1 imx8mp|
 
     - 详细步骤：
@@ -565,12 +565,12 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   - For A311D(Linux 版) & S905D3(Linux 版) & C308X(Linux 版)
     - tiny_publish 编译方式
       ```shell
-      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_src_git_tag=main --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_4_3_generic.tgz
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_4_3_generic.tgz
       
       ```
     - full_publish 编译方式
       ```shell
-      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_src_git_tag=main --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_4_3_generic.tgz full_publish
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_4_3_generic.tgz full_publish
       
       ```
     - 替换头文件和库
@@ -597,12 +597,12 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   - For A311D(Android 版) &S905D3(Android 版)
     - tiny_publish 编译方式
       ```shell
-      $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --android_stl=c++_shared --with_extra=ON --with_exception=ON --with_cv=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_src_git_tag=main --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_android_9_armeabi_v7a_6_4_4_3_generic.tgz
+      $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --android_stl=c++_shared --with_extra=ON --with_exception=ON --with_cv=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_android_9_armeabi_v7a_6_4_4_3_generic.tgz
       ```
   
     - full_publish 编译方式
       ```shell
-      $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --android_stl=c++_shared --with_extra=ON --with_exception=ON --with_cv=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_src_git_tag=main --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_android_9_armeabi_v7a_6_4_4_3_generic.tgz full_publish
+      $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --android_stl=c++_shared --with_extra=ON --with_exception=ON --with_cv=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_android_9_armeabi_v7a_6_4_4_3_generic.tgz full_publish
       ```
     - 替换头文件和库
       ```shell
@@ -628,12 +628,12 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   - For RV1109 & RV1126
     - tiny_publish 编译方式
       ```shell
-      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_cv=ON --with_exception=ON --arch=armv7hf  --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_src_git_tag=main --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm32_6_4_6_5_generic.tgz
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_cv=ON --with_exception=ON --arch=armv7hf  --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm32_6_4_6_5_generic.tgz
       
       ```
     - full_publish 编译方式
       ```shell
-      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_cv=ON --with_exception=ON --arch=armv7hf  --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_src_git_tag=main --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm32_6_4_6_5_generic.tgz full_publish
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_cv=ON --with_exception=ON --arch=armv7hf  --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm32_6_4_6_5_generic.tgz full_publish
       
       ```
     - 替换头文件和库
@@ -659,12 +659,12 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   - For RK1808
     - tiny_publish 编译方式
       ```shell
-      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_src_git_tag=main --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_6_5_generic.tgz
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_6_5_generic.tgz
       
       ```
     - full_publish 编译方式
       ```shell
-      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_src_git_tag=main --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_6_5_generic.tgz full_publish
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_6_5_generic.tgz full_publish
       
       ```
     - 替换头文件和库
@@ -690,12 +690,12 @@ Paddle Lite 已支持通过 TIM-VX 的方式调用芯原 NPU 算力的预测部�
   - For NXP imx8m plus
     - tiny_publish 编译方式
       ```shell
-      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_src_git_tag=main --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_3_p1_generic.tgz
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_3_p1_generic.tgz
       
       ```
     - full_publish 编译方式
       ```shell
-      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_src_git_tag=main --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_3_p1_generic.tgz full_publish
+      $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_verisilicon_timvx=ON --nnadapter_verisilicon_timvx_viv_sdk_url=http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_3_p1_generic.tgz full_publish
       
       ```
     - 替换头文件和库
