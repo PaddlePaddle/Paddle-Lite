@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "driver/huawei_ascend_npu/utility.h"
-#if defined(LITE_WITH_PYTHON)
+#if defined(NNADAPTER_WITH_PYTHON)
 #include <pybind11/pybind11.h>
 #endif
 #include <fstream>
@@ -242,7 +242,7 @@ bool BuildOMModelToBuffer(
     const std::string& optional_shape_str,
     const DynamicShapeMode dynamic_shape_mode,
     AscendConfigParams* config_params) {
-#if defined(LITE_WITH_PYTHON)
+#if defined(NNADAPTER_WITH_PYTHON)
   pybind11::gil_scoped_release no_gil;
 #endif
   // Should initialize the GE graph builder before model building
@@ -631,7 +631,7 @@ bool GetAscendCANNVersion(int* major, int* minor, int* patch) {
     initialized = true;
     std::regex express(
         "version=([0-9]+\\.[0-9]+\\.(RC)?[0-9]+\\.(alpha)?[0-9]*)");
-#if defined(LITE_WITH_ARM)
+#if defined(__arm__) || defined(__aarch64__)
     std::string ascend_cann_path =
         "/usr/local/Ascend/ascend-toolkit/latest/arm64-linux/"
         "ascend_toolkit_install.info";
