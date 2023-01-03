@@ -172,13 +172,15 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
             - arm64-v8a
               - include # Paddle Lite 头文件
               - lib # Paddle Lite 库文件
-                - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
-                - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
+                - opencl
+                  - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
+                  - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
             - armeabi-v7a
               - include # Paddle Lite 头文件
               - lib # Paddle Lite 库文件
-                - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
-                - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
+                - opencl
+                  - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
+                  - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
           - linux
             - amd64
               ...
@@ -194,13 +196,13 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
 
 - 进入 `PaddleLite-generic-demo/image_classification_demo/shell/`；
 
-- 执行以下命令观察 mobilenet_v1_int8_224_per_layer 模型的性能和结果；
+- 执行以下命令观察 mobilenet_v1_fp32_224 模型的性能和结果；
 
   ```shell
-  运行 mobilenet_v1_int8_224_per_layer 模型
+  运行 mobilenet_v1_fp32_224 模型
     
   For android arm64-v8a
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android arm64-v8a opencl <adb设备号>
+  $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android arm64-v8a opencl <adb设备号>
 
     Top1 tray - 0.480957
     Top2 lycaenid, lycaenid butterfly - 0.151367
@@ -213,7 +215,7 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
     Postprocess time: avg 6.092000 ms, max 6.092000 ms, min 6.092000 ms
 
   For android armeabi-v7a
-  $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a opencl <adb设备号>
+  $ ./run_with_adb.sh mobilenet_v1_fp32_224 imagenet_224.txt test android armeabi-v7a opencl <adb设备号>
 
     Top1 tray - 0.480957
     Top2 lycaenid, lycaenid butterfly - 0.151367
@@ -226,10 +228,10 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
     Postprocess time: avg 5.940000 ms, max 5.940000 ms, min 5.940000 ms
 
   For linux arm64
-  For 登陆开发板的使用场景
-  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 opencl
-  For SSH 连接开发板的使用场景
-  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 opencl <IP地址> 22 <用户名> <密码>
+  本地执行
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64 opencl
+  通过 SSH 远程执行
+  $ ./run_with_ssh.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux arm64 opencl <IP地址> 22 <用户名> <密码>
 
     Top1 tray - 0.480957
     Top2 lycaenid, lycaenid butterfly - 0.151367
@@ -242,10 +244,10 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
     Postprocess time: avg 9.756000 ms, max 9.756000 ms, min 9.756000 ms
 
   For linux armhf
-  For 登陆开发板的使用场景
-  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux armhf opencl
-  For SSH 连接开发板的使用场景
-  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux armhf opencl <IP地址> 22 <用户名> <密码>
+  本地执行
+  $ ./run.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux armhf opencl
+  通过 SSH 远程执行
+  $ ./run_with_ssh.sh mobilenet_v1_fp32_224 imagenet_224.txt test linux armhf opencl <IP地址> 22 <用户名> <密码>
 
 - 如果需要更改测试模型为 resnet50，执行命令修改为如下：
 
@@ -257,15 +259,15 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
   $ ./run_with_adb.sh resnet50_fp32_224 imagenet_224.txt test android armeabi-v7a opencl <adb设备号>
 
   For linux arm64
-  For 登陆开发板的使用场景
+  本地执行
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 opencl
-  For SSH 连接开发板的使用场景
+  通过 SSH 远程执行
   $ ./run_with_ssh.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 opencl <IP地址> 22 <用户名> <密码>
 
   For linux armhf
-  For 登陆开发板的使用场景
+  本地执行
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux armhf opencl
-  For SSH 连接开发板的使用场景
+  通过 SSH 远程执行
   $ ./run_with_ssh.sh resnet50_fp32_224 imagenet_224.txt test linux armhf opencl <IP地址> 22 <用户名> <密码>
   ```
 
@@ -286,7 +288,7 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
   $ ./build.sh linux armhf
   ```
 
-### 更新支持 opencl 的 Paddle Lite 库
+### 更新支持 OpenCL 的 Paddle Lite 库
 
 - 下载 Paddle Lite 源码
 
@@ -296,69 +298,100 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
   $ git checkout <release-version-tag>
   ```
 
-- 编译并生成 OpenCL 的部署库
+- 编译并生成 armv8 和 armv7 的部署库
 
-  按照**准备本地编译环境**中内容进行编译后，按照如下索引进行库替换操作。
-
-  - 替换头文件和库
-    - For android arm64-v8a
+  - For android arm64-v8a
+    - tiny_publish 编译
       ```shell
-      清理原有 include 目录
-      $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/include/
-      
+      $ ./lite/tools/build_android.sh --arch=armv8 --toolchain=clang --with_extra=ON --with_cv=ON --with_exception=ON --with_opencl=ON
+      ```
+
+    - full_publish 编译
+      ```shell
+      $ ./lite/tools/build_android.sh --arch=armv8 --toolchain=clang --with_extra=ON --with_cv=ON --with_exception=ON --with_opencl=ON full_publish
+      ```
+
+    - 替换头文件和库
+      ```shell
       替换 include 目录
       $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/include/
       
       替换 libpaddle_light_api_shared.so
-      $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
+      $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/opencl/
       
       替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
-      $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
+      $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.opencl/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/opencl/
       ```
 
-    - For android armeabi-v7a
+  - For android armeabi-v7a
+    - tiny_publish 编译
       ```shell
-      清理原有 include 目录
-      $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/include/
-      
+      $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_extra=ON --with_cv=ON --with_exception=ON --with_opencl=ON
+      ```
+
+    - full_publish 编译
+      ```shell
+      $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_extra=ON --with_cv=ON --with_exception=ON --with_opencl=ON full_publish
+      ```
+
+    - 替换头文件和库
+      ```shell
       替换 include 目录
       $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.opencl/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/include/
       
       替换 libpaddle_light_api_shared.so
-      $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.opencl/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
+      $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.opencl/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/opencl/
       
       替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
-      $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.opencl/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
+      $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.opencl/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/opencl/
       ```
 
-    - For linux arm64
+- 编译并生成 arm64 和 armhf 的部署库
+
+  - For linux arm64
+    - tiny_publish 编译
       ```shell
-      清理原有 include 目录
-      $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-      
+      $ ./lite/tools/build_linux.sh --arch=armv8 --with_extra=ON --with_cv=ON --with_exception=ON --with_opencl=ON
+      ```
+
+    - full_publish 编译
+      ```shell
+      $ ./lite/tools/build_linux.sh --arch=armv8 --with_extra=ON --with_cv=ON --with_exception=ON --with_opencl=ON full_publish
+      ```
+
+    - 替换头文件和库
+      ```shell
       替换 include 目录
       $ cp -rf build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
       
       替换 libpaddle_light_api_shared.so
-      $ cp -rf build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
+      $ cp -rf build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/opencl/
       
       替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
-      $ cp -rf build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
+      $ cp -rf build.lite.linux.armv8.gcc.opencl/inference_lite_lib.armlinux.armv8.opencl/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/opencl/
       ```
 
-    - For linux armhf
+  - For linux armhf
+    - tiny_publish 编译
       ```shell
-      清理原有 include 目录
-      $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/include/
-      
+      $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_cv=ON --with_exception=ON --with_opencl=ON
+      ```
+
+    - full_publish 编译
+      ```shell
+      $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_cv=ON --with_exception=ON --with_opencl=ON full_publish
+      ```
+
+    - 替换头文件和库
+      ```shell
       替换 include 目录
       $ cp -rf build.lite.linux.armv7hf.gcc.opencl/inference_lite_lib.armlinux.armv7hf.opencl/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/include/
       
       替换 libpaddle_light_api_shared.so
-      $ cp -rf build.lite.linux.armv7hf.gcc.opencl/inference_lite_lib.armlinux.armv7hf.opencl/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
+      $ cp -rf build.lite.linux.armv7hf.gcc.opencl/inference_lite_lib.armlinux.armv7hf.opencl/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/opencl/
       
       替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
-      $ cp -rf build.lite.linux.armv7hf.gcc.opencl/inference_lite_lib.armlinux.armv7hf.opencl/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
+      $ cp -rf build.lite.linux.armv7hf.gcc.opencl/inference_lite_lib.armlinux.armv7hf.opencl/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/opencl/
       ```
 
 - 替换头文件后需要重新编译示例程序

@@ -66,8 +66,10 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
 
 ## 参考示例演示
 
-### 测试设备(HUAWEI Mate30 5G)
-![huwei_mate30_5g](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/huawei_mate30_5g.jpg)
+### 测试设备
+- Android arm64-v8a/armeabi-v7a: HUAWEI P40pro
+- Linux arm64: RK3399
+- Linux armhf: Raspberry Pi 4B
 
 ### 准备交叉编译环境
 
@@ -147,9 +149,10 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
     Top3 tiger cat - 0.065506
     Top4 lynx, catamount - 0.007992
     Top5 cougar, puma, catamount, mountain lion, painter, panther, Felis concolor - 0.000494
-    Preprocess time: 5.699000 ms, avg 5.699000 ms, max 5.699000 ms, min 5.699000 ms
-    Prediction time: 15.554000 ms, avg 15.554000 ms, max 15.554000 ms, min 15.554000 ms
-    Postprocess time: 5.965000 ms, avg 5.965000 ms, max 5.965000 ms, min 5.965000 ms
+    [0] Preprocess time: 6.712000 ms Prediction time: 16.859000 ms Postprocess time: 6.026000 ms
+    Preprocess time: avg 6.712000 ms, max 6.712000 ms, min 6.712000 ms
+    Prediction time: avg 16.859000 ms, max 16.859000 ms, min 16.859000 ms
+    Postprocess time: avg 6.026000 ms, max 6.026000 ms, min 6.026000 ms
 
   For android armeabi-v7a
   $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a cpu <adb设备号>
@@ -159,14 +162,15 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
     Top3 tiger cat - 0.071703
     Top4 lynx, catamount - 0.008436
     Top5 cougar, puma, catamount, mountain lion, painter, panther, Felis concolor - 0.000563
-    Preprocess time: 6.427000 ms, avg 6.427000 ms, max 6.427000 ms, min 6.427000 ms
-    Prediction time: 43.715000 ms, avg 43.715000 ms, max 43.715000 ms, min 43.715000 ms
-    Postprocess time: 6.015000 ms, avg 6.015000 ms, max 6.015000 ms, min 6.015000 ms
+    [0] Preprocess time: 6.717000 ms Prediction time: 44.779000 ms Postprocess time: 6.444000 ms
+    Preprocess time: avg 6.717000 ms, max 6.717000 ms, min 6.717000 ms
+    Prediction time: avg 44.779000 ms, max 44.779000 ms, min 44.779000 ms
+    Postprocess time: avg 6.444000 ms, max 6.444000 ms, min 6.444000 ms
 
   For linux arm64
-  For 登陆开发板的使用场景
-  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64
-  For SSH 连接开发板的使用场景
+  本地执行
+  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 cpu
+  通过 SSH 远程执行
   $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 cpu <IP地址> 22 <用户名> <密码>
 
     Top1 Egyptian cat - 0.503239
@@ -179,9 +183,9 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
     Postprocess time: 9.969000 ms, avg 9.969000 ms, max 9.969000 ms, min 9.969000 ms
 
   For linux armhf
-  For 登陆开发板的使用场景
-  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux armhf
-  For SSH 连接开发板的使用场景
+  本地执行
+  $ ./run.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux armhf cpu
+  通过 SSH 远程执行
   $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux armhf cpu <IP地址> 22 <用户名> <密码>
 
     Top1 Egyptian cat - 0.502124
@@ -194,7 +198,7 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
     Postprocess time: 13.324000 ms, avg 13.324000 ms, max 13.324000 ms, min 13.324000 ms
   ```
 
-- 如果需要更改测试模型为 resnet50，执行命令修改为如下：
+- 如果需要更改测试模型为 resnet50 ，执行命令修改为如下：
 
   ```shell
   For android arm64-v8a
@@ -204,15 +208,15 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
   $ ./run_with_adb.sh resnet50_fp32_224 imagenet_224.txt test android armeabi-v7a cpu <adb设备号>
 
   For linux arm64
-  For 登陆开发板的使用场景
+  本地执行
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64
-  For SSH 连接开发板的使用场景
+  通过 SSH 远程执行
   $ ./run_with_ssh.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 cpu <IP地址> 22 <用户名> <密码>
 
   For linux armhf
-  For 登陆开发板的使用场景
+  本地执行
   $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux armhf
-  For SSH 连接开发板的使用场景
+  通过 SSH 远程执行
   $ ./run_with_ssh.sh resnet50_fp32_224 imagenet_224.txt test linux armhf cpu <IP地址> 22 <用户名> <密码>
   ```
 
@@ -234,7 +238,7 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
   $ ./build.sh linux armhf
   ```
 
-### 更新 Arm 预测库
+### 更新支持 Arm 的 Paddle Lite 库
 
 - 下载 Paddle Lite 源码
 
@@ -246,20 +250,15 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
 
 - 编译并生成 armv8 和 armv7 的部署库
 
-  - For android arm64-v8a
+  - For android arm64-v8a（注：--with_arm82_fp16=ON 编译选项可在部分机型启用 FP16 能力，但要求 NDK 版本 > 19 ）
     - tiny_publish 编译
       ```shell
-      $ ./lite/tools/build_android.sh --arch=armv8 --toolchain=clang --with_extra=ON --with_log=OFF --with_cv=ON
-      ```
-
-    - tiny_publish 编译（FP16）
-      ```shell
-      $ ./lite/tools/build_android.sh --arch=armv8 --toolchain=clang --with_extra=ON --with_log=OFF --with_cv=ON --with_arm82_fp16=ON
+      $ ./lite/tools/build_android.sh --arch=armv8 --toolchain=clang --with_extra=ON --with_cv=ON --with_exception=ON
       ```
 
     - full_publish 编译
       ```shell
-      $ ./lite/tools/build_android.sh --arch=armv8 --toolchain=clang --with_extra=ON --with_log=OFF --with_cv=ON full_publish
+      $ ./lite/tools/build_android.sh --arch=armv8 --toolchain=clang --with_extra=ON --with_cv=ON --with_exception=ON full_publish
       ```
 
     - 替换头文件和库
@@ -274,20 +273,15 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
       $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
       ```
 
-  - For android armeabi-v7a
+  - For android armeabi-v7a（注：--with_arm82_fp16=ON 编译选项可在部分机型启用 FP16 能力，但要求 NDK 版本 > 19 ）
     - tiny_publish 编译
       ```shell
-      $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_log=OFF --with_extra=ON --with_cv=ON
-      ```
-    
-    - tiny_publish 编译（FP16）
-      ```shell
-      $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_log=OFF --with_extra=ON --with_cv=ON --with_arm82_fp16=ON
+      $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_extra=ON --with_cv=ON --with_exception=ON
       ```
 
     - full_publish 编译
       ```shell
-      $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_log=OFF --with_extra=ON --with_cv=ON full_publish
+      $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --with_extra=ON --with_cv=ON --with_exception=ON full_publish
       ```
 
     - 替换头文件和库
@@ -307,17 +301,12 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
   - For linux arm64
     - tiny_publish 编译
       ```shell
-      $ ./lite/tools/build_linux.sh --arch=armv8 --with_extra=ON --with_log=ON --with_cv=ON --with_exception=ON
-      ```
-
-    - tiny_publish 编译（FP16）
-      ```shell
-      $ ./lite/tools/build_linux.sh --arch=armv8 --with_extra=ON --with_log=ON --with_cv=ON --with_exception=ON --with_arm82_fp16=ON
+      $ ./lite/tools/build_linux.sh --arch=armv8 --with_extra=ON --with_cv=ON --with_exception=ON
       ```
 
     - full_publish 编译
       ```shell
-      $ ./lite/tools/build_linux.sh --arch=armv8 --with_extra=ON --with_log=ON --with_cv=ON --with_exception=ON full_publish
+      $ ./lite/tools/build_linux.sh --arch=armv8 --with_extra=ON --with_cv=ON --with_exception=ON full_publish
       ```
 
     - 替换头文件和库
@@ -335,17 +324,12 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
   - For linux armhf
     - tiny_publish 编译
       ```shell
-      $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_cv=ON --with_exception=ON
-      ```
-    
-      - tiny_publish 编译（FP16）
-      ```shell
-      $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_cv=ON --with_exception=ON --with_arm82_fp16=ON
+      $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_cv=ON --with_exception=ON
       ```
 
     - full_publish 编译
       ```shell
-      $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_cv=ON --with_exception=ON full_publish
+      $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_cv=ON --with_exception=ON full_publish
       ```
 
     - 替换头文件和库
