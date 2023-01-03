@@ -118,21 +118,17 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
             - arm64-v8a
             - armeabi-v7a
           - linux
-            - amd64
+            - arm64
               - include # Paddle Lite 头文件
               - lib # Paddle Lite 库文件
                 - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
                 - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
-            - arm64
+            - armhf
               - include
               - lib
-            - armhf
-              ...
         - OpenCV # OpenCV 预编译库
       - object_detection_demo # 目标检测示例程序
   ```
-
-  
 
 - 进入 `PaddleLite-generic-demo/image_classification_demo/shell/`；
 
@@ -209,13 +205,13 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
 
   For linux arm64
   本地执行
-  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 cpu
   通过 SSH 远程执行
   $ ./run_with_ssh.sh resnet50_fp32_224 imagenet_224.txt test linux arm64 cpu <IP地址> 22 <用户名> <密码>
 
   For linux armhf
   本地执行
-  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux armhf
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux armhf cpu
   通过 SSH 远程执行
   $ ./run_with_ssh.sh resnet50_fp32_224 imagenet_224.txt test linux armhf cpu <IP地址> 22 <用户名> <密码>
   ```

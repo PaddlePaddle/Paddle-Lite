@@ -1,6 +1,6 @@
 # 昆仑芯 XPU
 
-Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000+/64）上进行预测部署, 支持 Kernel 接入方式。
+Paddle Lite 已支持昆仑芯 XPU 在 x86 和 Arm 服务器（例如飞腾 FT-2000+/64）上进行预测部署, 支持 Kernel 接入方式。
 
 ## 支持现状
 
@@ -181,8 +181,8 @@ Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2
                   - libxpuapi.so # XPU API 库，提供设备管理和算子实现。
                   - libxpurt.so # XPU runtime 库
                   ...
-                - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
-                - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
+                  - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
+                  - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
             - arm64
               - include
               - lib
