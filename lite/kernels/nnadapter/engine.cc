@@ -311,6 +311,7 @@ Engine::Engine(KernelContext* ctx,
     }
   }
   CHECK_GT(devices_.size(), 0) << "No device found.";
+
   // Get the context properties from the scope
   auto context_properties =
       ctx->As<NNAdapterContext>().NNAdapterContextProperties(exec_scope_);
