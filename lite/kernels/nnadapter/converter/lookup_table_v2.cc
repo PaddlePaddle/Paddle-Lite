@@ -47,7 +47,7 @@ int ConvertLookupTableV2(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasAttr("padding_idx")) {
     auto padding_idx = op->GetAttr<int64_t>("padding_idx");
     // TODO(zhupengyang): support padding_idx later.
-    if (padding_idx != -1 && padding_idx != 0) {
+    if (!(padding_idx == -1 || padding_idx == 0)) {
       LOG(FATAL) << "Only support padding_idx = -1 or 0";
     }
   }
