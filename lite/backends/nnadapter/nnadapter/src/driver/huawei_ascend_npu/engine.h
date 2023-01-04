@@ -21,7 +21,11 @@
 #include <vector>
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "driver/huawei_ascend_npu/utility.h"
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(6, 0, 0)
+#include "built-in/op_proto/inc/all_ops.h"
+#else
 #include "op_proto/built-in/inc/all_ops.h"
+#endif
 #include "utility/string.h"
 
 namespace nnadapter {
