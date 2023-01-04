@@ -40,6 +40,8 @@ namespace lite {
 const int XPU_MAX_LOD_SIZE = 32;
 // MAX(lod.size()) = 64 in XPU refactor
 const int XPU_MAX_LOD_SIZE_64 = 64;
+// MAX(lod.size()) = 256 in XPU
+const int XPU_MAX_LOD_SIZE_256 = 256;
 // MAX(lod[i + 1] - lod[i]) = 512
 const int XPU_MAX_LOD_SEQ_LEN = 512;
 
