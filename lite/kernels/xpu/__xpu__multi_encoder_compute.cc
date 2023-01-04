@@ -146,14 +146,18 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   const int n_layers = param.fc_weight.size() / 6;
   // prepare bias
   if (param.already_qkv_fusion) {
-    // only 3 bias per layer if qkv isa already fusion.
-    CHECK_EQ((int)param.fc_bias.size(), 3 * n_layers);
+    // only 3 or 4 bias per layer if qkv is already be fusioned.
+    CHECK((param.fc_bias.size() == 3 * n_layers) ||
+          (param.fc_bias.size() == 4 * n_layers))
+        << "bias num per layer shouble be 3 or 4";
+    int num_per_layer = param.fc_bias.size() / n_layers;
     for (int i = 0; i < n_layers; i++) {
-      // insert 3 nullptr replace q_add_y,k_add_y,v_add_y.
-      arg_fc_bias_.insert(arg_fc_bias_.end(), 3, nullptr);
-      for (int k = 0; k < 3; k++) {
-        arg_fc_bias_.push_back(param.fc_bias[3 * i + k]->data<float>());
+      for (int k = 0; k < num_per_layer; k++) {
+        arg_fc_bias_.push_back(
+            param.fc_bias[num_per_layer * i + k]->data<float>());
       }
+      // insert 2/3 nullptr
+      arg_fc_bias_.insert(arg_fc_bias_.end() - 3, 6 - num_per_layer, nullptr);
     }
   } else {
     for (auto* fc_bias : param.fc_bias) {

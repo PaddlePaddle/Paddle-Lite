@@ -930,12 +930,14 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
                                    const std::string& qkv_ln_2_out_pos = "Y",
                                    const std::string& matmul_type = "matmul",
                                    const std::string& mul_type = "mul",
+                                   bool with_fusion_qkv_bias = false,
                                    bool norm_before = false)
       : act_type_(act_type),
         input_pos_(input_pos),
         qkv_ln_2_out_pos_(qkv_ln_2_out_pos),
         matmul_type_(matmul_type),
         mul_type_(mul_type),
+        with_fusion_qkv_bias_(with_fusion_qkv_bias),
         norm_before_(norm_before) {}
 
   void BuildPattern() override {
@@ -979,8 +981,19 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
     auto* fc_qkv = OpNode("fc_qkv_mul", mul_type_);
     auto* fc_qkv_out = VarNode("fc_qkv_mul_out")
                            ->assert_is_op_output(mul_type_, "Out")
-                           ->assert_is_op_input("reshape2", "X")
                            ->AsIntermediate();
+    PMNode* fc_qkv_add = nullptr;
+    PMNode* fc_qkv_add_y = nullptr;
+    PMNode* fc_qkv_add_out = nullptr;
+    if (with_fusion_qkv_bias_) {
+      fc_qkv_add_y = VarNode("fc_qkv_add_y")
+                         ->assert_is_op_input("elementwise_add", "Y")
+                         ->AsInput();
+      fc_qkv_add = OpNode("fc_qkv_add", "elementwise_add")->AsIntermediate();
+      fc_qkv_add_out = VarNode("fc_qkv_add_out")
+                           ->assert_is_op_output("elementwise_add", "Out")
+                           ->AsIntermediate();
+    }
     // reshape2
     auto* fc_qkv_reshape2 =
         OpNode("fc_qkv_reshape2", "reshape2")->AsIntermediate();
@@ -1251,9 +1264,17 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
     } else {
       fc_qkv->LinksFrom({input, fc_qkv_y}).LinksTo({fc_qkv_out});
     }
-    // reshape, transpose
-    fc_qkv_reshape2->LinksFrom({fc_qkv_out})
-        .LinksTo({fc_qkv_reshape2_out, fc_qkv_reshape2_xshape});
+    // bias and reshape
+    if (with_fusion_qkv_bias_) {
+      fc_qkv_add->LinksFrom({fc_qkv_out, fc_qkv_add_y})
+          .LinksTo({fc_qkv_add_out});
+      fc_qkv_reshape2->LinksFrom({fc_qkv_add_out})
+          .LinksTo({fc_qkv_reshape2_out, fc_qkv_reshape2_xshape});
+    } else {
+      fc_qkv_reshape2->LinksFrom({fc_qkv_out})
+          .LinksTo({fc_qkv_reshape2_out, fc_qkv_reshape2_xshape});
+    }
+    // transpose
     fc_qkv_transpose2->LinksFrom({fc_qkv_reshape2_out})
         .LinksTo({fc_qkv_transpose2_out, fc_qkv_transpose2_xshape});
     // 3slice q/k/v
@@ -1317,12 +1338,22 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
             matched.at("qkv_mul_3_y")->arg()->name,
             matched.at("qkv_mul_4_y")->arg()->name,
         });
-    op_desc.SetInput("FCBias",
-                     {
-                         matched.at("qkv_add_y")->arg()->name,
-                         matched.at("qkv_add_3_y")->arg()->name,
-                         matched.at("qkv_add_4_y")->arg()->name,
-                     });
+    if (with_fusion_qkv_bias_) {
+      op_desc.SetInput("FCBias",
+                       {
+                           matched.at("fc_qkv_add_y")->arg()->name,
+                           matched.at("qkv_add_y")->arg()->name,
+                           matched.at("qkv_add_3_y")->arg()->name,
+                           matched.at("qkv_add_4_y")->arg()->name,
+                       });
+    } else {
+      op_desc.SetInput("FCBias",
+                       {
+                           matched.at("qkv_add_y")->arg()->name,
+                           matched.at("qkv_add_3_y")->arg()->name,
+                           matched.at("qkv_add_4_y")->arg()->name,
+                       });
+    }
     VLOG(3) << "matched.at(qkv_add_y)->arg()->name: "
             << matched.at("qkv_add_y")->arg()->name;
 
@@ -1439,6 +1470,9 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
       froms.push_back("qkv_ln_5_scale");
       froms.push_back("qkv_ln_5_bias");
     }
+    if (with_fusion_qkv_bias_) {
+      froms.push_back("fc_qkv_add_y");
+    }
     for (auto& from : froms) {
       IR_NODE_LINK_TO(matched.at(from), matched.at("fc_qkv_mul"));
     }
@@ -1455,6 +1489,7 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
   std::string qkv_ln_2_out_pos_;
   std::string matmul_type_;
   std::string mul_type_;
+  bool with_fusion_qkv_bias_;
   bool norm_before_;
   // quant_info: mul input_max, output_max * 6 + matmul x_max:y_max, output_max
   void set_quant_info(Scope* scope,
@@ -1466,18 +1501,11 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
                                                     "qkv_mul",
                                                     "qkv_mul_3",
                                                     "qkv_mul_4"};
-    const std::vector<std::string> mul_add_ops = {"fc_qkv_mul",
-                                                  "fc_qkv_mul",
-                                                  "fc_qkv_mul",
-                                                  "qkv_add",
-                                                  "qkv_act",
-                                                  "qkv_add_4"};
     const std::vector<std::string> matmul_ops = {"qk_matmul", "qkv_matmul"};
 
     bool mul_quant = false;
     bool matmul_quant = false;
     const int ops_size = quant_mul_ops.size() + matmul_ops.size();
-    std::vector<bool> op_is_quantized(ops_size, false);
     std::vector<std::string> op_quant_types(ops_size, "not_quantized");
     std::vector<std::string> weight_max_tensor_name(quant_mul_ops.size());
     CHECK(op_desc->HasInput("FCWeight"))
@@ -1491,50 +1519,23 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
       auto op_info = matched.at(quant_mul_ops[i])->stmt()->op_info();
       if (is_int8_quantized_op(op_info) || is_int16_quantized_op(op_info)) {
         mul_quant = true;
-        op_is_quantized[i] = true;
-        if (is_int8_quantized_op(op_info)) {
-          op_desc->SetAttr<bool>("enable_int8", true);
-          op_quant_types[i] = "enable_int8";
-        } else {
-          op_desc->SetAttr<bool>("enable_int16", true);
-          op_quant_types[i] = "enable_int16";
-        }
+        break;
       }
     }
     for (size_t i = 0; i < matmul_ops.size(); ++i) {
       auto op_info = matched.at(matmul_ops[i])->stmt()->op_info();
       if (is_int8_quantized_op(op_info) || is_int16_quantized_op(op_info)) {
         matmul_quant = true;
-        op_is_quantized[quant_mul_ops.size() + i] = true;
-        if (is_int8_quantized_op(op_info)) {
-          op_desc->SetAttr<bool>("enable_int8", true);
-          op_quant_types[quant_mul_ops.size() + i] = "enable_int8";
-        } else {
-          op_desc->SetAttr<bool>("enable_int16", true);
-          op_quant_types[quant_mul_ops.size() + i] = "enable_int16";
-        }
+        break;
       }
     }
-
+    // quant is not supported in XPUSingleEncoderV2Fuser
+    if (mul_quant || matmul_quant) {
+      CHECK(false) << "mul matmul quantized will be supported later";
+    }
     op_desc->SetAttr<std::vector<std::string>>("quant_types", op_quant_types);
     op_desc->SetAttr<std::vector<std::string>>("Y0_max",
                                                weight_max_tensor_name);
-
-    if (!mul_quant && !matmul_quant) {
-      VLOG(3) << "no quantized op";
-    } else {
-      VLOG(3) << "mul quantized: " << mul_quant;
-      for (size_t i = 0; i < quant_mul_ops.size(); ++i) {
-        VLOG(3) << "  " << quant_mul_ops[i] << " : " << op_quant_types[i];
-      }
-      VLOG(3) << "matmul quantized: " << matmul_quant;
-      for (size_t i = 0; i < matmul_ops.size(); ++i) {
-        VLOG(3) << "  " << matmul_ops[i] << " : "
-                << op_quant_types[quant_mul_ops.size() + i];
-      }
-      CHECK(false) << "mul matmul quantized will be supported later";
-    }
-    return;
   }
 };
 
@@ -2129,19 +2130,22 @@ class XPUMultiEncoderFusePass : public ProgramPass {
         for (auto& qkv_ln_2_out_pos : {"X"}) {
           for (auto& matmul_type : matmul_types) {
             for (auto& mul_type : mul_types) {
-              for (auto norm_before : {true}) {
-                fusion::XPUSingleEncoderV2Fuser single_encoder_fuser(
-                    act_type,
-                    input_pos,
-                    qkv_ln_2_out_pos,
-                    matmul_type,
-                    mul_type,
-                    norm_before);
-                single_encoder_fuser(graph.get());
+              for (auto& fusion_qkv_bias : {true, false}) {
+                for (auto norm_before : {true}) {
+                  fusion::XPUSingleEncoderV2Fuser single_encoder_fuser(
+                      act_type,
+                      input_pos,
+                      qkv_ln_2_out_pos,
+                      matmul_type,
+                      mul_type,
+                      fusion_qkv_bias,
+                      norm_before);
+                  single_encoder_fuser(graph.get());
 
-                fusion::XPUMultiEncoderFuser multi_encoder_fuser(
-                    fc_precision, adaptive_seqlen, true);
-                multi_encoder_fuser(graph.get());
+                  fusion::XPUMultiEncoderFuser multi_encoder_fuser(
+                      fc_precision, adaptive_seqlen, true);
+                  multi_encoder_fuser(graph.get());
+                }
               }
             }
           }
