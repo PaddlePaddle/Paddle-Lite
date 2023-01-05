@@ -284,6 +284,10 @@ TEST(fill_constant, precision) {
   TestFillConstantShape(place, abs_error);
   TestFillConstantValue(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+  TestFillConstantShape(place, abs_error);
+  return;
 #else
   return;
 #endif

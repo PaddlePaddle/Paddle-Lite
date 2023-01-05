@@ -462,6 +462,8 @@ TEST(Elementwise, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 1e-1;
   for (auto elt_type : std::vector<std::string>{
