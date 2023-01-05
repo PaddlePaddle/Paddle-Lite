@@ -1755,6 +1755,7 @@ struct XPUMultiEncoderParam : ParamBase {
   bool norm_before{false};
   bool adaptive_seqlen{false};
   bool per_channel{false};
+  bool already_qkv_fusion{false};  // qkv is already fusion in graph
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
