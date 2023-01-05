@@ -816,7 +816,7 @@ void OptBase::InitSupportedOpInfo() {
                                      "qualcomm_qnn",
                                      "kunlunxin_xtcl",
                                      "kUnk"};
-  for (size_t idx = 0; idx < supported_ops_target.size(); idx++) {
+  for (size_t idx = 0; idx < collect_targets.size(); idx++) {
     if (valid_target.find(collect_targets[idx]) != valid_target.end()) {
       auto& support_ops = target_supported_ops_[collect_targets[idx]];
       support_ops.insert(supported_ops_target[idx].begin(),
