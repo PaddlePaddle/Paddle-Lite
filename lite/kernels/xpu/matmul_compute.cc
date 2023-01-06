@@ -73,6 +73,7 @@ void MatMulCompute<TGEMM, TW, DX, DY, PType>::Run() {
         mat_dim_b.batch_size_ = mat_dim_a.batch_size_;
         mat_dim_b.height_ = mat_dim_b.height_ / mat_dim_b.batch_size_;
       }
+      mat_dim_b.stride_ = mat_dim_b.height_ * mat_dim_b.width_;
     } else if (x_dims.size() <= 2 && y_dims.size() >= 3) {
       if (!param.transpose_Y) {
         mat_dim_b.height_ *= mat_dim_b.batch_size_;
@@ -81,6 +82,7 @@ void MatMulCompute<TGEMM, TW, DX, DY, PType>::Run() {
         mat_dim_a.batch_size_ = mat_dim_b.batch_size_;
         mat_dim_a.height_ = mat_dim_a.height_ / mat_dim_a.batch_size_;
       }
+      mat_dim_a.stride_ = mat_dim_a.height_ * mat_dim_a.width_;
     }
 
     CHECK_EQ(mat_dim_a.batch_size_, mat_dim_b.batch_size_);
