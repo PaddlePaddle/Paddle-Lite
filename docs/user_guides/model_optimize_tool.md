@@ -27,6 +27,9 @@ pip install x2paddle
 ```shell
 ./lite/tools/build.sh build_optimize_tool
 ```
+如果提示第三方库获取失败，可以将`Paddle-Lite/third_party`删除，再重新执行此指令，Paddlelite会从国内镜像获取第三方库。
+
+编译产物位于`Paddle-Lite/build.opt/lite/api/opt`
 
 如果在 arm64 架构的 MacOS 下编译 opt 工具失败
 
