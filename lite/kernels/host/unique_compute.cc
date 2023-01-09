@@ -59,7 +59,7 @@ void UniqueFunc(const lite::Tensor* x,
     bool index_type_match =
         (index_type == PRECISION(kInt64) || index_type == PRECISION(kInt32));
     CHECK(index_type_match) << "index type must be int32 or int64, but now is "
-                            << index_type;
+                            << static_cast<int>(index_type);
     for (auto i = 0; i < x->numel(); ++i) {
       const IndexT& index = index_data[i];
       count_data[index] += static_cast<IndexT>(1);
@@ -382,7 +382,7 @@ void UniqueCompute<InT>::Run() {
   lite_api::PrecisionType index_type = index->precision();
   lite_api::PrecisionType x_type = x->precision();
   CHECK(dtype == 3 || dtype == 2) << "dtype must be int or int64, but now is "
-                                  << dtype;
+                                  << static_cast<int>(dtype);
   // set output precision
   UNIQUE_SET_OUT_PRECISION(index, dtype);
   UNIQUE_SET_OUT_PRECISION(indices, dtype);
