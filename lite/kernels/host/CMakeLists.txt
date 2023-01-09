@@ -108,6 +108,7 @@ add_kernel(distribute_fpn_proposals_compute_host Host extra SRCS distribute_fpn_
 add_kernel(collect_fpn_proposals_compute_host Host extra SRCS collect_fpn_proposals_compute.cc)
 add_kernel(flip_compute_host Host extra SRCS flip_compute.cc)
 add_kernel(unique_with_counts_compute  Host extra SRCS unique_with_counts_compute.cc)
+add_kernel(unique_compute Host extra SRCS unique_compute.cc)
 add_kernel(roi_align_compute Host extra SRCS roi_align_compute.cc)
 add_kernel(box_clip_compute Host extra SRCS box_clip_compute.cc)
 add_kernel(gaussian_random_compute Host extra SRCS gaussian_random_compute.cc)

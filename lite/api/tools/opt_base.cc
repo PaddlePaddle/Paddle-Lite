@@ -129,6 +129,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)});
       valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kInt64), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
           TARGET(kARM));  // enable kARM CPU kernel when no opencl kernel
     } else if (target_repr == "metal") {
       valid_places_.emplace_back(Place{

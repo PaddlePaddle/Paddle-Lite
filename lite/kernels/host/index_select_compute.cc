@@ -35,6 +35,8 @@ void Index_selectCompute<T>::Run() {
   auto index_ddim = index->dims();
   auto output_ddim = output->dims();
 
+  if (param.dim < 0) param.dim += input_ddim.size();
+
   int left = input_ddim.count(0, param.dim);
   int middle = input_ddim[param.dim];
   int right = input_ddim.count(param.dim + 1, input_ddim.size());
@@ -71,6 +73,19 @@ REGISTER_LITE_KERNEL(index_select,
     .Finalize();
 
 #ifdef LITE_BUILD_EXTRA
+
+REGISTER_LITE_KERNEL(index_select,
+                     kHost,
+                     kAny,
+                     kNCHW,
+                     paddle::lite::kernels::host::Index_selectCompute<int64_t>,
+                     int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("Index",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindPaddleOpVersion("index_select", 1)
+    .Finalize();
 
 REGISTER_LITE_KERNEL(index_select,
                      kHost,

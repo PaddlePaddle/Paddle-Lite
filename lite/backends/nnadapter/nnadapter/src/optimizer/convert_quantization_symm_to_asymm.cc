@@ -81,6 +81,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
     auto output_count = output_operands.size();
     switch (operation->type) {
       case NNADAPTER_ADD:
+      case NNADAPTER_AND:
       case NNADAPTER_DIV:
       case NNADAPTER_EQUAL:
       case NNADAPTER_FULLY_CONNECTED:
@@ -111,6 +112,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_CUM_SUM:
       case NNADAPTER_EXP:
       case NNADAPTER_EXPAND:
+      case NNADAPTER_FILL:
       case NNADAPTER_FILL_LIKE:
       case NNADAPTER_FLATTEN:
       case NNADAPTER_FLOOR:
@@ -123,6 +125,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_LOG:
       case NNADAPTER_LP_NORMALIZATION:
       case NNADAPTER_MAX_POOL_2D:
+      case NNADAPTER_NOT:
       case NNADAPTER_PAD:
       case NNADAPTER_PRELU:
       case NNADAPTER_REDUCE_MAX:
@@ -147,7 +150,8 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         PropagateAsymmZeroPoint(input_operands[0], output_operands[0]);
       } break;
       case NNADAPTER_CONCAT:
-      case NNADAPTER_STACK: {
+      case NNADAPTER_STACK:
+      case NNADAPTER_SUM: {
         NNADAPTER_CHECK_GE(input_count, 2);
         for (int i = 0; i < input_count - 1; i++) {
           ConvertOperandSymmToAsymm(input_operands[i], 128);
@@ -162,6 +166,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         ConvertOperandSymmToAsymm(input_operands[2], 128);
         ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
+      case NNADAPTER_LOG_SOFTMAX:
       case NNADAPTER_SIGMOID:
       case NNADAPTER_SOFTMAX: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
@@ -181,6 +186,11 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         for (uint32_t i = 0; i < output_count; i++) {
           ConvertOperandSymmToAsymm(output_operands[i], 128);
         }
+      } break;
+      case NNADAPTER_WHERE: {
+        ConvertOperandSymmToAsymm(input_operands[1], 128);
+        ConvertOperandSymmToAsymm(input_operands[2], 128);
+        ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
       case NNADAPTER_QUANTIZE:
       case NNADAPTER_DEQUANTIZE:

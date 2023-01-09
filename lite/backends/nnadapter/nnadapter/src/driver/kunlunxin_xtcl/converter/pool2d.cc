@@ -45,7 +45,7 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
           converter->builder()->CreateGlobalAvgPool2D(input_expr, "NCHW");
     } else {
       pool2d_expr = converter->builder()->CreateAvgPool2D(
-          input_expr, ksize, strides, paddings, "NCHW", ceil_mode, flag);
+          input_expr, ksize, strides, paddings, "NCHW", "", ceil_mode, flag);
     }
   } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
     if (global_pooling) {
@@ -53,7 +53,7 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
           converter->builder()->CreateGlobalMaxPool2D(input_expr, "NCHW");
     } else {
       pool2d_expr = converter->builder()->CreateMaxPool2D(
-          input_expr, ksize, strides, paddings, "NCHW", ceil_mode);
+          input_expr, ksize, strides, paddings, "NCHW", "", ceil_mode);
     }
   } else if (operation->type == NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D) {
     pool2d_expr = converter->builder()->CreateAdaptiveAvgPool2D(

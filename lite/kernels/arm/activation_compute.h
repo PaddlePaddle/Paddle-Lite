@@ -21,6 +21,15 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace arm {
+template <PrecisionType ptype>
+class SigmoidCompute : public KernelLite<TARGET(kARM), ptype> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~SigmoidCompute() = default;
+};
 
 template <PrecisionType ptype>
 class ReluCompute : public KernelLite<TARGET(kARM), ptype> {
@@ -30,15 +39,6 @@ class ReluCompute : public KernelLite<TARGET(kARM), ptype> {
   void Run() override;
 
   virtual ~ReluCompute() = default;
-};
-
-class LeakyReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  void Run() override;
-
-  virtual ~LeakyReluCompute() = default;
 };
 
 template <PrecisionType ptype>
@@ -51,15 +51,6 @@ class PReluCompute : public KernelLite<TARGET(kARM), ptype> {
   virtual ~PReluCompute() = default;
 };
 
-class SigmoidCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::ActivationParam;
-
-  void Run() override;
-
-  virtual ~SigmoidCompute() = default;
-};
-
 template <PrecisionType ptype>
 class TanhCompute : public KernelLite<TARGET(kARM), ptype> {
  public:
@@ -68,6 +59,15 @@ class TanhCompute : public KernelLite<TARGET(kARM), ptype> {
   void Run() override;
 
   virtual ~TanhCompute() = default;
+};
+
+class LeakyReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~LeakyReluCompute() = default;
 };
 
 class Relu6Compute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {

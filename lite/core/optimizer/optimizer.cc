@@ -215,6 +215,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "fix_mismatched_precision_pass",
        "__xpu__dynamic_lstm_fuse_pass",
        "__xpu__multi_softmax_fuse_pass",
+       "__xpu__conv2d_transpose_fuse_pass",
        // pick original kernel from graph (exclude xpu)
        "static_kernel_pick_pass",
        // xpu pick original kernel from graph

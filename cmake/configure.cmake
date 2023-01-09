@@ -240,6 +240,7 @@ endif(LITE_BUILD_EXTRA)
 
 if (LITE_WITH_PYTHON)
   add_definitions("-DLITE_WITH_PYTHON")
+  add_definitions("-DNNADAPTER_WITH_PYTHON")
 endif(LITE_WITH_PYTHON)
 
 if (LITE_WITH_ARM82_FP16)

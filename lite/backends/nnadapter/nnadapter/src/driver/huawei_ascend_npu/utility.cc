@@ -13,11 +13,13 @@
 // limitations under the License.
 
 #include "driver/huawei_ascend_npu/utility.h"
-#if defined(LITE_WITH_PYTHON)
+#if defined(NNADAPTER_WITH_PYTHON)
 #include <pybind11/pybind11.h>
 #endif
+#include <fstream>
 #include <map>
 #include <mutex>  // NOLINT
+#include <regex>  // NOLINT
 #include <utility>
 #include "utility/debug.h"
 #include "utility/string.h"
@@ -49,8 +51,8 @@ void InitializeAscendCL() {
                       << current_version;
     NNADAPTER_VLOG(5) << "The CANN version of the current environment is "
                       << build_version;
-    if (major_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION &&
-        minor_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION &&
+    if (major_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION ||
+        minor_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION ||
         patch_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION) {
       NNADAPTER_LOG(WARNING)
           << "CANN version mismatch. The build version is " << build_version
@@ -240,7 +242,7 @@ bool BuildOMModelToBuffer(
     const std::string& optional_shape_str,
     const DynamicShapeMode dynamic_shape_mode,
     AscendConfigParams* config_params) {
-#if defined(LITE_WITH_PYTHON)
+#if defined(NNADAPTER_WITH_PYTHON)
   pybind11::gil_scoped_release no_gil;
 #endif
   // Should initialize the GE graph builder before model building
@@ -627,44 +629,40 @@ bool GetAscendCANNVersion(int* major, int* minor, int* patch) {
   static int patch_version = 0;
   if (!initialized) {
     initialized = true;
-    std::string ld_library_path = GetStringFromEnv("LD_LIBRARY_PATH");
-    // Split the value of LD_LIBRARY_PATH by ":", and obtain the root directory
-    // of the Ascend CANN toolkit
-    std::vector<std::string> paths =
-        string_split<std::string>(ld_library_path, ":");
-    paths.push_back("/usr/local/Ascend/ascend-toolkit/latest");
-    for (auto path : paths) {
-      if (path.find("Ascend/ascend-toolkit") == std::string::npos &&
-          path.find("Ascend/nnrt") == std::string::npos)
-        continue;
-      auto ascend_cann_path = GetRealPath(path.c_str());
-      // Check if the file path is valid
-      if (ascend_cann_path.empty()) continue;
-      // Split ascend_cann_path string by "/"
-      auto tokens = string_split<std::string>(ascend_cann_path, "/");
-      std::string ascend_cann_version;
-      for (size_t i = 0; i < tokens.size(); i++) {
-        if (tokens[i] == "ascend-toolkit" || tokens[i] == "nnrt") {
-          if (i < tokens.size() - 1) {
-            ascend_cann_version = tokens[i + 1];
-            break;
-          }
+    std::regex express(
+        "version=([0-9]+\\.[0-9]+\\.(RC)?[0-9]+\\.(alpha)?[0-9]*)");
+#if defined(__arm__) || defined(__aarch64__)
+    std::string ascend_cann_path =
+        "/usr/local/Ascend/ascend-toolkit/latest/arm64-linux/"
+        "ascend_toolkit_install.info";
+#else
+    std::string ascend_cann_path =
+        "/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux/"
+        "ascend_toolkit_install.info";
+#endif
+    std::smatch match_result;
+    std::ifstream ifile(ascend_cann_path.c_str());
+    if (!ifile.is_open()) {
+      NNADAPTER_LOG(WARNING) << "Open file: [" << ascend_cann_path
+                             << "] failed.";
+      NNADAPTER_LOG(FATAL)
+          << "Unable to find the Ascend CANN installation path! "
+             "Please install the Ascend CANN.";
+      return false;
+    }
+    std::string line_data;
+    while (getline(ifile, line_data)) {
+      if (std::regex_match(line_data, match_result, express)) {
+        auto tokens = string_split<std::string>(match_result.str(1), ".");
+        if (tokens.size() == 3 || tokens.size() == 4) {
+          major_version = atoi(tokens[0].c_str());
+          minor_version = atoi(tokens[1].c_str());
+          patch_version = atoi(tokens[2].c_str());
+          break;
         }
       }
-      if (ascend_cann_version.empty()) continue;
-      // Split ascend_cann_version string by "."
-      tokens = string_split<std::string>(ascend_cann_version, ".");
-      if (tokens.size() == 3 || tokens.size() == 4) {
-        major_version = atoi(tokens[0].c_str());
-        minor_version = atoi(tokens[1].c_str());
-        patch_version = atoi(tokens[2].c_str());
-        return true;
-      }
     }
-    NNADAPTER_LOG(FATAL) << "Unable to find the Ascend CANN installation path! "
-                            "Please install the Ascend CANN and add the root "
-                            "directory into LD_LIBRARY_PATH.";
-    return false;
+    ifile.close();
   }
   *major = major_version;
   *minor = minor_version;

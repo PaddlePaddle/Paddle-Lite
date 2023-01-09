@@ -132,9 +132,10 @@ function publish_metal_lib {
   with_opencl=$3
   # Remove Compiling Cache
   rm -rf build*
+  rm -rf third-party
 
   # Step1. Compiling python installer on mac
-  ./lite/tools/build_linux.sh \
+  ./lite/tools/build_macos.sh \
     --with_python=ON \
     --python_version=$python_version \
     --with_opencl=${with_opencl} \
@@ -143,14 +144,14 @@ function publish_metal_lib {
     --with_exception=$WITH_EXCEPTION \
     --with_profile=$WITH_PROFILE \
     --with_precision_profile=$WITH_PRECISION_PROFILE \
-    --arch=x86
+    x86
 
   # Step2. Checking results: cplus and python inference lib.
-  build_dir=build.lite.linux.x86.gcc
-  if [ ${with_opencl} == ON ]; then
+  build_dir=build.lite.x86
+  if [ ${with_opencl} = ON ]; then
     build_dir=${build_dir}.opencl
   fi
-  if [ ${with_metal} == ON ]; then
+  if [ ${with_metal} = ON ]; then
     build_dir=${build_dir}.metal
   fi
 
