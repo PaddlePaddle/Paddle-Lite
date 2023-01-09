@@ -180,8 +180,10 @@ void XPUMultiEncoderCompute::PrepareForRun() {
     }
   }
   // prepare weights
-  local_quant_ =
-      GetBoolFromEnv("XPU_LOCAL_QUANT") || lite::TargetWrapperXPU::local_quant;
+  CHECK(lite::TargetWrapperXPU::xpu_runtime_ptr)
+      << "xpu_runtime_ptr null in run";
+  local_quant_ = GetBoolFromEnv("XPU_LOCAL_QUANT") ||
+                 lite::TargetWrapperXPU::xpu_runtime_ptr->local_quant;
   if (param.precision == "int16") {
     if (local_quant_) {
       arg_fc_weight_fp16_ = prepare_weight<float16>(param.fc_weight);

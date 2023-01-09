@@ -182,13 +182,6 @@ template XPUQuantData
 TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int16_t, int16_t>(
     const int16_t*, const DDimLite&, bool, size_t);
 
-// multi encoder config
-LITE_THREAD_LOCAL std::string
-    TargetWrapperXPU::multi_encoder_precision;  // NOLINT
-LITE_THREAD_LOCAL bool TargetWrapperXPU::multi_encoder_adaptive_seqlen{false};
-// local quant
-LITE_THREAD_LOCAL bool TargetWrapperXPU::local_quant{false};
-LITE_THREAD_LOCAL std::string TargetWrapperXPU::compute_precision;  // NOLINT
 // l3 cache config
 LITE_THREAD_LOCAL bool TargetWrapperXPU::need_l3_mutex{false};
 void* TargetWrapperXPU::shared_l3_ptr_{nullptr};

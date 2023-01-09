@@ -788,6 +788,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     std::vector<float> input_max(
         quant_mul_ops.size() * 2 + matmul_ops.size() * 3, 0);
     bool per_channel = false;
+    float q_weight_scale = std::numeric_limits<float>::min();
     for (int i = 0; i < quant_mul_ops.size(); ++i) {
       if (op_is_quantized[i]) {
         auto op_info = matched.at(quant_mul_ops[i])->stmt()->op_info();
@@ -804,6 +805,9 @@ class XPUSingleEncoderFuser : public FuseBase {
         CHECK(!(per_channel && per_tensor))
             << "The quant type of all weights must be consistent!";
         per_channel = !per_tensor;
+        if (i == 0 && per_tensor) {
+          q_weight_scale = weight_scales[0];
+        }
         auto weight_max_tensor =
             scope->FindMutableTensor(weight_max_tensor_name[i]);
         if (weight_max_tensor == nullptr) {
@@ -819,6 +823,16 @@ class XPUSingleEncoderFuser : public FuseBase {
           memcpy(weight_max_tensor->mutable_data<float>(),
                  weight_max.data(),
                  weight_max.size() * sizeof(float));
+        }
+        if (i < 3) {
+          CHECK_EQ(op_is_quantized[i], op_is_quantized[0])
+              << "fc qkv should be same quant type: " << i << ", "
+              << op_is_quantized[i];
+          if (per_tensor) {
+            CHECK_LT(std::abs(weight_scales[0] - q_weight_scale), 1e-6)
+                << "fc qkv weight scale shoule be same: " << weight_scales[0]
+                << ", " << q_weight_scale;
+          }
         }
 
         VLOG(3)
@@ -2011,9 +2025,11 @@ class XPUMultiEncoderFuser {
                qkv_len * sizeof(int8_t));
       } else {
 #ifdef LITE_WITH_XPU
+        CHECK(lite::TargetWrapperXPU::xpu_runtime_ptr)
+            << "xpu_runtime_ptr null in pass";
         // For R200+int16+local quant, use the fp16 weight.
         if (GetBoolFromEnv("XPU_LOCAL_QUANT") ||
-            lite::TargetWrapperXPU::local_quant) {
+            lite::TargetWrapperXPU::xpu_runtime_ptr->local_quant) {
           std::unique_ptr<float16[]> weight_qkv_trans_fp16(
               new float16[qkv_len]);
           paddle::lite::xpu::math::ConvertFP32ToFP16(
@@ -2068,24 +2084,30 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     // LITE_WITH_XPU==ON. To suppress linkage error, we use
     // #ifdef here. Any better idea?
     if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
-        lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
+        lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision ==
+            "int31") {
       fc_precision = "int31";
-      VLOG(3) << "Use int31 in XPUMultiEncoderOp, "
-              << "lite::TargetWrapperXPU::multi_encoder_precision="
-              << lite::TargetWrapperXPU::multi_encoder_precision;
+      VLOG(3)
+          << "Use int31 in XPUMultiEncoderOp, "
+          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision="
+          << lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision;
     } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
-               lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
+               lite::TargetWrapperXPU::xpu_runtime_ptr
+                       ->multi_encoder_precision == "int8") {
       fc_precision = "int8";
-      VLOG(3) << "Use int8 in XPUMultiEncoderOp, "
-              << "lite::TargetWrapperXPU::multi_encoder_precision="
-              << lite::TargetWrapperXPU::multi_encoder_precision;
+      VLOG(3)
+          << "Use int8 in XPUMultiEncoderOp, "
+          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision="
+          << lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision;
     } else {
       fc_precision = "int16";
-      VLOG(3) << "Use int16 in XPUMultiEncoderOp, "
-              << "lite::TargetWrapperXPU::multi_encoder_precision="
-              << lite::TargetWrapperXPU::multi_encoder_precision;
+      VLOG(3)
+          << "Use int16 in XPUMultiEncoderOp, "
+          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision="
+          << lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision;
     }
-    adaptive_seqlen = lite::TargetWrapperXPU::multi_encoder_adaptive_seqlen;
+    adaptive_seqlen =
+        lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_adaptive_seqlen;
     VLOG(3) << "adaptive_seqlen: " << adaptive_seqlen;
 #endif
 

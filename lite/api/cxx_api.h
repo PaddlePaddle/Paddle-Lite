@@ -38,6 +38,23 @@ static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
 
 std::vector<std::string> GetAllOps();
 
+#ifdef LITE_WITH_XPU
+class LoadPredictorConfig {
+ public:
+  LoadPredictorConfig(const LoadPredictorConfig&) = delete;
+  LoadPredictorConfig& operator=(const LoadPredictorConfig&) = delete;
+  explicit LoadPredictorConfig(lite::XPURunTimeOption* xpu_target_config) {
+    if (lite::TargetWrapperXPU::xpu_runtime_ptr != xpu_target_config) {
+      lite::TargetWrapperXPU::xpu_runtime_ptr = xpu_target_config;
+      // As rumtime context is thread_local,so we should set device when
+      // using different predictor in the same thread.
+      XPU_CALL(
+          xpu_set_device(lite::TargetWrapperXPU::xpu_runtime_ptr->xpu_dev_num));
+    }
+  }
+  ~LoadPredictorConfig() { lite::TargetWrapperXPU::xpu_runtime_ptr = nullptr; }
+};
+#endif
 /*
  * Predictor for inference, input a model, it will optimize and execute it.
  */
@@ -164,16 +181,9 @@ class LITE_API Predictor {
     CheckInputValid();
 
 #ifdef LITE_WITH_XPU
-    if (lite::TargetWrapperXPU::xpu_runtime_ptr !=
-        target_configs_[TARGET(kXPU)].get()) {
-      lite::TargetWrapperXPU::xpu_runtime_ptr =
-          reinterpret_cast<lite::XPURunTimeOption*>(
-              target_configs_[TARGET(kXPU)].get());
-      // thanks to rumtime context is thread_local,so we should set device when
-      // using different predictor in the same thread.
-      XPU_CALL(
-          xpu_set_device(lite::TargetWrapperXPU::xpu_runtime_ptr->xpu_dev_num));
-    }
+    class LoadPredictorConfig load_xpu_config_guard(
+        reinterpret_cast<lite::XPURunTimeOption*>(
+            target_configs_.at(TARGET(kXPU)).get()));
     std::vector<std::vector<int64_t>> query_shape;
     for (size_t i = 0; i < input_names_.size(); i++) {
       query_shape.push_back(std::vector<int64_t>(GetInput(i)->dims().data()));
