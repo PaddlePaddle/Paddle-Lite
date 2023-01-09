@@ -91,8 +91,8 @@ class XPUStream {
         << ",but we get current device id is : " << cur_dev_id;
 
     CHECK(xpu_stream_create(&xpu_stream_) == 0) << "xpu stream_create failed.";
-    VLOG(6) << "thread 0x" << std::hex << std::this_thread::get_id()
-            << " Creat context xpu stream: " << xpu_stream_;
+    LOG(INFO) << "thread 0x" << std::hex << std::this_thread::get_id()
+              << " Creat context xpu stream: " << xpu_stream_;
     CHECK(xpu_stream_ != nullptr);
     xpu_stream_origin_ = xpu_stream_;
   }
@@ -105,9 +105,9 @@ class XPUStream {
     if (xpu_stream_origin_ != nullptr) {
       CHECK(xpu_stream_destroy(xpu_stream_origin_) == 0)
           << "xpu stream destroy failed.";
-      VLOG(6) << "Thread 0x" << std::hex << std::this_thread::get_id()
-              << ",Destory origin xpu stream: " << xpu_stream_origin_
-              << ",which create by lite context.";
+      LOG(WARNING) << "Thread 0x" << std::hex << std::this_thread::get_id()
+                   << ",Destory origin xpu stream: " << xpu_stream_origin_
+                   << ",which create by lite context.";
       xpu_stream_origin_ = nullptr;
     }
 
@@ -131,6 +131,14 @@ struct XPURunTimeOption {
     xpu_enable_multi_stream = config->xpu_enable_multi_stream;
     xpu_dev_num = config->xpu_dev_num;
     xpu_stream.SetXPUDevid(xpu_dev_num);
+    if (!config->multi_encoder_precision.empty()) {
+      multi_encoder_precision = config->multi_encoder_precision;
+    }
+    if (!config->compute_precision.empty()) {
+      compute_precision = config->compute_precision;
+    }
+    multi_encoder_adaptive_seqlen = config->multi_encoder_adaptive_seqlen;
+    local_quant = config->local_quant;
     if (!config->xpu_dump_log_path.empty()) {
       xpu_dump_log_path = config->xpu_dump_log_path;
       need_dump_xpu_info = true;
@@ -151,6 +159,11 @@ struct XPURunTimeOption {
   int xpu_sdnn_num{0};
   bool xpu_enable_multi_stream{false};
   int xpu_dev_num{0};
+  // encoder config
+  std::string multi_encoder_precision;
+  std::string compute_precision;
+  bool multi_encoder_adaptive_seqlen{false};
+  bool local_quant{false};
   // dump tensor
   std::string xpu_dump_tensor_path{""};
   std::string xpu_dump_log_path{""};

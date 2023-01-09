@@ -24,6 +24,10 @@ void XPUScratchPad::Reserve(size_t new_size) {
   }
 
   XPU_CALL(xpu_set_device(devid_));
+  void* xpu_stream = TargetWrapperXPU::get_xpu_stream();
+  VLOG(3) << "thread 0x" << std::hex << std::this_thread::get_id()
+          << " set context xpu stream: " << xpu_stream;
+  xpu_stream_ = xpu_stream;
   XPU_CALL(xpu_wait(xpu_stream_));
   XPU_CALL(xpu_free(addr_));
   addr_ = nullptr;
