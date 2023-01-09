@@ -78,8 +78,6 @@ class ScaleComputeBuffer
       bias *= scale;
     }
     const float alpha = scale_param_->alpha;
-    const float scale1 = scale_param_->scale1;
-    const float bias1 = scale_param_->bias1;
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
