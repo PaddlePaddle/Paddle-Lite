@@ -48,8 +48,6 @@ bool UniqueOp::InferShapeImpl() const {
     }
     CHECK_LT(axis_value, in_dims.size()) << "The axis(%d) should be less than"
                                          << "the dimension size(%d) of x.";
-    auto out_dims = in_dims;
-    out_dims[axis_value] = -1;
     param_.Out->Resize({1});  // need infer
     if (param_.return_inverse) {
       param_.Index->Resize({in_dims[axis_value]});
