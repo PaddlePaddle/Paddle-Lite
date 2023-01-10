@@ -536,7 +536,6 @@ void CLImageConverterWinoTransWeight::NCHWToImage(float *tensor,
   int kernelCount = tensor_dim[2];
   int unitCi = 4;
   int unitCo = 4;
-  int alpha = 4;
   int num_count = 16 * ((co + 3) / 4) * ((ci + 3) / 4) * 4 * 4;
   float *image_fp32 = static_cast<float *>(image);
   half_t *image_fp16 = static_cast<half_t *>(image);
@@ -642,7 +641,6 @@ void CLImageConverterNBlock::NCHWToImage(float *nchw,
   half_t *image_fp16 = static_cast<half_t *>(image);
 
   float *p = nchw;
-  size_t i0 = 0;
   for (size_t n = 0; n < n_block * 4; n++) {
     for (size_t c = 0; c < c_block4; c++) {
       for (size_t h = 0; h < H; h++) {
@@ -691,8 +689,6 @@ void CLImageConverterNBlockGroup::NCHWToImage(float *nchw,
   half_t *image_fp16 = static_cast<half_t *>(image);
 
   float *p = nchw;
-  size_t i0 = 0;
-  int i = 0;
   for (size_t n = 0; n < n_block * 4; n++) {
     for (size_t c = 0; c < c_block4; c++) {
       for (size_t h = 0; h < H; h++) {
@@ -756,7 +752,6 @@ void CLImageConverterN2Block::NCHWToImage(float *nchw,
   half_t *image_fp16 = static_cast<half_t *>(image);
 
   float *p = nchw;
-  size_t i0 = 0;
   for (size_t n = 0; n < n_block * 8; n++) {
     for (size_t c = 0; c < c_block * 4; c++) {
       for (size_t h = 0; h < H; h++) {
@@ -818,7 +813,6 @@ void CLImageConverterDWFilter::NCHWToImage(float *nchw,
   half_t *image_fp16 = static_cast<half_t *>(image);
 
   float *p = nchw;
-  size_t i0 = 0;
   for (size_t n = 0; n < n_block * 4; n++) {
     for (size_t c = 0; c < C; c++) {
       for (size_t h = 0; h < H; h++) {

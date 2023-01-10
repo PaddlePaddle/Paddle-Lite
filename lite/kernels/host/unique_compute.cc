@@ -365,7 +365,6 @@ void UniqueCompute::Run() {
   auto index = param.Index;
   auto indices = param.Indices;
   auto count = param.Counts;
-  auto dtype = param.dtype;
   bool return_index = param.return_index;
   bool return_inverse = param.return_inverse;
   bool return_counts = param.return_counts;

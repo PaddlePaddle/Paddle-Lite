@@ -108,8 +108,6 @@ class LayerNormImageCompute : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     auto* x = layer_norm_param_->X;
-    auto* scale = layer_norm_param_->Scale;
-    auto* bias = layer_norm_param_->Bias;
 
     auto x_dims = x->dims();
     auto* x_img = GET_DATA_GPU(x);

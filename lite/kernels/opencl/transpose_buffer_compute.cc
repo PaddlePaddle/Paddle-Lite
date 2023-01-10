@@ -223,7 +223,6 @@ class TransposeComputeFloatBuffer
                   TARGET(kOpenCL))
             : transpose_param_->output->mutable_data<float, cl::Buffer>(
                   TARGET(kOpenCL));
-    auto& context = ctx_->As<OpenCLContext>();
     auto kernel = kernel_;
     cl_int status;
     if (kernel_func_name_ == "transpose_general_buffer" ||
