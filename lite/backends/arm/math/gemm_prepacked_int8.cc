@@ -822,14 +822,14 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   "scvtf  v6.4s , v22.4s\n"  /*  12, convert to fp32 */               \
   "scvtf  v7.4s , v23.4s\n"  /*  13, convert to fp32 */               \
   /* add bias */                                                      \
-  "mov    v16.4s, v8.4s\n"                                            \
-  "mov    v17.4s, v9.4s\n"                                            \
-  "mov    v18.4s, v10.4s\n"                                           \
-  "mov    v19.4s, v11.4s\n"                                           \
-  "mov    v20.4s, v8.4s\n"                                            \
-  "mov    v21.4s, v9.4s\n"                                            \
-  "mov    v22.4s, v10.4s\n"                                           \
-  "mov    v23.4s, v11.4s\n"                                           \
+  "mov    v16.16b, v8.16b\n"                                            \
+  "mov    v17.16b, v9.16b\n"                                            \
+  "mov    v18.16b, v10.16b\n"                                           \
+  "mov    v19.16b, v11.16b\n"                                           \
+  "mov    v20.16b, v8.16b\n"                                            \
+  "mov    v21.16b, v9.16b\n"                                            \
+  "mov    v22.16b, v10.16b\n"                                           \
+  "mov    v23.16b, v11.16b\n"                                           \
   "fmla   v16.4s, v0.4s, v12.4s\n" /*  00, mul scale */               \
   "fmla   v17.4s, v1.4s, v13.4s\n" /*  01, mul scale */               \
   "fmla   v18.4s, v2.4s, v14.4s\n" /*  02, mul scale */               \
@@ -846,14 +846,14 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   "scvtf  v5.4s , v29.4s\n"          /*  31, convert to fp32 */       \
   "scvtf  v6.4s , v30.4s\n"          /*  32, convert to fp32 */       \
   "scvtf  v7.4s , v31.4s\n"          /*  33, convert to fp32 */       \
-  "mov    v24.4s, v8.4s\n"                                            \
-  "mov    v25.4s, v9.4s\n"                                            \
-  "mov    v26.4s, v10.4s\n"                                           \
-  "mov    v27.4s, v11.4s\n"                                           \
-  "mov    v28.4s, v8.4s\n"                                            \
-  "mov    v29.4s, v9.4s\n"                                            \
-  "mov    v30.4s, v10.4s\n"                                           \
-  "mov    v31.4s, v11.4s\n"                                         \
+  "mov    v24.16b, v8.16b\n"                                            \
+  "mov    v25.16b, v9.16b\n"                                            \
+  "mov    v26.16b, v10.16b\n"                                           \
+  "mov    v27.16b, v11.16b\n"                                           \
+  "mov    v28.16b, v8.16b\n"                                            \
+  "mov    v29.16b, v9.16b\n"                                            \
+  "mov    v30.16b, v10.16b\n"                                           \
+  "mov    v31.16b, v11.16b\n"                                         \
   "fmla   v24.4s, v0.4s, v12.4s\n" /*  20, mul scale */             \
   "fmla   v25.4s, v1.4s, v13.4s\n" /*  21, mul scale */             \
   "fmla   v26.4s, v2.4s, v14.4s\n" /*  22, mul scale */             \
@@ -2164,28 +2164,28 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "ldp  q0, q1, [%[scale]]\n"     /* load scale */                         \
   "ldp  q2, q3, [%[bias_ptr]]\n"  /* load bias */                          \
   "scvtf  v4.4s , v8.4s\n"        /*  00, convert to fp32 */               \
-  "mov    v8.4s,  v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v8.16b,  v2.16b\n"        /*  fill with bias*/                     \
   "fmla v8.4s, v4.4s, v0.4s\n"  /*  00, mul scale to get final result */ \
   "scvtf  v4.4s , v11.4s\n"       /*  10, convert to fp32 */               \
-  "mov    v11.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v11.16b, v2.16b\n"        /*  fill with bias*/                     \
   "fmla v11.4s, v4.4s, v0.4s\n" /*  10, mul scale to get final result */ \
   "scvtf  v4.4s , v14.4s\n"       /*  20, convert to fp32 */               \
-  "mov    v14.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v14.16b, v2.16b\n"        /*  fill with bias*/                     \
   "fmla v14.4s, v4.4s, v0.4s\n" /*  20, mul scale to get final result */ \
   "scvtf  v4.4s , v17.4s\n"       /*  30, convert to fp32 */               \
-  "mov    v17.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v17.16b, v2.16b\n"        /*  fill with bias*/                     \
   "fmla v17.4s, v4.4s, v0.4s\n" /*  30, mul scale to get final result */ \
   "scvtf  v4.4s , v20.4s\n"       /*  40, convert to fp32 */               \
-  "mov    v20.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v20.16b, v2.16b\n"        /*  fill with bias*/                     \
   "fmla v20.4s, v4.4s, v0.4s\n" /*  40, mul scale to get final result */ \
   "scvtf  v4.4s , v23.4s\n"       /*  50, convert to fp32 */               \
-  "mov    v23.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v23.16b, v2.16b\n"        /*  fill with bias*/                     \
   "fmla v23.4s, v4.4s, v0.4s\n" /*  50, mul scale to get final result */ \
   "scvtf  v4.4s , v26.4s\n"       /*  60, convert to fp32 */               \
-  "mov    v26.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v26.16b, v2.16b\n"        /*  fill with bias*/                     \
   "fmla v26.4s, v4.4s, v0.4s\n" /*  60, mul scale to get final result */ \
   "scvtf  v4.4s, v29.4s\n"        /*  70, convert to fp32 */               \
-  "mov    v29.4s, v2.4s\n"        /*  fill with bias*/                     \
+  "mov    v29.16b, v2.16b\n"        /*  fill with bias*/                     \
   "fmla v29.4s, v4.4s, v0.4s\n"  /*  70, mul scale to get final result */ \
   "b 9f \n"                                                                \
   "8: \n"
@@ -2250,50 +2250,50 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "ldp  q2, q3, [%[bias_ptr]]\n"  /* load bias */                          \
   "scvtf  v4.4s , v8.4s\n"        /*  00, convert to fp32 */               \
   "scvtf  v5.4s , v9.4s\n"        /*  01, convert to fp32 */               \
-  "mov    v8.4s,  v2.4s\n"      /*  fill with bias*/                     \
-  "mov    v9.4s,  v3.4s\n"      /*  fill with bias*/                     \
+  "mov    v8.16b,  v2.16b\n"      /*  fill with bias*/                     \
+  "mov    v9.16b,  v3.16b\n"      /*  fill with bias*/                     \
   "fmla v8.4s, v4.4s, v0.4s\n"  /*  00, mul scale to get final result */ \
   "fmla v9.4s, v5.4s, v1.4s\n"  /*  01, mul scale to get final result */ \
   "scvtf  v4.4s , v11.4s\n"       /*  10, convert to fp32 */               \
   "scvtf  v5.4s , v12.4s\n"       /*  11, convert to fp32 */               \
-  "mov    v11.4s, v2.4s\n"      /*  fill with bias*/                     \
-  "mov    v12.4s, v3.4s\n"      /*  fill with bias*/                     \
+  "mov    v11.16b, v2.16b\n"      /*  fill with bias*/                     \
+  "mov    v12.16b, v3.16b\n"      /*  fill with bias*/                     \
   "fmla v11.4s, v4.4s, v0.4s\n" /*  10, mul scale to get final result */ \
   "fmla v12.4s, v5.4s, v1.4s\n" /*  11, mul scale to get final result */ \
   "scvtf  v4.4s , v14.4s\n"       /*  20, convert to fp32 */               \
   "scvtf  v5.4s , v15.4s\n"       /*  21, convert to fp32 */               \
-  "mov    v14.4s, v2.4s\n"      /*  fill with bias*/                     \
-  "mov    v15.4s, v3.4s\n"      /*  fill with bias*/                     \
+  "mov    v14.16b, v2.16b\n"      /*  fill with bias*/                     \
+  "mov    v15.16b, v3.16b\n"      /*  fill with bias*/                     \
   "fmla v14.4s, v4.4s, v0.4s\n" /*  20, mul scale to get final result */ \
   "fmla v15.4s, v5.4s, v1.4s\n" /*  21, mul scale to get final result */ \
   "scvtf  v4.4s , v17.4s\n"       /*  30, convert to fp32 */               \
   "scvtf  v5.4s , v18.4s\n"       /*  31, convert to fp32 */               \
-  "mov    v17.4s, v2.4s\n"      /*  fill with bias*/                     \
-  "mov    v18.4s, v3.4s\n"      /*  fill with bias*/                     \
+  "mov    v17.16b, v2.16b\n"      /*  fill with bias*/                     \
+  "mov    v18.16b, v3.16b\n"      /*  fill with bias*/                     \
   "fmla v17.4s, v4.4s, v0.4s\n" /*  30, mul scale to get final result */ \
   "fmla v18.4s, v5.4s, v1.4s\n" /*  31, mul scale to get final result */ \
   "scvtf  v4.4s , v20.4s\n"       /*  40, convert to fp32 */               \
   "scvtf  v5.4s , v21.4s\n"       /*  41, convert to fp32 */               \
-  "mov    v20.4s, v2.4s\n"      /*  fill with bias*/                     \
-  "mov    v21.4s, v3.4s\n"      /*  fill with bias*/                     \
+  "mov    v20.16b, v2.16b\n"      /*  fill with bias*/                     \
+  "mov    v21.16b, v3.16b\n"      /*  fill with bias*/                     \
   "fmla v20.4s, v4.4s, v0.4s\n" /*  40, mul scale to get final result */ \
   "fmla v21.4s, v5.4s, v1.4s\n" /*  41, mul scale to get final result */ \
   "scvtf  v4.4s , v23.4s\n"       /*  50, convert to fp32 */               \
   "scvtf  v5.4s , v24.4s\n"       /*  51, convert to fp32 */               \
-  "mov    v23.4s, v2.4s\n"      /*  fill with bias*/                     \
-  "mov    v24.4s, v3.4s\n"      /*  fill with bias*/                     \
+  "mov    v23.16b, v2.16b\n"      /*  fill with bias*/                     \
+  "mov    v24.16b, v3.16b\n"      /*  fill with bias*/                     \
   "fmla v23.4s, v4.4s, v0.4s\n" /*  50, mul scale to get final result */ \
   "fmla v24.4s, v5.4s, v1.4s\n" /*  51, mul scale to get final result */ \
   "scvtf  v4.4s , v26.4s\n"       /*  60, convert to fp32 */               \
   "scvtf  v5.4s , v27.4s\n"       /*  61, convert to fp32 */               \
-  "mov    v26.4s, v2.4s\n"      /*  fill with bias*/                     \
-  "mov    v27.4s, v3.4s\n"      /*  fill with bias*/                     \
+  "mov    v26.16b, v2.16b\n"      /*  fill with bias*/                     \
+  "mov    v27.16b, v3.16b\n"      /*  fill with bias*/                     \
   "fmla v26.4s, v4.4s, v0.4s\n" /*  60, mul scale to get final result */ \
   "fmla v27.4s, v5.4s, v1.4s\n" /*  61, mul scale to get final result */ \
   "scvtf  v4.4s, v29.4s\n"        /*  70, convert to fp32 */               \
   "scvtf  v5.4s, v30.4s\n"        /*  71, convert to fp32 */               \
-  "mov    v29.4s, v2.4s\n"      /*  fill with bias*/                     \
-  "mov    v30.4s, v3.4s\n"      /*  fill with bias*/                     \
+  "mov    v29.16b, v2.16b\n"      /*  fill with bias*/                     \
+  "mov    v30.16b, v3.16b\n"      /*  fill with bias*/                     \
   "fmla v29.4s, v4.4s, v0.4s\n"  /*  70, mul scale to get final result */ \
   "fmla v30.4s, v5.4s, v1.4s\n"  /*  71, mul scale to get final result */ \
   "b 9f \n"                                                                \
@@ -2383,77 +2383,77 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "ldp  q2, q3, [%[bias_ptr]]\n"  /* load bias */                          \
   "scvtf  v4.4s , v8.4s\n"        /*  00, convert to fp32 */               \
   "scvtf  v5.4s , v9.4s\n"        /*  01, convert to fp32 */               \
-  "mov    v8.4s,  v2.4s\n"        /*  fill with bias*/                     \
-  "mov    v9.4s,  v3.4s\n"        /*  fill with bias*/                     \
+  "mov    v8.16b,  v2.16b\n"        /*  fill with bias*/                     \
+  "mov    v9.16b,  v3.16b\n"        /*  fill with bias*/                     \
   "fmla v8.4s, v4.4s, v0.4s\n"    /*  00, mul scale to get final result */ \
   "fmla v9.4s, v5.4s, v1.4s\n"    /*  01, mul scale to get final result */ \
   "scvtf  v4.4s , v11.4s\n"       /*  10, convert to fp32 */               \
   "scvtf  v5.4s , v12.4s\n"       /*  11, convert to fp32 */               \
-  "mov    v11.4s, v2.4s\n"        /*  fill with bias*/                     \
-  "mov    v12.4s, v3.4s\n"        /*  fill with bias*/                     \
+  "mov    v11.16b, v2.16b\n"        /*  fill with bias*/                     \
+  "mov    v12.16b, v3.16b\n"        /*  fill with bias*/                     \
   "fmla v11.4s, v4.4s, v0.4s\n"   /*  10, mul scale to get final result */ \
   "fmla v12.4s, v5.4s, v1.4s\n"   /*  11, mul scale to get final result */ \
   "scvtf  v4.4s , v14.4s\n"       /*  20, convert to fp32 */               \
   "scvtf  v5.4s , v15.4s\n"       /*  21, convert to fp32 */               \
-  "mov    v14.4s, v2.4s\n"        /*  fill with bias*/                     \
-  "mov    v15.4s, v3.4s\n"        /*  fill with bias*/                     \
+  "mov    v14.16b, v2.16b\n"        /*  fill with bias*/                     \
+  "mov    v15.16b, v3.16b\n"        /*  fill with bias*/                     \
   "fmla v14.4s, v4.4s, v0.4s\n"   /*  20, mul scale to get final result */ \
   "fmla v15.4s, v5.4s, v1.4s\n"   /*  21, mul scale to get final result */ \
   "scvtf  v4.4s , v17.4s\n"       /*  30, convert to fp32 */               \
   "scvtf  v5.4s , v18.4s\n"       /*  31, convert to fp32 */               \
-  "mov    v17.4s, v2.4s\n"        /*  fill with bias*/                     \
-  "mov    v18.4s, v3.4s\n"        /*  fill with bias*/                     \
+  "mov    v17.16b, v2.16b\n"        /*  fill with bias*/                     \
+  "mov    v18.16b, v3.16b\n"        /*  fill with bias*/                     \
   "fmla v17.4s, v4.4s, v0.4s\n"   /*  30, mul scale to get final result */ \
   "fmla v18.4s, v5.4s, v1.4s\n"   /*  31, mul scale to get final result */ \
   "scvtf  v4.4s , v20.4s\n"       /*  40, convert to fp32 */               \
   "scvtf  v5.4s , v21.4s\n"       /*  41, convert to fp32 */               \
-  "mov    v20.4s, v2.4s\n"        /*  fill with bias*/                     \
-  "mov    v21.4s, v3.4s\n"        /*  fill with bias*/                     \
+  "mov    v20.16b, v2.16b\n"        /*  fill with bias*/                     \
+  "mov    v21.16b, v3.16b\n"        /*  fill with bias*/                     \
   "fmla v20.4s, v4.4s, v0.4s\n"   /*  40, mul scale to get final result */ \
   "fmla v21.4s, v5.4s, v1.4s\n"   /*  41, mul scale to get final result */ \
   "scvtf  v4.4s , v23.4s\n"       /*  50, convert to fp32 */               \
   "scvtf  v5.4s , v24.4s\n"       /*  51, convert to fp32 */               \
-  "mov    v23.4s, v2.4s\n"        /*  fill with bias*/                     \
-  "mov    v24.4s, v3.4s\n"        /*  fill with bias*/                     \
+  "mov    v23.16b, v2.16b\n"        /*  fill with bias*/                     \
+  "mov    v24.16b, v3.16b\n"        /*  fill with bias*/                     \
   "fmla v23.4s, v4.4s, v0.4s\n"   /*  50, mul scale to get final result */ \
   "fmla v24.4s, v5.4s, v1.4s\n"   /*  51, mul scale to get final result */ \
   "scvtf  v4.4s , v26.4s\n"       /*  60, convert to fp32 */               \
   "scvtf  v5.4s , v27.4s\n"       /*  61, convert to fp32 */               \
-  "mov    v26.4s, v2.4s\n"        /*  fill with bias*/                     \
-  "mov    v27.4s, v3.4s\n"        /*  fill with bias*/                     \
+  "mov    v26.16b, v2.16b\n"        /*  fill with bias*/                     \
+  "mov    v27.16b, v3.16b\n"        /*  fill with bias*/                     \
   "fmla v26.4s, v4.4s, v0.4s\n"   /*  60, mul scale to get final result */ \
   "fmla v27.4s, v5.4s, v1.4s\n"   /*  61, mul scale to get final result */ \
   "scvtf  v4.4s, v29.4s\n"        /*  70, convert to fp32 */               \
   "scvtf  v5.4s, v30.4s\n"        /*  71, convert to fp32 */               \
-  "mov    v29.4s, v2.4s\n"        /*  fill with bias*/                     \
-  "mov    v30.4s, v3.4s\n"        /*  fill with bias*/                     \
+  "mov    v29.16b, v2.16b\n"        /*  fill with bias*/                     \
+  "mov    v30.16b, v3.16b\n"        /*  fill with bias*/                     \
   "fmla v29.4s, v4.4s,v0.4s\n"    /*  70, mul scale to get final result */ \
   "fmla v30.4s, v5.4s,v1.4s\n"    /*  71, mul scale to get final result */ \
   "ldr  q0, [%[scale], #32]\n"    /* load scale */                         \
   "ldr  q2, [%[bias_ptr], #32]\n" /* load bias */                          \
   "scvtf  v6.4s , v10.4s\n"       /*  02, convert to fp32 */               \
-  "mov    v10.4s,  v2.4s\n"       /*  fill with bias*/                       \
+  "mov    v10.16b,  v2.16b\n"       /*  fill with bias*/                       \
   "fmla v10.4s, v6.4s, v0.4s\n"   /*  02, mul scale to get final result */   \
   "scvtf  v6.4s , v13.4s\n"       /*  12, convert to fp32 */               \
-  "mov    v13.4s, v2.4s\n"        /*  fill with bias*/                       \
+  "mov    v13.16b, v2.16b\n"        /*  fill with bias*/                       \
   "fmla v13.4s, v6.4s, v0.4s\n"   /*  12, mul scale to get final result */   \
   "scvtf  v6.4s , v16.4s\n"       /*  22, convert to fp32 */               \
-  "mov    v16.4s, v2.4s\n"        /*  fill with bias*/                       \
+  "mov    v16.16b, v2.16b\n"        /*  fill with bias*/                       \
   "fmla v16.4s, v6.4s, v0.4s\n"   /*  22, mul scale to get final result */   \
   "scvtf  v6.4s , v19.4s\n"       /*  32, convert to fp32 */               \
-  "mov    v19.4s, v2.4s\n"        /*  fill with bias*/                       \
+  "mov    v19.16b, v2.16b\n"        /*  fill with bias*/                       \
   "fmla v19.4s, v6.4s, v0.4s\n"   /*  32, mul scale to get final result */   \
   "scvtf  v6.4s , v22.4s\n"       /*  42, convert to fp32 */               \
-  "mov    v22.4s, v2.4s\n"        /*  fill with bias*/                       \
+  "mov    v22.16b, v2.16b\n"        /*  fill with bias*/                       \
   "fmla v22.4s, v6.4s, v0.4s\n"   /*  42, mul scale to get final result */   \
   "scvtf  v6.4s , v25.4s\n"       /*  52, convert to fp32 */               \
-  "mov    v25.4s, v2.4s\n"        /*  fill with bias*/                       \
+  "mov    v25.16b, v2.16b\n"        /*  fill with bias*/                       \
   "fmla v25.4s, v6.4s, v0.4s\n"   /*  52, mul scale to get final result */   \
   "scvtf  v6.4s , v28.4s\n"       /*  62, convert to fp32 */               \
-  "mov    v28.4s, v2.4s\n"        /*  fill with bias*/                       \
+  "mov    v28.16b, v2.16b\n"        /*  fill with bias*/                       \
   "fmla v28.4s, v6.4s, v0.4s\n"   /*  62, mul scale to get final result */   \
   "scvtf  v6.4s, v31.4s\n"        /*  72, convert to fp32 */               \
-  "mov    v31.4s, v2.4s\n"        /*  fill with bias*/                       \
+  "mov    v31.16b, v2.16b\n"        /*  fill with bias*/                       \
   "fmla v31.4s, v6.4s,v0.4s\n"    /*  72, mul scale to get final result */   \
   "b 9f \n"                                                                \
   "8: \n"
