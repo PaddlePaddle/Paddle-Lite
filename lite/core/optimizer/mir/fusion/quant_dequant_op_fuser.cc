@@ -578,11 +578,6 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
   // 3. Delete nodes and edges
   std::set<const Node*> nodes2rm = {
       quant_dequant_node, output_scale_node, output_var_node};
-  if (quant_dequant_op_type_ ==
-      "fake_quantize_dequantize_moving_average_abs_max") {
-    auto* input_scale_node = matched.at("input_scale_node");
-    nodes2rm.insert(input_scale_node);
-  }
   GraphSafeRemoveNodes(graph, nodes2rm);
 }
 
