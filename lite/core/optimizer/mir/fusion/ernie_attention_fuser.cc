@@ -47,10 +47,16 @@ namespace fusion {
 *                softmax            /
 *                    \             /
 *                     \           /
-*                      \         /
-*                       \       /
-*                        \     /
 *                       matmul_v2
+*                           |
+*                           |
+*                       transpose2
+*                           |
+*                           |
+*                        reshape2
+*                           |
+*                           |
+*                         output
 */
 
 void ErnieAttentionFuser::BuildPattern() {
@@ -105,10 +111,12 @@ void ErnieAttentionFuser::BuildPattern() {
   auto* reshape2_out =
       VarNode("reshape2_out")->assert_is_op_output("reshape2", "Out");
 
+  auto* reshape3 = OpNode("reshape3", "reshape2");
+
   auto* xshape0 = VarNode("xshape0")->assert_is_op_output("reshape2", "XShape");
   auto* xshape1 = VarNode("xshape1")->assert_is_op_output("reshape2", "XShape");
   auto* xshape2 = VarNode("xshape2")->assert_is_op_output("reshape2", "XShape");
-
+  auto* xshape6 = VarNode("xshape6")->assert_is_op_output("reshape2", "XShape");
   // transpose2
   auto* transpose0 = OpNode("transpose0", "transpose2")
                          ->assert_node_satisfied(transpose_attr_teller);
@@ -130,6 +138,13 @@ void ErnieAttentionFuser::BuildPattern() {
       VarNode("transpose2_out")->assert_is_op_output("transpose2", "Out");
   auto* xshape5 =
       VarNode("xshape5")->assert_is_op_output("transpose2", "XShape");
+
+  auto* transpose3 = OpNode("transpose3", "transpose2")
+                         ->assert_node_satisfied(transpose_attr_teller);
+  auto* transpose3_out =
+      VarNode("transpose3_out")->assert_is_op_output("transpose2", "Out");
+  auto* xshape7 =
+      VarNode("xshape7")->assert_is_op_output("transpose2", "XShape");
 
   // scale
   auto* scale0 = OpNode("scale0", "scale");
@@ -156,6 +171,9 @@ void ErnieAttentionFuser::BuildPattern() {
   // matmul_v2
   auto* matmul1 = OpNode("matmul1", "matmul_v2")
                       ->assert_node_satisfied(matmul1_attr_teller);
+  auto* matmul1_out =
+      VarNode("matmul1_out")->assert_is_op_output("matmul_v2", "Out");
+
   auto* Out = VarNode("Out");
 
   std::vector<PMNode*> fc0_inputs{input0, fc0_w, fc0_bias};
@@ -170,9 +188,11 @@ void ErnieAttentionFuser::BuildPattern() {
   *reshape0 >> *xshape0;
   *reshape1 >> *xshape1;
   *reshape2 >> *xshape2;
+  *reshape3 >> *xshape6;
   *transpose0 >> *xshape3;
   *transpose1 >> *xshape4;
   *transpose2 >> *xshape5;
+  *transpose3 >> *xshape7;
 
   std::vector<PMNode*> matmul0_inputs{scale0_out, transpose1_out};
   matmul0_inputs >> *matmul0 >> *matmul0_out;
@@ -180,7 +200,8 @@ void ErnieAttentionFuser::BuildPattern() {
   add0_inputs >> *add >> *add0_out >> *softmax0 >> *softmax0_out;
 
   std::vector<PMNode*> matmul1_inputs{softmax0_out, transpose2_out};
-  matmul1_inputs >> *matmul1 >> *Out;
+  matmul1_inputs >> *matmul1 >> *matmul1_out >> *transpose3 >>
+      *transpose3_out >> *reshape3 >> *Out;
 
   xshape0->AsIntermediate();
   xshape1->AsIntermediate();
@@ -188,6 +209,8 @@ void ErnieAttentionFuser::BuildPattern() {
   xshape3->AsIntermediate();
   xshape4->AsIntermediate();
   xshape5->AsIntermediate();
+  xshape6->AsIntermediate();
+  xshape7->AsIntermediate();
   fc0->AsIntermediate();
   fc0_out->AsIntermediate();
   reshape0->AsIntermediate();
@@ -215,6 +238,10 @@ void ErnieAttentionFuser::BuildPattern() {
   softmax0->AsIntermediate();
   softmax0_out->AsIntermediate();
   matmul1->AsIntermediate();
+  matmul1_out->AsIntermediate();
+  transpose3->AsIntermediate();
+  transpose3_out->AsIntermediate();
+  reshape3->AsIntermediate();
 }
 
 template <typename T>
@@ -349,6 +376,7 @@ void ErnieAttentionFuser::InsertNewNode(SSAGraph* graph,
   auto matmul1_op_desc = matched.at("matmul1")->stmt()->op_info();
   auto scale0_op_desc = matched.at("scale0")->stmt()->op_info();
   auto scale0_scale = scale0_op_desc->GetAttr<float>("scale");
+  auto reshape3_op_desc = matched.at("reshape3")->stmt()->op_info();
   if (enable_int8) {
     op_desc.SetAttr<bool>("enable_int8",
                           fc0_op_desc->GetAttr<bool>("enable_int8"));
@@ -412,8 +440,11 @@ void ErnieAttentionFuser::InsertNewNode(SSAGraph* graph,
     fc1_scale_data.push_back(matmul0_scale_x[0] * matmul0_scale_y[0]);
     op_desc.SetAttr<std::vector<float>>("fc1_scale", fc1_scale_data);
     // fc 2 == matmul 1
+    auto reshape3_scale =
+        reshape3_op_desc->GetAttr<std::vector<float>>("X0_scale");
     std::vector<float> fc2_scale_data;
-    fc2_scale_data.push_back(matmul1_scale_x[0] * matmul1_scale_y[0]);
+    fc2_scale_data.push_back(matmul1_scale_x[0] * matmul1_scale_y[0] /
+                             reshape3_scale[0]);
     op_desc.SetAttr<std::vector<float>>("fc2_scale", fc2_scale_data);
   } else {
     ComputeNewWeight<float>(&weight_tensor,
@@ -423,6 +454,7 @@ void ErnieAttentionFuser::InsertNewNode(SSAGraph* graph,
                             weight0_dims[0],
                             weight0_dims[1]);
     ComputeNewBias(&bias_tensor, bias0_t, bias1_t, bias2_t, bias0_dims[0]);
+    op_desc.SetAttr<float>("scale", scale0_scale);
   }
   // update weight bias
   weight0_t->Resize({weight0_dims[0], weight0_dims[1] * 3});

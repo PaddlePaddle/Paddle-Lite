@@ -63,6 +63,25 @@ void TransposeCompute_1to3(int8_t* input,
   }
 }
 
+void TransposeCompute_0213(int8_t* input,
+                           int8_t* output,
+                           int input_n,
+                           int input_c,
+                           int intput_h,
+                           int intput_w) {
+  int out_hw_stride = input_c * intput_w;
+  for (int n = 0; n < input_n; n++) {
+    for (int c = 0; c < input_c; c++) {
+      for (int h = 0; h < intput_h; h++) {
+        memcpy(output + h * out_hw_stride + c * intput_w,
+               input,
+               intput_w * sizeof(int8_t));
+        input += intput_w;
+      }
+    }
+  }
+}
+
 template <>
 void FusedAttentionCompute<PRECISION(kInt8)>::PrepareForRun() {
   ReInitWhenNeeded();
@@ -138,7 +157,7 @@ void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto* input0_data = param.input0->data<float>();
   auto* input1_data = param.input1->data<float>();
-  auto* o_data = param.output->mutable_data<float>();
+  auto* o_data = param.output->mutable_data<int8_t>();
   auto input0_dims = param.input0->dims();
 
   Tensor calib_t;
@@ -246,25 +265,35 @@ void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
                                 softmax_out_dim_.production());
 
   // matmul_v2 fuse calib -> (int8 -> fp32)
+  Tensor matmul2_t;
+  matmul2_t.Resize(fc2_out_dim_);
+  matmul2_t.mutable_data<int8_t>();
+  auto* matmul2_out = const_cast<int8_t*>(matmul2_t.data<int8_t>());
   int fc2_x_inner = fc2_m_ * fc2_k_;
   int fc2_y_inner = fc2_k_ * fc2_n_;
   int fc2_out_inner = fc2_m_ * fc2_n_;
   for (size_t i = 0; i < fc2_out_dim_[1]; ++i) {
-    lite::arm::math::gemm_s8(false,
-                             false,
-                             fc2_m_,
-                             fc2_n_,
-                             fc2_k_,
-                             calib1_out + i * fc2_x_inner,
-                             v2 + i * fc2_y_inner,
-                             o_data + i * fc2_out_inner,
-                             nullptr,
-                             false,
-                             lite::arm::math::GemmNBias,
-                             fc2_scale_.data(),
-                             act_param_,
-                             &ctx);
+    lite::arm::math::gemm_s8<int8_t>(false,
+                                     false,
+                                     fc2_m_,
+                                     fc2_n_,
+                                     fc2_k_,
+                                     calib1_out + i * fc2_x_inner,
+                                     v2 + i * fc2_y_inner,
+                                     matmul2_out + i * fc2_out_inner,
+                                     nullptr,
+                                     false,
+                                     lite::arm::math::GemmNBias,
+                                     fc2_scale_.data(),
+                                     act_param_,
+                                     &ctx);
   }
+  TransposeCompute_0213(matmul2_out,
+                        o_data,
+                        fc2_out_dim_[0],
+                        fc2_out_dim_[1],
+                        fc2_out_dim_[2],
+                        fc2_out_dim_[3]);
 }
 
 }  // namespace arm
@@ -281,5 +310,5 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .Finalize();

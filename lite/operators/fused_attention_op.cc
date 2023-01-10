@@ -101,9 +101,8 @@ bool FusedAttentionOpLite::InferShape() {
   } else {
     CHECK_EQ(capacity, input_size) << "Invalid shape is given.";
   }
-  // transpose axis {0, 2, 1, 3}
-  lite::DDim out_dims = DDim(
-      {x_dims[0], reshape_output_dims[2], x_dims[1], reshape_output_dims[3]});
+
+  lite::DDim out_dims = x_dims;
   param_.output->Resize(out_dims);
 
   // share LoD
@@ -153,6 +152,8 @@ bool FusedAttentionOpLite::AttachImpl(const cpp::OpDesc &op_desc,
     param_.fc1_scale = op_desc.GetAttr<std::vector<float>>("fc1_scale");
     param_.fc2_scale = op_desc.GetAttr<std::vector<float>>("fc2_scale");
     param_.enable_int8 = op_info->GetAttr<bool>("enable_int8");
+  } else {
+    param_.scale = op_info->GetAttr<float>("scale");
   }
   if (op_desc.HasAttr("op_type")) {
     param_.op_type = op_desc.GetAttr<std::string>("op_type");

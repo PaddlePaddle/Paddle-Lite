@@ -142,6 +142,9 @@ struct FusedAttentionParam : ParamBase {
   std::vector<float> fc1_scale{};
   std::vector<float> fc2_scale{};
   int bit_length{8};
+
+  // for float/fp16
+  float scale{1.f};
 };
 
 struct SearchSeqFcParam : ParamBase {
