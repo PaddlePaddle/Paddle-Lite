@@ -22,44 +22,36 @@ namespace operators {
 bool UniqueOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
-  if (!param_.is_sorted) {
-    CHECK_OR_FALSE(param_.Index);
-  } else {
-    if (param_.return_index) {
-      CHECK_OR_FALSE(param_.Indices);
-    }
-    if (param_.return_inverse) {
-      CHECK_OR_FALSE(param_.Index);
-    }
-    if (param_.return_counts) {
-      CHECK_OR_FALSE(param_.Counts)
-    }
-  }
   return true;
 }
 
 bool UniqueOp::InferShapeImpl() const {
+  if (param_.return_index) CHECK(param_.Indices);
+  if (param_.return_inverse || !param_.is_sorted) CHECK(param_.Index);
+  if (param_.return_counts) CHECK(param_.Counts);
+  DDim in_dims = param_.X->dims();
   if (!param_.is_sorted) {
-    DDim in_dims = param_.X->dims();
-    if (param_.Out) param_.Out->Resize({-1});
-    if (param_.Index) param_.Index->Resize(in_dims);
+    CHECK_EQ(in_dims.size(), 1) << "The Input(X) should be 1-D Tensor,"
+                                << "But now dims of Input(X) is "
+                                << in_dims.size();
+    param_.Out->Resize({1});  // need infer
+    param_.Index->Resize(in_dims);
+    return true;
+  }
+  if (param_.axis.empty()) {
+    param_.Out->Resize({1});  // need infer
+    if (param_.return_inverse) param_.Index->Resize(in_dims);
   } else {
-    DDim in_dims = param_.X->dims();
-    if (param_.axis.empty()) {
-      if (param_.Out) param_.Out->Resize(in_dims);
-      if (param_.return_inverse) param_.Index->Resize(in_dims);
-    } else {
-      int axis_value = param_.axis[0];
-      if (axis_value < 0) {
-        axis_value += in_dims.size();
-      }
-      DDim out_dims = in_dims;
-      out_dims[axis_value] = -1;
-      if (param_.Out) param_.Out->Resize(out_dims);
-      if (param_.return_inverse) param_.Index->Resize({in_dims[axis_value]});
+    int axis_value = param_.axis[0];
+    if (axis_value < 0) {
+      axis_value += in_dims.size();
     }
-    if (param_.return_index) param_.Indices->Resize({-1});
-    if (param_.return_counts) param_.Counts->Resize({-1});
+    CHECK_LT(axis_value, in_dims.size()) << "The axis(%d) should be less than"
+                                         << "the dimension size(%d) of x.";
+    param_.Out->Resize({1});  // need infer
+    if (param_.return_inverse) {
+      param_.Index->Resize({in_dims[axis_value]});
+    }
   }
   return true;
 }
@@ -81,7 +73,6 @@ bool UniqueOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     param_.Counts = scope->FindMutableTensor(opdesc.Output("Counts").front());
     CHECK(param_.Counts) << "Output(Counts) of UniqueOp should not be null.";
   }
-
   if (opdesc.HasAttr("dtype")) {
     param_.dtype = opdesc.GetAttr<int>("dtype");
   }
@@ -98,7 +89,6 @@ bool UniqueOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (opdesc.HasAttr("is_sorted")) {
     param_.is_sorted = opdesc.GetAttr<bool>("is_sorted");
   }
-
   return true;
 }
 
