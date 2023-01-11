@@ -324,8 +324,6 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
     act_param.Relu_clipped_coef = param.alpha;
   }
   if (flag_gemm_) {
-    CHECK(!param.bias) << "fc int8 kernel with int8 output using gemm kernel "
-                          "must not have bias";
     lite::arm::math::gemm_s8(false,
                              false,
                              m_,
