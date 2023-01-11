@@ -373,13 +373,12 @@ void UniqueCompute<InT>::Run() {
   auto index = param.Index;
   auto indices = param.Indices;
   auto count = param.Counts;
+  auto dtype = param.dtype;
   bool return_index = param.return_index;
   bool return_inverse = param.return_inverse;
   bool return_counts = param.return_counts;
   auto axis_vec = param.axis;
   auto is_sorted = param.is_sorted;
-  lite_api::PrecisionType index_type = index->precision();
-  lite_api::PrecisionType x_type = x->precision();
   CHECK(dtype == 3 || dtype == 2) << "dtype must be int or int64, but now is "
                                   << static_cast<int>(dtype);
   // set output precision
