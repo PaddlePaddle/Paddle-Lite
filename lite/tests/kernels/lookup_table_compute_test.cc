@@ -117,9 +117,9 @@ TEST(LookupTable, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 1e-3;
+#endif
 #else
   return;
-#endif
 #endif
   using ID_T = int64_t;
 
