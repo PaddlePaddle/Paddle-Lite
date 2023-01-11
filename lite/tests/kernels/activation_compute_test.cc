@@ -995,11 +995,12 @@ TEST(Activation_sqrt, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_INTEL_OPENVINO)
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-3;
 #else
   return;
 #endif
-#endif
-#if defined(LITE_WITH_OPENCL)
+#elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_error = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_ARM)
@@ -1036,6 +1037,8 @@ TEST(Activation_square, precision) {
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 5e-2;
 #else
   return;

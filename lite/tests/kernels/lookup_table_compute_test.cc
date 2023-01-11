@@ -113,16 +113,34 @@ TEST(LookupTable, precision) {
   Place place;
 #if defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-3;
 #else
   return;
 #endif
-
+#endif
   using ID_T = int64_t;
 
   for (auto ids_dims :
        std::vector<std::vector<int64_t>>{{5, 2, 3, 1}, {2, 3, 1}, {3, 1}}) {
     for (auto w_dims :
          std::vector<std::vector<int64_t>>{{4, 2}, {6, 8}, {12, 15}}) {
+#if defined(LITE_WITH_NNADAPTER)
+      for (auto padding_idx :
+           std::vector<int64_t>{-1}) {  // NNadapter only support -1
+        std::unique_ptr<arena::TestCase> tester(
+            new LookupTableComputeTest<int>(  // NNadapter only support int
+                place,
+                "def",
+                DDim(ids_dims),
+                DDim(w_dims),
+                padding_idx));
+        arena::Arena arena(std::move(tester), place, abs_error);
+        arena.TestPrecision();
+      }
+#else
 #if defined(LITE_WITH_XPU)
       for (auto padding_idx :
            std::vector<int64_t>{-1}) {  // XPU only support -1
@@ -135,6 +153,7 @@ TEST(LookupTable, precision) {
         arena::Arena arena(std::move(tester), place, abs_error);
         arena.TestPrecision();
       }
+#endif
     }
   }
 }

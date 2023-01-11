@@ -150,10 +150,17 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         PropagateAsymmZeroPoint(input_operands[0], output_operands[0]);
       } break;
       case NNADAPTER_CONCAT:
-      case NNADAPTER_STACK:
-      case NNADAPTER_SUM: {
+      case NNADAPTER_STACK: {
         NNADAPTER_CHECK_GE(input_count, 2);
         for (int i = 0; i < input_count - 1; i++) {
+          ConvertOperandSymmToAsymm(input_operands[i], 128);
+        }
+        NNADAPTER_CHECK_EQ(output_count, 1);
+        ConvertOperandSymmToAsymm(output_operands[0], 128);
+      } break;
+      case NNADAPTER_SUM: {
+        NNADAPTER_CHECK_GE(input_count, 2);
+        for (int i = 0; i < input_count; i++) {
           ConvertOperandSymmToAsymm(input_operands[i], 128);
         }
         NNADAPTER_CHECK_EQ(output_count, 1);

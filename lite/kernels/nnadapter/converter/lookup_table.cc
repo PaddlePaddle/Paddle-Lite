@@ -19,7 +19,7 @@ namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-int ConvertLookupTableV2(Converter* converter, OpInfo* op, Scope* scope) {
+int ConvertLookupTable(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
   auto input_name = op->Input("W").front();
   auto input_scale_name = "W0_scale";
@@ -40,6 +40,16 @@ int ConvertLookupTableV2(Converter* converter, OpInfo* op, Scope* scope) {
   auto indices_operand =
       converter->AddInputOperand(scope, indices_name, {}, indices_scales);
 
+  auto out_name = op->Output("Out").front();
+  std::vector<int> axes = {-1};
+  auto squeeze_axes_operand = converter->AddConstantOperand(axes);
+
+  auto gather_indices_operand =
+      converter->AddOutputOperand(out_name, indices_scales);
+  converter->AddOperation(NNADAPTER_SQUEEZE,
+                          {indices_operand, squeeze_axes_operand},
+                          {gather_indices_operand});
+
   // Axis operand
   auto axis_operand = converter->AddConstantOperand<int>(0);
 
@@ -53,7 +63,6 @@ int ConvertLookupTableV2(Converter* converter, OpInfo* op, Scope* scope) {
   }
 
   // Output operand
-  auto out_name = op->Output("Out").front();
   auto out_scale_name = "Out0_scale";
   std::vector<float> out_scales;
   if (op->HasOutputScale(out_scale_name, true)) {
@@ -63,7 +72,7 @@ int ConvertLookupTableV2(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Gather operation
   converter->AddOperation(NNADAPTER_GATHER,
-                          {input_operand, indices_operand, axis_operand},
+                          {input_operand, gather_indices_operand, axis_operand},
                           {output_operand});
   return NO_ERROR;
 }
