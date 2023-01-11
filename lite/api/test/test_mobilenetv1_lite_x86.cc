@@ -41,7 +41,7 @@ TEST(Mobilenet_v1, test_mobilenetv1_lite_x86) {
        Place{TARGET(kHost), PRECISION(kFloat)}});
 
   bool is_opencl_backend_valid =
-      ::IsOpenCLBackendValid(false /*check_fp16_valid = false*/);
+      paddle::lite_api::IsOpenCLBackendValid(false /*check_fp16_valid = false*/);
   std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
             << std::endl;
 
@@ -63,13 +63,13 @@ TEST(Mobilenet_v1, test_mobilenetv1_lite_x86) {
   // CL_TUNE_RAPID: 1
   // CL_TUNE_NORMAL: 2
   // CL_TUNE_EXHAUSTIVE: 3
-  config.set_opencl_tune(CL_TUNE_NONE);
+  config.set_opencl_tune(paddle::lite_api::CL_TUNE_NONE);
   // opencl precision option. Most x86 devices only support fp32, so set
   // CL_PRECISION_FP32 as default.
   // CL_PRECISION_AUTO: 0, first fp16 if valid, default
   // CL_PRECISION_FP32: 1, force fp32
   // CL_PRECISION_FP16: 2, force fp16
-  config.set_opencl_precision(CL_PRECISION_FP32);
+  config.set_opencl_precision(paddle::lite_api::CL_PRECISION_FP32);
 #else
   config.set_valid_places({lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
