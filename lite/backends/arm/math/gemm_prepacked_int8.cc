@@ -4096,30 +4096,30 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
   "vld1.32 {d14-d15}, [%[bias]]!\n"  /* load bias */             \
   "vcvt.f32.s32   q10, q8\n"        /* r00, cvt int32 to fp32*/ \
   "vcvt.f32.s32   q12, q0\n"        /* r10, cvt int32 to fp32*/ \
-  "vmov.32    q8, q6\n"   \
-  "vmov.32    q0, q6\n"   \
-  "vmla.f32 q8, q10, q7\n"      /*  r00, mul scale */ \
-  "vmla.f32 q0, q12, q7\n"      /*  r10, mul scale */ \
+  "vmov.32    q8, q7\n"   \
+  "vmov.32    q0, q7\n"   \
+  "vmla.f32 q8, q10, q6\n"      /*  r00, mul scale */ \
+  "vmla.f32 q0, q12, q6\n"      /*  r10, mul scale */ \
   "vcvt.f32.s32   q10, q2\n"        /* r20, cvt int32 to fp32*/ \
   "vcvt.f32.s32   q12, q4\n"        /* r30, cvt int32 to fp32*/ \
-  "vdup.32    q2, d15[0]\n"   \
-  "vdup.32    q4, d15[1]\n"   \
-  "vmla.f32 q2, q10, d13[0]\n"      /* r20, mul scale */  \
-  "vmla.f32 q4, q12, d13[1]\n"      /* r30, mul scale */  \
+  "vmov.32    q2, q7\n"   \
+  "vmov.32    q4, q7\n"   \
+  "vmla.f32 q2, q10, q6\n"      /* r20, mul scale */  \
+  "vmla.f32 q4, q12, q6\n"      /* r30, mul scale */  \
   "vld1.32 {d12-d13}, [%[scale]]\n" /* load scale */            \
   "vld1.32 {d14-d15}, [%[bias]]\n"  /* load bias */             \
   "vcvt.f32.s32   q11, q9\n"        /* r01, cvt int32 to fp32*/ \
   "vcvt.f32.s32   q13, q1\n"        /* r11, cvt int32 to fp32*/ \
-  "vmov.32    q9, q6\n"   \
-  "vmov.32    q1, q6\n"   \
-  "vmla.f32 q9, q11, q7\n"      /*  r01, mul scale */ \
-  "vmla.f32 q1, q13, q7\n"      /*  r11, mul scale */ \
+  "vmov.32    q9, q7\n"   \
+  "vmov.32    q1, q7\n"   \
+  "vmla.f32 q9, q11, q6\n"      /*  r01, mul scale */ \
+  "vmla.f32 q1, q13, q6\n"      /*  r11, mul scale */ \
   "vcvt.f32.s32   q11, q3\n"        /* r21, cvt int32 to fp32*/ \
   "vcvt.f32.s32   q13, q5\n"        /* r31, cvt int32 to fp32*/ \
-  "vdup.32    q3, d15[0]\n"   \
-  "vdup.32    q5, d15[1]\n"   \
-  "vmla.f32 q3, q11, d13[0]\n"      /* r21, mul scale */  \
-  "vmla.f32 q5, q13, d13[1]\n"      /* r31, mul scale */  \
+  "vmov.32    q3, q7\n"   \
+  "vmov.32    q5, q7\n"   \
+  "vmla.f32 q3, q11, q6\n"      /* r21, mul scale */  \
+  "vmla.f32 q5, q13, q6\n"      /* r31, mul scale */  \
   "b 8f \n"                                                         \
   "7: \n"
 
