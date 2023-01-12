@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,9 +57,7 @@ int ConvertLookupTable(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasAttr("padding_idx")) {
     auto padding_idx = op->GetAttr<int64_t>("padding_idx");
     // TODO(zhupengyang): support padding_idx later.
-    if (padding_idx != -1) {
-      LOG(FATAL) << "Only support padding_idx = -1";
-    }
+    CHECK_EQ(padding_idx, -1) << "Only support padding_idx = -1";
   }
 
   // Output operand
