@@ -3274,7 +3274,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vmla.f32   q14,  q2, d0[1]       \n" \
   "vmla.f32   q15,  q3, d0[1]       \n" \
   "9: \n"                               \
-  "lsl %[relu], #28                 \n"
+  "and %[relu], #15                 \n"
 
 #define GEMM_DOT_CVT_INT32_TO_FP32_N_Direction \
   "cmp %[relu], #32                 \n"        \
@@ -7999,7 +7999,7 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
             for (int i = xb * NBLOCK_INT8_DOT + x0;
                  i < xmax && j < NBLOCK_INT8_DOT;
                  i++, j++) {
-              bias_local[j] = bias[xb * NBLOCK_INT8_DOT + j + x0];
+              bias_local[j] = bias[i];
             }
           }
         }
@@ -8057,7 +8057,6 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
                                     static_cast<int>(bias_direction));
         scale_ptr = scale_local;
         bias_ptr = bias_local;
-
         if (flag_p_remain && (xb == bblocks - 1)) {
           for (int i = 0; i < remain; ++i) {
             *pout0++ = cout0[i];
