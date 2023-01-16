@@ -806,7 +806,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   "fmla   v31.4s, v7.4s, v15.s[3]\n" /*  33, mul scale */             \
   "8: \n"
 
-#define GEMM_TRANS_INT32_TO_FP32_N_Direction                          \
+#define GEMM_TRANS_INT32_TO_FP32_N_DIRECTION                          \
   "cmp %w[bias_direction], #2\n"   /* skip N_Direction  */            \
   "bne   7f\n"                    /* skip N_Direction  */             \
   "ldp    q8, q9,   [%[bias]]\n"      /* load bias */                 \
@@ -866,7 +866,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   "7: \n"
 
 #define GEMM_INT8_FP32_OUT                \
-  GEMM_TRANS_INT32_TO_FP32_N_Direction    \
+  GEMM_TRANS_INT32_TO_FP32_N_DIRECTION    \
   GEMM_TRANS_INT32_TO_FP32                \
   GEMM_INT8_RELU                          \
   GEMM_INT8_RELU6                         \
@@ -883,7 +883,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   "stp    q30, q31,   [%[c_ptr3]], #32\n"
 
 #define GEMM_INT8_INT8_OUT                                         \
-  GEMM_TRANS_INT32_TO_FP32_N_Direction                             \
+  GEMM_TRANS_INT32_TO_FP32_N_DIRECTION                             \
   GEMM_TRANS_INT32_TO_FP32                                         \
   GEMM_INT8_RELU                                                   \
   GEMM_INT8_RELU6                                                  \
@@ -2158,7 +2158,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "fmla v29.4s, v4.4s,v1.s[3]\n"  /*  70, mul scale to get final result */ \
   "9: \n"
 
-#define GEMM_SDOT_CVT_INT32_TO_FP32_8x4_N_Direction                          \
+#define GEMM_SDOT_CVT_INT32_TO_FP32_8x4_N_DIRECTION                          \
   "cmp    %w[bias_direction], #2\n" /* skip N_Direction  */                  \
   "bne    8f\n"                     /* skip N_Direction  */                  \
   "ldp    q0, q1, [%[scale]]\n"     /* load scale */                         \
@@ -2243,7 +2243,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "fmla v30.4s, v5.4s,v1.s[3]\n"  /*  71, mul scale to get final result */ \
   "9: \n"
 
-#define GEMM_SDOT_CVT_INT32_TO_FP32_8x8_N_Direction                        \
+#define GEMM_SDOT_CVT_INT32_TO_FP32_8x8_N_DIRECTION                        \
   "cmp %w[bias_direction],#2\n"   /* skip N_Direction  */                  \
   "bne   8f\n"                    /* skip N_Direction  */                  \
   "ldp  q0, q1, [%[scale]]\n"     /* load scale */                         \
@@ -2376,7 +2376,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "fmla v31.4s, v6.4s,v1.s[3]\n"  /*  72, mul scale to get final result */ \
   "9: \n"
 
-#define GEMM_SDOT_CVT_INT32_TO_FP32_N_Direction                            \
+#define GEMM_SDOT_CVT_INT32_TO_FP32_N_DIRECTION                            \
   "cmp %w[bias_direction],#2\n"   /* skip N_Direction  */                  \
   "bne   8f\n"                    /* skip N_Direction  */                  \
   "ldp  q0, q1, [%[scale]]\n"     /* load scale */                         \
@@ -2459,7 +2459,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "8: \n"
 
 #define GEMM_SDOT_FP32_OUT_8x4                                \
-  GEMM_SDOT_CVT_INT32_TO_FP32_8x4_N_Direction                 \
+  GEMM_SDOT_CVT_INT32_TO_FP32_8x4_N_DIRECTION                 \
   GEMM_SDOT_CVT_INT32_TO_FP32_8x4                             \
   GEMM_SDOT_RELU_8x4                                          \
   GEMM_SDOT_RELU6_8x4                                         \
@@ -2475,7 +2475,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "st1 {v29.4s},[%[c_ptr7]], #16\n" /* store r7 */
 
 #define GEMM_SDOT_FP32_OUT_8x8                                \
-  GEMM_SDOT_CVT_INT32_TO_FP32_8x8_N_Direction                 \
+  GEMM_SDOT_CVT_INT32_TO_FP32_8x8_N_DIRECTION                 \
   GEMM_SDOT_CVT_INT32_TO_FP32_8x8                             \
   GEMM_SDOT_RELU_8x8                                          \
   GEMM_SDOT_RELU6_8x8                                         \
@@ -2491,7 +2491,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "st1 {v29.4s, v30.4s},[%[c_ptr7]], #32\n" /* store r7 */
 
 #define GEMM_SDOT_FP32_OUT                                         \
-  GEMM_SDOT_CVT_INT32_TO_FP32_N_Direction                          \
+  GEMM_SDOT_CVT_INT32_TO_FP32_N_DIRECTION                          \
   GEMM_SDOT_CVT_INT32_TO_FP32                                      \
   GEMM_SDOT_RELU                                                   \
   GEMM_SDOT_RELU6                                                  \
@@ -2507,7 +2507,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "st1 {v29.4s, v30.4s, v31.4s},[%[c_ptr7]], #48\n" /* store r7 */
 
 #define GEMM_SDOT_INT8_OUT_8x4                                     \
-  GEMM_SDOT_CVT_INT32_TO_FP32_8x4_N_Direction                      \
+  GEMM_SDOT_CVT_INT32_TO_FP32_8x4_N_DIRECTION                      \
   GEMM_SDOT_CVT_INT32_TO_FP32_8x4                                  \
   GEMM_SDOT_RELU_8x4                                               \
   GEMM_SDOT_RELU6_8x4                                              \
@@ -2572,7 +2572,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "str s7,[%[c_ptr7]], #4\n"     /* store r7 */
 
 #define GEMM_SDOT_INT8_OUT_8x8                                  \
-  GEMM_SDOT_CVT_INT32_TO_FP32_8x8_N_Direction                   \
+  GEMM_SDOT_CVT_INT32_TO_FP32_8x8_N_DIRECTION                   \
   GEMM_SDOT_CVT_INT32_TO_FP32_8x8                               \
   GEMM_SDOT_RELU_8x8                                            \
   GEMM_SDOT_RELU6_8x8                                           \
@@ -2669,7 +2669,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "st1 {v7.8b},[%[c_ptr7]], #8\n" /* store r7 */
 
 #define GEMM_SDOT_INT8_OUT                                         \
-  GEMM_SDOT_CVT_INT32_TO_FP32_N_Direction                          \
+  GEMM_SDOT_CVT_INT32_TO_FP32_N_DIRECTION                          \
   GEMM_SDOT_CVT_INT32_TO_FP32                                      \
   GEMM_SDOT_RELU                                                   \
   GEMM_SDOT_RELU6                                                  \
@@ -3276,7 +3276,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "9: \n"                               \
   "and %[relu], #15                 \n"
 
-#define GEMM_DOT_CVT_INT32_TO_FP32_N_Direction \
+#define GEMM_DOT_CVT_INT32_TO_FP32_N_DIRECTION \
   "cmp %[relu], #32                 \n"        \
   "blt   8f                         \n"        \
   "vld1.32  {d0-d1}, [%[scale]]!    \n"        \
@@ -3666,12 +3666,12 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vst1.32    {d4}, [%[c_ptr5]]!    \n"
 
 #define GEMM_DOT_FP32_OUT                                                  \
-  GEMM_DOT_CVT_INT32_TO_FP32_N_Direction GEMM_DOT_CVT_INT32_TO_FP32        \
+  GEMM_DOT_CVT_INT32_TO_FP32_N_DIRECTION GEMM_DOT_CVT_INT32_TO_FP32        \
       GEMM_DOT_RELU GEMM_DOT_RELU6 GEMM_DOT_LEAKY_RELU GEMM_DOT_HARD_SWISH \
           GEMM_DOT_ST_FP32
 
 #define GEMM_DOT_INT8_OUT                                                  \
-  GEMM_DOT_CVT_INT32_TO_FP32_N_Direction GEMM_DOT_CVT_INT32_TO_FP32        \
+  GEMM_DOT_CVT_INT32_TO_FP32_N_DIRECTION GEMM_DOT_CVT_INT32_TO_FP32        \
       GEMM_DOT_RELU GEMM_DOT_RELU6 GEMM_DOT_LEAKY_RELU GEMM_DOT_HARD_SWISH \
           GEMM_DOT_ST_INT8
 #define GEMM_DOT_INT32_OUT        \
@@ -4088,7 +4088,7 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
   "vmla.f32 q5, q13, d13[1]\n"      /* r31, mul scale */  \
   "8: \n"
 
-#define GEMM_INT8_TRANS_INT32_TO_FP32_N_Direction                \
+#define GEMM_INT8_TRANS_INT32_TO_FP32_N_DIRECTION                \
   "cmp %[bias_direction], #2\n"      /* skip N_Direction  */     \
   "bne 7f\n"                                                     \
   /* write output */                                             \
@@ -4246,7 +4246,7 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
   "9:  \n"
 
 #define GEMM_INT8_FP32_OUT                \
-  GEMM_INT8_TRANS_INT32_TO_FP32_N_Direction    \
+  GEMM_INT8_TRANS_INT32_TO_FP32_N_DIRECTION    \
   GEMM_INT8_TRANS_INT32_TO_FP32           \
   GEMM_INT8_RELU                          \
   GEMM_INT8_RELU6                         \
@@ -4259,7 +4259,7 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
 
 
 #define GEMM_INT8_INT8_OUT      \
-  GEMM_INT8_TRANS_INT32_TO_FP32_N_Direction    \
+  GEMM_INT8_TRANS_INT32_TO_FP32_N_DIRECTION    \
   GEMM_INT8_TRANS_INT32_TO_FP32   \
   GEMM_INT8_RELU                  \
   GEMM_INT8_RELU6                 \
