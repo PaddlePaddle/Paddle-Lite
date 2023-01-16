@@ -23,14 +23,12 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-class ErnieAttentionFuser : public FuseBase {
+class TransformerAttentionFuser : public FuseBase {
  public:
-  explicit ErnieAttentionFuser(std::string op_type) : op_type_(op_type) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
-  std::string op_type_;
 };
 
 }  // namespace fusion

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/optimizer/mir/fusion/ernie_attention_fuser.h"
+#include "lite/core/optimizer/mir/fusion/transformer_attention_fuser.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -59,7 +59,7 @@ namespace fusion {
 *                         output
 */
 
-void ErnieAttentionFuser::BuildPattern() {
+void TransformerAttentionFuser::BuildPattern() {
   auto transpose_attr_teller = [](const Node* node) -> bool {
     auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
     auto axis = op_desc.GetAttr<std::vector<int>>("axis");
@@ -267,6 +267,7 @@ void ComputeNewWeight(lite::Tensor* dout,
     weight2_data += iw;
   }
 }
+
 void ComputeNewBias(lite::Tensor* dout,
                     lite::Tensor* din0,
                     lite::Tensor* din1,
@@ -282,6 +283,7 @@ void ComputeNewBias(lite::Tensor* dout,
   fuse_bias += iw;
   memcpy(fuse_bias, bias2_data, iw * sizeof(float));
 }
+
 void ComputeNewBias(lite::Tensor* dout,
                     lite::Tensor* din0,
                     lite::Tensor* din1,
@@ -334,8 +336,8 @@ void ComputeNewScale(float* fuse_scales,
   }
 }
 
-void ErnieAttentionFuser::InsertNewNode(SSAGraph* graph,
-                                        const key2nodes_t& matched) {
+void TransformerAttentionFuser::InsertNewNode(SSAGraph* graph,
+                                              const key2nodes_t& matched) {
   cpp::OpDesc op_desc;
   op_desc.SetType("fused_attention");
 

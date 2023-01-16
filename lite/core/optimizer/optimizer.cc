@@ -192,7 +192,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "identity_dropout_eliminate_pass",
        "sparse_conv_detect_pass",
        //  "keepdims_convert_pass",
-       "lite_ernie_attention_fuse_pass",
+       "lite_transformer_attention_fuse_pass",
        "__xpu__max_pooling_pad_zero_detect_fuse_pass",
        "__xpu__graph_dedup_pass",
        "__xpu__resnet_fuse_pass",
