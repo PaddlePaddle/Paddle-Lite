@@ -6011,6 +6011,18 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
       }
       int remain_a = remain;
       if (remain_a >= 8) {
+        if (bias_direction == GemmNBias) {
+          if (scale) {
+            for (int j = 0; j < 8; j++) {
+              scale_local[j] = scale[N - remain_a + j];
+            }
+          }
+          if (bias) {
+            for (int j = 0; j < 8; j++) {
+              bias_local[j] = bias[N - remain_a + j];
+            }
+          }
+        }
         const int8_t* a_ptr = a_ptr_l;
         int k = kup / 4;
         gemm_sdot_int8_kernel_8x8<Dtype>(a_ptr,
@@ -6035,6 +6047,18 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
       if (remain_a >= 4) {
         const int8_t* a_ptr = a_ptr_l;
         int k = kup / 4;
+        if (bias_direction == GemmNBias) {
+          if (scale) {
+            for (int j = 0; j < 4; j++) {
+              scale_local[j] = scale[N - remain_a + j];
+            }
+          }
+          if (bias) {
+            for (int j = 0; j < 4; j++) {
+              bias_local[j] = bias[N - remain_a + j];
+            }
+          }
+        }
         gemm_sdot_int8_kernel_8x4<Dtype>(a_ptr,
                                          b_ptr,
                                          bias_local,
@@ -6057,6 +6081,18 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
       if (remain_a) {
         const int8_t* a_ptr = a_ptr_l;
         int k = kup / 4;
+        if (bias_direction == GemmNBias) {
+          if (scale) {
+            for (int j = 0; j < remain_a; j++) {
+              scale_local[j] = scale[N - remain_a + j];
+            }
+          }
+          if (bias) {
+            for (int j = 0; j < remain_a; j++) {
+              bias_local[j] = bias[N - remain_a + j];
+            }
+          }
+        }
         gemm_sdot_int8_kernel_8x4<Dtype>(a_ptr,
                                          b_ptr,
                                          bias_local,
@@ -7951,12 +7987,18 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
       for (int xb = 0; xb < bblocks; xb++) {
         if (bias_direction == GemmNBias) {
           if (scale) {
-            for (int j = 0; j < NBLOCK_INT8_DOT; j++) {
-              scale_local[j] = scale[xb * NBLOCK_INT8_DOT + j + x0];
+            int j = 0;
+            for (int i = xb * NBLOCK_INT8_DOT + x0;
+                 i < xmax && j < NBLOCK_INT8_DOT;
+                 i++, j++) {
+              scale_local[j] = scale[i];
             }
           }
           if (bias) {
-            for (int j = 0; j < NBLOCK_INT8_DOT; j++) {
+            int j = 0;
+            for (int i = xb * NBLOCK_INT8_DOT + x0;
+                 i < xmax && j < NBLOCK_INT8_DOT;
+                 i++, j++) {
               bias_local[j] = bias[xb * NBLOCK_INT8_DOT + j + x0];
             }
           }
