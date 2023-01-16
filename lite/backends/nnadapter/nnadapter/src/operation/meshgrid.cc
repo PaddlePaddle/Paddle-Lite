@@ -15,7 +15,6 @@
 #include "operation/meshgrid.h"
 #include <vector>
 #include "core/types.h"
-#include "operation/math/meshgrid.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
