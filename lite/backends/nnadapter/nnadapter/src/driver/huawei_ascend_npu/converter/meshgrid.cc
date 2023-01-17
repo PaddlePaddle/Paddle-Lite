@@ -32,16 +32,16 @@ int ConvertMeshgrid(Converter* converter, core::Operation* operation) {
     if (!input_operator) {
       input_operator = converter->ConvertOperand(input_operand);
     }
-    std::vector<int32_t> shape(input_operand->type.dimensions.data,
-                               input_operand->type.dimensions.data +
-                                   input_operand->type.dimensions.count);
-    auto shape_operator = converter->AddInt32ConstantOperator(shape);
     auto output_operand = output_operands[i];
-    auto broadcastToOp =
+    std::vector<int32_t> shape(output_operand->type.dimensions.data,
+                               output_operand->type.dimensions.data +
+                                   output_operand->type.dimensions.count);
+    auto shape_operator = converter->AddInt32ConstantOperator(shape);
+    auto broadcast_to_op =
         converter->AddOperator<ge::op::BroadcastTo>(output_operands[i]);
-    SET_INPUT(broadcastToOp, x, input_operator);
-    SET_INPUT(broadcastToOp, shape, shape_operator);
-    MAP_OUTPUT(broadcastToOp, y, output_operand);
+    SET_INPUT(broadcast_to_op, x, input_operator);
+    SET_INPUT(broadcast_to_op, shape, shape_operator);
+    MAP_OUTPUT(broadcast_to_op, y, output_operand);
   }
   return NNADAPTER_NO_ERROR;
 }
