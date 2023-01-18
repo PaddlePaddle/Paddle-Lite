@@ -161,51 +161,34 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
   // TODO(weihaoji): remove fc_int31 and fc_int16 after xpu fc wrapper
   // refactor
   int r = 0;
+  float* pc_weight_max_ptr = nullptr;
+  float* weight_max_ptr = nullptr;
   if (per_channel_ && !(std::is_same<TGEMM, float>::value)) {
-    r = xdnn::fc_fusion_pc<DX, TW, DY, TGEMM>(
-        ctx.GetRawContext(),                                       // ctx
-        param.input->template data<DX>(),                          // x
-        reinterpret_cast<const TW*>(xpu_quant_weight_.data_ptr_),  // w
-        param.output->template mutable_data<DY>(TARGET(kXPU)),     // y
-        m,                                                         // m
-        n,                                                         // n
-        k,                                                         // k
-        x_trans,                                                   // x_trans
-        true,                                                      // w_trans
-        input_max,                                                 // x_maxptr
-        nullptr,                                                   // w_maxptr
-        output_max,                                                // y_maxptr
-        ldx,                                                       // ldx
-        ldw,                                                       // ldw
-        ldy,                                                       // ldy
-        param.alpha,                                               // alpha
-        0.0f,                                                      // beta
-        bias,                                                      // bias
-        reinterpret_cast<const float*>(
-            xpu_quant_weight_.max_ptr_),  // per channel weight_max
-        act);
+    pc_weight_max_ptr = reinterpret_cast<float*>(xpu_quant_weight_.max_ptr_);
   } else {
-    r = xdnn::fc_fusion<DX, TW, DY, TGEMM>(
-        ctx.GetRawContext(),                                         // ctx
-        param.input->template data<DX>(),                            // x
-        reinterpret_cast<const TW*>(xpu_quant_weight_.data_ptr_),    // w
-        param.output->template mutable_data<DY>(TARGET(kXPU)),       // y
-        m,                                                           // m
-        n,                                                           // n
-        k,                                                           // k
-        x_trans,                                                     // x_trans
-        true,                                                        // w_trans
-        input_max,                                                   // x_maxptr
-        reinterpret_cast<const float*>(xpu_quant_weight_.max_ptr_),  // w_maxptr
-        output_max,                                                  // y_maxptr
-        ldx,                                                         // ldx
-        ldw,                                                         // ldw
-        ldy,                                                         // ldy
-        param.alpha,                                                 // alpha
-        0.0f,                                                        // beta
-        bias,                                                        // bias
-        act);
+    weight_max_ptr = reinterpret_cast<float*>(xpu_quant_weight_.max_ptr_);
   }
+  r = xdnn::fc_fusion<DX, TW, DY, TGEMM>(
+      ctx.GetRawContext(),                                       // ctx
+      param.input->template data<DX>(),                          // x
+      reinterpret_cast<const TW*>(xpu_quant_weight_.data_ptr_),  // w
+      param.output->template mutable_data<DY>(TARGET(kXPU)),     // y
+      m,                                                         // m
+      n,                                                         // n
+      k,                                                         // k
+      x_trans,                                                   // x_trans
+      true,                                                      // w_trans
+      input_max,                                                 // x_maxptr
+      weight_max_ptr,                                            // w_maxptr
+      output_max,                                                // y_maxptr
+      ldx,                                                       // ldx
+      ldw,                                                       // ldw
+      ldy,                                                       // ldy
+      param.alpha,                                               // alpha
+      0.0f,                                                      // beta
+      bias,                                                      // bias
+      act,                                                       // act
+      pc_weight_max_ptr);  // per channel weight_max
   CHECK_EQ(r, 0);
 }
 
