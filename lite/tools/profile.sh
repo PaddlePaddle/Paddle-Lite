@@ -5,7 +5,7 @@ set +x
 
 readonly NPROC=16
 # Set shell script params
-readonly DOCKER_IMAGE_NAME=aibench:latest
+readonly DOCKER_IMAGE_NAME=paddlepaddle/paddle-lite:latest
 readonly workspace=$PWD
 # Set benchmark runtime params
 readonly WARMUP=10
