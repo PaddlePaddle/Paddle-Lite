@@ -3746,11 +3746,11 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
                  [c_ptr2] "+&r"(c_ptr2),
                  [c_ptr3] "+&r"(c_ptr3),
                  [c_ptr4] "+&r"(c_ptr4),
-                 [c_ptr5] "+&r"(c_ptr5)
-               : [bias_ptr] "r"(bias),
-                 [scale] "r"(scale),
-                 [relu] "r"(is_relu),
-                 [alpha] "r"(new_ptr)
+                 [c_ptr5] "+&r"(c_ptr5),
+                 [relu] "+r"(is_relu),
+                 [bias_ptr] "+r"(bias),
+                 [scale] "+r"(scale)
+               : [alpha] "r"(new_ptr)
                : "q0",
                  "q1",
                  "q2",
@@ -3815,9 +3815,11 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
                  [c_ptr2] "+r"(c_ptr2),
                  [c_ptr3] "+r"(c_ptr3),
                  [c_ptr4] "+r"(c_ptr4),
-                 [c_ptr5] "+r"(c_ptr5)
-               : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu), 
-                 [alpha] "r"(new_ptr)
+                 [c_ptr5] "+r"(c_ptr5),
+                 [relu] "+r"(is_relu),
+                 [bias_ptr] "+r"(bias),
+                 [scale] "+r"(scale)
+               : [alpha] "r"(new_ptr)
                : "q0","q1","q2",
                  "q3","q4","q5","q6","q7","q8","q9","q10",
                  "q11","q12","q13","q14","q15","cc","memory");
