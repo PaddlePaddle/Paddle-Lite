@@ -7944,8 +7944,8 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
         ymax = M;
       }
 
-      float32_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0};
-      float32_t scale_local[8] = {1, 1, 1, 1, 1, 1, 1};
+      float32_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+      float32_t scale_local[8] = {1, 1, 1, 1, 1, 1, 1, 1};
       if (bias_direction != GemmNBias) {
         if (is_bias) {
           int j = 0;
