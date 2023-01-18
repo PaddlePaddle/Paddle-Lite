@@ -29,6 +29,20 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
+template <typename T>
+void ScaleCompute(lite::Tensor* x_tensor,
+                  float scale,
+                  float bias,
+                  lite::Tensor* out_tensor) {
+  auto x_data = x_tensor->mutable_data<T>();
+  auto x_dims = x_tensor->dims();
+  out_tensor->Resize(x_dims);
+  auto out_data = out_tensor->mutable_data<T>();
+  for (int i = 0; i < x_dims.production(); i++) {
+    out_data[i] = x_data[i] * scale + bias;
+  }
+}
+
 void ScaleCalcOfflinePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   RemoveScalePattern(graph);
 }
@@ -60,11 +74,12 @@ void ScaleCalcOfflinePass::RemoveScalePattern(
     auto x_t = x_var->GetMutable<lite::Tensor>();
     if (!x_t->persistable()) {
       VLOG(5) << "WARNING: ScaleCalcOfflinePass does not support input that is "
-                 "not  persistable";
+                 "not persistable";
       continue;
     }
-    auto x_data = x_t->mutable_data<float>();
-    auto x_dims = x_t->dims();
+    // Get scale's output tensor
+    auto out_var = scope->FindVar(op_desc->Output("Out").front());
+    auto out_t = out_var->GetMutable<lite::Tensor>();
     // Get scale's attr
     auto scale = op_desc->GetAttr<float>("scale");
     auto bias = op_desc->GetAttr<float>("bias");
@@ -72,15 +87,16 @@ void ScaleCalcOfflinePass::RemoveScalePattern(
     if (!bias_after_scale) {
       bias *= scale;
     }
-    // Get scale's output tensor
-    auto out_var = scope->FindVar(op_desc->Output("Out").front());
-    auto out_t = out_var->GetMutable<lite::Tensor>();
-    out_t->Resize(x_dims);
-    auto out_data = out_t->mutable_data<float>();
-    for (int i = 0; i < x_dims.production(); i++) {
-      out_data[i] = x_data[i] * scale + bias;
+    auto precision = x_t->precision();
+    if (precision == PrecisionType::kInt64) {
+      ScaleCompute<int64_t>(x_t, scale, bias, out_t);
+    } else if (precision == PrecisionType::kInt32) {
+      ScaleCompute<int32_t>(x_t, scale, bias, out_t);
+    } else if (precision == PrecisionType::kFloat) {
+      ScaleCompute<float>(x_t, scale, bias, out_t);
+    } else {
+      LOG(FATAL) << "Unsupported precision: " << PrecisionToStr(precision);
     }
-
     // Offline calc scale, only retain output tensor as persistable tensor
     out_t->set_persistable(true);
     auto scale_outlinks = node->outlinks;
