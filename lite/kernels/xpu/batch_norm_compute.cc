@@ -22,7 +22,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void BatchNormCompute::Run() {
+template <class T, PrecisionType PType>
+void BatchNormCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   float epsilon = param.epsilon;
@@ -37,19 +38,19 @@ void BatchNormCompute::Run() {
   }
 
   int r =
-      xdnn::batch_norm_infer<float>(ctx.GetRawContext(),
-                                    param.x->data<float>(),
-                                    param.y->mutable_data<float>(TARGET(kXPU)),
-                                    x_shape[0],
-                                    x_shape[1],
-                                    x_shape[2],
-                                    x_shape[3],
-                                    epsilon,
-                                    param.scale->data<float>(),
-                                    param.bias->data<float>(),
-                                    param.mean->data<float>(),
-                                    param.variance->data<float>(),
-                                    true);
+      xdnn::batch_norm_infer<T>(ctx.GetRawContext(),
+                                param.x->template data<T>(),
+                                param.y->template mutable_data<T>(TARGET(kXPU)),
+                                x_shape[0],
+                                x_shape[1],
+                                x_shape[2],
+                                x_shape[3],
+                                epsilon,
+                                param.scale->template data<float>(),
+                                param.bias->template data<float>(),
+                                param.mean->template data<float>(),
+                                param.variance->template data<float>(),
+                                true);
 
   CHECK_EQ(r, 0);
 }
@@ -59,18 +60,32 @@ void BatchNormCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(batch_norm,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::BatchNormCompute,
-                     def)
+namespace xpu = paddle::lite::kernels::xpu;
+
+using BatchNorm_FP32 = xpu::BatchNormCompute<float, PRECISION(kFloat)>;
+using BatchNorm_FP16 = xpu::BatchNormCompute<float16, PRECISION(kFP16)>;
+
+REGISTER_LITE_KERNEL(batch_norm, kXPU, kFloat, kNCHW, BatchNorm_FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Mean", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Variance", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("MeanOut", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("VarianceOut", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("SavedVariance", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    batch_norm, kXPU, kFP16, kNCHW, BatchNorm_FP16, DISABLE_XPU1_fp16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Mean", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Variance", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindOutput("MeanOut", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("VarianceOut", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kXPU))})
