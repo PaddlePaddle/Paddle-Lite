@@ -143,9 +143,26 @@ void XPUMultiEncoderCompute::prepare_weight_max(
 void XPUMultiEncoderCompute::PrepareForRun() {
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->template Param<param_t>();
+  const int n_layers = param.fc_weight.size() / 6;
   // prepare bias
-  for (auto* fc_bias : param.fc_bias) {
-    arg_fc_bias_.push_back(fc_bias->data<float>());
+  if (param.already_qkv_fusion) {
+    // only 3 or 4 bias per layer if qkv is already be fusioned.
+    CHECK((param.fc_bias.size() == 3 * n_layers) ||
+          (param.fc_bias.size() == 4 * n_layers))
+        << "bias num per layer shouble be 3 or 4";
+    int num_per_layer = param.fc_bias.size() / n_layers;
+    for (int i = 0; i < n_layers; i++) {
+      for (int k = 0; k < num_per_layer; k++) {
+        arg_fc_bias_.push_back(
+            param.fc_bias[num_per_layer * i + k]->data<float>());
+      }
+      // insert 2/3 nullptr
+      arg_fc_bias_.insert(arg_fc_bias_.end() - 3, 6 - num_per_layer, nullptr);
+    }
+  } else {
+    for (auto* fc_bias : param.fc_bias) {
+      arg_fc_bias_.push_back(fc_bias->data<float>());
+    }
   }
   // prepare scale
   for (auto* ln_scale : param.ln_scale) {
@@ -163,8 +180,10 @@ void XPUMultiEncoderCompute::PrepareForRun() {
     }
   }
   // prepare weights
-  local_quant_ =
-      GetBoolFromEnv("XPU_LOCAL_QUANT") || lite::TargetWrapperXPU::local_quant;
+  CHECK(lite::TargetWrapperXPU::xpu_runtime_ptr)
+      << "xpu_runtime_ptr null in run";
+  local_quant_ = GetBoolFromEnv("XPU_LOCAL_QUANT") ||
+                 lite::TargetWrapperXPU::xpu_runtime_ptr->local_quant;
   if (param.precision == "int16") {
     if (local_quant_) {
       arg_fc_weight_fp16_ = prepare_weight<float16>(param.fc_weight);
@@ -176,7 +195,7 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   } else if (param.precision == "int31") {
     arg_fc_weight_fp32_ = prepare_weight<float>(param.fc_weight);
   }
-  const int n_layers = param.fc_weight.size() / 6;
+
   const int XPU_QUANT_SCALE_NUM = ctx.GetRawContext()->max_ptr_size();
   prepare_weight_max(
       param.per_channel, param.weight_max, XPU_QUANT_SCALE_NUM, fc_weight_max_);

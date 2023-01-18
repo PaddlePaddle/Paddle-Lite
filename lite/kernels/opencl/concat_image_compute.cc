@@ -154,7 +154,6 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     const auto& output_tensor_dims = concat_param_->output->dims();
     auto new_dim = Broadcast2GpuShape(output_tensor_dims);
     int output_tensor_w = new_dim[3];
-    int output_tensor_c = new_dim[1];
     auto output_image_shape = InitImageDimInfoWith(output_tensor_dims);
     auto* output_image_p = MUTABLE_DATA_GPU(concat_param_->output,
                                             output_image_shape["width"],

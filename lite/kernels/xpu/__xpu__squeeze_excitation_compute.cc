@@ -23,10 +23,11 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void XPUSqueezeExcitationCompute::PrepareForRun() {
+template <typename T, PrecisionType PType>
+void XPUSqueezeExcitationCompute<T, PType>::PrepareForRun() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
-  auto weight_ptr = param.filter->data<float>();
+  auto weight_ptr = param.filter->template data<float>();
   auto weight_len = param.filter->numel();
   auto weight1_len = weight_len / 2;
   auto weight2_len = weight_len / 2;
@@ -43,7 +44,8 @@ void XPUSqueezeExcitationCompute::PrepareForRun() {
           weight_ptr + weight1_len, weight2_dims, false, max_ptr_len);
 }
 
-void XPUSqueezeExcitationCompute::Run() {
+template <typename T, PrecisionType PType>
+void XPUSqueezeExcitationCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
@@ -53,7 +55,7 @@ void XPUSqueezeExcitationCompute::Run() {
   int h = input_dims[2];
   int w = input_dims[3];
   const auto* branch =
-      param.has_branch ? param.branch->template data<float>() : nullptr;
+      param.has_branch ? param.branch->template data<T>() : nullptr;
   auto filter_dims = param.filter_dims;
   const float* bias1_ptr =
       param.has_bias ? param.bias->template data<float>() : nullptr;
@@ -74,12 +76,12 @@ void XPUSqueezeExcitationCompute::Run() {
     }
     act.push_back(cur_act);
   }
-  int r = xdnn::squeeze_excitation_block<float, int16_t, int16_t>(
+  int r = xdnn::squeeze_excitation_block<T, int16_t, int16_t>(
       ctx.GetRawContext(),
-      param.input->data<float>(),
+      param.input->template data<T>(),
       reinterpret_cast<const int16_t*>(quant_weight1_.data_ptr_),
       reinterpret_cast<const int16_t*>(quant_weight2_.data_ptr_),
-      param.output->mutable_data<float>(TARGET(kXPU)),
+      param.output->template mutable_data<T>(TARGET(kXPU)),
       batch,
       channel,
       h,
@@ -102,16 +104,39 @@ void XPUSqueezeExcitationCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
+using squeeze_excitation_block_fp32 =
+    paddle::lite::kernels::xpu::XPUSqueezeExcitationCompute<float,
+                                                            PRECISION(kFloat)>;
+using squeeze_excitation_block_fp16 =
+    paddle::lite::kernels::xpu::XPUSqueezeExcitationCompute<float16,
+                                                            PRECISION(kFP16)>;
+
 REGISTER_LITE_KERNEL(__xpu__squeeze_excitation_block,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::xpu::XPUSqueezeExcitationCompute,
+                     squeeze_excitation_block_fp32,
                      def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Branch", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(__xpu__squeeze_excitation_block,
+                     kXPU,
+                     kFP16,
+                     kNCHW,
+                     squeeze_excitation_block_fp16,
+                     DISABLE_XPU1_fp16)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Branch",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

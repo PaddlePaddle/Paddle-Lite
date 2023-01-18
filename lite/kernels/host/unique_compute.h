@@ -22,8 +22,9 @@ namespace lite {
 namespace kernels {
 namespace host {
 
+template <typename InT>
 class UniqueCompute
-    : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
  public:
   void Run() override;
 

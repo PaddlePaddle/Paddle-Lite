@@ -179,7 +179,7 @@ REGISTER_LITE_KERNEL(multiclass_nms3,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::xpu::MulticlassNmsCompute,
-                     DISABLE_XPU2_MulticlassNms3)
+                     def)
     .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("RoisNum",

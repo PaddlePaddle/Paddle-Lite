@@ -81,7 +81,6 @@ class GreaterThanComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
   void Run() override {
     auto* x_img = GET_DATA_GPU(greater_than_param_->X);
-    auto* y_img = GET_DATA_GPU(greater_than_param_->Y);
     auto* out_img = MUTABLE_DATA_GPU(greater_than_param_->Out,
                                      out_img_shape_[0],
                                      out_img_shape_[1],

@@ -59,9 +59,10 @@ void fc_trans_weights<PRECISION(kInt8)>(const Tensor& tin, Tensor* tout) {
   CHECK_EQ(tin.dims().size(), 2) << "fc weights size must = 2";
   int m = tin.dims()[0];
   int n = tin.dims()[1];
-  tout->Resize({n, m});
+  tout->Resize({(n - 1) * m + (m + 15) / 16 * 16});
   auto* ptr_in = tin.data<int8_t>();
   auto* ptr_out = tout->mutable_data<int8_t>();
+  memset(ptr_out, 0, tout->dims().production() * sizeof(int8_t));
   naive_transpose(ptr_in, ptr_out, m, n);
 }
 
@@ -367,9 +368,10 @@ void fc_trans_weights<PRECISION(kFP16)>(const Tensor& tin, Tensor* tout) {
   CHECK_EQ(tin.dims().size(), 2) << "fc weights size must = 2";
   int m = tin.dims()[0];
   int n = tin.dims()[1];
-  tout->Resize({n, m});
+  tout->Resize({(n - 1) * m + (m + 15) / 16 * 16});
   auto* ptr_in = tin.data<float16_t>();
   auto* ptr_out = tout->mutable_data<float16_t>();
+  memset(ptr_out, 0, tout->dims().production() * sizeof(float16_t));
   naive_transpose(ptr_in, ptr_out, m, n);
 }
 

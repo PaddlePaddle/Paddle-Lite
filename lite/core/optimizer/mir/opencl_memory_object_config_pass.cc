@@ -359,7 +359,13 @@ void OpenCLMemoryObjectConfigPass::UpdateTargetToCPU(
                                         "unsqueeze",
                                         "squeeze2",
                                         "squeeze",
-                                        "split"};
+                                        "split",
+                                        "greater_than",
+                                        "cos",
+                                        "sin",
+                                        "tan",
+                                        "expand",
+                                        "shape"};
   std::vector<std::string> x86_host_ops{
       "abs",      "arg_max",         "cos",
       "exp",      "expand",          "flatten",
