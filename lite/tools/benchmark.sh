@@ -11,23 +11,25 @@ readonly workspace=$PWD
 readonly WARMUP=10
 readonly REPEATS=30
 
+# can be customed from terminal input 
 ANDROID_DIR=/data/local/tmp/benchmark_test
-MODELS_DIR=PPModels
-RESULTS_DIR=${workspace}/results
+MODELS_DIR=benchmark
+LITE_DIR=Paddle-Lite
+RESULTS_DIR=results
 # default test on armv8
 ABI_LIST="armv8"
 # default 865
-DEV_ID=bf0173d8
+DEV_ID=5047ff6e
 # default fp16 benchmark
 RUN_LOW_PRECISION=true
 
 #Download paddle model
 function prepare_models() {
-    if [ ! -d "${RESULTS_DIR}" ]; then
-        mkdir ${RESULTS_DIR}
+    if [ ! -d "${workspace}/${RESULTS_DIR}" ]; then
+        mkdir ${workspace}/${RESULTS_DIR}
     fi  
-    if [ ! -d "Model_zoo" ]; then
-        mkdir Model_zoo
+    if [ ! -d "${workspace}/Model_zoo" ]; then
+        mkdir ${workspace}/Model_zoo
     fi  
     if [ ! -d "${workspace}/Model_zoo/${MODELS_DIR}" ]; then
         cd Model_zoo
@@ -43,14 +45,14 @@ function prepare_models() {
 function download_repo() {
     # download repo
     # Set proxy to accelate github download if necessary
-    # export http_proxy=http://172.19.56.199:3128
-    # export https_proxy=http://172.19.56.199:3128
-    if [ ! -d "./Paddle-Lite" ]; then
+    export http_proxy=http://172.19.56.199:3128
+    export https_proxy=http://172.19.56.199:3128
+    if [ ! -d "${workspace}/${LITE_DIR}" ]; then
         git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-    else
-        echo "PaddleLite repo exists. Update repo to latest."
-	    cd Paddle-Lite && git checkout . && git pull
-	    cd -
+    # else
+    #     echo "PaddleLite repo exists. Update repo to latest."
+	#     cd Paddle-Lite && git checkout . && git pull
+	#     cd -
     fi
 }
 
@@ -68,6 +70,7 @@ function build() {
     fi  
     local abi_list=$1
     local abis=(${abi_list//,/ })
+    local LiteDir=${workspace}/${LITE_DIR}
     for abi in ${abis[@]}; do 
         if [[ "$abi" == "armv7" ]]; then
             # build 32-bit TODO : need update when needed!
@@ -76,35 +79,34 @@ function build() {
                 -e https_proxy=${https_proxy} \
                 ${DOCKER_IMAGE_NAME} \
                 /bin/bash -x -e -c "
-                    cd Paddle-Lite/
-		            git config --global --add safe.directory /work/Paddle-Lite
+                    cd ${LITE_DIR}
+		            git config --global --add safe.directory /work/${LITE_DIR}
                     rm -rf third-party
                     ./lite/tools/build_android.sh --toolchain=clang --arch=armv7 --with_arm82_fp16=ON --with_benchmark=ON full_publish
                     mv build.lite.android.armv7.clang build.lite.android.armv7.clang.fp16
                 "
-            BENCHMARK_BIN=${workspace}/Paddle-Lite/build.lite.android.${abi}.clang.fp16/lite/api/tools/benchmark/benchmark_bin
         elif [[ "$abi" == "armv8" ]]; then
             # build 64-bit
-            if [ "${RUN_LOW_PRECISION}" = true ] && [ ! -d "Paddle-Lite/build.lite.android.armv8.clang.fp16" ]; then
+            if [ "${RUN_LOW_PRECISION}" = true ] && [ ! -d "${LiteDir}/build.lite.android.armv8.clang.fp16" ]; then
                 docker run --net=host -i --privileged --rm -v ${workspace}:/work --workdir /work -u 0 \
                     -e http_proxy=${http_proxy} \
                     -e https_proxy=${https_proxy} \
                     ${DOCKER_IMAGE_NAME} \
                     /bin/bash -x -e -c "
-                        cd Paddle-Lite/
-                        git config --global --add safe.directory /work/Paddle-Lite
+                        cd ${LITE_DIR}
+                        git config --global --add safe.directory /work/${LITE_DIR}
                         rm -rf third-party
                         ./lite/tools/build_android.sh --toolchain=clang --arch=armv8 --with_arm82_fp16=ON --with_benchmark=ON full_publish
                         mv build.lite.android.armv8.clang build.lite.android.armv8.clang.fp16
                     "
-            elif [ "${RUN_LOW_PRECISION}" = false ] && [ ! -d "Paddle-Lite/build.lite.android.armv8.clang.fp32" ]; then
+            elif [ "${RUN_LOW_PRECISION}" = false ] && [ ! -d "${LiteDir}/build.lite.android.armv8.clang.fp32" ]; then
                 docker run --net=host -i --privileged --rm -v ${workspace}:/work --workdir /work -u 0 \
                     -e http_proxy=${http_proxy} \
                     -e https_proxy=${https_proxy} \
                     ${DOCKER_IMAGE_NAME} \
                     /bin/bash -x -e -c "
-                        cd Paddle-Lite/
-                        git config --global --add safe.directory /work/Paddle-Lite
+                        cd ${LITE_DIR}
+                        git config --global --add safe.directory /work/${LITE_DIR}
                         rm -rf third-party
                         ./lite/tools/build_android.sh --toolchain=clang --arch=armv8 --with_benchmark=ON full_publish
                         mv build.lite.android.armv8.clang build.lite.android.armv8.clang.fp32
@@ -119,22 +121,26 @@ function build() {
         fi
         echo "Build Paddle-Lite $abi benchmark success."
     done
+
+    cd ${workspace}
 }
 
 run_benchmark() {
     # push benchmark_bin && model_file to android devices
-    if [ "${RUN_LOW_PRECISION}" = true ]; then 
-        BENCHMARK_BIN=${workspace}/Paddle-Lite/build.lite.android.${abi}.clang.fp16/lite/api/tools/benchmark/benchmark_bin
-    else 
-        BENCHMARK_BIN=${workspace}/Paddle-Lite/build.lite.android.${abi}.clang.fp32/lite/api/tools/benchmark/benchmark_bin
-    fi
+    local abis=(${ABI_LIST//,/ })
+    for abi in ${abis[@]}; do
+        if [ "${RUN_LOW_PRECISION}" = true ]; then 
+            BENCHMARK_BIN=${workspace}/${LITE_DIR}/build.lite.android.${abi}.clang.fp16/lite/api/tools/benchmark/benchmark_bin
+        else 
+            BENCHMARK_BIN=${workspace}/${LITE_DIR}/build.lite.android.${abi}.clang.fp32/lite/api/tools/benchmark/benchmark_bin
+        fi
+    done
     adb -s $DEV_ID shell "mkdir -p ${ANDROID_DIR}"
     adb -s $DEV_ID push ${workspace}/Model_zoo/${MODELS_DIR} ${ANDROID_DIR}
     adb -s $DEV_ID push ${BENCHMARK_BIN} ${ANDROID_DIR}
-    adb -s $DEV_ID shell "chmod +x $ANDROID_DIR/benchmark_bin"
+    adb -s $DEV_ID shell "chmod +x ${ANDROID_DIR}/benchmark_bin"
 
     # run benchmark for each model
-    # set threads_list as you need
     local num_threads_list=(1)
     local model_names=$(ls ${workspace}/Model_zoo/${MODELS_DIR})
     echo -e ">>>>>>>>>>>>>>Paddle Benchmark"
@@ -162,39 +168,37 @@ run_benchmark() {
             # run benchmark for this model
             if [ "${RUN_LOW_PRECISION}" = true ]; then
                 adb -s $DEV_ID shell "echo 'PaddleLite Benchmark' > ${ANDROID_DIR}/${model_name}_fp16_${threads}.txt"
-                adb -s $DEV_ID shell "echo Threads=$threads Warmup=$WARMUP Repeats=$REPEATS >> ${ANDROID_DIR}/${model_name}_fp16_${threads}.txt"
                 adb -s $DEV_ID shell "${ANDROID_DIR}/benchmark_bin --cpu_precision=fp16 --backend=arm \
                         --model_file=${ANDROID_DIR}/${MODELS_DIR}/${model_name}/inference.pdmodel \
                         --param_file=${ANDROID_DIR}/${MODELS_DIR}/${model_name}/inference.pdiparams \
                         --input_shape=${input_shape} --warmup=${WARMUP} --repeats=${REPEATS} \
                         --threads=${threads} --result_path=${ANDROID_DIR}/${model_name}_fp16_${threads}.txt"
-                adb -s $DEV_ID pull ${ANDROID_DIR}/${model_name}_fp16_${threads}.txt ${RESULTS_DIR}
+                adb -s $DEV_ID pull ${ANDROID_DIR}/${model_name}_fp16_${threads}.txt ${workspace}/${RESULTS_DIR}
             else
                 adb -s $DEV_ID shell "echo 'PaddleLite Benchmark' > ${ANDROID_DIR}/${model_name}_fp32_${threads}.txt"
-                adb -s $DEV_ID shell "echo Threads=$threads Warmup=$WARMUP Repeats=$REPEATS >> ${ANDROID_DIR}/${model_name}_fp32_${threads}.txt"
                 adb -s $DEV_ID shell "${ANDROID_DIR}/benchmark_bin --cpu_precision=fp32 --backend=arm \
                         --model_file=${ANDROID_DIR}/${MODELS_DIR}/${model_name}/inference.pdmodel \
                         --param_file=${ANDROID_DIR}/${MODELS_DIR}/${model_name}/inference.pdiparams \
                         --input_shape=${input_shape} --warmup=${WARMUP} --repeats=${REPEATS} \
                         --threads=${threads} --result_path=${ANDROID_DIR}/${model_name}_fp32_${threads}.txt"
-                adb -s $DEV_ID pull ${ANDROID_DIR}/${model_name}_fp32_${threads}.txt ${RESULTS_DIR}
+                adb -s $DEV_ID pull ${ANDROID_DIR}/${model_name}_fp32_${threads}.txt ${workspace}/${RESULTS_DIR}
             fi
             echo -e ">>>>>>>>>>>>>>${model_name} run success with thread ${threads}"
         done
     done
     echo -e ">>>>>>>>>>>>>>run all models success!"
     # transport all result files back to host 
-    echo -e ">>>>>>>>>>>>>>all result files at ${RESULTS_DIR}"
+    echo -e ">>>>>>>>>>>>>>all result files at ${workspace}/${RESULTS_DIR}"
 }
 
 function android_build() {
-    # prepare benchmark models
+    # 1.prepare benchmark models
+    # 2.download paddlelite repo      
+    # 3.build paddlite benchmark 
+    # 4.run benchmark on android devices && get results
     prepare_models   
-    # # download paddlelite repo      
     download_repo
-    # # build paddlite benchmark 
     build $ABI_LIST
-    # run benchmark on android devices && get results
     run_benchmark
 }
 
@@ -211,18 +215,24 @@ function print_help_info() {
     echo -e "|     --android_dir: default is /data/local/tmp/benchmark_test, you can change the last level directory name                           |"
     echo -e "|     --run_low_precision: (true|false), controls whether to use low precision, default is true                                        |"
     echo -e "|     --results_dir: The directory where the result files is stored                                                                    |"
+    echo -e "|     --lite_dir: The directory where the lite repo is stored                                                                          |"    
     echo -e "|                    default directory tree should like this, and results_dir is in same dir with benchmark.sh                         |"
     echo -e "|                          |── benchmark.sh                                                                                            |"
     echo -e "|                          ├── Models_zoo	                                                                                       |"
     echo -e "|                          ├── results_dir	                                                                                       |"
+    echo -e "|                          ├── {lite_dir} :eg. Work/Paddle-Lite CI/Paddle-Lite	                                                        |"
+    echo -e "|                          ├── Work	                                                                                                |"
+    echo -e "|                                └──Paddle-Lite	                                                                                    |"
     echo -e "|     --models_dir: The directory where the models is stored                                                                           |"
     echo -e "|                   your model tree should like this, and Model_zoo is in same dir with benchmark.sh                                   |"
     echo -e "|                          Model_zoo	                                                                                               |"
     echo -e "|                          └── models_dir                                                                                              |"
-    echo -e "|  arguments of benchmark shell script:(models_dir must be set, low_precision, android build)                                          |"
+    echo -e "|  arguments of benchmark shell script:(models_dir must be set, low_precision, android_build)                                          |"
     echo -e "|     ./benchmark.sh --dev_id=<> --models_dir=<path_to_model> --results_dir=<path_to_results> android_build                            |"
     echo -e "|     before run this shell script, u need Replenish model's shape information at models_list.txt.                                     |"
     echo -e "|          whose format is like {model_name};{input_name0:input_shape0}' '{input_namex:input_shapex}                                   |"
+    echo -e "|          eg. AlexNet;images:1,3,224,224                                                                                              |"
+    echo -e "|              inception_v1;X:1,224,224,3                                                                                              |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  TODO: other target platform will be supperted later!                                                                                |"
     echo "----------------------------------------------------------------------------------------------------------------------------------------"
@@ -248,6 +258,10 @@ function main() {
             ;;
         --models_dir=*)
             MODELS_DIR="${i#*=}"
+            shift
+            ;;
+        --lite_dir=*)
+            LITE_DIR="${i#*=}"
             shift
             ;;
         --android_dir=*)
