@@ -4622,8 +4622,7 @@ void gemm_prepack_oth_int8(const int8_t* A_packed,
       Dtype* tmp1 = nullptr;
       Dtype* tmp2 = nullptr;
       Dtype* tmp3 = nullptr;
-      float32_t scale_local[16] = {
-          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+      float32_t scale_local[16] = {0};
       float32_t bias_local[16] = {0};
       if (bias_direction != GemmNBias) {
         if (is_bias) {
@@ -5889,8 +5888,8 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
     LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK_INT8_DOT) {
       unsigned int ymax = y + MBLOCK_INT8_DOT;
       ymax = (ymax > M) ? M : ymax;
-      float32_t bias_local[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-      float32_t scale_local[12] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+      float32_t bias_local[12] = {0};
+      float32_t scale_local[12] = {0};
       if (bias_direction != GemmNBias) {
         if (is_bias) {
           int j = 0;
@@ -7944,8 +7943,8 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
         ymax = M;
       }
 
-      float32_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-      float32_t scale_local[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+      float32_t bias_local[8] = {0};
+      float32_t scale_local[8] = {0};
       if (bias_direction != GemmNBias) {
         if (is_bias) {
           int j = 0;
