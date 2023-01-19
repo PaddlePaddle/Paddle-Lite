@@ -33,13 +33,24 @@ int ConvertMeshgrid(Converter* converter, core::Operation* operation) {
       input_operator = converter->ConvertOperand(input_operand);
     }
     auto output_operand = output_operands[i];
-    std::vector<int32_t> shape(output_operand->type.dimensions.data,
-                               output_operand->type.dimensions.data +
-                                   output_operand->type.dimensions.count);
-    auto shape_operator = converter->AddInt32ConstantOperator(shape);
+    std::vector<int32_t> output_shape(
+        output_operand->type.dimensions.data,
+        output_operand->type.dimensions.data +
+            output_operand->type.dimensions.count);
+    // Reshape input
+    std::vector<int32_t> view_shape(output_count, 1);
+    view_shape[i] = output_shape[i];
+    auto view_shape_operator = converter->AddInt32ConstantOperator(view_shape);
+    auto reshape_op =
+        converter->AddOperator<ge::op::Reshape>(output_operand, "reshape");
+    SET_INPUT(reshape_op, x, input_operator);
+    SET_INPUT(reshape_op, shape, view_shape_operator);
+    auto reshape_input_operator = MAP_OUTPUT(reshape_op, y, output_operand);
+    // BroadcastTo op
+    auto shape_operator = converter->AddInt32ConstantOperator(output_shape);
     auto broadcast_to_op =
         converter->AddOperator<ge::op::BroadcastTo>(output_operands[i]);
-    SET_INPUT(broadcast_to_op, x, input_operator);
+    SET_INPUT(broadcast_to_op, x, reshape_input_operator);
     SET_INPUT(broadcast_to_op, shape, shape_operator);
     MAP_OUTPUT(broadcast_to_op, y, output_operand);
   }
