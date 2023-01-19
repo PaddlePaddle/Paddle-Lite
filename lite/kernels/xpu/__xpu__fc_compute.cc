@@ -55,6 +55,15 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
             per_channel_ ? param.weight_max.size() : max_ptr_size);
     CHECK(xpu_quant_weight_.max_ptr_ != nullptr)
         << "slim int8 quant xpu_quant_weight_max_ptr should't be null";
+    std::vector<float> cpu_output_max(max_ptr_size, param.quant_output_max);
+    lite::TargetWrapperXPU::MemcpySync(output_max_guard_->addr_,
+                                       cpu_output_max.data(),
+                                       sizeof(float) * max_ptr_size,
+                                       IoDirection::HtoD);
+    if (per_channel_) {
+      weight_one_value_guard_ =
+          TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
+    }
     std::vector<float> cpu_input_max(max_ptr_size, param.quant_input_max);
     lite::TargetWrapperXPU::MemcpySync(input_max_guard_->addr_,
                                        cpu_input_max.data(),
@@ -66,6 +75,11 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
           param.weight_max.data(),
           sizeof(float) * param.weight_max.size(),
           IoDirection::HtoD);
+      std::vector<float> cpu_weight_one_value(max_ptr_size, 1.0);
+      lite::TargetWrapperXPU::MemcpySync(weight_one_value_guard_->addr_,
+                                         cpu_weight_one_value.data(),
+                                         sizeof(float) * max_ptr_size,
+                                         IoDirection::HtoD);
     } else {
       VLOG(3) << "set weight max :" << max_ptr_size
               << ", param.weight_max[0]:" << param.weight_max[0];
@@ -165,6 +179,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
   float* weight_max_ptr = nullptr;
   if (per_channel_ && !(std::is_same<TGEMM, float>::value)) {
     pc_weight_max_ptr = reinterpret_cast<float*>(xpu_quant_weight_.max_ptr_);
+    weight_max_ptr = reinterpret_cast<float*>(weight_one_value_guard_->addr_);
   } else {
     weight_max_ptr = reinterpret_cast<float*>(xpu_quant_weight_.max_ptr_);
   }
