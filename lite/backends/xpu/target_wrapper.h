@@ -82,6 +82,8 @@ class TargetWrapper<TARGET(kXPU)> {
 
   static xdnn::Context* GetRawContext() {
     if (xpu_runtime_ptr->xpu_tls_raw_ctx != nullptr) {
+      xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()->xpu_stream =
+          xpu_runtime_ptr->xpu_stream.GetXPUStream();
       return xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext();
     }
 
