@@ -22,7 +22,7 @@ namespace paddle {
 namespace lite {
 namespace mir {
 namespace fusion {
-/* fuse conv2d scale block model to xpu_conv2d op one more step      */
+/* Fuse conv2d scale block model to xpu_conv2d op one more step      */
 /* For example:                                                      */
 /* graph: sub block                                                  */
 /*                           in_Input                                */
