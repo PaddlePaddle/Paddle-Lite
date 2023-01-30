@@ -70,8 +70,8 @@ class MeshgridComputeTester : public arena::TestCase {
     DDim out_dims;
     out_dims.ConstructFrom(shape);
     for (int64_t i = 0; i < size; i++) {
-      float* dst = outs[i]->template mutable_data<float>();
       outs[i]->Resize(out_dims);
+      float* dst = outs[i]->template mutable_data<float>();
       Tensor reshape_ins_tensor;
       reshape_ins_tensor.ShareDataWith(*ins[i]);
       std::vector<int64_t> view_shape(size, 1);
@@ -131,10 +131,12 @@ class MeshgridComputeTester : public arena::TestCase {
 
 void TestMeshgrid(Place place, float abs_error, const std::string& alias) {
   DDimLite x_dims{{5}};
-  std::unique_ptr<arena::TestCase> tester(
-      new MeshgridComputeTester(place, alias, x_dims, 1));
-  arena::Arena arena(std::move(tester), place, abs_error);
-  arena.TestPrecision();
+  for (int x_num : std::vector<int>{2, 3, 4}) {
+    std::unique_ptr<arena::TestCase> tester(
+        new MeshgridComputeTester(place, alias, x_dims, x_num));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
 }
 
 TEST(meshgrid, precision) {
@@ -144,6 +146,9 @@ TEST(meshgrid, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  alias = "def";
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-2;
   alias = "def";
 #else
