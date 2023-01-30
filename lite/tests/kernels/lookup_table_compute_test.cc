@@ -107,36 +107,45 @@ class LookupTableComputeTest : public arena::TestCase {
   }
 };
 
+template <typename T>
+void TestLookupTableCase(Place place,
+                         float abs_error,
+                         std::vector<int64_t> padding_idx_list) {
+  for (auto ids_dims :
+       std::vector<std::vector<int64_t>>{{5, 2, 3, 1}, {2, 3, 1}, {3, 1}}) {
+    for (auto w_dims :
+         std::vector<std::vector<int64_t>>{{4, 2}, {6, 8}, {12, 15}}) {
+      for (auto padding_idx : padding_idx_list) {
+        std::unique_ptr<arena::TestCase> tester(new LookupTableComputeTest<T>(
+            place, "def", DDim(ids_dims), DDim(w_dims), padding_idx));
+        arena::Arena arena(std::move(tester), place, abs_error);
+        arena.TestPrecision();
+      }
+    }
+  }
+}
+
 TEST(LookupTable, precision) {
   LOG(INFO) << "test lookup_table op";
   float abs_error = 1e-5;
   Place place;
 #if defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-3;
+  TestLookupTableCase<int32_t>(place, abs_error, std::vector<int64_t>{-1});
+  return;
+#else
+  return;
+#endif
 #else
   return;
 #endif
 
-  using ID_T = int64_t;
-
-  for (auto ids_dims :
-       std::vector<std::vector<int64_t>>{{5, 2, 3, 1}, {2, 3, 1}, {3, 1}}) {
-    for (auto w_dims :
-         std::vector<std::vector<int64_t>>{{4, 2}, {6, 8}, {12, 15}}) {
-#if defined(LITE_WITH_XPU)
-      for (auto padding_idx :
-           std::vector<int64_t>{-1}) {  // XPU only support -1
-#else
-      for (auto padding_idx : std::vector<int64_t>{-1, 0, w_dims[0] - 1}) {
-#endif
-        std::unique_ptr<arena::TestCase> tester(
-            new LookupTableComputeTest<ID_T>(
-                place, "def", DDim(ids_dims), DDim(w_dims), padding_idx));
-        arena::Arena arena(std::move(tester), place, abs_error);
-        arena.TestPrecision();
-      }
-    }
-  }
+  TestLookupTableCase<int64_t>(
+      place, abs_error, std::vector<int64_t>{-1, 0, 1});
 }
 
 }  // namespace lite

@@ -108,7 +108,7 @@ void TestLogical(Place place, float abs_error) {
 
 #if !((defined LITE_WITH_XPU) || (defined NNADAPTER_WITH_HUAWEI_ASCEND_NPU) || \
       (defined NNADAPTER_WITH_CAMBRICON_MLU) ||                                \
-      (NNADAPTER_WITH_VERISILICON_TIMVX))
+      (NNADAPTER_WITH_VERISILICON_TIMVX) || (NNADAPTER_WITH_QUALCOMM_QNN))
   std::unique_ptr<arena::TestCase> logical_or_tester(
       new LogicalTester<_logical_or_func>(place, "def", "logical_or"));
   arena::Arena arena_or(std::move(logical_or_tester), place, abs_error);
@@ -137,6 +137,8 @@ TEST(Logical, precision) {
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-3;
 #else
   return;
 #endif
