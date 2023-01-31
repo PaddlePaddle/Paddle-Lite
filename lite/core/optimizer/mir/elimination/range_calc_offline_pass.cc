@@ -38,6 +38,9 @@ int64_t GetSpanCount(T start, T end, T step) {
              : std::ceil(std::abs((end - start) / step));
 }
 
+#if defined(_MSC_VER) && !defined(_WIN64)
+#pragma optimize("", off)
+#endif
 template <typename T>
 void RangeCompute(lite::Tensor* start_tensor,
                   lite::Tensor* end_tensor,
@@ -56,6 +59,9 @@ void RangeCompute(lite::Tensor* start_tensor,
     value += step;
   }
 }
+#if defined(_MSC_VER) && !defined(_WIN64)
+#pragma optimize("", on)
+#endif
 
 void RangeCalcOfflinePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   RemoveRangePattern(graph);
