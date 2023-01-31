@@ -82,9 +82,12 @@ void SequenceExpandCompute<T, PType>::Run() {
     }
     ref_out_lod[i] = ref_out_lod[i - 1] + seq_len * repeat_num;
   }
+  // write lod to out if x has lod
+  if (x->lod().size()) {
+    auto& ref_lod = *out->mutable_lod();
+    ref_lod[0] = out_lod;
+  }
 
-  auto& ref_lod = *out->mutable_lod();
-  ref_lod[0] = out_lod;
   int lod_len = ref_y_lod.size();
   for (int i = 0; i < lod_len; ++i) {
     lodx_cpu_[i] = ref_x_lod[i];
