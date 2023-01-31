@@ -47,7 +47,18 @@ void Pad2dCompute<T>::Run() {
   }
   T* out_data = out->template mutable_data<T>(TARGET(kXPU));
 
-  if (mode == "reflect" || mode == "constant" || mode == "edge") {
+  if (mode == "reflect") {
+    int r = xdnn::reflection_pad2d<T>(ctx.GetRawContext(),
+                                      in_data,
+                                      out_data,
+                                      in_dims[0],
+                                      in_dims[1],
+                                      in_dims[2],
+                                      in_dims[3],
+                                      pads,
+                                      (data_format == "NCHW"));
+    CHECK_EQ(r, 0);
+  } else if (mode == "constant" || mode == "edge") {
     int r = xdnn::pad2d<T>(ctx.GetRawContext(),
                            in_data,
                            out_data,
