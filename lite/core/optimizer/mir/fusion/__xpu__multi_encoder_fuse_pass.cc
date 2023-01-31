@@ -1652,8 +1652,6 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
                                                     "qkv_mul_4"};
     const std::vector<std::string> matmul_ops = {"qk_matmul", "qkv_matmul"};
 
-    // bool mul_quant = false;
-    // bool matmul_quant = false;
     const int ops_size = quant_mul_ops.size() + matmul_ops.size();
     std::vector<std::string> op_quant_types(ops_size, "not_quantized");
     std::vector<std::string> weight_max_tensor_name(quant_mul_ops.size());
@@ -1666,15 +1664,13 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
       weight_max_tensor_name[i] =
           get_weight_max_tensor_name(fc_weight_names[i]);
       auto op_info = matched.at(quant_mul_ops[i])->stmt()->op_info();
-      if (is_int8_quantized_op(op_info) || is_int16_quantized_op(op_info)) {
-        CHECK(false) << "mul quantized will be supported later";
-      }
+      CHECK(is_int8_quantized_op(op_info) || is_int16_quantized_op(op_info))
+          << "mul quantized will be supported later";
     }
     for (size_t i = 0; i < matmul_ops.size(); ++i) {
       auto op_info = matched.at(matmul_ops[i])->stmt()->op_info();
-      if (is_int8_quantized_op(op_info) || is_int16_quantized_op(op_info)) {
-        CHECK(false) << "matmul quantized will be supported later";
-      }
+      CHECK(is_int8_quantized_op(op_info) || is_int16_quantized_op(op_info))
+          << "matmul quantized will be supported later";
     }
     // quant is not supported in XPUSingleEncoderV2Fuser
     op_desc->SetAttr<std::vector<std::string>>("quant_types", op_quant_types);
