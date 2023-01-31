@@ -116,60 +116,59 @@ void Conv2dTransposeCompute<TGEMM, TW, TX, TY, PType>::Run() {
           nullptr,
           true);
       CHECK_EQ(ret, 0);
-    } else if (param.output_size.size()) {
-      const auto* bias = (param.bias != nullptr)
-                             ? param.bias->template data<float>()
-                             : nullptr;
-      int ret = xdnn::conv2d_transpose_fusion_v2<TX, TW, TY, int16_t>(
-          ctx.GetRawContext(),
-          param.x->template data<TX>(),
-          reinterpret_cast<const TW*>(xpu_quant_filter_.data_ptr_),
-          param.output->template mutable_data<TY>(TARGET(kXPU)),
-          in_dims[0],
-          in_dims[1],
-          out_dims[2],
-          out_dims[3],
-          out_dims[1],
-          std::vector<int>{static_cast<int>(w_dims[2]),
-                           static_cast<int>(w_dims[3])},
-          strides,
-          paddings,
-          dilations,
-          groups,
-          nullptr,
-          reinterpret_cast<const float*>(xpu_quant_filter_.max_ptr_),
-          nullptr,
-          bias,
-          act_,
-          true);
-      CHECK_EQ(ret, 0);
     } else {
       const auto* bias = (param.bias != nullptr)
                              ? param.bias->template data<float>()
                              : nullptr;
-      int ret = xdnn::conv2d_transpose_fusion<TX, TW, TY, int16_t>(
-          ctx.GetRawContext(),
-          param.x->template data<TX>(),
-          reinterpret_cast<const TW*>(xpu_quant_filter_.data_ptr_),
-          param.output->template mutable_data<TY>(TARGET(kXPU)),
-          in_dims[0],
-          in_dims[1],
-          in_dims[2],
-          in_dims[3],
-          out_dims[1],
-          std::vector<int>{static_cast<int>(w_dims[2]),
-                           static_cast<int>(w_dims[3])},
-          strides,
-          paddings,
-          dilations,
-          groups,
-          nullptr,
-          reinterpret_cast<const float*>(xpu_quant_filter_.max_ptr_),
-          nullptr,
-          bias,
-          act_,
-          true);
-      CHECK_EQ(ret, 0);
+      if (param.output_size.size()) {
+        int ret = xdnn::conv2d_transpose_fusion_v2<TX, TW, TY, int16_t>(
+            ctx.GetRawContext(),
+            param.x->template data<TX>(),
+            reinterpret_cast<const TW*>(xpu_quant_filter_.data_ptr_),
+            param.output->template mutable_data<TY>(TARGET(kXPU)),
+            in_dims[0],
+            in_dims[1],
+            out_dims[2],
+            out_dims[3],
+            out_dims[1],
+            std::vector<int>{static_cast<int>(w_dims[2]),
+                             static_cast<int>(w_dims[3])},
+            strides,
+            paddings,
+            dilations,
+            groups,
+            nullptr,
+            reinterpret_cast<const float*>(xpu_quant_filter_.max_ptr_),
+            nullptr,
+            bias,
+            act_,
+            true);
+        CHECK_EQ(ret, 0);
+      } else {
+        int ret = xdnn::conv2d_transpose_fusion<TX, TW, TY, int16_t>(
+            ctx.GetRawContext(),
+            param.x->template data<TX>(),
+            reinterpret_cast<const TW*>(xpu_quant_filter_.data_ptr_),
+            param.output->template mutable_data<TY>(TARGET(kXPU)),
+            in_dims[0],
+            in_dims[1],
+            in_dims[2],
+            in_dims[3],
+            out_dims[1],
+            std::vector<int>{static_cast<int>(w_dims[2]),
+                             static_cast<int>(w_dims[3])},
+            strides,
+            paddings,
+            dilations,
+            groups,
+            nullptr,
+            reinterpret_cast<const float*>(xpu_quant_filter_.max_ptr_),
+            nullptr,
+            bias,
+            act_,
+            true);
+        CHECK_EQ(ret, 0);
+      }
     }
   } else {
     int n = in_dims[0];
