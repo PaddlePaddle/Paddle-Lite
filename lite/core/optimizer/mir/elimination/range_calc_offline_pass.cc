@@ -38,25 +38,6 @@ int64_t GetSpanCount(T start, T end, T step) {
              : std::ceil(std::abs((end - start) / step));
 }
 
-// template <typename T>
-// void RangeCompute(lite::Tensor* start_tensor,
-//                   lite::Tensor* end_tensor,
-//                   lite::Tensor* step_tensor,
-//                   lite::Tensor* output_tensor) {
-//   auto start = start_tensor->mutable_data<T>()[0];
-//   auto end = end_tensor->mutable_data<T>()[0];
-//   auto step = step_tensor->mutable_data<T>()[0];
-//   // Calc range
-//   int64_t size = GetSpanCount(start, end, step);
-//   output_tensor->Resize(DDim({size}));
-//   auto out_data = output_tensor->mutable_data<T>();
-//   T value = start;
-//   for (int64_t i = 0; i < size; ++i) {
-//     out_data[i] = value;
-//     value += step;
-//   }
-// }
-
 template <typename T>
 void RangeCompute(
     int64_t size, T start, T end, T step, lite::Tensor* output_tensor) {
