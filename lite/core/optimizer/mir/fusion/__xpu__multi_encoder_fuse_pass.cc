@@ -1664,12 +1664,12 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
       weight_max_tensor_name[i] =
           get_weight_max_tensor_name(fc_weight_names[i]);
       auto op_info = matched.at(quant_mul_ops[i])->stmt()->op_info();
-      CHECK(is_int8_quantized_op(op_info) || is_int16_quantized_op(op_info))
+      CHECK(!is_int8_quantized_op(op_info) && !is_int16_quantized_op(op_info))
           << "mul quantized will be supported later";
     }
     for (size_t i = 0; i < matmul_ops.size(); ++i) {
       auto op_info = matched.at(matmul_ops[i])->stmt()->op_info();
-      CHECK(is_int8_quantized_op(op_info) || is_int16_quantized_op(op_info))
+      CHECK(!is_int8_quantized_op(op_info) && !is_int16_quantized_op(op_info))
           << "matmul quantized will be supported later";
     }
     // quant is not supported in XPUSingleEncoderV2Fuser
