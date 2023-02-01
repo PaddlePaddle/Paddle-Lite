@@ -238,7 +238,7 @@ void ConvImageCompute::PrepareForRun() {
     }
 #endif
   } else if (is_mali_ && filter_tensor_h_ == 1 && filter_tensor_w_ == 1 &&
-             groups_ == 1) {  // mali conv1x1
+             groups_ == 1 && input_tensor_n_ == 1) {  // mali conv1x1
     if (task_size <= threshold_2) {
       CLImageConverterNBlock converter;
       kernel_func_names_.push_back("conv2d_1x1_mali_h1w2c1");
