@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -396,7 +396,6 @@ class XPUConv2dScaleFuser : public FuseBase {
 class XPUConv2dScaleFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
-    if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     for (auto act_type : {"relu"}) {  // [TO DO] add more activate algorithm
       fusion::XPUConv2dScaleFuser fuser(act_type);
       fuser(graph.get());
