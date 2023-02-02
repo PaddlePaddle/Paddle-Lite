@@ -39,15 +39,8 @@ int64_t GetSpanCount(T start, T end, T step) {
 }
 
 template <typename T>
-void RangeCompute(lite::Tensor* start_tensor,
-                  lite::Tensor* end_tensor,
-                  lite::Tensor* step_tensor,
-                  lite::Tensor* output_tensor) {
-  auto start = start_tensor->mutable_data<T>()[0];
-  auto end = end_tensor->mutable_data<T>()[0];
-  auto step = step_tensor->mutable_data<T>()[0];
-  // Calc range
-  int64_t size = GetSpanCount(start, end, step);
+void RangeCompute(
+    int64_t size, T start, T end, T step, lite::Tensor* output_tensor) {
   output_tensor->Resize(DDim({size}));
   auto out_data = output_tensor->mutable_data<T>();
   T value = start;
@@ -103,11 +96,23 @@ void RangeCalcOfflinePass::RemoveRangePattern(
     // Get input precision
     auto precision = start_t->precision();
     if (precision == PrecisionType::kInt64) {
-      RangeCompute<int64_t>(start_t, end_t, step_t, out_t);
+      auto start = start_t->mutable_data<int64_t>()[0];
+      auto end = end_t->mutable_data<int64_t>()[0];
+      auto step = step_t->mutable_data<int64_t>()[0];
+      int64_t size = GetSpanCount(start, end, step);
+      RangeCompute<int64_t>(size, start, end, step, out_t);
     } else if (precision == PrecisionType::kInt32) {
-      RangeCompute<int32_t>(start_t, end_t, step_t, out_t);
+      auto start = start_t->mutable_data<int32_t>()[0];
+      auto end = end_t->mutable_data<int32_t>()[0];
+      auto step = step_t->mutable_data<int32_t>()[0];
+      int64_t size = GetSpanCount(start, end, step);
+      RangeCompute<int32_t>(size, start, end, step, out_t);
     } else if (precision == PrecisionType::kFloat) {
-      RangeCompute<float>(start_t, end_t, step_t, out_t);
+      auto start = start_t->mutable_data<float>()[0];
+      auto end = end_t->mutable_data<float>()[0];
+      auto step = step_t->mutable_data<float>()[0];
+      int64_t size = GetSpanCount(start, end, step);
+      RangeCompute<float>(size, start, end, step, out_t);
     } else {
       LOG(FATAL) << "Unsupported precision: " << PrecisionToStr(precision);
     }
