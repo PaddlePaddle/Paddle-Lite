@@ -125,40 +125,40 @@
 
 |Arch |下载链接 |适用的操作系统 |
 |:-----:|:-----:|:-----:|
-|x86   |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.centos.x86.kunlunxin_xpu.tar.gz) |CentOS 6.3 |
-|x86   |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.ubuntu.x86.kunlunxin_xpu.tar.gz) |Ubuntu     |
-|armv8 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.ky10.armv8.kunlunxin_xpu.tar.gz) |银河麒麟v10 |
+|x86   |[develop (dailybuild)](https://paddle-qa.bj.bcebos.com/Paddle-Lite/DevelopDailyBuild/inference_lite_lib.centos.x86.kunlunxin_xpu.tar.gz) |CentOS 6.3 |
+|x86   |[develop (dailybuild)](https://paddle-qa.bj.bcebos.com/Paddle-Lite/DevelopDailyBuild/inference_lite_lib.ubuntu.x86.kunlunxin_xpu.tar.gz) |Ubuntu     |
+|armv8 |[develop (dailybuild)](https://paddle-qa.bj.bcebos.com/Paddle-Lite/DevelopDailyBuild/inference_lite_lib.ky10.armv8.kunlunxin_xpu.tar.gz) |银河麒麟v10 |
 
 
 ## 华为昇腾 NPU
 
 |Arch |下载链接 |适用的操作系统 |
 |:-----:|:-----:|:-----:|
-|x86   |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.ubuntu.x86.huawei_ascend_npu.CANN5.1.RC1.alpha001.tar.gz) |Ubuntu    |
-|armv8 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.ky10.armv8.huawei_ascend_npu.CANN5.1.RC1.alpha001.tar.gz) |银河麒麟v10 |
+|x86   |[develop (dailybuild)](https://paddle-qa.bj.bcebos.com/Paddle-Lite/DevelopDailyBuild/inference_lite_lib.ubuntu.x86.huawei_ascend_npu.CANN5.1.RC1.alpha001.tar.gz) |Ubuntu    |
+|armv8 |[develop (dailybuild)](https://paddle-qa.bj.bcebos.com/Paddle-Lite/DevelopDailyBuild/inference_lite_lib.ky10.armv8.huawei_ascend_npu.CANN5.1.RC1.alpha001.tar.gz) |银河麒麟v10 |
 
 
 ## 华为麒麟 NPU
 
 |Arch |下载链接 |
 |:-----:|:-----:|
-|armv7 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.android.armv7.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
-|armv8 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.android.armv8.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
+|armv7 |[develop (dailybuild)](https://paddle-qa.bj.bcebos.com/Paddle-Lite/DevelopDailyBuild/inference_lite_lib.android.armv7.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
+|armv8 |[develop (dailybuild)](https://paddle-qa.bj.bcebos.com/Paddle-Lite/DevelopDailyBuild/inference_lite_lib.android.armv8.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
 
 
 ## 联发科 APU
 
 |Arch |下载链接 |
 |:-----:|:-----:|
-|armv7 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.android.armv7.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
-|armv8 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.android.armv8.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
+|armv7 |[develop (dailybuild)](https://paddle-qa.bj.bcebos.com/Paddle-Lite/DevelopDailyBuild/inference_lite_lib.android.armv7.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
+|armv8 |[develop (dailybuild)](https://paddle-qa.bj.bcebos.com/Paddle-Lite/DevelopDailyBuild/inference_lite_lib.android.armv8.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
 
 
 ## 颖脉 NNA
 
 |Arch |下载链接 |
 |:-----:|:-----:|
-|armv8 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.armlinux.armv8.imagination_nna.with_extra.with_log.tiny_publish.tar.gz) |
+|armv8 |[develop (dailybuild)](https://paddle-qa.bj.bcebos.com/Paddle-Lite/DevelopDailyBuild/inference_lite_lib.armlinux.armv8.imagination_nna.with_extra.with_log.tiny_publish.tar.gz) |
 
 
 ## opt 工具
