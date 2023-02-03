@@ -312,11 +312,17 @@ bool BuildOMModelToBuffer(
     options.insert(
         std::make_pair(ge::ir_option::INPUT_SHAPE, input_shape_info.data()));
   }
+  // Config AIPP
+  if (!config_params->aipp_file_path.empty()) {
+    options.insert(std::make_pair(ge::ir_option::INSERT_OP_FILE,
+                                  config_params->aipp_file_path.c_str()));
+  }
+  // Build graph model
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
   // For debug: save ascend offline model to local.
   if (!config_params->dump_model_path.empty()) {
     ATC_CALL(aclgrphSaveModel(
-        std::string(config_params->dump_model_path + "ir_graph_model").c_str(),
+        std::string(config_params->dump_model_path + "/ir_graph_model").c_str(),
         om_buffer));
   }
   // Copy from om model buffer
@@ -412,6 +418,11 @@ ge::DataType GetGEDataType<float>() {
 }
 
 template <>
+ge::DataType GetGEDataType<uint8_t>() {
+  return ge::DT_UINT8;
+}
+
+template <>
 ge::DataType GetGEDataType<int8_t>() {
   return ge::DT_INT8;
 }
@@ -444,6 +455,9 @@ ge::DataType ConvertACLDataTypeToGEDataType(aclDataType input_data_type) {
       break;
     case ACL_FLOAT16:
       output_data_type = ge::DT_FLOAT16;
+      break;
+    case ACL_UINT8:
+      output_data_type = ge::DT_UINT8;
       break;
     case ACL_INT8:
       output_data_type = ge::DT_INT8;

@@ -41,6 +41,9 @@ namespace huawei_ascend_npu {
 #define HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH \
   "HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH"
 
+// Specify the file path of the aipp config file
+#define HUAWEI_ASCEND_NPU_AIPP_FILE_PATH "HUAWEI_ASCEND_NPU_AIPP_FILE_PATH"
+
 // Specify the file path to dump the model
 #define HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH \
   "HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH"

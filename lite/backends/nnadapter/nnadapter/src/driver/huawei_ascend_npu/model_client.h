@@ -36,6 +36,7 @@ typedef enum {
 
 typedef struct AscendConfigParams {
   std::string profiling_file_path = "";
+  std::string aipp_file_path = "";
   std::string dump_model_path = "";
   std::string precision_mode = "";
   std::string modify_mixlist_path = "";

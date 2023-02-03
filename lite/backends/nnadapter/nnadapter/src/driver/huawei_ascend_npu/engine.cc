@@ -77,6 +77,15 @@ Context::Context(void* device, const char* properties) : device_(device) {
   }
   NNADAPTER_LOG(INFO) << "profiling path: "
                       << ascend_config_params_.profiling_file_path;
+  // HUAWEI_ASCEND_NPU_AIPP_FILE_PATH
+  if (key_values.count(HUAWEI_ASCEND_NPU_AIPP_FILE_PATH)) {
+    ascend_config_params_.aipp_file_path =
+        key_values[HUAWEI_ASCEND_NPU_AIPP_FILE_PATH];
+  } else {
+    ascend_config_params_.aipp_file_path =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_AIPP_FILE_PATH);
+  }
+  NNADAPTER_LOG(INFO) << "aipp path: " << ascend_config_params_.aipp_file_path;
   // HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH
   if (key_values.count(HUAWEI_ASCEND_NPU_DUMP_MODEL_FILE_PATH)) {
     ascend_config_params_.dump_model_path =
