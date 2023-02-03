@@ -26,19 +26,19 @@ namespace lite {
 namespace arm {
 namespace math {
 void input_trans_c4_10x10(const float* src,
-                        int src_stride,
-                        float* dest,
-                        int dest_stride);
+                          int src_stride,
+                          float* dest,
+                          int dest_stride);
 void output_trans_c4_8x10(const float* src,
-                         int src_stride,
-                         float* dest,
-                         int dest_stride);
+                          int src_stride,
+                          float* dest,
+                          int dest_stride);
 void output_trans_c4_post_8x10(const float* src,
-                              int src_stride,
-                              float* dest,
-                              int dest_stride,
-                              float* bias_value,
-                              bool has_relu);
+                               int src_stride,
+                               float* dest,
+                               int dest_stride,
+                               float* bias_value,
+                               bool has_relu);
 void input_trans_c4_8x8(const float* src,
                         int src_stride,
                         float* dest,
@@ -91,12 +91,11 @@ void weight_trans_c4_4x4(
     float* dest, const float* src, int ic, int oc, void* workspace);
 
 /*
-*The following function conv_compute_6x6_3x3 and conv_compute_2x2_3x3[_small] is
-*base on
-*MNN[https://github.com/alibaba/MNN]
-*
-*Copyright © 2018, Alibaba Group Holding Limited
-*/
+ *The following function conv_compute_6x6_3x3 and conv_compute_2x2_3x3[_small]
+ *is base on MNN[https://github.com/alibaba/MNN]
+ *
+ *Copyright © 2018, Alibaba Group Holding Limited
+ */
 
 // F(8,3)
 void conv_compute_8x8_3x3(const float* input,
@@ -224,9 +223,9 @@ void conv_compute_8x8_3x3(const float* input,
             float* dst_ci = dst_ptr + ci * tile_count * 4;
             for (int i = 0; i < 10; ++i) {
               input_trans_c4_10x10(trans_tmp_data + i * 40,
-                                 4,
-                                 dst_ci + i * b_gi_stride * 10,
-                                 b_gi_stride);
+                                   4,
+                                   dst_ci + i * b_gi_stride * 10,
+                                   b_gi_stride);
             }
           }
         } else {
@@ -251,9 +250,9 @@ void conv_compute_8x8_3x3(const float* input,
             float* dst_ci = dst_ptr + ci * tile_count * 4;
             for (int i = 0; i < 10; ++i) {
               input_trans_c4_10x10(trans_tmp_data + i * 40,
-                                 4,
-                                 dst_ci + i * b_gi_stride * 10,
-                                 b_gi_stride);
+                                   4,
+                                   dst_ci + i * b_gi_stride * 10,
+                                   b_gi_stride);
             }
           }  // for ci_4
         }
@@ -312,17 +311,17 @@ void conv_compute_8x8_3x3(const float* input,
             float* src_ci = src_ptr + ci * tile_count * 4;
             for (int i = 0; i < 10; ++i) {
               output_trans_c4_8x10(src_ci + i * c_gi_stride * 10,
-                                  c_gi_stride,
-                                  trans_tmp_data + i * 4,
-                                  40);
+                                   c_gi_stride,
+                                   trans_tmp_data + i * 4,
+                                   40);
             }
             for (int i = 0; i < ey; ++i) {
               output_trans_c4_post_8x10(trans_tmp_data + i * 40,
-                                       4,
-                                       trans_remain_tmp_data + i * 32,
-                                       4,
-                                       bias_value,
-                                       param.fuse_relu);
+                                        4,
+                                        trans_remain_tmp_data + i * 32,
+                                        4,
+                                        bias_value,
+                                        param.fuse_relu);
             }
             write_to_output_c4_fp32(trans_remain_tmp_data,
                                     output_ptr,
@@ -358,17 +357,17 @@ void conv_compute_8x8_3x3(const float* input,
             float* src_ci = src_ptr + ci * tile_count * 4;
             for (int i = 0; i < 10; ++i) {
               output_trans_c4_8x10(src_ci + i * c_gi_stride * 10,
-                                  c_gi_stride,
-                                  trans_tmp_data + i * 4,
-                                  40);
+                                   c_gi_stride,
+                                   trans_tmp_data + i * 4,
+                                   40);
             }
             for (int i = 0; i < ey; ++i) {
               output_trans_c4_post_8x10(trans_tmp_data + i * 40,
-                                       4,
-                                       trans_remain_tmp_data + i * 32,
-                                       4,
-                                       bias_value,
-                                       param.fuse_relu);
+                                        4,
+                                        trans_remain_tmp_data + i * 32,
+                                        4,
+                                        bias_value,
+                                        param.fuse_relu);
             }
             // copy to dest
             memset(trans_tmp_data, 0, 256 * sizeof(float));
@@ -1566,9 +1565,9 @@ AT = [
 ]
 */
 void output_trans_c4_8x10(const float* src,
-                         int src_stride,
-                         float* dest,
-                         int dest_stride) {
+                          int src_stride,
+                          float* dest,
+                          int dest_stride) {
   const float32x4_t src0 = vld1q_f32(src);
   const float32x4_t src1 = vld1q_f32(src + src_stride);
   const float32x4_t src2 = vld1q_f32(src + src_stride * 2);
@@ -1589,32 +1588,39 @@ void output_trans_c4_8x10(const float* src,
   float32x4_t tmp0246d = vaddq_f32(src7, src8);
   float32x4_t tmp1357d = vsubq_f32(src7, src8);
 
-  float32x4_t dest0 =
-      vaddq_f32(vaddq_f32(vaddq_f32(vaddq_f32(src0, tmp0246a), tmp0246b), tmp0246c), tmp0246d);
-  float32x4_t dest2 = vaddq_f32(vaddq_f32(vaddq_f32(tmp0246a, vmulq_n_f32(tmp0246b, 4)),
-                                vmulq_n_f32(tmp0246c, 0.25f)),
-                                vmulq_n_f32(tmp0246d, 2.25f));
-  float32x4_t dest4 = vaddq_f32(vaddq_f32(vaddq_f32(tmp0246a, vmulq_n_f32(tmp0246b, 16)),
-                                vmulq_n_f32(tmp0246c, 0.0625f)),
-                                vmulq_n_f32(tmp0246d, 5.0625f));
-  float32x4_t dest6 = vaddq_f32(vaddq_f32(vaddq_f32(tmp0246a, vmulq_n_f32(tmp0246b, 64)),
-                                vmulq_n_f32(tmp0246c, 0.015625f)),
-                                vmulq_n_f32(tmp0246d, 11.390625f));
+  float32x4_t dest0 = vaddq_f32(
+      vaddq_f32(vaddq_f32(vaddq_f32(src0, tmp0246a), tmp0246b), tmp0246c),
+      tmp0246d);
+  float32x4_t dest2 =
+      vaddq_f32(vaddq_f32(vaddq_f32(tmp0246a, vmulq_n_f32(tmp0246b, 4)),
+                          vmulq_n_f32(tmp0246c, 0.25f)),
+                vmulq_n_f32(tmp0246d, 2.25f));
+  float32x4_t dest4 =
+      vaddq_f32(vaddq_f32(vaddq_f32(tmp0246a, vmulq_n_f32(tmp0246b, 16)),
+                          vmulq_n_f32(tmp0246c, 0.0625f)),
+                vmulq_n_f32(tmp0246d, 5.0625f));
+  float32x4_t dest6 =
+      vaddq_f32(vaddq_f32(vaddq_f32(tmp0246a, vmulq_n_f32(tmp0246b, 64)),
+                          vmulq_n_f32(tmp0246c, 0.015625f)),
+                vmulq_n_f32(tmp0246d, 11.390625f));
 
-  float32x4_t dest1 = vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 2)),
-                                vmulq_n_f32(tmp1357c, 0.5f)),
-                                vmulq_n_f32(tmp1357d, 1.5f));
-  float32x4_t dest3 = vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 8)),
-                                vmulq_n_f32(tmp1357c, 0.125f)),
-                                vmulq_n_f32(tmp1357d, 3.375f));
-  float32x4_t dest5 = vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 32)),
-                                vmulq_n_f32(tmp1357c, 0.03125f)),
-                                vmulq_n_f32(tmp1357d, 7.59375f));
-  float32x4_t dest7 =
-      vaddq_f32(src9,
-                vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 128)),
+  float32x4_t dest1 =
+      vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 2)),
+                          vmulq_n_f32(tmp1357c, 0.5f)),
+                vmulq_n_f32(tmp1357d, 1.5f));
+  float32x4_t dest3 =
+      vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 8)),
+                          vmulq_n_f32(tmp1357c, 0.125f)),
+                vmulq_n_f32(tmp1357d, 3.375f));
+  float32x4_t dest5 =
+      vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 32)),
+                          vmulq_n_f32(tmp1357c, 0.03125f)),
+                vmulq_n_f32(tmp1357d, 7.59375f));
+  float32x4_t dest7 = vaddq_f32(
+      src9,
+      vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 128)),
                           vmulq_n_f32(tmp1357c, 0.0078125f)),
-                          vmulq_n_f32(tmp1357d, 17.0859375f)));
+                vmulq_n_f32(tmp1357d, 17.0859375f)));
 
   vst1q_f32(dest, dest0);
   vst1q_f32(dest + dest_stride, dest1);
@@ -1627,11 +1633,11 @@ void output_trans_c4_8x10(const float* src,
 }
 
 void output_trans_c4_post_8x10(const float* src,
-                              int src_stride,
-                              float* dest,
-                              int dest_stride,
-                              float* bias_value,
-                              bool has_relu = false) {
+                               int src_stride,
+                               float* dest,
+                               int dest_stride,
+                               float* bias_value,
+                               bool has_relu = false) {
   const float32x4_t src0 = vld1q_f32(src);
   const float32x4_t src1 = vld1q_f32(src + src_stride);
   const float32x4_t src2 = vld1q_f32(src + src_stride * 2);
@@ -1652,32 +1658,39 @@ void output_trans_c4_post_8x10(const float* src,
   float32x4_t tmp0246d = vaddq_f32(src7, src8);
   float32x4_t tmp1357d = vsubq_f32(src7, src8);
 
-  float32x4_t dest0 =
-      vaddq_f32(vaddq_f32(vaddq_f32(vaddq_f32(src0, tmp0246a), tmp0246b), tmp0246c), tmp0246d);
-  float32x4_t dest2 = vaddq_f32(vaddq_f32(vaddq_f32(tmp0246a, vmulq_n_f32(tmp0246b, 4)),
-                                vmulq_n_f32(tmp0246c, 0.25f)),
-                                vmulq_n_f32(tmp0246d, 2.25f));
-  float32x4_t dest4 = vaddq_f32(vaddq_f32(vaddq_f32(tmp0246a, vmulq_n_f32(tmp0246b, 16)),
-                                vmulq_n_f32(tmp0246c, 0.0625f)),
-                                vmulq_n_f32(tmp0246d, 5.0625f));
-  float32x4_t dest6 = vaddq_f32(vaddq_f32(vaddq_f32(tmp0246a, vmulq_n_f32(tmp0246b, 64)),
-                                vmulq_n_f32(tmp0246c, 0.015625f)),
-                                vmulq_n_f32(tmp0246d, 11.390625f));
+  float32x4_t dest0 = vaddq_f32(
+      vaddq_f32(vaddq_f32(vaddq_f32(src0, tmp0246a), tmp0246b), tmp0246c),
+      tmp0246d);
+  float32x4_t dest2 =
+      vaddq_f32(vaddq_f32(vaddq_f32(tmp0246a, vmulq_n_f32(tmp0246b, 4)),
+                          vmulq_n_f32(tmp0246c, 0.25f)),
+                vmulq_n_f32(tmp0246d, 2.25f));
+  float32x4_t dest4 =
+      vaddq_f32(vaddq_f32(vaddq_f32(tmp0246a, vmulq_n_f32(tmp0246b, 16)),
+                          vmulq_n_f32(tmp0246c, 0.0625f)),
+                vmulq_n_f32(tmp0246d, 5.0625f));
+  float32x4_t dest6 =
+      vaddq_f32(vaddq_f32(vaddq_f32(tmp0246a, vmulq_n_f32(tmp0246b, 64)),
+                          vmulq_n_f32(tmp0246c, 0.015625f)),
+                vmulq_n_f32(tmp0246d, 11.390625f));
 
-  float32x4_t dest1 = vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 2)),
-                                vmulq_n_f32(tmp1357c, 0.5f)),
-                                vmulq_n_f32(tmp1357d, 1.5f));
-  float32x4_t dest3 = vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 8)),
-                                vmulq_n_f32(tmp1357c, 0.125f)),
-                                vmulq_n_f32(tmp1357d, 3.375f));
-  float32x4_t dest5 = vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 32)),
-                                vmulq_n_f32(tmp1357c, 0.03125f)),
-                                vmulq_n_f32(tmp1357d, 7.59375f));
-  float32x4_t dest7 =
-      vaddq_f32(src9,
-                vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 128)),
+  float32x4_t dest1 =
+      vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 2)),
+                          vmulq_n_f32(tmp1357c, 0.5f)),
+                vmulq_n_f32(tmp1357d, 1.5f));
+  float32x4_t dest3 =
+      vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 8)),
+                          vmulq_n_f32(tmp1357c, 0.125f)),
+                vmulq_n_f32(tmp1357d, 3.375f));
+  float32x4_t dest5 =
+      vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 32)),
+                          vmulq_n_f32(tmp1357c, 0.03125f)),
+                vmulq_n_f32(tmp1357d, 7.59375f));
+  float32x4_t dest7 = vaddq_f32(
+      src9,
+      vaddq_f32(vaddq_f32(vaddq_f32(tmp1357a, vmulq_n_f32(tmp1357b, 128)),
                           vmulq_n_f32(tmp1357c, 0.0078125f)),
-                          vmulq_n_f32(tmp1357d, 17.0859375f)));
+                vmulq_n_f32(tmp1357d, 17.0859375f)));
 
   float32x4_t bias = vld1q_f32(bias_value);
   dest0 = vaddq_f32(dest0, bias);
@@ -1894,9 +1907,9 @@ BT = [
 ]
 */
 void input_trans_c4_10x10(const float* src,
-                        int src_stride,
-                        float* dest,
-                        int dest_stride) {
+                          int src_stride,
+                          float* dest,
+                          int dest_stride) {
   float32x4_t src0 = vld1q_f32(src);
   float32x4_t src1 = vld1q_f32(src + src_stride);
   float32x4_t src2 = vld1q_f32(src + src_stride * 2);
@@ -1908,58 +1921,60 @@ void input_trans_c4_10x10(const float* src,
   float32x4_t src8 = vld1q_f32(src + src_stride * 8);
   float32x4_t src9 = vld1q_f32(src + src_stride * 9);
 
-  float32x4_t dst0 = vaddq_f32(vsubq_f32(vaddq_f32(vsubq_f32(vmulq_n_f32(src0, 2.25),
-                               vmulq_n_f32(src2, 12.8125)),
-                               vmulq_n_f32(src4, 17.0625)),
-                               vmulq_n_f32(src6, 7.5)),
-                               src8);
-  float32x4_t dst9 = vaddq_f32(vsubq_f32(vaddq_f32(vsubq_f32(vmulq_n_f32(src1, 2.25),
-                               vmulq_n_f32(src3, 12.8125)),
-                               vmulq_n_f32(src5, 17.0625)),
-                               vmulq_n_f32(src7, 7.5)),
-                               src9);
+  float32x4_t dst0 =
+      vaddq_f32(vsubq_f32(vaddq_f32(vsubq_f32(vmulq_n_f32(src0, 2.25),
+                                              vmulq_n_f32(src2, 12.8125)),
+                                    vmulq_n_f32(src4, 17.0625)),
+                          vmulq_n_f32(src6, 7.5)),
+                src8);
+  float32x4_t dst9 =
+      vaddq_f32(vsubq_f32(vaddq_f32(vsubq_f32(vmulq_n_f32(src1, 2.25),
+                                              vmulq_n_f32(src3, 12.8125)),
+                                    vmulq_n_f32(src5, 17.0625)),
+                          vmulq_n_f32(src7, 7.5)),
+                src9);
 
-  float32x4_t tmp12a = vaddq_f32(vsubq_f32(vsubq_f32(vmulq_n_f32(src4, 10.5625),
-                                 vmulq_n_f32(src2, 2.25)),
-                                 vmulq_n_f32(src6, 6.5)),
-                                 src8);
-  float32x4_t tmp12b = vaddq_f32(vsubq_f32(vsubq_f32(vmulq_n_f32(src3, 10.5625),
-                                 vmulq_n_f32(src1, 2.25)),
-                                 vmulq_n_f32(src5, 6.5)),
-                                 src7);
+  float32x4_t tmp12a = vaddq_f32(
+      vsubq_f32(vsubq_f32(vmulq_n_f32(src4, 10.5625), vmulq_n_f32(src2, 2.25)),
+                vmulq_n_f32(src6, 6.5)),
+      src8);
+  float32x4_t tmp12b = vaddq_f32(
+      vsubq_f32(vsubq_f32(vmulq_n_f32(src3, 10.5625), vmulq_n_f32(src1, 2.25)),
+                vmulq_n_f32(src5, 6.5)),
+      src7);
   float32x4_t dst1 = vaddq_f32(tmp12a, tmp12b);
   float32x4_t dst2 = vsubq_f32(tmp12a, tmp12b);
 
-  float32x4_t tmp34a = vaddq_f32(vsubq_f32(vsubq_f32(vmulq_n_f32(src4, 3.0625),
-                                 vmulq_n_f32(src2, 0.5625)),
-                                 vmulq_n_f32(src6, 3.5)),
-                                 src8);
-  float32x4_t tmp34b = vaddq_f32(vsubq_f32(vsubq_f32(vmulq_n_f32(src3, 6.125),
-                                 vmulq_n_f32(src1, 1.125)),
-                                 vmulq_n_f32(src5, 7)),
-                                 vmulq_n_f32(src7, 2));
+  float32x4_t tmp34a = vaddq_f32(
+      vsubq_f32(vsubq_f32(vmulq_n_f32(src4, 3.0625), vmulq_n_f32(src2, 0.5625)),
+                vmulq_n_f32(src6, 3.5)),
+      src8);
+  float32x4_t tmp34b = vaddq_f32(
+      vsubq_f32(vsubq_f32(vmulq_n_f32(src3, 6.125), vmulq_n_f32(src1, 1.125)),
+                vmulq_n_f32(src5, 7)),
+      vmulq_n_f32(src7, 2));
   float32x4_t dst3 = vaddq_f32(tmp34a, tmp34b);
   float32x4_t dst4 = vsubq_f32(tmp34a, tmp34b);
 
-  float32x4_t tmp56a = vaddq_f32(vsubq_f32(vsubq_f32(vmulq_n_f32(src4, 15.25),
-                                 vmulq_n_f32(src2, 9)),
-                                 vmulq_n_f32(src6, 7.25)),
-                                 src8);
-  float32x4_t tmp56b = vaddq_f32(vsubq_f32(vsubq_f32(vmulq_n_f32(src3, 7.625),
-                                 vmulq_n_f32(src1, 4.5)),
-                                 vmulq_n_f32(src5, 3.625)),
-                                 vmulq_n_f32(src7, 0.5));
+  float32x4_t tmp56a = vaddq_f32(
+      vsubq_f32(vsubq_f32(vmulq_n_f32(src4, 15.25), vmulq_n_f32(src2, 9)),
+                vmulq_n_f32(src6, 7.25)),
+      src8);
+  float32x4_t tmp56b = vaddq_f32(
+      vsubq_f32(vsubq_f32(vmulq_n_f32(src3, 7.625), vmulq_n_f32(src1, 4.5)),
+                vmulq_n_f32(src5, 3.625)),
+      vmulq_n_f32(src7, 0.5));
   float32x4_t dst5 = vaddq_f32(tmp56a, tmp56b);
   float32x4_t dst6 = vsubq_f32(tmp56a, tmp56b);
 
-  float32x4_t tmp78a = vaddq_f32(vsubq_f32(vsubq_f32(vmulq_n_f32(src4, 5.25),
-                                 src2),
-                                 vmulq_n_f32(src6, 5.25)),
-                                 src8);
-  float32x4_t tmp78b = vaddq_f32(vsubq_f32(vsubq_f32(vmulq_n_f32(src3, 7.875),
-                                 vmulq_n_f32(src1, 1.5)),
-                                 vmulq_n_f32(src5, 7.875)),
-                                 vmulq_n_f32(src7, 1.5));
+  float32x4_t tmp78a =
+      vaddq_f32(vsubq_f32(vsubq_f32(vmulq_n_f32(src4, 5.25), src2),
+                          vmulq_n_f32(src6, 5.25)),
+                src8);
+  float32x4_t tmp78b = vaddq_f32(
+      vsubq_f32(vsubq_f32(vmulq_n_f32(src3, 7.875), vmulq_n_f32(src1, 1.5)),
+                vmulq_n_f32(src5, 7.875)),
+      vmulq_n_f32(src7, 1.5));
   float32x4_t dst7 = vaddq_f32(tmp78a, tmp78b);
   float32x4_t dst8 = vsubq_f32(tmp78a, tmp78b);
 
@@ -2229,15 +2244,15 @@ void output_trans_c4_post_2x4(const float* src,
 void weight_trans_c4_10x10(
     float* dest, const float* din, int ch_in, int ch_out, void* workspace) {
   const float coeff[10][3] = {{4.0f / 9, 0.0f, 0.0f},
-                             {8.0f / 45, 8.0f / 45, 8.0f / 45},
-                             {8.0f / 45, -8.0f / 45, 8.0f / 45},
-                             {2.0f / 315, 4.0f / 315, 8.0f / 315},
-                             {2.0f / 315, -4.0f / 315, 8.0f / 315},
-                             {-16.0f / 45, -8.0f / 45, -4.0f / 45},
-                             {-16.0f / 45, 8.0f / 45, -4.0f / 45},
-                             {-16.0f / 315, -8.0f / 105, -4.0f / 35},
-                             {-16.0f / 315, 8.0f / 105, -4.0f / 35},
-                             {0.0f, 0.0f, 1.0f}};
+                              {8.0f / 45, 8.0f / 45, 8.0f / 45},
+                              {8.0f / 45, -8.0f / 45, 8.0f / 45},
+                              {2.0f / 315, 4.0f / 315, 8.0f / 315},
+                              {2.0f / 315, -4.0f / 315, 8.0f / 315},
+                              {-16.0f / 45, -8.0f / 45, -4.0f / 45},
+                              {-16.0f / 45, 8.0f / 45, -4.0f / 45},
+                              {-16.0f / 315, -8.0f / 105, -4.0f / 35},
+                              {-16.0f / 315, 8.0f / 105, -4.0f / 35},
+                              {0.0f, 0.0f, 1.0f}};
 
   float* ptr_out = static_cast<float*>(workspace);
 
@@ -2268,8 +2283,8 @@ void weight_trans_c4_10x10(
         float* tmpp = &tmp[j][0];
         for (int i = 0; i < 10; i++) {
           ptr_channel[j * 10 + i] = tmpp[0] * coeff[i][0] +
-                                   tmpp[1] * coeff[i][1] +
-                                   tmpp[2] * coeff[i][2];
+                                    tmpp[1] * coeff[i][1] +
+                                    tmpp[2] * coeff[i][2];
         }
       }
     }
