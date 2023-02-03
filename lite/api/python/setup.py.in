@@ -65,8 +65,11 @@ if '${WITH_MKL}' == 'ON' and '${WITH_STATIC_MKL}' == 'ON' and os.name != 'nt':
 if '${LITE_WITH_XPU}' == 'ON':
     shutil.copy('${XPUAPI_LIB}', LIB_PATH)
     PACKAGE_DATA['paddlelite.libs'] += ['libxpuapi.so']
-    shutil.copy('${XPURT_LIB}', LIB_PATH)
-    PACKAGE_DATA['paddlelite.libs'] += ['libxpurt.so.1']
+    for filepath, dir, files in os.walk(os.path.split('${XPURT_LIB}')[0]):
+        for filename in files:
+            if filename.find("libxpurt.so") != -1:
+                shutil.copy(os.path.join(filepath, filename), LIB_PATH)
+                PACKAGE_DATA['paddlelite.libs'] += [filename]
 
 if '${LITE_WITH_NNADAPTER}' == 'ON':
     shutil.copy('${PADDLE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/src/libnnadapter.so', LIB_PATH)
