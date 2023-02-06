@@ -134,13 +134,13 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "weight_quantization_preprocess_pass",
        "op_transformation_pass",
        "assign_value_calc_offline_pass",
+       "ssd_boxes_calc_offline_pass",
        "p_norm_fill_constant_max_div_fuse_pass",
        "fill_constant_calc_offline_pass",
        "range_calc_offline_pass",
        "scale_calc_offline_pass",
        "unsqueeze_calc_offline_pass",
        "reshape_calc_offline_pass",
-       "ssd_boxes_calc_offline_pass",
        // A minimal set of op fusion pass.
        "op_fusion_minimal_set_pass",
        // For the fully quantization model, the quantization parameters of the
