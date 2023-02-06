@@ -26,9 +26,13 @@ class Pad2dCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::Pad2dParam;
 
+  void PrepareForRun() override;
   virtual void Run();
 
   virtual ~Pad2dCompute() = default;
+
+ private:
+  uint64_t cur_dev_attr_ = 0;
 };
 
 }  // namespace xpu
