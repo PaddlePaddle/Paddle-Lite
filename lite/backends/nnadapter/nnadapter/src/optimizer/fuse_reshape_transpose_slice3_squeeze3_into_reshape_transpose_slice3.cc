@@ -205,15 +205,16 @@ bool ReshapeTransposeSlice3Squeeze3Fuser::HandleMatchedResults(
 
   // Modify slice 0,1,2
   int slice_length = transpose_out_shape_data[1] / 3;
-#define MODIFY_SLICE(id_)                                                   \
-  reinterpret_cast<int32_t*>(                                               \
-      nodes.at("slice" #id_ "_axes")->operand->buffer)[0] = 1;              \
-  reinterpret_cast<int32_t*>(                                               \
-      nodes.at("slice" #id_ "_starts")->operand->buffer)[0] =               \
-      id_ * slice_length;                                                   \
-  reinterpret_cast<int32_t*>(nodes.at("slice0_ends")->operand->buffer)[0] = \
-      (id_ + 1) * slice_length;                                             \
-  nodes.at("slice" #id_)->operation->output_operands[0] =                   \
+#define MODIFY_SLICE(id_)                                      \
+  reinterpret_cast<int32_t*>(                                  \
+      nodes.at("slice" #id_ "_axes")->operand->buffer)[0] = 1; \
+  reinterpret_cast<int32_t*>(                                  \
+      nodes.at("slice" #id_ "_starts")->operand->buffer)[0] =  \
+      id_ * slice_length;                                      \
+  reinterpret_cast<int32_t*>(                                  \
+      nodes.at("slice" #id_ "_ends")->operand->buffer)[0] =    \
+      (id_ + 1) * slice_length;                                \
+  nodes.at("slice" #id_)->operation->output_operands[0] =      \
       nodes.at("squeeze" #id_ "_out")->operand;
   MODIFY_SLICE(0);
   MODIFY_SLICE(1);
