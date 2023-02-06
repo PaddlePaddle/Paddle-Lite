@@ -115,6 +115,7 @@ add_kernel(deformable_conv_compute_xpu XPU extra SRCS deformable_conv_compute.cc
 add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc)
 add_kernel(__xpu__multi_encoder_compute_xpu XPU extra SRCS __xpu__multi_encoder_compute.cc)
 add_kernel(__xpu__embedding_with_eltwise_add_compute_xpu XPU extra SRCS __xpu__embedding_with_eltwise_add_compute.cc)
+add_kernel(__xpu__mask_adaptive_compute_xpu XPU extra SRCS __xpu__mask_adaptive_compute.cc)
 add_kernel(__xpu__fc_compute_xpu XPU extra SRCS __xpu__fc_compute.cc)
 add_kernel(__xpu__quick_gelu_compute_xpu XPU extra SRCS __xpu__quick_gelu_compute.cc)
 add_kernel(__xpu__search_attention_compute_xpu XPU extra SRCS __xpu__search_attention_compute.cc)
