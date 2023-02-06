@@ -411,7 +411,7 @@ class XPUConv2dFuser : public FuseBase {
 
         for (int i = 0; i < mean_len; ++i) {
           scale_on_host[i] =
-              scale_on_host[i] / sqrtf(var_on_host[i] + eps_on_host);  // 0.0001
+              scale_on_host[i] / sqrtf(var_on_host[i] + eps_on_host);
         }
         for (int i = 0; i < mean_len; ++i) {
           for (int j = 0; j < filter_stride; ++j) {
