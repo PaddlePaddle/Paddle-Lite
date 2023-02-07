@@ -1773,10 +1773,10 @@ typedef enum {
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
    * tensor.
-   * * 1: shifts, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor, It
+   * * 1: shifts, a NNADAPTER_TENSOR_INT64 tensor, It
    * represents the number of places by which the elements of the tensor are
    * shifted.
-   * * 2: axes, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor, It
+   * * 2: axes, a NNADAPTER_TENSOR_INT64 tensor, It
    * represents axis along which to roll.
    *
    * Outputs:

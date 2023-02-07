@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,10 @@ int ConvertRoll(Converter* converter, core::Operation* operation) {
   if (!shifts_operator) {
     shifts_operator = converter->ConvertOperand(shifts_operand);
   }
-  auto axes_operator = converter->ConvertOperand(axes_operand);
+  auto axes_operator = converter->GetMappedOperator(axes_operand);
+  if (!axes_operator) {
+    axes_operator = converter->ConvertOperand(axes_operand);
+  }
   auto roll_op = converter->AddOperator<ge::op::RollV2>(output_operand);
   SET_INPUT(roll_op, input, input_operator);
   SET_INPUT(roll_op, shift, shifts_operator);
