@@ -83,8 +83,7 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
         ge::Operator::OpString(GetPoolingPaddingMode(auto_pad)));
     if (auto_pad == NNADAPTER_AUTO_PAD_VALID) {
       pool2d_op->set_attr_ceil_mode(false);
-    }
-    if (auto_pad == NNADAPTER_AUTO_PAD_NONE) {
+    } else if (auto_pad == NNADAPTER_AUTO_PAD_NONE) {
       pool2d_op->set_attr_pads(ge::Operator::OpListInt({pad_height_top,
                                                         pad_height_bottom,
                                                         pad_width_left,

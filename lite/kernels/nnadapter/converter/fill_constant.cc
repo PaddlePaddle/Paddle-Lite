@@ -72,8 +72,7 @@ int ConvertFillConstant(Converter* converter, OpInfo* op, Scope* scope) {
     } else if (str_value == "nan") {
       value = std::numeric_limits<float>::quiet_NaN();
     } else {
-      std::stringstream convert_stream(str_value);
-      convert_stream >> value;
+      value = std::stof(str_value);
     }
     value_operand = converter->AddConstantOperand(value);
   } else if (op->HasAttr("value")) {
