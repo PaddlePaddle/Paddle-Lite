@@ -1684,10 +1684,10 @@ typedef struct Device {
   沿给定维度滚动张量输入。超出最后位置的元素将在第一个位置重新引入，如果不设置 axes，则张量将在滚动之前展开变平，然后恢复为原始形状。。
   - 输入 ：
     - 0 ： input ，输入操作数，类型： NNADAPTER_FLOAT32 、 NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 。
-    - 1 ： shifts ，表示张量元素移动的位置数，给定的单个或多个轴，形状：任意一维操作数，类型： NNADAPTER_INT64 。
-    - 2 ： axes ，表示滚动的单个或多个轴，形状：任意一维操作数，类型： NNADAPTER_INT64 。
+    - 1 ： shifts ，表示张量元素移动的位置数，给定的单个或多个轴，形状：任意一维操作数，类型： NNADAPTER_INT32 。
+    - 2 ： axes ，表示滚动的单个或多个轴，形状：任意一维操作数，类型： NNADAPTER_INT32 。
   - 输出 ：
-    - 0 ： output ，输出操作数，与输入操作数 `input` 的类型相同。
+    - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
 
 - NNADAPTER_SHAPE
 

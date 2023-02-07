@@ -31,11 +31,11 @@ namespace operation {
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);         \
   /* Shifts */                                                              \
   auto shifts_operand = input_operands[1];                                  \
-  std::vector<int64_t> shifts;                                              \
+  std::vector<int32_t> shifts;                                              \
   if (IsConstantOperand(shifts_operand)) {                                  \
-    auto shifts_count = shifts_operand->length / sizeof(int64_t);           \
-    auto shifts_data = reinterpret_cast<int64_t*>(shifts_operand->buffer);  \
-    shifts = std::vector<int64_t>(shifts_data, shifts_data + shifts_count); \
+    auto shifts_count = shifts_operand->length / sizeof(int32_t);           \
+    auto shifts_data = reinterpret_cast<int32_t*>(shifts_operand->buffer);  \
+    shifts = std::vector<int32_t>(shifts_data, shifts_data + shifts_count); \
     for (size_t i = 0; i < shifts.size(); i++) {                            \
       NNADAPTER_VLOG(5) << "shifts[" << i << "]: " << shifts[i];            \
     }                                                                       \
@@ -44,11 +44,11 @@ namespace operation {
   }                                                                         \
   /* Axes */                                                                \
   auto axes_operand = input_operands[2];                                    \
-  std::vector<int64_t> axes;                                                \
+  std::vector<int32_t> axes;                                                \
   if (IsConstantOperand(axes_operand)) {                                    \
-    auto axes_count = axes_operand->length / sizeof(int64_t);               \
-    auto axes_data = reinterpret_cast<int64_t*>(axes_operand->buffer);      \
-    axes = std::vector<int64_t>(axes_data, axes_data + axes_count);         \
+    auto axes_count = axes_operand->length / sizeof(int32_t);               \
+    auto axes_data = reinterpret_cast<int32_t*>(axes_operand->buffer);      \
+    axes = std::vector<int32_t>(axes_data, axes_data + axes_count);         \
     for (size_t i = 0; i < axes.size(); i++) {                              \
       NNADAPTER_VLOG(5) << "axes[" << i << "]: " << axes[i];                \
     }                                                                       \

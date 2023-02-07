@@ -34,12 +34,14 @@ int ConvertRoll(Converter* converter, OpInfo* op, Scope* scope) {
     auto shifts_name = op->Input("ShiftsTensor").front();
     shifts_operand = converter->AddInputOperand(scope, shifts_name);
   } else {
-    auto shifts = op->GetAttr<std::vector<int64_t>>("shifts");
-    shifts_operand = converter->AddConstantOperand(shifts);
+    std::vector<int64_t> shifts = op->GetAttr<std::vector<int64_t>>("shifts");
+    shifts_operand = converter->AddConstantOperand(
+        std::vector<int32_t>(shifts.begin(), shifts.end()));
   }
   // Axes
-  auto axis = op->GetAttr<std::vector<int64_t>>("axis");
-  auto axes_operand = converter->AddConstantOperand(axis);
+  std::vector<int64_t> axis = op->GetAttr<std::vector<int64_t>>("axis");
+  auto axes_operand = converter->AddConstantOperand(
+      std::vector<int32_t>(axis.begin(), axis.end()));
   // Output
   auto out_name = op->Output("Out").front();
   auto out_scale_name = "Out0_scale";
