@@ -112,11 +112,13 @@ REGISTER_CONVERTER(mul,
                    "mlu,verisilicon_timvx,kunlunxin_xtcl,android_nnapi,nvidia_"
                    "tensorrt,intel_openvino,qualcomm_qnn,google_xnnpack,"
                    "eeasytech_npu");
-REGISTER_CONVERTER(lookup_table, ConvertLookupTable, "qualcomm_qnn");
+REGISTER_CONVERTER(lookup_table,
+                   ConvertLookupTable,
+                   "qualcomm_qnn,verisilicon_timvx");
 REGISTER_CONVERTER(lookup_table_v2,
                    ConvertLookupTableV2,
                    "huawei_ascend_npu,huawei_kirin_npu,intel_openvino,"
-                   "qualcomm_qnn,kunlunxin_xtcl");
+                   "qualcomm_qnn,kunlunxin_xtcl,verisilicon_timvx");
 REGISTER_CONVERTER(elementwise_add,
                    ConvertElementwise,
                    "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,"
@@ -193,6 +195,9 @@ REGISTER_CONVERTER(fusion_elementwise_pow_activation,
                    ConvertElementwise,
                    "huawei_ascend_npu,huawei_kirin_npu,kunlunxin_xtcl,qualcomm_"
                    "qnn,verisilicon_timvx");
+REGISTER_CONVERTER(fusion_elementwise_floordiv_activation,
+                   ConvertElementwise,
+                   "huawei_ascend_npu,verisilicon_timvx");
 REGISTER_CONVERTER(pow,
                    ConvertPow,
                    "huawei_ascend_npu,huawei_kirin_npu,kunlunxin_xtcl,"
@@ -285,7 +290,7 @@ REGISTER_CONVERTER(arg_min,
 REGISTER_CONVERTER(assign,
                    ConvertAssign,
                    "huawei_ascend_npu,nvidia_tensorrt,cambricon_mlu,"
-                   "intel_openvino,kunlunxin_xtcl");
+                   "intel_openvino,kunlunxin_xtcl,verisilicon_timvx");
 REGISTER_CONVERTER(equal,
                    ConvertComparisons,
                    "huawei_ascend_npu,huawei_kirin_npu,cambricon_mlu,intel_"
@@ -494,7 +499,7 @@ REGISTER_CONVERTER(
     "verisilicon_timvx");
 REGISTER_CONVERTER(meshgrid,
                    ConvertMeshgrid,
-                   "huawei_ascend_npu,kunlunxin_xtcl");
+                   "huawei_ascend_npu,kunlunxin_xtcl,verisilicon_timvx");
 REGISTER_CONVERTER(sqrt,
                    ConvertSqrt,
                    "intel_openvino,qualcomm_qnn,huawei_ascend_npu");
@@ -534,12 +539,14 @@ REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "cambricon_mlu,kunlunxin_xtcl");
 REGISTER_CONVERTER(multiclass_nms3,
                    ConvertMulticlassNms,
                    "cambricon_mlu,intel_openvino");
-REGISTER_CONVERTER(sin, ConvertUnaryActivations, "huawei_ascend_npu");
+REGISTER_CONVERTER(sin,
+                   ConvertUnaryActivations,
+                   "huawei_ascend_npu,verisilicon_timvx");
 REGISTER_CONVERTER(cos, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(silu, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(elementwise_floordiv,
                    ConvertElementwise,
-                   "huawei_ascend_npu");
+                   "huawei_ascend_npu,verisilicon_timvx");
 // TODO(shentanyue): open later
 // REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "huawei_ascend_npu");
 // REGISTER_CONVERTER(grid_sample, ConvertGridSample, "huawei_ascend_npu");

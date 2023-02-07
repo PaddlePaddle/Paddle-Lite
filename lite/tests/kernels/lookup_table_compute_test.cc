@@ -129,17 +129,21 @@ TEST(LookupTable, precision) {
   LOG(INFO) << "test lookup_table op";
   float abs_error = 1e-5;
   Place place;
-#if defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#elif defined(LITE_WITH_NNADAPTER)
+#if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-3;
+  TestLookupTableCase<int32_t>(place, abs_error, std::vector<int64_t>{-1});
+  return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-3;
   TestLookupTableCase<int32_t>(place, abs_error, std::vector<int64_t>{-1});
   return;
 #else
   return;
 #endif
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
 #else
   return;
 #endif

@@ -1,4 +1,4 @@
-// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "operation/gather.h"
+#include "operation/assign.h"
 #include "driver/verisilicon_timvx/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -20,8 +20,8 @@
 namespace nnadapter {
 namespace verisilicon_timvx {
 
-int ConvertGather(Converter* converter, core::Operation* operation) {
-  GATHER_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertAssign(Converter* converter, core::Operation* operation) {
+  ASSIGN_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to tim-vx tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
@@ -29,17 +29,11 @@ int ConvertGather(Converter* converter, core::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
 
-  auto indices_tensor = converter->GetMappedTensor(indices_operand);
-  if (!indices_tensor) {
-    indices_tensor = converter->ConvertOperand(indices_operand);
-  }
-
   auto output_tensor = converter->ConvertOperand(output_operand);
-  auto gather_op = converter->graph()->CreateOperation<tim::vx::ops::Gather>(
-      ConvertToTimVXAxis(axis, input_operand->type.dimensions.count) /* WHCN */,
-      0);
-  gather_op->BindInputs({input_tensor, indices_tensor});
-  gather_op->BindOutputs({output_tensor});
+  auto assign_op =
+      converter->graph()->CreateOperation<tim::vx::ops::DataConvert>();
+  assign_op->BindInputs({input_tensor});
+  assign_op->BindOutputs({output_tensor});
   return NNADAPTER_NO_ERROR;
 }
 
