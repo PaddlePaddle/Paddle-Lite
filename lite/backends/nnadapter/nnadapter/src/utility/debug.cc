@@ -563,6 +563,10 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
                       "score_threshold"};
         output_args = {"Out", "NmsRoisNum", "Index"};
         break;
+      case NNADAPTER_ROLL:
+        input_args = {"input", "shifts", "axes"};
+        output_args = {"output"};
+        break;
       default:
         if (operation->type < 0) {
           input_args.resize(input_count);
@@ -753,6 +757,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(RESIZE_NEAREST);
     NNADAPTER_TYPE_TO_STRING(RESIZE_LINEAR);
     NNADAPTER_TYPE_TO_STRING(ROI_ALIGN);
+    NNADAPTER_TYPE_TO_STRING(ROLL);
     NNADAPTER_TYPE_TO_STRING(SHAPE);
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
     NNADAPTER_TYPE_TO_STRING(SIN);

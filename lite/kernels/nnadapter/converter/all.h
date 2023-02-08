@@ -544,6 +544,7 @@ REGISTER_CONVERTER(sin,
                    "huawei_ascend_npu,verisilicon_timvx");
 REGISTER_CONVERTER(cos, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(silu, ConvertUnaryActivations, "huawei_ascend_npu");
+REGISTER_CONVERTER(roll, ConvertRoll, "huawei_ascend_npu");
 REGISTER_CONVERTER(elementwise_floordiv,
                    ConvertElementwise,
                    "huawei_ascend_npu,verisilicon_timvx");
