@@ -387,10 +387,9 @@ REGISTER_CONVERTER(squeeze2,
                    "huawei_ascend_npu,verisilicon_timvx,kunlunxin_xtcl,"
                    "cambricon_mlu,huawei_kirin_npu,nvidia_tensorrt,intel_"
                    "openvino,qualcomm_qnn");
-REGISTER_CONVERTER(
-    range,
-    ConvertRange,
-    "huawei_ascend_npu,intel_openvino,kunlunxin_xtcl,verisilicon_timvx");
+REGISTER_CONVERTER(range,
+                   ConvertRange,
+                   "huawei_ascend_npu,intel_openvino,kunlunxin_xtcl");
 REGISTER_CONVERTER(stack,
                    ConvertStack,
                    "huawei_ascend_npu,nvidia_tensorrt,intel_openvino,"
