@@ -113,7 +113,7 @@
 |x64 |3.7 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.win.x86.MSVC.C++_static.py37.full_publish.zip) |
 
 
-## Opencl
+## OpenCL
 
 |Arch |下载链接 |
 |:-----:|:-----:|
