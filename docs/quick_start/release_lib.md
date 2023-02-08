@@ -107,10 +107,10 @@
 
 |Arch |python_version |下载链接 |
 |:-----:|:-----:|:-----:|
-|x86 |2.7 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.win.x86.MSVC.C++_static.py27.full_publish.zip) |
-|x86 |3.5 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.win.x86.MSVC.C++_static.py35.full_publish.zip) |
-|x86 |3.6 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.win.x86.MSVC.C++_static.py36.full_publish.zip) |
-|x86 |3.7 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.win.x86.MSVC.C++_static.py37.full_publish.zip) |
+|x64 |2.7 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.win.x86.MSVC.C++_static.py27.full_publish.zip) |
+|x64 |3.5 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.win.x86.MSVC.C++_static.py35.full_publish.zip) |
+|x64 |3.6 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.win.x86.MSVC.C++_static.py36.full_publish.zip) |
+|x64 |3.7 |[v2.12](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.12/inference_lite_lib.win.x86.MSVC.C++_static.py37.full_publish.zip) |
 
 
 ## Opencl
@@ -134,8 +134,8 @@
 
 |Arch |下载链接 |适用的操作系统 |
 |:-----:|:-----:|:-----:|
-|x86   |[develop (dailybuild)](https://paddle-qa.bj.bcebos.com/Paddle-Lite/DevelopDailyBuild/inference_lite_lib.ubuntu.x86.huawei_ascend_npu.CANN5.1.RC1.alpha001.tar.gz) |Ubuntu    |
-|armv8 |[develop (dailybuild)](https://paddle-qa.bj.bcebos.com/Paddle-Lite/DevelopDailyBuild/inference_lite_lib.ky10.armv8.huawei_ascend_npu.CANN5.1.RC1.alpha001.tar.gz) |银河麒麟v10 |
+|x86   |[develop (dailybuild)](https://paddle-qa.bj.bcebos.com/Paddle-Lite/DevelopDailyBuild/inference_lite_lib.ubuntu.x86.huawei_ascend_npu.CANN5.1.RC2.alpha001.tar.gz) |Ubuntu    |
+|armv8 |[develop (dailybuild)](https://paddle-qa.bj.bcebos.com/Paddle-Lite/DevelopDailyBuild/inference_lite_lib.ky10.armv8.huawei_ascend_npu.CANN5.1.RC2.alpha001.tar.gz) |银河麒麟v10 |
 
 
 ## 华为麒麟 NPU
