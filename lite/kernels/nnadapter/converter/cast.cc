@@ -36,6 +36,7 @@ int ConvertCast(Converter* converter, OpInfo* op, Scope* scope) {
   std::vector<float> output_scales;
   if (op->HasOutputScale(output_scale_name, true)) {
     output_scales = op->GetOutputScale(output_scale_name, true);
+    out_dtype = 21;  //  INT8 = 21
   }
 
   // Convert to NNAdapter operands and operation
