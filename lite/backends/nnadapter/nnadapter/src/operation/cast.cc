@@ -30,7 +30,7 @@ OutType TransOp(InType in) {
 }
 
 NNADAPTER_EXPORT bool ValidateCast(const core::Operation* operation) {
-  return false;
+  return true;
 }
 
 NNADAPTER_EXPORT int ExecuteCast(core::Operation* operation) {
@@ -84,6 +84,11 @@ NNADAPTER_EXPORT int ExecuteCast(core::Operation* operation) {
     auto output_data = reinterpret_cast<int32_t*>(output_buffer);
     std::transform(
         input_data, input_data + size, output_data, TransOp<float, int32_t>);
+  } else if (input_precision == dtype) {
+    NNADAPTER_LOG(WARNING) << "Input precision code == output precision code, ("
+                           << OperandPrecisionCodeToString(input_precision)
+                           << "), "
+                           << "skip the cast OP";
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported input precision code("
                          << OperandPrecisionCodeToString(input_precision) << ")"

@@ -17,7 +17,7 @@
 #include <cstring>
 #include <memory>
 #include <vector>
-
+#include "utility/logging.h"
 namespace nnadapter {
 namespace operation {
 namespace math {
@@ -39,7 +39,7 @@ static int meshgrid(const std::vector<T*>& input_datas,
   int32_t num = input_datas.size();
   std::vector<int32_t> shape(num);
   for (int32_t i = 0; i < num; ++i) {
-    switch (input_shapes.size()) {
+    switch (input_shapes[i].size()) {
       case 1:
         shape[i] = input_shapes[i][0];
         break;
@@ -47,7 +47,6 @@ static int meshgrid(const std::vector<T*>& input_datas,
         return NNADAPTER_INVALID_DIMENSIONS;
     }
   }
-
   for (int32_t i = 0; i < num; ++i) {
     T* dst = output_datas[i];
 
@@ -84,6 +83,7 @@ static int meshgrid(const std::vector<T*>& input_datas,
       inner_num *= bcast_dims[idx];
     }
   }
+  return 0;
 }
 
 }  // namespace math

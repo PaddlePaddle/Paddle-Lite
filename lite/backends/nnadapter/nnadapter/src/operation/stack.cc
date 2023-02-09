@@ -25,7 +25,7 @@ namespace nnadapter {
 namespace operation {
 
 NNADAPTER_EXPORT bool ValidateStack(const core::Operation* operation) {
-  return false;
+  return true;
 }
 
 NNADAPTER_EXPORT int PrepareStack(core::Operation* operation) {

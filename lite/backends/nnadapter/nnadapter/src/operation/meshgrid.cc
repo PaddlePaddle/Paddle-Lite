@@ -26,7 +26,7 @@ namespace nnadapter {
 namespace operation {
 
 NNADAPTER_EXPORT bool ValidateMeshgrid(const core::Operation* operation) {
-  return false;
+  return true;
 }
 
 NNADAPTER_EXPORT int PrepareMeshgrid(core::Operation* operation) {
@@ -80,22 +80,21 @@ NNADAPTER_EXPORT int ExecuteMeshgrid(core::Operation* operation) {
   // auto output_buffer = AllocateOperand(output_operand);
   auto input_precision = input_operands[0]->type.precision;
   std::vector<std::vector<int32_t>> input_shapes;
-  for (int i = 0; i < input_count - 1; i++) {
+  for (int i = 0; i < input_count; i++) {
     auto in_dims = input_operands[i]->type.dimensions.data;
     auto in_dims_count = input_operands[i]->type.dimensions.count;
     input_shapes.push_back(
         std::vector<int32_t>(in_dims, in_dims + in_dims_count));
   }
-
   switch (input_precision) {
     case NNADAPTER_FLOAT32: {
       std::vector<float*> input_datas;
-      for (int i = 0; i < input_count - 1; i++) {
+      for (int i = 0; i < input_count; i++) {
         input_datas.push_back(
             reinterpret_cast<float*>(input_operands[i]->buffer));
       }
       std::vector<float*> output_datas;
-      for (int i = 0; i < output_count - 1; i++) {
+      for (int i = 0; i < output_count; i++) {
         output_datas.push_back(
             reinterpret_cast<float*>(AllocateOperand(output_operands[i])));
       }
@@ -103,12 +102,12 @@ NNADAPTER_EXPORT int ExecuteMeshgrid(core::Operation* operation) {
     } break;
     case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER: {
       std::vector<int8_t*> input_datas;
-      for (int i = 0; i < input_count - 1; i++) {
+      for (int i = 0; i < input_count; i++) {
         input_datas.push_back(
             reinterpret_cast<int8_t*>(input_operands[i]->buffer));
       }
       std::vector<int8_t*> output_datas;
-      for (int i = 0; i < output_count - 1; i++) {
+      for (int i = 0; i < output_count; i++) {
         output_datas.push_back(
             reinterpret_cast<int8_t*>(AllocateOperand(output_operands[i])));
       }

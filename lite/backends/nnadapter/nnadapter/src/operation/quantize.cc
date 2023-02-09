@@ -25,7 +25,7 @@ namespace nnadapter {
 namespace operation {
 
 NNADAPTER_EXPORT bool ValidateQuantize(const core::Operation* operation) {
-  return false;
+  return true;
 }
 
 NNADAPTER_EXPORT int PrepareQuantize(core::Operation* operation) {
@@ -59,7 +59,6 @@ NNADAPTER_EXPORT int ExecuteQuantize(core::Operation* operation) {
   NNADAPTER_CHECK(input_buffer);
   auto& output_type = output_operand->type;
   auto output_buffer = AllocateOperand(output_operand);
-  NNADAPTER_CHECK_EQ(input_type.precision, output_type.precision);
   if (input_type.precision == NNADAPTER_FLOAT32 &&
       output_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
     const auto input_data = reinterpret_cast<const float*>(input_buffer);

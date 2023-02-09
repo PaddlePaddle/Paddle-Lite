@@ -57,6 +57,7 @@ static int stack(const std::vector<T*>& input_datas,
     }
     x_offset += post;
   }
+  return 0;
 }
 
 }  // namespace math

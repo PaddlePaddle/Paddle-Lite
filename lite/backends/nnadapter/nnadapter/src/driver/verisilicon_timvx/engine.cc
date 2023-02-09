@@ -120,8 +120,8 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     // Build from model
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
     ConvertFillLikeIntoMulAdd(model);
-    ConvertMeshgridIntoReshapeExpand(model);
     ConstantFoldOperations(model);
+    ConvertMeshgridIntoReshapeExpand(model);
     FuseConv2DBatchNormIntoConv2D(
         model, context_->batchnorm_fusion_max_allowed_quant_scale_deviation());
     FuseConv2DAddIntoConv2D(model);
