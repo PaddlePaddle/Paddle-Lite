@@ -708,6 +708,14 @@ struct NegativeParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
 };
+/// ----------------------- pad operators ----------------------
+struct PadParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> paddings{};
+  float pad_value = 0.f;
+};
+
 /// ----------------------- pad2d operators ----------------------
 struct Pad2dParam : ParamBase {
   const lite::Tensor* X{};
