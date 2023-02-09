@@ -22,6 +22,14 @@ namespace lite {
 namespace kernels {
 namespace arm {
 template <PrecisionType Ptype>
+class LinearInterpCompute : public KernelLite<TARGET(kARM), Ptype> {
+ public:
+  void Run() override;
+
+  virtual ~LinearInterpCompute() = default;
+};
+
+template <PrecisionType Ptype>
 class BilinearInterpCompute : public KernelLite<TARGET(kARM), Ptype> {
  public:
   void Run() override;
