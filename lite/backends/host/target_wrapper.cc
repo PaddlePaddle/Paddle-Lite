@@ -16,6 +16,10 @@
 #include <cstring>
 #include <memory>
 
+#ifdef LITE_WITH_XPU
+#include <xpu/runtime.h>
+#endif
+
 namespace paddle {
 namespace lite {
 
@@ -36,10 +40,17 @@ void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
   void* r = reinterpret_cast<void*>(reinterpret_cast<size_t>(p + offset) &
                                     (~(MALLOC_ALIGN - 1)));
   static_cast<void**>(r)[-1] = p;
+#ifdef LITE_WITH_XPU
+  // map page-lock memory
+  CHECK_EQ(xpu_host_register(r, size, 0), 0) << "xpu_host_register failed";
+#endif
   return r;
 }
 void TargetWrapper<TARGET(kHost)>::Free(void* ptr) {
   if (ptr) {
+#ifdef LITE_WITH_XPU
+    CHECK_EQ(xpu_host_unregister(ptr), 0) << "xpu_host_unregister failed";
+#endif
     free(static_cast<void**>(ptr)[-1]);
   }
 }
