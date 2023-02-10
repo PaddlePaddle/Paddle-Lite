@@ -42,7 +42,7 @@ template <class T>
 void Pad2dCompute<T>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
-  auto pads = param.paddings;
+  auto& pads = param.paddings;
   auto mode = param.mode;
   auto data_format = param.data_format;
   T value = static_cast<T>(param.pad_value);
@@ -51,6 +51,7 @@ void Pad2dCompute<T>::Run() {
   auto in_dims = x->dims();
   auto* in_data = x->template data<T>();
   auto* out = param.Out;
+
   if (data_format == "NCHW") {
     out->Resize({in_dims[0],
                  in_dims[1],
@@ -124,5 +125,7 @@ REGISTER_LITE_KERNEL(pad2d,
                      paddle::lite::kernels::xpu::Pad2dCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Paddings",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

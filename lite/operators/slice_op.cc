@@ -38,8 +38,6 @@ bool SliceOp::InferShapeImpl() const {
   } else if (param_.X) {
     auto in_dims = param_.X->dims();
     auto out_dims = in_dims;
-    CHECK_EQ(param_.starts.size(), param_.ends.size())
-        << "for slice op starts and ends must be equal";
     int dim_value, start, end;
     auto axes = param_.axes;
     auto starts = param_.starts;

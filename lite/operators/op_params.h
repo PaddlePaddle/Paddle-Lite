@@ -720,6 +720,7 @@ struct PadParam : ParamBase {
 struct Pad2dParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
+  lite::Tensor* input_paddings = nullptr;
   std::vector<int> paddings{0, 0, 0, 0};
   std::string mode{"constant"};
   float pad_value = 0.f;
