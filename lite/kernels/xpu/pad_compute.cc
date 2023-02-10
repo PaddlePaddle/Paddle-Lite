@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <class T>
+template <typename T>
 void PadCompute<T>::PrepareForRun() {
   auto& param = this->template Param<param_t>();
   auto& pads = param.paddings;
@@ -32,11 +32,10 @@ void PadCompute<T>::PrepareForRun() {
   }
 }
 
-template <class T>
+template <typename T>
 void PadCompute<T>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
-  auto pads = param.paddings;
   T value = static_cast<T>(param.pad_value);
 
   auto* x = param.X;
