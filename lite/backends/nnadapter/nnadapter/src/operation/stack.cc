@@ -71,10 +71,10 @@ NNADAPTER_EXPORT int ExecuteStack(core::Operation* operation) {
   auto input_precision = input_operands[0]->type.precision;
   std::vector<std::vector<int32_t>> input_shapes;
   for (int i = 0; i < input_count - 1; i++) {
-    auto in_dims = input_operands[i]->type.dimensions.data;
-    auto in_dims_count = input_operands[i]->type.dimensions.count;
     input_shapes.push_back(
-        std::vector<int32_t>(in_dims, in_dims + in_dims_count));
+        std::vector<int32_t>(input_operands[i]->type.dimensions.data,
+                             input_operands[i]->type.dimensions.data +
+                                 input_operands[i]->type.dimensions.count));
   }
   switch (input_precision) {
     case NNADAPTER_INT32: {

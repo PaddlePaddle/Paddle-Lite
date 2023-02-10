@@ -77,7 +77,6 @@ NNADAPTER_EXPORT int ExecuteMeshgrid(core::Operation* operation) {
 
   // Allocate and calculate the output operands
   int status = -1;
-  // auto output_buffer = AllocateOperand(output_operand);
   auto input_precision = input_operands[0]->type.precision;
   std::vector<std::vector<int32_t>> input_shapes;
   for (int i = 0; i < input_count; i++) {

@@ -29,11 +29,6 @@ static int stack(const std::vector<T*>& input_datas,
                  const std::vector<std::vector<int32_t>>& input_shapes,
                  int axis,
                  T* output_data) {
-  // auto &param = this->template Param<operators::StackParam>();
-  // std::vector<lite::Tensor *> x = param.X;
-  // lite::Tensor *y = param.Out;
-  // int axis = param.axis;
-
   if (axis < 0) axis += (input_shapes[0].size() + 1);
   int num = input_datas.size();
   auto* y_data = output_data;
@@ -51,8 +46,7 @@ static int stack(const std::vector<T*>& input_datas,
   int y_offset = 0;
   for (int i = 0; i < pre; i++) {
     for (int j = 0; j < num; j++) {
-      std::memcpy(
-          y_data + y_offset, x_data_arr[j] + x_offset, post * sizeof(T));
+      memcpy(y_data + y_offset, x_data_arr[j] + x_offset, post * sizeof(T));
       y_offset += post;
     }
     x_offset += post;
