@@ -23,16 +23,6 @@ namespace nnadapter {
 namespace operation {
 namespace math {
 
-static int count(int start_axis,
-                 int end_axis,
-                 const std::vector<int32_t>& shape) {
-  int count = 1;
-  for (int i = start_axis; i < end_axis; ++i) {
-    count *= shape[i];
-  }
-  return count;
-}
-
 template <typename T>
 static int meshgrid(const std::vector<T*>& input_datas,
                     const std::vector<std::vector<int32_t>>& input_shapes,
