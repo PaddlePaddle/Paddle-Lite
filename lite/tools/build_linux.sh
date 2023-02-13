@@ -114,14 +114,6 @@ function set_benchmark_options {
   WITH_EXTRA=ON
   WITH_EXCEPTION=ON
   WITH_NNADAPTER=ON
-  if [ "${ARCH}" == "x86" ]; then
-    # Turn off opencl. Additional third party library need to be installed on
-    # Linux. Otherwise opencl is not supported on Linux. See link for more info:
-    # https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
-    WITH_OPENCL=OFF
-  else
-    WITH_OPENCL=ON
-  fi
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
     WITH_LOG=ON
   else

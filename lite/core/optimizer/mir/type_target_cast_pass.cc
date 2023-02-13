@@ -111,6 +111,8 @@ void TypeTargetTransformPass::AddOutputIoCopyInst(
   auto new_name =
       string_format("%s/target_trans_out", out->AsArg().name.c_str());
   auto* new_var_node = graph->NewArgumentNode(new_name);
+  // Create the new var manually.
+  inst_node->AsStmt().op()->scope()->Var(new_name);
   // Set the place for new var node, the target should be equal to to.target()
   // The precision and layout should be equal to from.precision(), from.layout()
   bool is_tensor = from.IsTensor();
@@ -120,13 +122,24 @@ void TypeTargetTransformPass::AddOutputIoCopyInst(
   if (is_tensor) {
     new_var_node->AsArg().type =
         LiteType::GetTensorTy(from.target(), to.precision(), to.layout());
+    auto* tensor = inst_node->AsStmt()
+                       .op()
+                       ->scope()
+                       ->FindVar(new_name)
+                       ->GetMutable<Tensor>();
+    tensor->set_precision(to.precision());
   } else {
     new_var_node->AsArg().type =
         LiteType::GetTensorListTy(from.target(), to.precision(), to.layout());
+    auto* tensor_list = inst_node->AsStmt()
+                            .op()
+                            ->scope()
+                            ->FindVar(new_name)
+                            ->GetMutable<std::vector<Tensor>>();
+    for (auto tensor : *tensor_list) {
+      tensor.set_precision(to.precision());
+    }
   }
-  // Create the new var manually.
-  inst_node->AsStmt().op()->scope()->Var(new_name);
-  inst_node->AsStmt().op()->scope()->FindVar(new_name)->GetMutable<Tensor>();
 
   RemoveDirectedLink(inst_node, out);
   DirectedLink(inst_node, new_var_node);
@@ -278,6 +291,8 @@ void TypeTargetTransformPass::AddInputIoCopyInst(
   } else {
     // TODO(MyPandaShaoxiang) should set same place with input?
     auto* io_copy_output_arg = graph->NewArgumentNode(io_copy_output_name);
+    // Create the new var manually.
+    auto new_var = inst_node->AsStmt().op()->scope()->Var(io_copy_output_name);
     // Set the place for io_copy_output_arg node, the target should be equal to
     // to.target()
     // The precision and layout should be equal to from.precision(),
@@ -289,9 +304,15 @@ void TypeTargetTransformPass::AddInputIoCopyInst(
     if (is_tensor) {
       io_copy_output_arg->AsArg().type =
           LiteType::GetTensorTy(to.target(), from.precision(), from.layout());
+      auto* tensor = new_var->GetMutable<lite::Tensor>();
+      tensor->set_precision(from.precision());
     } else {
       io_copy_output_arg->AsArg().type = LiteType::GetTensorListTy(
           to.target(), from.precision(), from.layout());
+      auto* tensor_list = new_var->GetMutable<std::vector<lite::Tensor>>();
+      for (auto tensor : *tensor_list) {
+        tensor.set_precision(from.precision());
+      }
     }
     auto* io_copy_inst = graph->NewInstructNode();
 
@@ -301,9 +322,6 @@ void TypeTargetTransformPass::AddInputIoCopyInst(
     // create Op and kernels.
     auto io_copy_op = LiteOpRegistry::Global().Create(io_copy_type);
     CHECK(io_copy_op) << "create op [" << io_copy_op << "] failed";
-    // CHECK(io_copy_op);
-    // Create the new var manually.
-    inst_node->AsStmt().op()->scope()->Var(io_copy_output_name);
 
     // Create IoCopy Instruction.
     cpp::OpDesc op_desc;

@@ -90,7 +90,23 @@ void FillConstantCalcOfflinePass::RemoveFillConstantPattern(
     }
     // Get fill_constant's attr
     auto dtype = op_desc->GetAttr<int>("dtype");
-    auto value = op_desc->GetAttr<float>("value");
+    auto str_value = op_desc->GetAttr<std::string>("str_value");
+    float value;
+    if (str_value.empty()) {
+      value = op_desc->GetAttr<float>("value");
+    } else {
+      // handle NaN/Inf first, which cannot be read from stream.
+      if (str_value == "inf") {
+        value = std::numeric_limits<float>::quiet_NaN();
+      } else if (str_value == "-inf") {
+        value = std::numeric_limits<float>::quiet_NaN();
+      } else if (str_value == "nan") {
+        value = std::numeric_limits<float>::quiet_NaN();
+      } else {
+        std::stringstream convert_stream(str_value);
+        convert_stream >> value;
+      }
+    }
     auto shape = op_desc->GetAttr<std::vector<int64_t>>("shape");
     // Get fill_constant's output tensor
     auto out_var = scope->FindVar(op_desc->Output("Out").front());

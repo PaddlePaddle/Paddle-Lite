@@ -22,6 +22,23 @@ namespace kernels {
 namespace xpu {
 
 template <class T>
+void Pad2dCompute<T>::PrepareForRun() {
+  int cur_dev_idx = 0;
+
+  XPU_CALL(xpu_current_device(&cur_dev_idx));
+  XPU_CALL(xpu_device_get_attr(&cur_dev_attr_, XPUATTR_MODEL, cur_dev_idx));
+  if (cur_dev_attr_ <= 1) {
+    VLOG(4) << "Currents XPU device : XPU1";
+  } else if (cur_dev_attr_ >= 2 && cur_dev_attr_ <= 299) {
+    VLOG(4) << "Currents XPU device : XPU2";
+  } else if (cur_dev_attr_ >= 300 && cur_dev_attr_ <= 599) {
+    VLOG(4) << "Currents XPU device : XPU3";
+  } else {
+    VLOG(4) << "invaid XPU device";
+  }
+}
+
+template <class T>
 void Pad2dCompute<T>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
@@ -47,21 +64,51 @@ void Pad2dCompute<T>::Run() {
   }
   T* out_data = out->template mutable_data<T>(TARGET(kXPU));
 
-  if (mode == "reflect" || mode == "constant" || mode == "edge") {
-    int r = xdnn::pad2d<T>(ctx.GetRawContext(),
-                           in_data,
-                           out_data,
-                           in_dims[0],
-                           in_dims[1],
-                           in_dims[2],
-                           in_dims[3],
-                           pads,
-                           mode.c_str(),
-                           value,
-                           (data_format == "NCHW"));
-    CHECK_EQ(r, 0);
+  if (cur_dev_attr_ <= 1) {
+    if (mode == "constant" || mode == "edge" || mode == "reflect") {
+      int r = xdnn::pad2d<T>(ctx.GetRawContext(),
+                             in_data,
+                             out_data,
+                             in_dims[0],
+                             in_dims[1],
+                             in_dims[2],
+                             in_dims[3],
+                             pads,
+                             mode.c_str(),
+                             value,
+                             (data_format == "NCHW"));
+      CHECK_EQ(r, 0);
+    } else {
+      LOG(FATAL) << "xpu unsupport mode: " << mode;
+    }
   } else {
-    LOG(FATAL) << "xpu unsupport mode: " << mode;
+    if (mode == "reflect") {
+      int r = xdnn::reflection_pad2d<T>(ctx.GetRawContext(),
+                                        in_data,
+                                        out_data,
+                                        in_dims[0],
+                                        in_dims[1],
+                                        in_dims[2],
+                                        in_dims[3],
+                                        pads,
+                                        (data_format == "NCHW"));
+      CHECK_EQ(r, 0);
+    } else if (mode == "constant" || mode == "edge") {
+      int r = xdnn::pad2d<T>(ctx.GetRawContext(),
+                             in_data,
+                             out_data,
+                             in_dims[0],
+                             in_dims[1],
+                             in_dims[2],
+                             in_dims[3],
+                             pads,
+                             mode.c_str(),
+                             value,
+                             (data_format == "NCHW"));
+      CHECK_EQ(r, 0);
+    } else {
+      LOG(FATAL) << "xpu unsupport mode: " << mode;
+    }
   }
 }
 

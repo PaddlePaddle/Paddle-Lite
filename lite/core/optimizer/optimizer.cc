@@ -134,13 +134,13 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "weight_quantization_preprocess_pass",
        "op_transformation_pass",
        "assign_value_calc_offline_pass",
+       "ssd_boxes_calc_offline_pass",
        "p_norm_fill_constant_max_div_fuse_pass",
        "fill_constant_calc_offline_pass",
        "range_calc_offline_pass",
        "scale_calc_offline_pass",
        "unsqueeze_calc_offline_pass",
        "reshape_calc_offline_pass",
-       "ssd_boxes_calc_offline_pass",
        // A minimal set of op fusion pass.
        "op_fusion_minimal_set_pass",
        // For the fully quantization model, the quantization parameters of the
@@ -188,7 +188,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "lite_conv_scale_fuse_pass",
        "lite_conv_elementwise_tree_fuse_pass",
        "lite_greater_than_cast_fuse_pass",
-       "fill_range_fuse_pass",
        "identity_dropout_eliminate_pass",
        "sparse_conv_detect_pass",
        //  "keepdims_convert_pass",
@@ -197,6 +196,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__resnet_fuse_pass",
        "__xpu__conv2d_affine_channel_fuse_pass",
        "__xpu__conv2d_fuse_pass",
+       "__xpu__conv2d_scale_fuse_pass",
        "__xpu__squeeze_excitation_fuse_pass",
        "__xpu__mmdnn_fuse_pass",
        "__xpu__bigru_fuse_pass",
@@ -215,6 +215,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "fix_mismatched_precision_pass",
        "__xpu__dynamic_lstm_fuse_pass",
        "__xpu__multi_softmax_fuse_pass",
+       "__xpu__conv2d_transpose_fuse_pass",
        // pick original kernel from graph (exclude xpu)
        "static_kernel_pick_pass",
        // xpu pick original kernel from graph

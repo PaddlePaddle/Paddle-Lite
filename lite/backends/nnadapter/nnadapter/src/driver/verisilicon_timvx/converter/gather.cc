@@ -36,8 +36,7 @@ int ConvertGather(Converter* converter, core::Operation* operation) {
 
   auto output_tensor = converter->ConvertOperand(output_operand);
   auto gather_op = converter->graph()->CreateOperation<tim::vx::ops::Gather>(
-      ConvertToTimVXAxis(axis,
-                         output_operand->type.dimensions.count) /* WHCN */,
+      ConvertToTimVXAxis(axis, input_operand->type.dimensions.count) /* WHCN */,
       0);
   gather_op->BindInputs({input_tensor, indices_tensor});
   gather_op->BindOutputs({output_tensor});

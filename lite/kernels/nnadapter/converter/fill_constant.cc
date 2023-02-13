@@ -20,6 +20,9 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertFillConstant(Converter* converter, OpInfo* op, Scope* scope) {
+  // Out operand
+  auto out_name = op->Output("Out").front();
+  auto out_operand = converter->AddOutputOperand(out_name);
   // Shape operand
   NNAdapterOperand* shape_operand = nullptr;
   // Priority: ShapeTensor > ShapeTensorList > shape(attr)
@@ -33,9 +36,17 @@ int ConvertFillConstant(Converter* converter, OpInfo* op, Scope* scope) {
     shape_operand = converter->AddInputOperand(scope, shape_name);
   } else if (op->HasInput("ShapeTensorList") &&
              !op->Input("ShapeTensorList").empty()) {
-    // TODO(zhupengyang): Use concat to generate shape_operand later
-    LOG(WARNING) << "Not support ShapeTensorList now.";
-    return PARAMETER_ERROR;
+    std::vector<NNAdapterOperand*> shapes_operands;
+    for (auto shapes_tensor_name : op->Input("ShapeTensorList")) {
+      auto shape_operand =
+          converter->AddInputOperand(scope, shapes_tensor_name);
+      shapes_operands.push_back(shape_operand);
+    }
+    auto axis_operand = converter->AddConstantOperand(0);
+    shapes_operands.push_back(axis_operand);
+    shape_operand = converter->AddOutputOperand(out_name + "/concat");
+    // Concat operation
+    converter->AddOperation(NNADAPTER_CONCAT, shapes_operands, {shape_operand});
   } else if (op->HasAttr("shape")) {
     std::vector<int64_t> shape = op->GetAttr<std::vector<int64_t>>("shape");
     shape_operand = converter->AddConstantOperand(shape);
@@ -44,7 +55,6 @@ int ConvertFillConstant(Converter* converter, OpInfo* op, Scope* scope) {
         << "One of ShapeTensor, ShapeTensorList or shape(attr) must be set.";
     return PARAMETER_ERROR;
   }
-
   // Value operand
   NNAdapterOperand* value_operand = nullptr;
   if (HasInput(op, scope, "ValueTensor")) {
@@ -52,9 +62,19 @@ int ConvertFillConstant(Converter* converter, OpInfo* op, Scope* scope) {
     value_operand = converter->AddInputOperand(scope, value_name);
   } else if (op->HasInput("str_value") &&
              !op->GetAttr<std::string>("str_value").empty()) {
-    // TODO(zhupengyang): support str_value later
-    LOG(WARNING) << "Not support str_value now.";
-    return PARAMETER_ERROR;
+    auto str_value = op->GetAttr<std::string>("str_value");
+    float value = 0.f;
+    // handle NaN/Inf first, which cannot be read from stream.
+    if (str_value == "inf") {
+      value = std::numeric_limits<float>::quiet_NaN();
+    } else if (str_value == "-inf") {
+      value = std::numeric_limits<float>::quiet_NaN();
+    } else if (str_value == "nan") {
+      value = std::numeric_limits<float>::quiet_NaN();
+    } else {
+      value = std::stof(str_value);
+    }
+    value_operand = converter->AddConstantOperand(value);
   } else if (op->HasAttr("value")) {
     float value = op->GetAttr<float>("value");
     int dtype = op->GetAttr<int>("dtype");
@@ -84,11 +104,6 @@ int ConvertFillConstant(Converter* converter, OpInfo* op, Scope* scope) {
         << "One of ValueTensor, str_value(attr) or value(attr) must be set.";
     return PARAMETER_ERROR;
   }
-
-  // Out operand
-  auto out_name = op->Output("Out").front();
-  auto out_operand = converter->AddOutputOperand(out_name);
-
   // Fill operation
   converter->AddOperation(
       NNADAPTER_FILL, {shape_operand, value_operand}, {out_operand});

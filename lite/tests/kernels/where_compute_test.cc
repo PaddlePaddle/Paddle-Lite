@@ -130,6 +130,10 @@ TEST(where, precision) {
   abs_error = 1e-2;
   // TODO(liusiyuan): support later
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
 #else
   return;
 #endif

@@ -108,6 +108,11 @@ TEST(Softmax, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  return;
 #else
   return;
 #endif

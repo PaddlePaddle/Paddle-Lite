@@ -64,26 +64,60 @@ void MatMulCompute<TGEMM, TW, DX, DY, PType>::Run() {
   auto mat_dim_b = math::CreateMatrixDescriptor(
       math::ColumnMatrixFromVector(y_dims), 0, param.transpose_Y);
 
-  if (x_dims.size() >= 3 && y_dims.size() <= 2) {
-    if (!param.transpose_X) {
-      mat_dim_a.height_ *= mat_dim_a.batch_size_;
-      mat_dim_a.batch_size_ = 0;
-    } else {
-      mat_dim_b.batch_size_ = mat_dim_a.batch_size_;
-      mat_dim_b.height_ = mat_dim_b.height_ / mat_dim_b.batch_size_;
+  if (x_dims.size() <= 2 || y_dims.size() <= 2) {
+    if (x_dims.size() >= 3 && y_dims.size() <= 2) {
+      if (!param.transpose_X) {
+        mat_dim_a.height_ *= mat_dim_a.batch_size_;
+        mat_dim_a.batch_size_ = 0;
+      } else {
+        mat_dim_b.batch_size_ = mat_dim_a.batch_size_;
+        mat_dim_b.height_ = mat_dim_b.height_ / mat_dim_b.batch_size_;
+      }
+    } else if (x_dims.size() <= 2 && y_dims.size() >= 3) {
+      if (!param.transpose_Y) {
+        mat_dim_b.height_ *= mat_dim_b.batch_size_;
+        mat_dim_b.batch_size_ = 0;
+      } else {
+        mat_dim_a.batch_size_ = mat_dim_b.batch_size_;
+        mat_dim_a.height_ = mat_dim_a.height_ / mat_dim_a.batch_size_;
+      }
     }
-  } else if (x_dims.size() <= 2 && y_dims.size() >= 3) {
-    if (!param.transpose_Y) {
-      mat_dim_b.height_ *= mat_dim_b.batch_size_;
-      mat_dim_b.batch_size_ = 0;
-    } else {
-      mat_dim_a.batch_size_ = mat_dim_b.batch_size_;
-      mat_dim_a.height_ = mat_dim_a.height_ / mat_dim_a.batch_size_;
+
+    CHECK_EQ(mat_dim_a.batch_size_, mat_dim_b.batch_size_);
+  }
+
+  if (x_dims.size() >= 3 && y_dims.size() >= 3) {
+    // Not support broadcast matmu in current case.
+
+    // case1: mat_a_batch = mat_b_batch.
+    if (mat_dim_a.batch_size_ > 1 && mat_dim_b.batch_size_ > 1) {
+      CHECK_EQ(mat_dim_a.batch_size_, mat_dim_b.batch_size_);
+    }
+
+    // case2: mat_a_batch >1, mat_b_batch=1.
+    if (mat_dim_a.batch_size_ > 1 && mat_dim_b.batch_size_ == 1) {
+      if (!param.transpose_X) {
+        mat_dim_a.height_ *= mat_dim_a.batch_size_;
+        mat_dim_a.batch_size_ = 0;
+      } else {
+        mat_dim_b.batch_size_ = mat_dim_a.batch_size_;
+        mat_dim_b.height_ = mat_dim_b.height_ / mat_dim_b.batch_size_;
+      }
+    }
+
+    // case3: mat_a_batch =1, mat_b_batch>1.
+    if (mat_dim_a.batch_size_ == 1 && mat_dim_b.batch_size_ > 1) {
+      if (!param.transpose_Y) {
+        mat_dim_b.height_ *= mat_dim_b.batch_size_;
+        mat_dim_b.batch_size_ = 0;
+      } else {
+        mat_dim_a.batch_size_ = mat_dim_b.batch_size_;
+        mat_dim_a.height_ = mat_dim_a.height_ / mat_dim_a.batch_size_;
+      }
     }
   }
 
   CHECK_EQ(mat_dim_a.width_, mat_dim_b.height_);
-  CHECK_EQ(mat_dim_a.batch_size_, mat_dim_b.batch_size_);
 
   int lda = (mat_dim_a.trans_ ? mat_dim_a.height_ : mat_dim_a.width_);
   int ldb = (mat_dim_b.trans_ ? mat_dim_b.height_ : mat_dim_b.width_);

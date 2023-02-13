@@ -978,7 +978,7 @@ typedef enum {
    * (a mini-batch of 2D inputs with additional channel dimension)
    * as described in the paper Group Normalization.
    *
-  * Inputs:
+   * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
    * of shape [N, C, ...].
    * * 1: scale, a NNADAPTER_FLOAT32 tensor of shape [C].
@@ -986,7 +986,7 @@ typedef enum {
    * * 3: epsilon, a NNADAPTER_FLOAT32 tensor of shape [1], a small value added
    * to the variance to prevent division by zero, defaults to 1e-5.
    * * 4: groups, a NNADAPTER_INT32 tensor of shape [1], the number of groups
-  * that divided from channels.
+   * that divided from channels.
    *
    * Outputs:
    * * 0: output, a tensor of the same shape and type as `input`.
@@ -1630,19 +1630,19 @@ typedef enum {
   NNADAPTER_REDUCE_SUM,
 
   /**
-  * Performs element-wise rectified linear activation.
-  * The output is calculated using this formula:
-  *     `output` = max(0, `input`)
-  *
-  * Inputs:
-  * * 0: input, a NNADAPTER_FLOAT32,
-  * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-  *
-  * Outputs:
-  * * 0: output, a tensor of the same shape and type as `input`.
-  *
-  * Available since version 1.
-  */
+   * Performs element-wise rectified linear activation.
+   * The output is calculated using this formula:
+   *     `output` = max(0, `input`)
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the same shape and type as `input`.
+   *
+   * Available since version 1.
+   */
   NNADAPTER_RELU,
 
   /**
@@ -1763,6 +1763,28 @@ typedef enum {
    * the same type as `input`.
    */
   NNADAPTER_ROI_ALIGN,
+
+  /**
+   * Roll the tensor input along the given dimension(s). Elements that are
+   * shifted beyond the last position are re-introduced at the first position.
+   * If axes is None, the tensor will be flattened before rolling and then
+   * restored to the original shape.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: shifts, a NNADAPTER_TENSOR_INT32 tensor, It
+   * represents the number of places by which the elements of the tensor are
+   * shifted.
+   * * 2: axes, a NNADAPTER_TENSOR_INT32 tensor, It
+   * represents axis along which to roll.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the same shape and type as `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_ROLL,
 
   /**
    * Outputs an 1-D tensor containing the shape of the input tensor.
@@ -1909,19 +1931,19 @@ typedef enum {
   NNADAPTER_SPLIT,
 
   /**
-  * Performs element-wise square operation.
-  * The output is calculated using this formula:
-  *     `output` = `input`^2
-  *
-  * Inputs:
-  * * 0: input, a NNADAPTER_FLOAT32,
-  * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-  *
-  * Outputs:
-  * * 0: output, a tensor of the same shape and type as `input`.
-  *
-  * Available since version 1.
-  */
+   * Performs element-wise square operation.
+   * The output is calculated using this formula:
+   *     `output` = `input`^2
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the same shape and type as `input`.
+   *
+   * Available since version 1.
+   */
   NNADAPTER_SQUARE,
 
   /**

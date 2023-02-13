@@ -35,7 +35,6 @@ int ConvertPool(Converter* converter, OpInfo* op, Scope* scope) {
           : "";
   auto auto_pad_operand = converter->AddConstantOperand(static_cast<int32_t>(
       ConvertPaddingAlgorithmToNNAutoPadCode(padding_algorithm)));
-
   // Pads operand(optional)
   std::vector<int> paddings = op->GetAttr<std::vector<int>>("paddings");
   if (paddings.size() == 2L) {

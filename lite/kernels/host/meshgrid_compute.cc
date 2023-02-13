@@ -46,8 +46,8 @@ void MeshgridCompute<T, PType>::Run() {
   out_dims.ConstructFrom(shape);
 
   for (int64_t i = 0; i < size; ++i) {
-    T* dst = outs[i]->template mutable_data<T>();
     outs[i]->Resize(out_dims);
+    T* dst = outs[i]->template mutable_data<T>();
     Tensor reshape_ins_tensor;
     reshape_ins_tensor.ShareDataWith(*ins[i]);
     std::vector<int64_t> view_shape(size, 1);

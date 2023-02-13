@@ -126,7 +126,6 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
                                      nullptr);
 
     const auto* input_targetbox = boxcoder_param_->target_box;
-    const auto& code_type = boxcoder_param_->code_type;
 
     auto* target_box_image = GET_DATA_GPU(input_targetbox);
 

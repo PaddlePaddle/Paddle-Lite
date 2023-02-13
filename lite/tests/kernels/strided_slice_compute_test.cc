@@ -603,6 +603,18 @@ TEST(StrideSlice, precision) {
   test_strided_slice_axes(place, abs_error);
   test_strided_slice_decrease_axis(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+  test_strided_slice(place, abs_error);
+  test_strided_slice_axes(place, abs_error);
+  test_strided_slice_decrease_axis(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  test_strided_slice(place, abs_error);
+  test_strided_slice_axes(place, abs_error);
+  test_strided_slice_decrease_axis(place, abs_error);
+  return;
 #else
   return;
 #endif

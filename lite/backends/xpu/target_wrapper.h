@@ -40,6 +40,8 @@ namespace lite {
 const int XPU_MAX_LOD_SIZE = 32;
 // MAX(lod.size()) = 64 in XPU refactor
 const int XPU_MAX_LOD_SIZE_64 = 64;
+// MAX(lod.size()) = 256 in XPU
+const int XPU_MAX_LOD_SIZE_256 = 256;
 // MAX(lod[i + 1] - lod[i]) = 512
 const int XPU_MAX_LOD_SEQ_LEN = 512;
 
@@ -51,6 +53,12 @@ class TargetWrapper<TARGET(kXPU)> {
   static size_t num_devices() { return 1; }
   static size_t maximum_stream() { return 0; }
   static void* get_xpu_stream() {
+    // if ~LoadPredictorConfig is called before ~Predictor,
+    // the xpu_runtime_ptr would be nullptr, so return nullptr make ~Predictor
+    // go well
+    if (xpu_runtime_ptr == nullptr) {
+      return nullptr;
+    }
     return xpu_runtime_ptr->xpu_stream.GetXPUStream();
   }
 
@@ -93,9 +101,6 @@ class TargetWrapper<TARGET(kXPU)> {
     }
 
     if (!xpu_runtime_ptr->xpu_enable_multi_stream) {
-      CHECK(xpu_runtime_ptr->xpu_stream.GetXPUStream() == nullptr)
-          << " xpu default stream should be nullptr: "
-          << xpu_runtime_ptr->xpu_stream.GetXPUStream();
       VLOG(3) << "all threads share the default xpu stream";
     } else {
       // use different stream per thread
@@ -184,13 +189,6 @@ class TargetWrapper<TARGET(kXPU)> {
     XPU_CALL(xpu_set_device(dev_no));
   }
 
-  // not used in runtime
-  // multi encoder config
-  static LITE_THREAD_LOCAL std::string multi_encoder_precision;  // NOLINT
-  static LITE_THREAD_LOCAL bool multi_encoder_adaptive_seqlen;
-  static LITE_THREAD_LOCAL std::string compute_precision;  // NOLINT
-  // only for R200
-  static LITE_THREAD_LOCAL bool local_quant;
   // TODO(quwei): refactor share l3.
   static LITE_THREAD_LOCAL bool need_l3_mutex;  // model level l3 size
   static size_t shared_l3_size;                 // model level l3 size

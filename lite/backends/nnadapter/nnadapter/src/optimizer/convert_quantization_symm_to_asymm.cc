@@ -81,8 +81,10 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
     auto output_count = output_operands.size();
     switch (operation->type) {
       case NNADAPTER_ADD:
+      case NNADAPTER_AND:
       case NNADAPTER_DIV:
       case NNADAPTER_EQUAL:
+      case NNADAPTER_FLOOR_DIV:
       case NNADAPTER_FULLY_CONNECTED:
       case NNADAPTER_GATHER:
       case NNADAPTER_GREATER:
@@ -103,6 +105,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_ABS:
       case NNADAPTER_ARG_MAX:
       case NNADAPTER_ARG_MIN:
+      case NNADAPTER_ASSIGN:
       case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_BATCH_NORMALIZATION:
       case NNADAPTER_CAST:
@@ -111,6 +114,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_CUM_SUM:
       case NNADAPTER_EXP:
       case NNADAPTER_EXPAND:
+      case NNADAPTER_FILL:
       case NNADAPTER_FILL_LIKE:
       case NNADAPTER_FLATTEN:
       case NNADAPTER_FLOOR:
@@ -123,6 +127,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_LOG:
       case NNADAPTER_LP_NORMALIZATION:
       case NNADAPTER_MAX_POOL_2D:
+      case NNADAPTER_NOT:
       case NNADAPTER_PAD:
       case NNADAPTER_PRELU:
       case NNADAPTER_REDUCE_MAX:
@@ -133,6 +138,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_RESHAPE:
       case NNADAPTER_RESIZE_NEAREST:
       case NNADAPTER_RESIZE_LINEAR:
+      case NNADAPTER_SIN:
       case NNADAPTER_SLICE:
       case NNADAPTER_SOFTPLUS:
       case NNADAPTER_SQUEEZE:
@@ -155,6 +161,14 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         NNADAPTER_CHECK_EQ(output_count, 1);
         ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
+      case NNADAPTER_SUM: {
+        NNADAPTER_CHECK_GE(input_count, 2);
+        for (int i = 0; i < input_count; i++) {
+          ConvertOperandSymmToAsymm(input_operands[i], 128);
+        }
+        NNADAPTER_CHECK_EQ(output_count, 1);
+        ConvertOperandSymmToAsymm(output_operands[0], 128);
+      } break;
       case NNADAPTER_CONV_2D:
       case NNADAPTER_CONV_2D_TRANSPOSE: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
@@ -162,6 +176,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         ConvertOperandSymmToAsymm(input_operands[2], 128);
         ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
+      case NNADAPTER_LOG_SOFTMAX:
       case NNADAPTER_SIGMOID:
       case NNADAPTER_SOFTMAX: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
@@ -177,6 +192,21 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       } break;
       case NNADAPTER_UNSTACK: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
+        NNADAPTER_CHECK_GE(output_count, 1);
+        for (uint32_t i = 0; i < output_count; i++) {
+          ConvertOperandSymmToAsymm(output_operands[i], 128);
+        }
+      } break;
+      case NNADAPTER_WHERE: {
+        ConvertOperandSymmToAsymm(input_operands[1], 128);
+        ConvertOperandSymmToAsymm(input_operands[2], 128);
+        ConvertOperandSymmToAsymm(output_operands[0], 128);
+      } break;
+      case NNADAPTER_MESHGRID: {
+        NNADAPTER_CHECK_GE(input_count, 1);
+        for (int i = 0; i < input_count; i++) {
+          ConvertOperandSymmToAsymm(input_operands[i], 128);
+        }
         NNADAPTER_CHECK_GE(output_count, 1);
         for (uint32_t i = 0; i < output_count; i++) {
           ConvertOperandSymmToAsymm(output_operands[i], 128);

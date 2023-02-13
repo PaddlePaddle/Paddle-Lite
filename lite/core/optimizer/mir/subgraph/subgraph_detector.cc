@@ -623,6 +623,7 @@ void MixedPrecisionAutoInsertCalibFuser::InsertQuantCalib(
           {"concat", {"AxisTensor"}},
           {"split", {"AxisTensor", "SectionsTensorList"}},
           {"gather", {"Axis"}},
+          {"reshape2", {"ShapeTensor"}},
       };
 
   std::vector<Node *> nodes_org = *nodes;

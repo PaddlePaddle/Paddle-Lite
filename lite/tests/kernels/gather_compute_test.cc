@@ -176,6 +176,8 @@ TEST(Gather, precision) {
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-3;
 #else
   return;
 #endif

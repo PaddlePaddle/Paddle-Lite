@@ -73,9 +73,12 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
       xpu_disable_flag_ = "NONE";
     }
     // init quant type, encode precision
+    CHECK(lite::TargetWrapperXPU::xpu_runtime_ptr)
+        << "xpu_runtime_ptr null in pass";
     local_quant_ = GetBoolFromEnv("XPU_LOCAL_QUANT") ||
-                   lite::TargetWrapperXPU::local_quant;
-    encode_precision_ = lite::TargetWrapperXPU::multi_encoder_precision;
+                   lite::TargetWrapperXPU::xpu_runtime_ptr->local_quant;
+    encode_precision_ =
+        lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision;
     if (encode_precision_.empty()) {
       encode_precision_ = GetStringFromEnv("XPU_ENCODER_PRECISION", "int16");
     }

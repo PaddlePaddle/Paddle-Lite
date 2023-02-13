@@ -37,7 +37,7 @@ class ReshapeComputekFP16Buffer
  public:
   using param_t = operators::ReshapeParam;
 
-  void PrepareForRun() override { auto& context = ctx_->As<OpenCLContext>(); }
+  void PrepareForRun() override {}
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();

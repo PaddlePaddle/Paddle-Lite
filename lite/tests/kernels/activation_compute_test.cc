@@ -600,6 +600,9 @@ TEST(Activation_prelu, precision) {
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 1e-2;
   modes = {"all", "channel"};
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+  modes = {"all", "channel"};
 #else
   return;
 #endif
@@ -992,11 +995,12 @@ TEST(Activation_sqrt, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_INTEL_OPENVINO)
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-3;
 #else
   return;
 #endif
-#endif
-#if defined(LITE_WITH_OPENCL)
+#elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_error = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_ARM)
@@ -1033,6 +1037,8 @@ TEST(Activation_square, precision) {
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 5e-2;
 #else
   return;
@@ -1148,6 +1154,8 @@ TEST(Activation_softplus, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 1e-2;
   // Not support htp
@@ -1594,6 +1602,55 @@ TEST(Activation_relu_fp16, precision) {
   }
 }
 
+TEST(Activation_sigmoid_fp16, precision) {
+  Place place;
+  float abs_error = 2e-3;
+#if defined(LITE_WITH_ARM)
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+#else
+  return;
+#endif
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 4, 5}, {1, 3, 5}, {5, 4}, {8}};
+  for (auto dims : test_dims) {
+    TestAct<float16_t>(place,
+                       "sigmoid_fp16_precision",
+                       0.01,
+                       6.,
+                       "all",
+                       0.,
+                       1.0,
+                       DDim(dims),
+                       "sigmoid",
+                       SIGMOID,
+                       abs_error);
+  }
+}
+
+TEST(Activation_sigmoid_fp16, performance) {
+  Place place;
+  float abs_error = 2e-3;
+#if defined(LITE_WITH_ARM)
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 320, 320}}) {
+    TestActPerformance<float16_t>(place,
+                                  "sigmoid_fp16_performance",
+                                  0.01,
+                                  6,
+                                  "all",
+                                  0.,
+                                  1.0,
+                                  DDim(dims),
+                                  "sigmoid",
+                                  SIGMOID,
+                                  abs_error);
+  }
+}
+
 TEST(Activation_hard_sigmoid_fp16, precision) {
   Place place;
   float abs_error = 2e-3;
@@ -1700,6 +1757,60 @@ TEST(Activation_prelu_fp16, performance) {
                                     DDim(dims),
                                     "prelu",
                                     PRELU,
+                                    abs_error);
+    }
+  }
+}
+
+TEST(Activation_swish_fp16, precision) {
+  Place place;
+  float abs_error = 2e-3;
+  std::vector<float> coefs{0.1, 1.0, 10.0};
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 1, 4, 8}, {1, 1, 1, 10}, {1, 1, 2, 2}, {5, 4}, {8}};
+#ifdef LITE_WITH_ARM
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+#else
+  return;
+#endif
+  for (auto dims : test_dims) {
+    for (auto coef : coefs) {
+      TestAct<float16_t>(place,
+                         "def",
+                         0.01,
+                         6.,
+                         "all",
+                         coef,
+                         1.0,
+                         DDim(dims),
+                         "swish",
+                         SWISH,
+                         abs_error);
+    }
+  }
+}
+
+TEST(Activation_swish_fp16, performance) {
+  Place place;
+  float abs_error = 2e-3;
+  std::vector<float> coefs{0.01, 0.1, 1.0, 10.0};
+#ifdef LITE_WITH_ARM
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+#else
+  return;
+#endif
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 320, 320}}) {
+    for (auto coef : coefs) {
+      TestActPerformance<float16_t>(place,
+                                    "def",
+                                    0.01,
+                                    6.,
+                                    "all",
+                                    0.,
+                                    1.0,
+                                    DDim(dims),
+                                    "swish",
+                                    SWISH,
                                     abs_error);
     }
   }

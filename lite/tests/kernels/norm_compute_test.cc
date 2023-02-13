@@ -117,6 +117,9 @@ TEST(Norm, precision) {
   epsilon = {1e-4};
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-3;
+  epsilon = {1e-12};
 #else
   return;
 #endif

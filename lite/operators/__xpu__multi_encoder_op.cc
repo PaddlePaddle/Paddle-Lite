@@ -149,6 +149,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.norm_before = op_desc.GetAttr<bool>("norm_before");
   param_.adaptive_seqlen = op_desc.GetAttr<bool>("adaptive_seqlen");
   param_.per_channel = op_desc.GetAttr<bool>("per_channel");
+  param_.already_qkv_fusion = op_desc.GetAttr<bool>("already_qkv_fusion");
   if ((op_desc.HasAttr("enable_int8") &&
        op_desc.GetAttr<bool>("enable_int8")) ||
       (op_desc.HasAttr("enable_int16") &&

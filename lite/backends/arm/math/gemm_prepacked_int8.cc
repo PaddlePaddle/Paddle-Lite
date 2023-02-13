@@ -5704,6 +5704,216 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
   }
 }
 
+// used to fuse im2col and packB, ic % 4 == 0 && ow % 8 == 0
+template <typename Dtype>
+void gemm_prepack_sdot_nopack_notrans(const int8_t* A_packed,
+                                      const int8_t* B_packed,
+                                      const float* bias,
+                                      Dtype* C,
+                                      int M,
+                                      int N,
+                                      int K,
+                                      bool is_bias,
+                                      int is_relu,
+                                      bool is_transB,
+                                      const float* scale,
+                                      const float* alpha,
+                                      ARMContext* ctx) {
+  int cnt_12, cnt_8, cnt_4, cnt_1_pack4, remain;
+  remain = N;
+  cnt_12 = N / 12;
+  remain -= 12 * cnt_12;
+  cnt_8 = remain / 8;
+  remain -= 8 * cnt_8;
+  cnt_4 = remain / 4;
+  remain -= 4 * cnt_4;
+  cnt_1_pack4 = remain > 0 ? 1 : 0;
+  int kup = ROUNDUP(K, KBLOCK_INT8);
+  int tail_pre = ((kup / 4) & (KBLOCK_INT8 - 1));
+  int k_pre = (((kup / 4) + KBLOCK_INT8 - 1) / KBLOCK_INT8) - 1;
+
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK_INT8_DOT) {
+    unsigned int ymax = y + MBLOCK_INT8_DOT;
+    ymax = (ymax > M) ? M : ymax;
+    float32_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    if (is_bias) {
+      int j = 0;
+      for (int i = y; i < ymax && j < 8; i++, j++) {
+        bias_local[j] = bias[i];
+      }
+    }
+    float32_t scale_local[8];
+    if (scale) {
+      int j = 0;
+      for (int i = y; i < ymax && j < 8; i++, j++) {
+        scale_local[j] = scale[i];
+      }
+    }
+    Dtype cout0[NBLOCK_INT8_DOT];
+    Dtype cout1[NBLOCK_INT8_DOT];
+    Dtype cout2[NBLOCK_INT8_DOT];
+    Dtype cout3[NBLOCK_INT8_DOT];
+    Dtype cout4[NBLOCK_INT8_DOT];
+    Dtype cout5[NBLOCK_INT8_DOT];
+    Dtype cout6[NBLOCK_INT8_DOT];
+    Dtype cout7[NBLOCK_INT8_DOT + 16];
+
+    Dtype* c_ptr0 = C + y * N;
+    Dtype* c_ptr1 = c_ptr0 + N;
+    Dtype* c_ptr2 = c_ptr1 + N;
+    Dtype* c_ptr3 = c_ptr2 + N;
+    Dtype* c_ptr4 = c_ptr3 + N;
+    Dtype* c_ptr5 = c_ptr4 + N;
+    Dtype* c_ptr6 = c_ptr5 + N;
+    Dtype* c_ptr7 = c_ptr6 + N;
+
+    Dtype* pout0 = cout0;
+    Dtype* pout1 = cout1;
+    Dtype* pout2 = cout2;
+    Dtype* pout3 = cout3;
+    Dtype* pout4 = cout4;
+    Dtype* pout5 = cout5;
+    Dtype* pout6 = cout6;
+    Dtype* pout7 = cout7;
+    if ((y + 7) >= ymax) {
+      switch ((y + 7) - ymax) {
+        case 6:
+          c_ptr1 = cout1;
+        case 5:
+          c_ptr2 = cout2;
+        case 4:
+          c_ptr3 = cout3;
+        case 3:
+          c_ptr4 = cout4;
+        case 2:
+          c_ptr5 = cout5;
+        case 1:
+          c_ptr6 = cout6;
+        case 0:
+          c_ptr7 = cout7;
+        default:
+          break;
+      }
+    }
+
+    // const int8_t *a_ptr_l = A_packed + y * K;
+    const int8_t* a_ptr_l = A_packed + y * kup;
+    const int8_t* b_ptr = B_packed;
+    for (int xb = 0; xb < cnt_12; xb++) {
+      if ((y + 7) >= ymax) {
+        switch ((y + 7) - ymax) {
+          case 6:
+            c_ptr1 = cout1;
+          case 5:
+            c_ptr2 = cout2;
+          case 4:
+            c_ptr3 = cout3;
+          case 3:
+            c_ptr4 = cout4;
+          case 2:
+            c_ptr5 = cout5;
+          case 1:
+            c_ptr6 = cout6;
+          case 0:
+            c_ptr7 = cout7;
+          default:
+            break;
+        }
+      }
+      const int8_t* a_ptr = a_ptr_l;
+      int tail = tail_pre;
+      int k = k_pre;
+      gemm_sdot_int8_kernel<Dtype>(a_ptr,
+                                   b_ptr,
+                                   bias_local,
+                                   c_ptr0,
+                                   c_ptr1,
+                                   c_ptr2,
+                                   c_ptr3,
+                                   c_ptr4,
+                                   c_ptr5,
+                                   c_ptr6,
+                                   c_ptr7,
+                                   scale_local,
+                                   alpha,
+                                   is_relu,
+                                   k,
+                                   tail);
+    }
+    if (cnt_8 > 0) {
+      const int8_t* a_ptr = a_ptr_l;
+      int k = kup / 4;
+      gemm_sdot_int8_kernel_8x8<Dtype>(a_ptr,
+                                       b_ptr,
+                                       bias_local,
+                                       c_ptr0,
+                                       c_ptr1,
+                                       c_ptr2,
+                                       c_ptr3,
+                                       c_ptr4,
+                                       c_ptr5,
+                                       c_ptr6,
+                                       c_ptr7,
+                                       scale_local,
+                                       alpha,
+                                       is_relu,
+                                       k,
+                                       0);
+    }
+    if (cnt_4 > 0) {
+      const int8_t* a_ptr = a_ptr_l;
+      int k = kup / 4;
+      gemm_sdot_int8_kernel_8x4<Dtype>(a_ptr,
+                                       b_ptr,
+                                       bias_local,
+                                       c_ptr0,
+                                       c_ptr1,
+                                       c_ptr2,
+                                       c_ptr3,
+                                       c_ptr4,
+                                       c_ptr5,
+                                       c_ptr6,
+                                       c_ptr7,
+                                       scale_local,
+                                       alpha,
+                                       is_relu,
+                                       k,
+                                       0);
+    }
+    if (cnt_1_pack4 > 0) {
+      const int8_t* a_ptr = a_ptr_l;
+      int k = kup / 4;
+      gemm_sdot_int8_kernel_8x4<Dtype>(a_ptr,
+                                       b_ptr,
+                                       bias_local,
+                                       pout0,
+                                       pout1,
+                                       pout2,
+                                       pout3,
+                                       pout4,
+                                       pout5,
+                                       pout6,
+                                       pout7,
+                                       scale_local,
+                                       alpha,
+                                       is_relu,
+                                       k,
+                                       0);
+      for (int i = 0; i < remain; ++i) {
+        *c_ptr0++ = cout0[i];
+        *c_ptr1++ = cout1[i];
+        *c_ptr2++ = cout2[i];
+        *c_ptr3++ = cout3[i];
+        *c_ptr4++ = cout4[i];
+        *c_ptr5++ = cout5[i];
+        *c_ptr6++ = cout6[i];
+        *c_ptr7++ = cout7[i];
+      }
+    }
+  }
+  LITE_PARALLEL_COMMON_END();
+}
+
 void prepackA_m8k4_int8(int8_t* out,
                         const int8_t* in,
                         const int ldin,
@@ -7418,6 +7628,9 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
 #endif
 #endif  // dotprod  //NOLINT
 
+#define IN_PARAMS \
+  A_packed, B, bias, C, M, N, K, is_bias, flag_act, is_transB, scale, alpha, ctx
+
 template <typename dtype>
 void gemm_prepack_int8(const int8_t* A_packed,
                        const int8_t* B,
@@ -7462,8 +7675,6 @@ void gemm_prepack_int8(const int8_t* A_packed,
     }
   }
 
-#define IN_PARAMS \
-  A_packed, B, bias, C, M, N, K, is_bias, flag_act, is_transB, scale, alpha, ctx
 #ifdef __aarch64__
   if (ctx->has_dot()) {
 #ifdef WITH_ARM_DOTPROD
@@ -7500,8 +7711,75 @@ void gemm_prepack_int8(const int8_t* A_packed,
 GEMM_PREPACK_INT8(int8_t);
 GEMM_PREPACK_INT8(float_t);
 GEMM_PREPACK_INT8(int32_t);
+
+#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+template <typename dtype>
+void gemm_prepack_int8_nopack(const int8_t* A_packed,
+                              const int8_t* B,
+                              const float* bias,
+                              dtype* C,
+                              int M,
+                              int N,
+                              int K,
+                              bool is_bias,
+                              bool is_transB,
+                              const float* scale,
+                              const operators::ActivationParam act_param,
+                              ARMContext* ctx) {
+  auto act_type = act_param.active_type;
+  float alpha[12] = {
+      0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 0x01;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 0x02;
+      float local_alpha = act_param.Relu_clipped_coef;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 0x03;
+      float local_alpha = act_param.Leaky_relu_alpha;
+      alpha[0] = local_alpha;
+      alpha[1] = local_alpha;
+      alpha[2] = local_alpha;
+      alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 0x04;
+      for (int i = 0; i < 4; i++) {
+        alpha[i] = 1.f / act_param.hard_swish_scale;
+        alpha[i + 4] = act_param.hard_swish_offset;
+        alpha[i + 8] = act_param.hard_swish_threshold;
+      }
+    }
+  }
+  gemm_prepack_sdot_nopack_notrans<dtype>(IN_PARAMS);
+}
+
+#define GEMM_PREPACK_INT8_NOPACK(dtype)           \
+  template void gemm_prepack_int8_nopack<dtype>(  \
+      const int8_t* A_packed,                     \
+      const int8_t* B,                            \
+      const float* bias,                          \
+      dtype* C,                                   \
+      int M,                                      \
+      int N,                                      \
+      int K,                                      \
+      bool is_bias,                               \
+      bool is_transB,                             \
+      const float* scale,                         \
+      const operators::ActivationParam act_param, \
+      ARMContext* ctx);
+GEMM_PREPACK_INT8_NOPACK(int8_t);
+GEMM_PREPACK_INT8_NOPACK(float_t);
+#endif  // __aarch64__ && WITH_ARM_DOTPROD
+
 #undef IN_PARAMS
 #undef GEMM_PREPACK_INT8
+#undef GEMM_PREPACK_INT8_NOPACK
 
 }  // namespace math
 }  // namespace arm

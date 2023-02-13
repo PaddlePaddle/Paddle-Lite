@@ -70,9 +70,6 @@ class VariablePlaceInferencePass : public DebugPass {
                type.precision() == PRECISION(kUnk)) {
       weight_node->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    } else if (with_targets.at("kXPU")) {
-      weight_node->AsArg().type = LiteType::GetTensorTy(
-          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     } else {
       weight_node->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), type.precision(), DATALAYOUT(kNCHW));

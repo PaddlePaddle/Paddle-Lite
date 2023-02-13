@@ -462,6 +462,20 @@ TEST(Elementwise, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+  TestEltDims(place, abs_error);
+  for (auto elt_type : std::vector<std::string>{
+           "add", "sub", "mul", "div", "floordiv", "max", "min", "pow"}) {
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1);
+  }
+  for (auto elt_type : std::vector<std::string>{
+           "add", "sub", "mul", "div", "floordiv", "max", "min", "pow"}) {
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0, "relu");
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1, "relu");
+  }
+  return;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 1e-1;
   for (auto elt_type : std::vector<std::string>{

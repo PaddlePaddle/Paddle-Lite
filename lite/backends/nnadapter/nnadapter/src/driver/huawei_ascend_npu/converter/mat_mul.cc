@@ -22,18 +22,58 @@ namespace huawei_ascend_npu {
 
 int ConvertMatMul(Converter* converter, core::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // TODO(zhupengyang): support by reshape or squeeze
-  NNADAPTER_CHECK_NE(x_operand->type.dimensions.count, 1);
 
-  // Convert to GE operators
-  auto x_operator = converter->GetMappedOperator(x_operand);
-  if (x_operator == nullptr) {
-    x_operator = converter->ConvertOperand(x_operand);
+  std::shared_ptr<Operator> x_operator = nullptr;
+  std::shared_ptr<Operator> y_operator = nullptr;
+  if (IsDynamicShapeOperandType(x_operand->type)) {
+    // Convert to GE operators
+    x_operator = converter->GetMappedOperator(x_operand);
+    if (x_operator == nullptr) {
+      x_operator = converter->ConvertOperand(x_operand);
+    }
+    y_operator = converter->GetMappedOperator(y_operand);
+    if (y_operator == nullptr) {
+      y_operator = converter->ConvertOperand(y_operand);
+    }
+    // Resize dim 1 to 2
+    if (x_operand->type.dimensions.count == 1) {
+      auto unsqueeze_op = converter->AddOperator<ge::op::Unsqueeze>(
+          output_operand, "reshape_x");
+      unsqueeze_op->set_attr_axes(
+          ge::Operator::OpListInt(std::vector<int64_t>({0})));
+      SET_INPUT(unsqueeze_op, x, x_operator);
+      x_operator = MAP_OUTPUT(unsqueeze_op, y, output_operand);
+    }
+    if (y_operand->type.dimensions.count == 1) {
+      auto unsqueeze_op = converter->AddOperator<ge::op::Unsqueeze>(
+          output_operand, "reshape_y");
+      unsqueeze_op->set_attr_axes(
+          ge::Operator::OpListInt(std::vector<int64_t>({1})));
+      SET_INPUT(unsqueeze_op, x, y_operator);
+      y_operator = MAP_OUTPUT(unsqueeze_op, y, output_operand);
+    }
+  } else {
+    // Resize dim 1 to 2
+    if (x_operand->type.dimensions.count == 1) {
+      x_operand->type.dimensions.count = 2;
+      x_operand->type.dimensions.data[1] = x_operand->type.dimensions.data[0];
+      x_operand->type.dimensions.data[0] = 1;
+    }
+    if (y_operand->type.dimensions.count == 1) {
+      y_operand->type.dimensions.count = 2;
+      y_operand->type.dimensions.data[1] = 1;
+    }
+    // Convert to GE operators
+    x_operator = converter->GetMappedOperator(x_operand);
+    if (x_operator == nullptr) {
+      x_operator = converter->ConvertOperand(x_operand);
+    }
+    y_operator = converter->GetMappedOperator(y_operand);
+    if (y_operator == nullptr) {
+      y_operator = converter->ConvertOperand(y_operand);
+    }
   }
-  auto y_operator = converter->GetMappedOperator(y_operand);
-  if (y_operator == nullptr) {
-    y_operator = converter->ConvertOperand(y_operand);
-  }
+
   auto mat_mul_op = converter->AddOperator<ge::op::BatchMatMul>(output_operand);
   mat_mul_op->set_attr_adj_x1(transpose_x);
   mat_mul_op->set_attr_adj_x2(transpose_y);

@@ -180,7 +180,14 @@ void TestRoll(const Place& place, float abs_error) {
 TEST(roll, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #else
   return;

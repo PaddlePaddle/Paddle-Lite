@@ -99,6 +99,22 @@ void gemm_prepack_int8(const int8_t* A_packed,
                        const operators::ActivationParam act_param,
                        ARMContext* ctx);
 
+#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+template <typename dtype>
+void gemm_prepack_int8_nopack(const int8_t* A_packed,
+                              const int8_t* B,
+                              const float* bias,
+                              dtype* C,
+                              int M,
+                              int N,
+                              int K,
+                              bool is_bias,
+                              bool is_transB,
+                              const float* scale,
+                              const operators::ActivationParam act_param,
+                              ARMContext* ctx);
+#endif
+
 #define ROUNDUP(a, b) ((((a) + (b)-1) / (b)) * (b))
 }  // namespace math
 }  // namespace arm

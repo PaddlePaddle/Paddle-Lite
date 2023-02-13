@@ -67,6 +67,7 @@ void UnpackOpFusion(core::Model* model) {
       case NNADAPTER_MUL:
       case NNADAPTER_POW:
       case NNADAPTER_SUB:
+      case NNADAPTER_FLOOR_DIV:
         UnpackActivations(
             model, operation, output_operands[0], input_operands[2]);
         break;

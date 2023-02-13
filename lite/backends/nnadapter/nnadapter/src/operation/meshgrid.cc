@@ -31,9 +31,9 @@ NNADAPTER_EXPORT bool ValidateMeshgrid(const core::Operation* operation) {
 NNADAPTER_EXPORT int PrepareMeshgrid(core::Operation* operation) {
   MESHGRID_OPERATION_EXTRACT_INPUTS_OUTPUTS
   for (auto output_operand : output_operands) {
-    output_operand->type.dimensions.count = input_count;
     CopyOperandTypeExceptQuantParams(&output_operand->type,
                                      input_operands[0]->type);
+    output_operand->type.dimensions.count = input_count;
   }
 
   // Infer the shape and type of output operands

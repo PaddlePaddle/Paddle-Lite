@@ -578,11 +578,6 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
   // 3. Delete nodes and edges
   std::set<const Node*> nodes2rm = {
       quant_dequant_node, output_scale_node, output_var_node};
-  if (quant_dequant_op_type_ ==
-      "fake_quantize_dequantize_moving_average_abs_max") {
-    auto* input_scale_node = matched.at("input_scale_node");
-    nodes2rm.insert(input_scale_node);
-  }
   GraphSafeRemoveNodes(graph, nodes2rm);
 }
 
@@ -722,7 +717,17 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
         if (!out_scale_node->IsStmt()) continue;
         auto* out_scale_scope = out_scale_node->stmt()->op()->scope();
         auto out_scale_op_info = *out_scale_node->stmt()->op_info();
-        if (out_scale_op_info.Type() != "quantize_linear") continue;
+        if (out_scale_op_info.Type() != "quantize_linear") {
+          if (out_scale_op_info.HasInputScale(op_out_var_node->arg()->name,
+                                              false)) {
+            auto input_scales = out_scale_op_info.GetInputScale(
+                op_out_var_node->arg()->name, false);
+            op_info.SetOutputScale(op_out_var_node->arg()->name, input_scales);
+            break;
+          } else {
+            continue;
+          }
+        }
         if (!out_scale_op_info.HasInput("Scale")) continue;
         std::string out_scale_name = out_scale_op_info.Input("Scale").front();
         auto* out_scale_tensor =

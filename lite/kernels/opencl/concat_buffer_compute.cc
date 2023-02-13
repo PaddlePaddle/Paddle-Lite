@@ -83,9 +83,7 @@ class ConcatCompute
 
   void Run() override {
     auto& param = *param_.get_mutable<param_t>();
-    const auto& x_dims = param.output->dims();
     auto* out_buf = MUTABLE_BUFFER_GPU(param.output);
-    const auto& y_dims = param.output->dims();  // useless: check dim only
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);

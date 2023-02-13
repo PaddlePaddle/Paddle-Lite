@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "operation/group_normalization.h"
+
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -21,122 +22,137 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-void Split(Converter* converter,
-           std::shared_ptr<Operator> input_operator,
-           core::Operand* output_operand,
-           const int32_t split_num,
-           const std::string name,
-           std::vector<std::shared_ptr<Operator>>* split_outs) {
-  auto axis_operator =
-      converter->AddInt32ConstantOperator(std::vector<int32_t>({1}));
-  auto split_op = converter->AddOperator<ge::op::Split>(output_operand, name);
-  split_op->set_attr_num_split(split_num);
-  split_op->create_dynamic_output_y(split_num);
-  SET_INPUT(split_op, x, input_operator);
-  SET_INPUT(split_op, split_dim, axis_operator);
-  for (uint32_t i = 0; i < split_num; i++) {
-    split_outs->push_back(MAP_DYNAMIC_OUTPUT(split_op, y, i, output_operand));
-  }
-}
-
 int ConvertGroupNormalization(Converter* converter,
                               core::Operation* operation) {
   GROUP_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  if (IsDynamicShapeOperandType(input_operand->type)) {
+    NNADAPTER_LOG(FATAL)
+        << "GroupNormalization does not support dynamic shape.";
+  }
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);
   if (input_operator == nullptr) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  auto scale_operator = converter->ConvertOperand(
-      scale_operand,
-      std::vector<int32_t>({1, scale_operand->type.dimensions.data[0], 1, 1}));
-  auto bias_operator = converter->ConvertOperand(
-      bias_operand,
-      std::vector<int32_t>({1, bias_operand->type.dimensions.data[0], 1, 1}));
-  // Split depends on groups
-  int32_t channel_axis = 1;
-  auto input_channel = input_operand->type.dimensions.data[channel_axis];
-  NNADAPTER_CHECK_GT(input_channel, 0);
-  NNADAPTER_CHECK_EQ(input_channel % groups, 0);
-  int32_t split_num = groups;
-  std::vector<std::shared_ptr<Operator>> split_input_outs;
-  std::vector<std::shared_ptr<Operator>> split_scale_outs;
-  std::vector<std::shared_ptr<Operator>> split_bias_outs;
-  if (groups > 1) {
-    Split(converter,
-          input_operator,
-          output_operand,
-          split_num,
-          "split_input",
-          &split_input_outs);
-    Split(converter,
-          scale_operator,
-          output_operand,
-          split_num,
-          "split_scale",
-          &split_scale_outs);
-    Split(converter,
-          bias_operator,
-          output_operand,
-          split_num,
-          "split_bias",
-          &split_bias_outs);
+
+  /**
+   * Use small operators to calculate, and the formula is as follows:
+   * input = reshape(input, shape=[batch_size, groups, -1])
+   * mean = reduce_mean(input, axis=2, keep_dims=True)
+   * var = reduce_sum(square(input - mean), axis=2, keep_dims=True) / (channel *
+   * height * width / groups)
+   * std = sqrt(var + epsilon)
+   * output = (input - mean) / std
+   * output = reshape(output, shape=[batch_size, channel, height, width])
+   * output = output * scale + bias
+   *
+   */
+  // Reshape Input to [batch_size, groups, -1]
+  auto shape = std::vector<int32_t>(
+      {input_operand->type.dimensions.data[0], groups, -1});
+  auto input_shape_operator = converter->AddInt32ConstantOperator(shape);
+  auto reshape_input_op =
+      converter->AddOperator<ge::op::Reshape>(output_operand, "reshape_input");
+  SET_INPUT(reshape_input_op, x, input_operator);
+  SET_INPUT(reshape_input_op, shape, input_shape_operator);
+  auto reshape_input_operator = MAP_OUTPUT(reshape_input_op, y, output_operand);
+  // Mean
+  auto reduce_mean_op =
+      converter->AddOperator<ge::op::ReduceMean>(output_operand, "reduce_mean");
+  auto reduce_mean_axes_operator =
+      converter->AddInt32ConstantOperator(std::vector<int32_t>({2}));
+  reduce_mean_op->set_attr_keep_dims(true);
+  SET_INPUT(reduce_mean_op, x, reshape_input_operator);
+  SET_INPUT(reduce_mean_op, axes, reduce_mean_axes_operator);
+  auto reduce_mean_operator = MAP_OUTPUT(reduce_mean_op, y, output_operand);
+  // Input - Mean
+  auto sub_op =
+      converter->AddOperator<ge::op::Sub>(output_operand, "input_sub_mean");
+  SET_INPUT(sub_op, x1, reshape_input_operator);
+  SET_INPUT(sub_op, x2, reduce_mean_operator);
+  auto sub_operator = MAP_OUTPUT(sub_op, y, output_operand);
+  // Square
+  auto square_op =
+      converter->AddOperator<ge::op::Square>(output_operand, "square");
+  SET_INPUT(square_op, x, sub_operator);
+  auto square_operator = MAP_OUTPUT(square_op, y, output_operand);
+  // ReduceSum
+  auto reduce_sum_op =
+      converter->AddOperator<ge::op::ReduceSum>(output_operand, "reduce_sum");
+  auto reduce_sum_axes_operator =
+      converter->AddInt32ConstantOperator(std::vector<int32_t>({2}));
+  reduce_sum_op->set_attr_keep_dims(true);
+  SET_INPUT(reduce_sum_op, x, square_operator);
+  SET_INPUT(reduce_sum_op, axes, reduce_sum_axes_operator);
+  auto reduce_sum_operator = MAP_OUTPUT(reduce_sum_op, y, output_operand);
+  // Variance
+  auto div_op = converter->AddOperator<ge::op::Xdivy>(output_operand, "div");
+  float block_num = input_operand->type.dimensions.data[1] *
+                    input_operand->type.dimensions.data[2] *
+                    input_operand->type.dimensions.data[3] / groups;
+  auto block_num_operator =
+      converter->AddFloat32ConstantOperator(std::vector<float>({block_num}));
+  SET_INPUT(div_op, x1, reduce_sum_operator);
+  SET_INPUT(div_op, x2, block_num_operator);
+  auto variance_operator = MAP_OUTPUT(div_op, y, output_operand);
+  // Add
+  auto add_op = converter->AddOperator<ge::op::Add>(output_operand, "add");
+  auto epsilon_operator =
+      converter->AddFloat32ConstantOperator(std::vector<float>({epsilon}));
+  SET_INPUT(add_op, x1, variance_operator);
+  SET_INPUT(add_op, x2, epsilon_operator);
+  auto add_operator = MAP_OUTPUT(add_op, y, output_operand);
+  // Sqrt
+  auto sqrt_op = converter->AddOperator<ge::op::Sqrt>(output_operand, "sqrt");
+  SET_INPUT(sqrt_op, x, add_operator);
+  auto std_operator = MAP_OUTPUT(sqrt_op, y, output_operand);
+  // Input Normalization
+  auto input_normalization_div_op = converter->AddOperator<ge::op::Xdivy>(
+      output_operand, "input_normalization");
+  SET_INPUT(input_normalization_div_op, x1, sub_operator);
+  SET_INPUT(input_normalization_div_op, x2, std_operator);
+  auto input_normalization_div_operator =
+      MAP_OUTPUT(input_normalization_div_op, y, output_operand);
+  // Reshape output
+  auto output_shape =
+      std::vector<int32_t>(input_operand->type.dimensions.data,
+                           input_operand->type.dimensions.data +
+                               input_operand->type.dimensions.count);
+  auto output_shape_operator =
+      converter->AddInt32ConstantOperator(output_shape);
+  auto reshape_output_op =
+      converter->AddOperator<ge::op::Reshape>(output_operand, "reshape_output");
+  SET_INPUT(reshape_output_op, x, input_normalization_div_operator);
+  SET_INPUT(reshape_output_op, shape, output_shape_operator);
+  auto reshape_output_operator =
+      MAP_OUTPUT(reshape_output_op, y, output_operand);
+  // Scale and bias
+  std::shared_ptr<Operator> mul_scale_operator = nullptr;
+  if (scale_operand) {
+    auto scale_operator = converter->ConvertOperand(
+        scale_operand,
+        std::vector<int32_t>(
+            {1, scale_operand->type.dimensions.data[0], 1, 1}));
+    auto mul_scale_op =
+        converter->AddOperator<ge::op::Mul>(output_operand, "mul_scale");
+    SET_INPUT(mul_scale_op, x1, reshape_output_operator);
+    SET_INPUT(mul_scale_op, x2, scale_operator);
+    mul_scale_operator = MAP_OUTPUT(mul_scale_op, y, output_operand);
   } else {
-    split_input_outs.push_back(input_operator);
-    split_scale_outs.push_back(scale_operator);
-    split_bias_outs.push_back(bias_operator);
+    mul_scale_operator = reshape_output_operator;
   }
-  // Use layer normalization
-  std::vector<float> gammas(input_operand->type.dimensions.data[1] *
-                                input_operand->type.dimensions.data[2] *
-                                input_operand->type.dimensions.data[3] / groups,
-                            1);
-  std::vector<float> betas(input_operand->type.dimensions.data[1] *
-                               input_operand->type.dimensions.data[2] *
-                               input_operand->type.dimensions.data[3] / groups,
-                           0);
-  std::vector<int32_t> input_dimensions(
-      {input_operand->type.dimensions.data[1] / groups,
-       input_operand->type.dimensions.data[2],
-       input_operand->type.dimensions.data[3]});
-  auto dummy_gamma_operator =
-      converter->AddFloat32ConstantOperator(gammas, input_dimensions);
-  auto dummy_beta_operator =
-      converter->AddFloat32ConstantOperator(betas, input_dimensions);
-  std::vector<std::shared_ptr<Operator>> layer_norm_outs;
-  for (uint32_t i = 0; i < split_num; i++) {
-    auto layer_norm_op = converter->AddOperator<ge::op::LayerNorm>(
-        output_operand, "layer_norm_" + std::to_string(i));
-    layer_norm_op->set_attr_epsilon(epsilon);
-    layer_norm_op->set_attr_begin_norm_axis(channel_axis);
-    layer_norm_op->set_attr_begin_params_axis(channel_axis);
-    SET_INPUT(layer_norm_op, x, split_input_outs[i]);
-    SET_INPUT(layer_norm_op, beta, dummy_beta_operator);
-    SET_INPUT(layer_norm_op, gamma, dummy_gamma_operator);
-    auto layer_norm_operator = MAP_OUTPUT(layer_norm_op, y, output_operand);
-    // Use eltwise_mul op to process scale
-    auto mul_op = converter->AddOperator<ge::op::Mul>(output_operand);
-    SET_INPUT(mul_op, x1, layer_norm_operator);
-    SET_INPUT(mul_op, x2, split_scale_outs[i]);
-    auto mul_operator = MAP_OUTPUT(mul_op, y, output_operand);
-    // Use eltwise_add op to process bias
-    auto add_op = converter->AddOperator<ge::op::Add>(output_operand);
-    SET_INPUT(add_op, x1, mul_operator);
-    SET_INPUT(add_op, x2, split_bias_outs[i]);
-    layer_norm_outs.push_back(MAP_OUTPUT(add_op, y, output_operand));
+  if (bias_operand) {
+    auto bias_operator = converter->ConvertOperand(
+        bias_operand,
+        std::vector<int32_t>({1, bias_operand->type.dimensions.data[0], 1, 1}));
+    auto add_bias_op =
+        converter->AddOperator<ge::op::Add>(output_operand, "add_bias");
+    SET_INPUT(add_bias_op, x1, mul_scale_operator);
+    SET_INPUT(add_bias_op, x2, bias_operator);
+    MAP_OUTPUT(add_bias_op, y, output_operand);
   }
-  if (layer_norm_outs.size() > 1) {
-    // Concat
-    auto concat_op = converter->AddOperator<ge::op::ConcatD>(output_operand);
-    concat_op->set_attr_concat_dim(channel_axis);
-    concat_op->set_attr_N(split_num);
-    concat_op->create_dynamic_input_x(split_num);
-    for (uint32_t i = 0; i < split_num; i++) {
-      SET_DYNAMIC_INPUT(concat_op, x, i, layer_norm_outs[i]);
-    }
-    MAP_OUTPUT(concat_op, y, output_operand);
-  }
+
   return NNADAPTER_NO_ERROR;
 }
 

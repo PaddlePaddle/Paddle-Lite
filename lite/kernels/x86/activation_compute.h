@@ -393,6 +393,26 @@ class HardSwishComputeCompute
   virtual ~HardSwishComputeCompute() = default;
 };
 
+template <typename T>
+class ErfCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto x_dims = param.X->dims();
+    auto x_data = param.X->template data<T>();
+    auto output_data = param.Out->template mutable_data<T>();
+    for (int i = 0; i < x_dims.production(); ++i) {
+      output_data[0] = std::erf(x_data[0]);
+      x_data++;
+      output_data++;
+    }
+  }
+
+  virtual ~ErfCompute() = default;
+};
+
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite

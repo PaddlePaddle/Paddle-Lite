@@ -45,8 +45,6 @@ void ConvImageCompute::PrepareForRun() {
     threshold_2 = 256.0f * 6.0f;
     threshold_4 = 256.0f * 16.0f;
   }
-  const bool fp16_support =
-      CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
   conv_param_ = param_.get_mutable<param_t>();
   auto output_dims = conv_param_->output->dims();
   output_tensor_n_ = output_dims[0];
@@ -240,7 +238,7 @@ void ConvImageCompute::PrepareForRun() {
     }
 #endif
   } else if (is_mali_ && filter_tensor_h_ == 1 && filter_tensor_w_ == 1 &&
-             groups_ == 1) {  // mali conv1x1
+             groups_ == 1 && input_tensor_n_ == 1) {  // mali conv1x1
     if (task_size <= threshold_2) {
       CLImageConverterNBlock converter;
       kernel_func_names_.push_back("conv2d_1x1_mali_h1w2c1");
@@ -1674,8 +1672,6 @@ void ConvImageCompute::OIHW2OHWIO4I4(
 
 void ConvImageCompute::NCHW2IMG4(
     void* src, void* dst, size_t oc, size_t ic, size_t index) {
-  bool fp16_support =
-      CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
   size_t oc_block = UP_DIV(oc, 4);
   size_t ic_block = UP_DIV(ic, 4);
 
@@ -2380,8 +2376,6 @@ void ConvImageCompute::Run() {
     // input_fill0 -> output_fill0
     // setArg
     {
-      int input_w_block = static_cast<int>(input_image_w_ / input_tensor_c_);
-      int single_block = static_cast<int>(input_tensor_c_ / groups_);
       use_lws_ = false;
       status_ = kernel_.setArg(0, c_blk_);
       CL_CHECK_FATAL(status_);

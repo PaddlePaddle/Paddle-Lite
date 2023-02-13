@@ -221,32 +221,13 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
           }
         }
       }
-      // image2d unsupport
-      const std::vector<std::string> op_cases_unsupport_in_out_int{
-          "elementwise_floordiv",
-          "elementwise_add",
-          "elementwise_sub",
-          "elementwise_mul",
-          "elementwise_div",
-          "elementwise_pow",
-          "elementwise_mod",
-          "scale"};
-      if (std::find(op_cases_unsupport_in_out_int.begin(),
-                    op_cases_unsupport_in_out_int.end(),
-                    op_type) != op_cases_unsupport_in_out_int.end()) {
-        for (std::list<Node*>::iterator i = x->inlinks.begin();
-             i != x->inlinks.end();
-             ++i) {
-          if ((*i)->arg()->type) {
-            if ((*i)->arg()->type->precision() != PRECISION(kFP16) &&
-                (*i)->arg()->type->precision() != PRECISION(kFloat)) {
-              change_image2d_to_cpu = true;
-            }
-          }
-        }
-        for (std::list<Node*>::iterator i = x->outlinks.begin();
-             i != x->outlinks.end();
-             ++i) {
+      // 4. image2d only support input fp32/fp16
+      for (std::list<Node*>::iterator i = x->inlinks.begin();
+           i != x->inlinks.end();
+           ++i) {
+        std::string in_name =
+            get_argname((*i)->arg()->name, inst.op_info()->inputs());
+        if (in_name == "X") {
           if ((*i)->arg()->type) {
             if ((*i)->arg()->type->precision() != PRECISION(kFP16) &&
                 (*i)->arg()->type->precision() != PRECISION(kFloat)) {
@@ -256,7 +237,7 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
         }
       }
 
-      // 4. if reduce op keepdim=false change target
+      // 5. if reduce op keepdim=false change target
       const std::vector<std::string> op_type_cases{"arg_max",
                                                    "reduce_max",
                                                    "reduce_min",
@@ -282,11 +263,11 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
         change_image2d_to_cpu = change_image2d_to_cpu || op_teller(x);
       }
 
-      // 5. split outlinks != 2 change target
+      // 6. split outlinks != 2 change target
       if (op_type == "split" && x->outlinks.size() != 2)
         change_image2d_to_cpu = true;
 
-      // 6. gather X.dims.size() == 2
+      // 7. gather X.dims.size() == 2
       if (op_type == "gather") {
         for (std::list<Node*>::iterator i = x->inlinks.begin();
              i != x->inlinks.end();
@@ -301,7 +282,7 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
         }
       }
 
-      // 7. reshape transpose change target
+      // 8. reshape transpose change target
       if ((op_type == "reshape" || op_type == "reshape2") &&
           input_shape_default_) {
         change_image2d_to_buffer = true;
@@ -378,7 +359,13 @@ void OpenCLMemoryObjectConfigPass::UpdateTargetToCPU(
                                         "unsqueeze",
                                         "squeeze2",
                                         "squeeze",
-                                        "split"};
+                                        "split",
+                                        "greater_than",
+                                        "cos",
+                                        "sin",
+                                        "tan",
+                                        "expand",
+                                        "shape"};
   std::vector<std::string> x86_host_ops{
       "abs",      "arg_max",         "cos",
       "exp",      "expand",          "flatten",

@@ -41,7 +41,7 @@ namespace operation {
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);            \
   /* Auto pad */                                                               \
   auto auto_pad = static_cast<NNAdapterAutoPadCode>(                           \
-      *reinterpret_cast<int32_t*>(input_operands[3]->buffer));                 \
+      *reinterpret_cast<int32_t*>(input_operands[1]->buffer));                 \
   NNADAPTER_VLOG(5) << "auto_pad: " << AutoPadCodeToString(auto_pad);          \
   /* Pads: Pads are transed according to auto_pad, so pads are used. */        \
   uint32_t pads_size =                                                         \
