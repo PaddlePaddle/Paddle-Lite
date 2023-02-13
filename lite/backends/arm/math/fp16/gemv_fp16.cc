@@ -309,7 +309,7 @@ void gemv_fp16_trans(const float16_t *A,
   int cnt_n = N >> 3;
   int rem_n = N & 7;
   if (rem_n > 0) cnt_n++;
-  LITE_PARALLEL_BEGIN(j, tid, cnt_n) {
+  for (int j = 0; j < cnt_n; ++j) {
     int y_index = j * 8;
     const float16_t *ptr_in = ptr_w + y_index;
     const float16_t *inptr_row[8];
@@ -482,7 +482,6 @@ void gemv_fp16_trans(const float16_t *A,
       out_ptr++;
     }
   }
-  LITE_PARALLEL_END();
 }
 
 void gemv_fp16(const float16_t *A,
@@ -540,9 +539,8 @@ void gemv_fp16(const float16_t *A,
   float16x8_t vzero = vdupq_n_f16(0.f);
   float16x8_t valpha = vdupq_n_f16(local_alpha);
 #ifdef __aarch64__
-  int out_cnt = M >> 3;
+  int out_cnt = Mup >> 3;
   int remain = M & 7;
-  if (remain > 0) out_cnt++;
   float16x8_t voffset = vdupq_n_f16(offset);
   float16x8_t vthreshold = vdupq_n_f16(threshold);
   int stride = 1;
