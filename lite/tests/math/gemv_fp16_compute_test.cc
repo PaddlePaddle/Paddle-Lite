@@ -56,7 +56,7 @@ DEFINE_bool(flag_bias, false, "with bias");
 DEFINE_double(leakey_relu_alpha, 1.0, "leakey relu alpha");
 DEFINE_double(clipped_coef, 6.0, "clipped relu coef");
 
-bool test_sgemv_fp16(bool tra,
+bool test_gemv_fp16(bool tra,
                      int m,
                      int n,
                      bool has_bias,
