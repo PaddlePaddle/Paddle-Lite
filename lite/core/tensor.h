@@ -82,6 +82,9 @@ class TensorLite {
   bool persistable() const { return persistable_; }
   void set_persistable(bool persistable) { persistable_ = persistable; }
 
+#ifdef LITE_WITH_XPU
+  void set_host_pinned_memory() const { buffer_->host_pinned_register(); }
+#endif
   // T is the data type and R is the return type
   // For OpenCL, the return type can be cl::Buffer
   // and the data type can be float/int8_t.
