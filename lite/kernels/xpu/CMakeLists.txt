@@ -95,6 +95,7 @@ add_kernel(generate_proposals_compute_xpu XPU extra SRCS generate_proposals_comp
 add_kernel(generate_proposals_v2_compute_xpu XPU extra SRCS generate_proposals_v2_compute.cc)
 add_kernel(anchor_generator_compute_xpu XPU extra SRCS anchor_generator_compute.cc)
 add_kernel(box_clip_compute_xpu XPU extra SRCS box_clip_compute.cc)
+add_kernel(pad_compute_xpu XPU extra SRCS pad_compute.cc)
 add_kernel(pad2d_compute_xpu XPU extra SRCS pad2d_compute.cc)
 add_kernel(pad3d_compute_xpu XPU extra SRCS pad3d_compute.cc)
 add_kernel(pixel_shuffle_compute_xpu XPU extra SRCS pixel_shuffle_compute.cc)
