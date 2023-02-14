@@ -1,6 +1,6 @@
 # 华为昇腾 NPU
 
-Paddle Lite 已支持华为昇腾 NPU（Ascend310、Ascend710和Ascend910）在 X86 和 ARM 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 Ascend NPU 组网 API 进行网络构建，在线生成并执行模型。
+Paddle Lite 已支持华为昇腾 NPU（ Ascend310、Ascend310P 和 Ascend910 ）在 X86 和 ARM 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 Ascend NPU 组网 API 进行网络构建，在线生成并执行模型。
 
 ## 支持现状
 
@@ -263,7 +263,7 @@ $ npu-smi info
   $ docker build --network=host -f Ascend_ubuntu18.04_aarch64_5.1.rc1.alpha001.Dockerfile -t paddlelite/ascend_aarch64:cann_5.1.1.alpha001 .
   
   创建容器
-  $ docker run -itd --privileged --name=ascend-aarch64 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device /dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_aarch64:cann_5.1.1.alpha001 /bin/bash
+  $ docker run -itd --privileged --name=ascend-aarch64 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device=/dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_aarch64:cann_5.1.1.alpha001 /bin/bash
   
   进入容器
   $ docker exec -it ascend-aarch64 /bin/bash
@@ -282,7 +282,7 @@ $ npu-smi info
   $ docker build --network=host -f Ascend_ubuntu18.04_x86_5.1.rc1.alpha001.Dockerfile -t paddlelite/ascend_x86:cann_5.1.1.alpha001 .
   
   创建容器
-  $ docker run -itd --privileged --name=ascend-x86 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device /dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_x86:cann_5.1.1.alpha001 /bin/bash
+  $ docker run -itd --privileged --name=ascend-x86 --net=host -v $PWD:/Work -w /Work --device=/dev/davinci0 --device=/dev/davinci_manager --device=/dev/hisi_hdc --device=/dev/devmm_svm -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi  -v /usr/local/Ascend/driver/:/usr/local/Ascend/driver/ paddlelite/ascend_x86:cann_5.1.1.alpha001 /bin/bash
   
   进入容器
   $ docker exec -it ascend-x86 /bin/bash
