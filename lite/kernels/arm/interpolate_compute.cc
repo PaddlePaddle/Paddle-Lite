@@ -49,16 +49,16 @@ namespace arm {
 template <>
 void LinearInterpCompute<PRECISION(kFloat)>::Run() {
   INIT_PARAM("Linear")
-  lite::arm::math::interpolate1D(X,
-                                 OutSize,
-                                 SizeTensor,
-                                 Scale,
-                                 Out,
-                                 out_w,
-                                 scale,
-                                 align_corners,
-                                 align_mode,
-                                 param.data_layout);
+  lite::arm::math::interpolate_linear(X,
+                                      OutSize,
+                                      SizeTensor,
+                                      Scale,
+                                      Out,
+                                      out_w,
+                                      scale,
+                                      align_corners,
+                                      align_mode,
+                                      param.data_layout);
 }
 
 template <>

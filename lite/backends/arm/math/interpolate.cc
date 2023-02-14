@@ -555,16 +555,16 @@ void linear_interp(const float* din,
   }
 }
 
-void interpolate1D(lite::Tensor* X,
-                   lite::Tensor* OutSize,
-                   std::vector<const lite::Tensor*> SizeTensor,
-                   lite::Tensor* Scale,
-                   lite::Tensor* Out,
-                   int out_w,
-                   float scale,
-                   bool align_corners,
-                   int align_mode,
-                   DataLayoutType data_layout) {
+void interpolate_linear(lite::Tensor* X,
+                        lite::Tensor* OutSize,
+                        std::vector<const lite::Tensor*> SizeTensor,
+                        lite::Tensor* Scale,
+                        lite::Tensor* Out,
+                        int out_w,
+                        float scale,
+                        bool align_corners,
+                        int align_mode,
+                        DataLayoutType data_layout) {
   int in_w, in_c, in_n;
   if (data_layout == DATALAYOUT(kNCHW)) {
     in_n = X->dims()[0];

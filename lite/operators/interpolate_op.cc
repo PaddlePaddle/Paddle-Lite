@@ -136,7 +136,7 @@ bool InterpolateOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   return true;
 }
 
-bool InterpolateOp1D::CheckShape() const {
+bool LinearInterpolateOp::CheckShape() const {
   auto* X = param_.X;
   auto* OutSize = param_.OutSize;
   CHECK_OR_FALSE(X);
@@ -150,8 +150,8 @@ bool InterpolateOp1D::CheckShape() const {
   return true;
 }
 
-bool InterpolateOp1D::AttachImpl(const cpp::OpDesc& op_desc,
-                                 lite::Scope* scope) {
+bool LinearInterpolateOp::AttachImpl(const cpp::OpDesc& op_desc,
+                                     lite::Scope* scope) {
   auto X = op_desc.Input("X").front();
   if (op_desc.HasInput("OutSize")) {
     auto out_size_var_names = op_desc.Input("OutSize");
@@ -211,4 +211,4 @@ bool InterpolateOp1D::AttachImpl(const cpp::OpDesc& op_desc,
 
 REGISTER_LITE_OP(nearest_interp, paddle::lite::operators::InterpolateOp);
 REGISTER_LITE_OP(bilinear_interp, paddle::lite::operators::InterpolateOp);
-REGISTER_LITE_OP(linear_interp, paddle::lite::operators::InterpolateOp1D);
+REGISTER_LITE_OP(linear_interp, paddle::lite::operators::LinearInterpolateOp);
