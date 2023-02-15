@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <vector>
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -29,6 +30,10 @@ class MulticlassNmsCompute
   virtual void Run();
 
   virtual ~MulticlassNmsCompute() = default;
+
+ private:
+  std::vector<float> outs_vec;
+  std::vector<int> out_index_vec;
 };
 
 }  // namespace xpu

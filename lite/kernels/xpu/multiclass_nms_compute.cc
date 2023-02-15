@@ -76,8 +76,8 @@ void MulticlassNmsCompute::Run() {
     b = boxes->dims()[1];
     boxes_count = n * b;
   }
-  std::vector<float> outs_vec(boxes_count * out_dim);
-  std::vector<int> out_index_vec(boxes_count);
+  outs_vec.resize(boxes_count * out_dim);
+  out_index_vec.resize(boxes_count);
 
   std::vector<size_t> batch_starts;
 
