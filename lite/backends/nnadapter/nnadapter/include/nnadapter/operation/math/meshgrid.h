@@ -35,7 +35,7 @@ static int meshgrid(const std::vector<T*>& input_datas,
         shape[i] = input_shapes[i][0];
         break;
       default:
-        return NNADAPTER_INVALID_DIMENSIONS;
+        return -1;
     }
   }
   for (int32_t i = 0; i < num; ++i) {
