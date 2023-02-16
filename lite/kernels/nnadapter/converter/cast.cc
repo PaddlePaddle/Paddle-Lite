@@ -36,13 +36,20 @@ int ConvertCast(Converter* converter, OpInfo* op, Scope* scope) {
   std::vector<float> output_scales;
   if (op->HasOutputScale(output_scale_name, true)) {
     output_scales = op->GetOutputScale(output_scale_name, true);
+    out_dtype = 21;  //  INT8 = 21
   }
 
   // Convert to NNAdapter operands and operation
   // Input operand
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   // Dtype operand
-  int32_t dtype = ConvertFluidDataTypeToNNPrecisionCode(out_dtype);
+  int32_t dtype = 0;
+  if (op->HasOutputScale(output_scale_name, true)) {
+    dtype = ConvertFluidDataTypeToNNPrecisionCode(
+        out_dtype, output_scales.data(), 1, 1);
+  } else {
+    dtype = ConvertFluidDataTypeToNNPrecisionCode(out_dtype);
+  }
   auto dtype_operand = converter->AddConstantOperand(dtype);
   // Output operand
   auto output_operand = converter->AddOutputOperand(output_name, output_scales);
