@@ -53,50 +53,18 @@ void XPUEmbeddingWithEltwiseAddCompute::Run() {
                                         std::vector<int>(idx_len, 0));
   std::vector<xdnn::VectorParam<int>> arg_ids_;
 
-  if (param.Mask && param.Mask->data<float>()) {
-    auto& mask_dims = param.Mask->dims();
-    auto batch_size = mask_dims[0];
-    auto pad_seq_len = mask_dims[1];
-    param.PadSeqLen->mutable_data<int>()[0] = pad_seq_len;
-    auto* seq_lod = param.SeqLod;
-    seq_lod->Resize({batch_size + 1});
-    std::vector<int> cpu_seq_lod{0};
+  if (param.SeqLod && param.SeqLod->data<int>()) {
+    auto batch_size = param.SeqLod->dims()[0] - 1;
+    int pad_seq_len = param.PadSeqLen->data<int>()[0];
 
-    const void* mask_ptr = nullptr;
-    if (param.mask_dtype == static_cast<int>(VarDescAPI::VarDataType::INT64)) {
-      mask_ptr = param.Mask->data<int64_t>();
-    } else {
-      mask_ptr = param.Mask->data<float>();
-    }
-
-    for (auto batch_idx = 0; batch_idx < batch_size; batch_idx++) {
-      int cur_batch_seq_len = 0;
-      for (auto seq_idx = 0; seq_idx < pad_seq_len; seq_idx++) {
-        if ((param.mask_dtype ==
-                 static_cast<int>(VarDescAPI::VarDataType::INT64) &&
-             reinterpret_cast<const int64_t*>(
-                 mask_ptr)[batch_idx * pad_seq_len + seq_idx] > 0) ||
-            reinterpret_cast<const float*>(
-                mask_ptr)[batch_idx * pad_seq_len + seq_idx] > 1e-7) {
-          cur_batch_seq_len += 1;
-        } else {
-          break;
-        }
-      }
-      cpu_seq_lod.push_back(cpu_seq_lod.back() + cur_batch_seq_len);
-      CHECK_GT(cur_batch_seq_len, 0);
-    }
-    auto* seq_lod_ptr = seq_lod->mutable_data<int>();
-    memcpy(seq_lod_ptr, cpu_seq_lod.data(), cpu_seq_lod.size() * sizeof(int));
-    idx_len = cpu_seq_lod.back();
+    auto* seq_lod = param.SeqLod->data<int>();
+    idx_len = seq_lod[batch_size];
 
     for (size_t i = 0; i < emb_layer_num; ++i) {
       auto* idx_pad_ptr = param.Ids[i]->data<int64_t>();
       for (auto batch_idx = 0; batch_idx < batch_size; batch_idx++) {
-        for (auto j = 0;
-             j < cpu_seq_lod[batch_idx + 1] - cpu_seq_lod[batch_idx];
-             j++) {
-          int_idx[i][cpu_seq_lod[batch_idx] + j] =
+        for (auto j = 0; j < seq_lod[batch_idx + 1] - seq_lod[batch_idx]; j++) {
+          int_idx[i][seq_lod[batch_idx] + j] =
               static_cast<int>(idx_pad_ptr[batch_idx * pad_seq_len + j]);
         }
       }
@@ -104,6 +72,13 @@ void XPUEmbeddingWithEltwiseAddCompute::Run() {
           xdnn::VectorParam<int>{int_idx[i].data(), idx_len, nullptr});
     }
     param.Out->Resize({1, idx_len, embed_dim});
+    std::vector<int> out_lod0_int;
+    out_lod0_int.insert(
+        out_lod0_int.begin(), seq_lod, seq_lod + batch_size + 1);
+    std::vector<uint64_t> out_lod0(out_lod0_int.begin(), out_lod0_int.end());
+    paddle::lite::LoD out_lod;
+    out_lod.push_back(out_lod0);
+    param.Out->set_lod(out_lod);
   } else {
     for (size_t i = 0; i < emb_layer_num; i++) {
       for (size_t j = 0; j < idx_len; j++) {
@@ -139,10 +114,9 @@ REGISTER_LITE_KERNEL(
     def)
     .BindInput("Ids", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindInput("Tables", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("SeqLod",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("PadSeqLen",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("SeqLod",
-                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("PadSeqLen",
-                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();

@@ -229,10 +229,15 @@ add_operator(mul_grad_op train SRCS mul_grad_op.cc)
 add_operator(sgd_op train SRCS sgd_op.cc)
 add_operator(sequence_pool_grad train SRCS sequence_pool_grad_op.cc)
 
+#for bert encoder
+add_operator(calculate_lod_op extra SRCS calculate_lod_op.cc)
 # Only for XPU
 add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc)
 add_operator(__xpu__softmax_topk_op extra SRCS __xpu__softmax_topk_op.cc)
-add_operator(__xpu__multi_encoder_op extra SRCS __xpu__multi_encoder_op.cc)
+#add_operator(__xpu__multi_encoder_op extra SRCS __xpu__multi_encoder_op.cc)
+add_operator(__xpu__encoder_op extra SRCS __xpu__encoder_op.cc)
+add_operator(__xpu__qk_attention_op extra SRCS __xpu__qk_attention_op.cc)
+add_operator(__xpu__qk_v_attention_op extra SRCS __xpu__qk_v_attention_op.cc)
 add_operator(__xpu__embedding_with_eltwise_add_op extra SRCS __xpu__embedding_with_eltwise_add_op.cc)
 add_operator(__xpu__fc_op extra SRCS __xpu__fc_op.cc)
 add_operator(__xpu__quick_gelu_op extra SRCS __xpu__quick_gelu_op.cc)

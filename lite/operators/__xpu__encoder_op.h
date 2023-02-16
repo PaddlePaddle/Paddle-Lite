@@ -20,10 +20,10 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class XPUMultiEncoderOp : public OpLite {
+class XPUEncoderOp : public OpLite {
  public:
-  XPUMultiEncoderOp() {}
-  explicit XPUMultiEncoderOp(const std::string &op_type) : OpLite(op_type) {}
+  XPUEncoderOp() {}
+  explicit XPUEncoderOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -32,10 +32,10 @@ class XPUMultiEncoderOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "MultiEncoder"; }
+  std::string DebugString() const override { return "Encoder"; }
 
  private:
-  mutable XPUMultiEncoderParam param_;
+  mutable XPUEncoderParam param_;
 };
 
 }  // namespace operators

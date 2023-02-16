@@ -28,29 +28,47 @@ class XPUMultiEncoderSliceLinkFuser : public FuseBase {
   explicit XPUMultiEncoderSliceLinkFuser(bool pre_ln = false)
       : pre_ln_(pre_ln) {}
   void BuildPattern() override {
-    auto* xpu_encoder = OpNode("xpu_encoder", "__xpu__multi_encoder");
-    auto* encoder_out =
-        VarNode("encoder_out")
-            ->assert_is_op_output("__xpu__multi_encoder", "Output")
-            ->assert_only_one_output();
+    auto* xpu_encoder = OpNode("xpu_encoder", "__xpu__encoder");
+    auto* encoder_out = VarNode("encoder_out")
+                            ->assert_is_op_output("__xpu__encoder", "Output")
+                            ->assert_only_one_output();
     PMNode* layer_norm = nullptr;
     PMNode* layer_norm_out = nullptr;
 
-    auto* slice = OpNode("slice", "slice")
-                      ->assert_op_attr_satisfied<std::vector<int>>(
-                          "axes",
-                          [](const std::vector<int>& attr) {
-                            return attr.size() == 1 && attr[0] == 1;
-                          })
-                      ->assert_op_attr_satisfied<std::vector<int>>(
-                          "starts",
-                          [](const std::vector<int>& attr) {
-                            return attr.size() == 1 && attr[0] == 0;
-                          })
-                      ->assert_op_attr_satisfied<std::vector<int>>(
-                          "ends", [](const std::vector<int>& attr) {
-                            return attr.size() == 1 && attr[0] == 1;
-                          });
+    auto* slice =
+        OpNode("slice", "slice")
+            ->assert_op_attr_satisfied<std::vector<int>>(
+                "axes",
+                [](const std::vector<int>& attr) {
+                  return attr.size() == 1 && attr[0] == 1;
+                })
+            ->assert_op_attr_satisfied<std::vector<int>>(
+                "starts",
+                [](const std::vector<int>& attr) {
+                  return attr.size() == 1 && attr[0] == 0;
+                })
+            ->assert_op_attr_satisfied<std::vector<int>>(
+                "ends",
+                [](const std::vector<int>& attr) {
+                  return attr.size() == 1 && attr[0] == 1;
+                })
+            ->assert_node_satisfied([](const Node* node) -> bool {
+              if (!const_cast<Node*>(node)->stmt()->op_info()->HasAttr(
+                      "decrease_axis")) {
+                return true;
+              }
+              std::vector<int> decrease_axis =
+                  const_cast<Node*>(node)
+                      ->stmt()
+                      ->op_info()
+                      ->GetAttr<std::vector<int>>("decrease_axis");
+              if (decrease_axis.size() == 0) {
+                return true;
+              } else if (decrease_axis.size() == 1) {
+                return decrease_axis[0] == 1;
+              }
+              return false;
+            });
     if (pre_ln_) {
       xpu_encoder->assert_op_attr<bool>("norm_before", true);
       encoder_out->assert_is_op_input("layer_norm", "X");
@@ -77,32 +95,27 @@ class XPUMultiEncoderSliceLinkFuser : public FuseBase {
     auto* encoder_instruct = matched.at("xpu_encoder")->stmt();
     auto encoder_op_desc = *encoder_instruct->mutable_op_info();
     auto encoder_op = encoder_instruct->op();
-    auto* slice_instruct = matched.at("slice")->stmt();
-    auto slice_op_desc = *slice_instruct->op_info();
-    std::string slice_out_name = matched.at("slice_out")->arg()->name;
 
-    if (!pre_ln_) {
-      encoder_op_desc.SetOutput("Output", {slice_out_name});
-    }
-    auto slice_axes = slice_op_desc.GetAttr<std::vector<int>>("axes");
-    encoder_op_desc.SetAttr("slice_axes", slice_axes);
-    if (slice_op_desc.HasAttr("starts")) {
-      auto slice_starts = slice_op_desc.GetAttr<std::vector<int>>("starts");
-      encoder_op_desc.SetAttr("slice_starts", slice_starts);
-    }
-    if (slice_op_desc.HasAttr("ends")) {
-      auto slice_ends = slice_op_desc.GetAttr<std::vector<int>>("ends");
-      encoder_op_desc.SetAttr("slice_ends", slice_ends);
-    }
-    if (slice_op_desc.HasAttr("decrease_axis")) {
-      auto slice_decrease_axis =
-          slice_op_desc.GetAttr<std::vector<int>>("decrease_axis");
-      encoder_op_desc.SetAttr("slice_decrease_axis", slice_decrease_axis);
-    }
-    encoder_instruct->ResetOp(encoder_op_desc, encoder_op->valid_places());
-    if (!pre_ln_) {
+    if (pre_ln_) {
+      encoder_op_desc.SetAttr<bool>("has_slice_decrease_axis", false);
+    } else {
       DirectedLink(matched.at("xpu_encoder"), matched.at("slice_out"));
+      encoder_op_desc.SetOutput("Output",
+                                {matched.at("slice_out")->arg()->name});
+      if (matched.at("slice")->stmt()->op_info()->HasAttr("decrease_axis") &&
+          matched.at("slice")
+                  ->stmt()
+                  ->op_info()
+                  ->GetAttr<std::vector<int>>("decrease_axis")
+                  .size() > 0) {
+        encoder_op_desc.SetAttr<bool>("has_slice_decrease_axis", true);
+      } else {
+        encoder_op_desc.SetAttr<bool>("has_slice_decrease_axis", false);
+      }
     }
+    encoder_op_desc.SetAttr<bool>("do_slice", true);
+    encoder_op_desc.SetAttr<bool>("do_padding", false);
+    encoder_instruct->ResetOp(encoder_op_desc, encoder_op->valid_places());
   }
 
  private:
@@ -129,4 +142,4 @@ class XPUMultiEncoderSliceLinkFusePass : public ProgramPass {
 REGISTER_MIR_PASS(__xpu__multi_encoder_slice_link_fuse_pass,
                   paddle::lite::mir::XPUMultiEncoderSliceLinkFusePass)
     .BindTargets({TARGET(kXPU)})
-    .BindKernel("__xpu__multi_encoder");
+    .BindKernel("__xpu__encoder");

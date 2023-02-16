@@ -123,24 +123,15 @@ bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
     param_.input_max =
         scope->FindVar(op_desc.Input("InputMax").front())->GetMutable<Tensor>();
   }
-
-  if (op_desc.HasAttr("enable_int8") && op_desc.GetAttr<bool>("enable_int8")) {
-    param_.enable_int8 = op_desc.GetAttr<bool>("enable_int8");
+  param_.precision = op_desc.GetAttr<std::string>("precision");
+  param_.quant_type = op_desc.GetAttr<std::string>("quant_type");
+  if (param_.quant_type == "per_tensor" || param_.quant_type == "per_channel") {
     // Equivalent use Input0_scale,Filter0_scale
-    param_.quant_input_max =
-        op_desc.GetAttr<std::vector<float>>("Input0_scale")[0];
+    param_.quant_input_max = {
+        op_desc.GetAttr<std::vector<float>>("Input0_scale")[0]};
     param_.weight_max = op_desc.GetAttr<std::vector<float>>("Filter0_scale");
-    param_.quant_output_max =
-        op_desc.GetAttr<std::vector<float>>("Output0_scale")[0];
-    param_.per_channel = op_desc.GetAttr<bool>("per_channel");
-  }
-
-  if (op_desc.HasAttr("enable_int16") &&
-      op_desc.GetAttr<bool>("enable_int16")) {
-    param_.enable_int16 = true;
-    param_.quant_input_max =
-        op_desc.GetAttr<std::vector<float>>("Input0_scale")[0];
-    param_.weight_max = op_desc.GetAttr<std::vector<float>>("Filter0_scale");
+    param_.quant_output_max = {
+        op_desc.GetAttr<std::vector<float>>("Output0_scale")[0]};
   }
 
   return true;
