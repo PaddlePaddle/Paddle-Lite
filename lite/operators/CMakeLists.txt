@@ -247,6 +247,11 @@ add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc)
 add_operator(__xpu__dynamic_lstm_fuse_op extra SRCS __xpu__dynamic_lstm_fuse_op.cc)
 add_operator(__xpu__multi_softmax_op extra SRCS __xpu__multi_softmax_op.cc)
 
+if(LITE_WITH_XFT)
+    add_operator(fusion_decoding_op extra SRCS fusion_decoding_op.cc)
+    add_operator(fusion_unified_decoding_op extra SRCS fusion_unified_decoding_op.cc)
+endif()
+
 add_library(ops STATIC ${OPS_SRC} op_params.cc)
 add_dependencies(ops utils)
 
