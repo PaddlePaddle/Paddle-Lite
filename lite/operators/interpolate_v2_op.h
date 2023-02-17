@@ -52,11 +52,12 @@ class InterpolateV2Op : public OpLite {
   mutable InterpolateParam param_;
 };
 
-class InterpolateV2Op1D : public OpLite {
+class LinearInterpolateV2Op : public OpLite {
  public:
-  InterpolateV2Op1D() {}
+  LinearInterpolateV2Op() {}
 
-  explicit InterpolateV2Op1D(const std::string &op_type) : OpLite(op_type) {}
+  explicit LinearInterpolateV2Op(const std::string &op_type)
+      : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
