@@ -66,6 +66,7 @@
 #include "lite/backends/arm/math/sparse_conv_impl.h"
 #include "lite/backends/arm/math/sparse_semi_conv_impl.h"
 #include "lite/backends/arm/math/split_merge_lod_tenosr.h"
+#include "lite/backends/arm/math/temporal_shift.h"
 
 namespace paddle {
 namespace lite {

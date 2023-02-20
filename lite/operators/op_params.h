@@ -2352,6 +2352,14 @@ struct RoundParam : ParamBase {
   lite::Tensor* Out{};
 };
 
+struct TemporalShiftParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  int seg_num;
+  float shift_ratio{0.25f};
+  std::string data_format{"NCHW"};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
