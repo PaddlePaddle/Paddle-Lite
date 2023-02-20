@@ -93,6 +93,38 @@ enum class IoDirection {
   DtoD,      // Device to device
 };
 
+// Allocator
+using MallocType = void* (*)(size_t);
+using FreeType = void (*)(void*);
+using MemcpyType = void (*)(void*, const void*, size_t);
+class Allocator {
+ public:
+  static Allocator& Global() {
+    static auto* alloc = new Allocator;
+    return *alloc;
+  }
+
+  void SetAllocatorMallocFunc(void* (*malloc)(size_t)) { malloc_ = malloc; }
+
+  void SetAllocatorFreeFunc(void (*free)(void*)) { free_ = free; }
+
+  void SetAllocatorMemcpyFunc(void (*memcpy)(void*, const void*, size_t)) {
+    memcpy_ = memcpy;
+  }
+
+  MallocType GetMallocFunc() { return malloc_; }
+
+  FreeType GetFreeFunc() { return free_; }
+
+  MemcpyType GetMemcpyFunc() { return memcpy_; }
+
+ private:
+  void* (*malloc_)(size_t) = nullptr;
+  void (*free_)(void*) = nullptr;
+  void (*memcpy_)(void*, const void*, size_t) = nullptr;
+  Allocator() = default;
+};
+
 // This interface should be specified by each kind of target.
 template <TargetType Target, typename StreamTy = int, typename EventTy = int>
 class TargetWrapper {

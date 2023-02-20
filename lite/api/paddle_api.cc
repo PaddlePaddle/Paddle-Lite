@@ -379,6 +379,21 @@ void ConfigBase::add_discarded_pass(const std::string pass) {
   return;
 }
 
+// Set external allocator
+void ConfigBase::set_allocator_malloc_func(void *(*malloc)(size_t)) {
+  lite::Allocator::Global().SetAllocatorMallocFunc(malloc);
+}
+
+void ConfigBase::set_allocator_free_func(void (*free)(void *)) {
+  lite::Allocator::Global().SetAllocatorFreeFunc(free);
+}
+
+void ConfigBase::set_allocator_memcpy_func(void (*memcpy)(void *,
+                                                          const void *,
+                                                          size_t)) {
+  lite::Allocator::Global().SetAllocatorMemcpyFunc(memcpy);
+}
+
 #ifdef LITE_WITH_X86
 void ConfigBase::set_x86_math_num_threads(int threads) {
   x86_math_num_threads_ = threads;
@@ -769,6 +784,20 @@ bool MobileConfig::check_fp16_valid() {
   return false;
 #endif
 }
+
+// // Set external allocator
+// void MobileConfig::set_allocator_malloc_func(void* (*malloc)(size_t)) {
+//   lite::Allocator::Global().SetAllocatorMallocFunc(malloc);
+// }
+
+// void MobileConfig::set_allocator_free_func(void (*free)(void*)) {
+//   lite::Allocator::Global().SetAllocatorFreeFunc(free);
+// }
+
+// void MobileConfig::set_allocator_memcpy_func(void (*memcpy)(void*, const
+// void*, size_t)) {
+//   lite::Allocator::Global().SetAllocatorMemcpyFunc(memcpy);
+// }
 
 }  // namespace lite_api
 }  // namespace paddle

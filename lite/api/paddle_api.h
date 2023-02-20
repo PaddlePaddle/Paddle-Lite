@@ -352,6 +352,11 @@ class LITE_API ConfigBase {
   std::map<TargetType, std::shared_ptr<void>> target_configs() const {
     return target_configs_;
   }
+
+  // Set external allocator
+  void set_allocator_malloc_func(void* (*malloc)(size_t));
+  void set_allocator_free_func(void (*free)(void*));
+  void set_allocator_memcpy_func(void (*memcpy)(void*, const void*, size_t));
 };
 
 class LITE_API CxxModelBuffer {
