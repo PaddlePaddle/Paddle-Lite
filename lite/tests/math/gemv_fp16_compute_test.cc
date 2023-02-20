@@ -57,14 +57,14 @@ DEFINE_double(leakey_relu_alpha, 1.0, "leakey relu alpha");
 DEFINE_double(clipped_coef, 6.0, "clipped relu coef");
 
 bool test_gemv_fp16(bool tra,
-                     int m,
-                     int n,
-                     bool has_bias,
-                     int flag_act,
-                     int cls,
-                     int ths,
-                     float six = 6.f,
-                     float alpha = 1.f) {
+                    int m,
+                    int n,
+                    bool has_bias,
+                    int flag_act,
+                    int cls,
+                    int ths,
+                    float six = 6.f,
+                    float alpha = 1.f) {
   Tensor ta;
   Tensor ta_fp32;
   Tensor tb;
