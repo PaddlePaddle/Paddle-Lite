@@ -785,19 +785,5 @@ bool MobileConfig::check_fp16_valid() {
 #endif
 }
 
-// // Set external allocator
-// void MobileConfig::set_allocator_malloc_func(void* (*malloc)(size_t)) {
-//   lite::Allocator::Global().SetAllocatorMallocFunc(malloc);
-// }
-
-// void MobileConfig::set_allocator_free_func(void (*free)(void*)) {
-//   lite::Allocator::Global().SetAllocatorFreeFunc(free);
-// }
-
-// void MobileConfig::set_allocator_memcpy_func(void (*memcpy)(void*, const
-// void*, size_t)) {
-//   lite::Allocator::Global().SetAllocatorMemcpyFunc(memcpy);
-// }
-
 }  // namespace lite_api
 }  // namespace paddle
