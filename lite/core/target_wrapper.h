@@ -15,6 +15,7 @@
 #pragma once
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
 #include "lite/api/paddle_place.h"
@@ -34,6 +35,7 @@ using lite_api::DataLayoutToStr;
 using lite_api::TargetRepr;
 using lite_api::PrecisionRepr;
 using lite_api::DataLayoutRepr;
+using lite_api::AllocatorFuncs;
 
 namespace host {
 const int MALLOC_ALIGN = 64;
@@ -94,9 +96,6 @@ enum class IoDirection {
 };
 
 // Allocator
-using MallocType = void* (*)(size_t);
-using FreeType = void (*)(void*);
-using MemcpyType = void (*)(void*, const void*, size_t);
 class Allocator {
  public:
   static Allocator& Global() {
@@ -104,24 +103,16 @@ class Allocator {
     return *alloc;
   }
 
-  void SetAllocatorMallocFunc(void* (*malloc)(size_t)) { malloc_ = malloc; }
-
-  void SetAllocatorFreeFunc(void (*free)(void*)) { free_ = free; }
-
-  void SetAllocatorMemcpyFunc(void (*memcpy)(void*, const void*, size_t)) {
-    memcpy_ = memcpy;
+  void SetAllocatorFuncsMap(std::map<TargetType, AllocatorFuncs> funcs_map) {
+    funcs_map_ = funcs_map;
   }
 
-  MallocType GetMallocFunc() { return malloc_; }
-
-  FreeType GetFreeFunc() { return free_; }
-
-  MemcpyType GetMemcpyFunc() { return memcpy_; }
+  std::map<TargetType, AllocatorFuncs> GetAllocatorFuncsMap() {
+    return funcs_map_;
+  }
 
  private:
-  void* (*malloc_)(size_t) = nullptr;
-  void (*free_)(void*) = nullptr;
-  void (*memcpy_)(void*, const void*, size_t) = nullptr;
+  std::map<TargetType, AllocatorFuncs> funcs_map_;
   Allocator() = default;
 };
 

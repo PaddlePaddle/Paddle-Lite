@@ -23,10 +23,6 @@ const int MALLOC_ALIGN = 64;
 const int MALLOC_EXTRA = 64;
 
 void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
-  if (lite::Allocator::Global().GetMallocFunc()) {
-    auto r = lite::Allocator::Global().GetMallocFunc()(size);
-    return r;
-  }
   size_t offset = sizeof(void*) + MALLOC_ALIGN - 1;
   CHECK(size);
   CHECK_GT(offset + size, size);
@@ -45,10 +41,6 @@ void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
 
 void TargetWrapper<TARGET(kHost)>::Free(void* ptr) {
   if (ptr) {
-    if (lite::Allocator::Global().GetFreeFunc()) {
-      lite::Allocator::Global().GetFreeFunc()(ptr);
-      return;
-    }
     free(static_cast<void**>(ptr)[-1]);
   }
 }
@@ -60,10 +52,6 @@ void TargetWrapper<TARGET(kHost)>::MemcpySync(void* dst,
   if (size > 0) {
     CHECK(dst) << "Error: the destination of MemcpySync can not be nullptr.";
     CHECK(src) << "Error: the source of MemcpySync can not be nullptr.";
-    if (lite::Allocator::Global().GetMemcpyFunc()) {
-      lite::Allocator::Global().GetMemcpyFunc()(dst, src, size);
-      return;
-    }
     memcpy(dst, src, size);
   }
 }

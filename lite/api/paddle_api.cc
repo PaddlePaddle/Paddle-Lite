@@ -380,18 +380,9 @@ void ConfigBase::add_discarded_pass(const std::string pass) {
 }
 
 // Set external allocator
-void ConfigBase::set_allocator_malloc_func(void *(*malloc)(size_t)) {
-  lite::Allocator::Global().SetAllocatorMallocFunc(malloc);
-}
-
-void ConfigBase::set_allocator_free_func(void (*free)(void *)) {
-  lite::Allocator::Global().SetAllocatorFreeFunc(free);
-}
-
-void ConfigBase::set_allocator_memcpy_func(void (*memcpy)(void *,
-                                                          const void *,
-                                                          size_t)) {
-  lite::Allocator::Global().SetAllocatorMemcpyFunc(memcpy);
+void ConfigBase::set_allocator(
+    std::map<TargetType, AllocatorFuncs> allocator_funcs_map) {
+  lite::Allocator::Global().SetAllocatorFuncsMap(allocator_funcs_map);
 }
 
 #ifdef LITE_WITH_X86

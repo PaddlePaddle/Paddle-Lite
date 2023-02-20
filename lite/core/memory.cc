@@ -24,96 +24,126 @@ namespace lite {
 
 void* TargetMalloc(TargetType target, size_t size) {
   void* data{nullptr};
-  switch (target) {
-    case TargetType::kHost:
-    case TargetType::kX86:
-    case TargetType::kARM:
-      data = TargetWrapper<TARGET(kHost)>::Malloc(size);
-      break;
+  if (lite::Allocator::Global().GetAllocatorFuncsMap().count(target)) {
+    auto allocator_malloc_func =
+        lite::Allocator::Global().GetAllocatorFuncsMap()[target].malloc;
+    if (allocator_malloc_func) {
+      data = allocator_malloc_func(size);
+    } else {
+      LOG(FATAL) << "The [malloc] function of Allocator is not set";
+    }
+  } else {
+    switch (target) {
+      case TargetType::kHost:
+      case TargetType::kX86:
+      case TargetType::kARM:
+        data = TargetWrapper<TARGET(kHost)>::Malloc(size);
+        break;
 #ifdef LITE_WITH_OPENCL
-    case TargetType::kOpenCL:
-      data = TargetWrapperCL::Malloc(size);
-      break;
+      case TargetType::kOpenCL:
+        data = TargetWrapperCL::Malloc(size);
+        break;
 #endif  // LITE_WITH_OPENCL
 #ifdef LITE_WITH_XPU
-    case TargetType::kXPU:
-      data = TargetWrapperXPU::Malloc(size);
-      break;
+      case TargetType::kXPU:
+        data = TargetWrapperXPU::Malloc(size);
+        break;
 #endif  // LITE_WITH_XPU
 #ifdef LITE_WITH_METAL
-    case TargetType::kMetal: {
-      data = TargetWrapperMetal::Malloc(size);
-      break;
-    }
+      case TargetType::kMetal: {
+        data = TargetWrapperMetal::Malloc(size);
+        break;
+      }
 #endif  // LITE_WITH_METAL
-    default:
-      LOG(FATAL) << "Unknown supported target " << TargetToStr(target);
+      default:
+        LOG(FATAL) << "Unknown supported target " << TargetToStr(target);
+    }
   }
   return data;
 }
 
 void TargetFree(TargetType target, void* data, std::string free_flag) {
-  switch (target) {
-    case TargetType::kHost:
-    case TargetType::kX86:
-    case TargetType::kARM:
-      TargetWrapper<TARGET(kHost)>::Free(data);
-      break;
+  if (lite::Allocator::Global().GetAllocatorFuncsMap().count(target)) {
+    auto allocator_free_func =
+        lite::Allocator::Global().GetAllocatorFuncsMap()[target].free;
+    if (allocator_free_func) {
+      allocator_free_func(data);
+    } else {
+      LOG(FATAL) << "The [free] function of Allocator is not set";
+    }
+  } else {
+    switch (target) {
+      case TargetType::kHost:
+      case TargetType::kX86:
+      case TargetType::kARM:
+        TargetWrapper<TARGET(kHost)>::Free(data);
+        break;
 
 #ifdef LITE_WITH_OPENCL
-    case TargetType::kOpenCL:
-      if (free_flag == "cl_use_image2d_") {
-        TargetWrapperCL::FreeImage(data);
-      } else {
-        TargetWrapperCL::Free(data);
-      }
-      break;
+      case TargetType::kOpenCL:
+        if (free_flag == "cl_use_image2d_") {
+          TargetWrapperCL::FreeImage(data);
+        } else {
+          TargetWrapperCL::Free(data);
+        }
+        break;
 #endif  // LITE_WITH_OPENCL
 #ifdef LITE_WITH_XPU
-    case TargetType::kXPU:
-      TargetWrapperXPU::Free(data);
-      break;
+      case TargetType::kXPU:
+        TargetWrapperXPU::Free(data);
+        break;
 #endif  // LITE_WITH_XPU
 #ifdef LITE_WITH_METAL
-    case TargetType::kMetal:
-      if (free_flag == "metal_use_image2d_") {
-        TargetWrapperMetal::FreeImage(data);
-      } else {
-        TargetWrapperMetal::Free(data);
-      }
-      break;
+      case TargetType::kMetal:
+        if (free_flag == "metal_use_image2d_") {
+          TargetWrapperMetal::FreeImage(data);
+        } else {
+          TargetWrapperMetal::Free(data);
+        }
+        break;
 #endif
-    default:
-      LOG(FATAL) << "Unknown type";
+      default:
+        LOG(FATAL) << "Unknown supported target:" << TargetToStr(target);
+    }
   }
 }
 
 void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
-  switch (target) {
-    case TargetType::kHost:
-    case TargetType::kX86:
-    case TargetType::kARM:
-      TargetWrapper<TARGET(kHost)>::MemcpySync(
-          dst, src, size, IoDirection::DtoD);
-      break;
+  if (lite::Allocator::Global().GetAllocatorFuncsMap().count(target)) {
+    auto allocator_memcpy_func =
+        lite::Allocator::Global().GetAllocatorFuncsMap()[target].memcpy;
+    if (allocator_memcpy_func) {
+      allocator_memcpy_func(dst, src, size);
+    } else {
+      LOG(FATAL) << "The [memcpy] function of Allocator is not set";
+    }
+  } else {
+    switch (target) {
+      case TargetType::kHost:
+      case TargetType::kX86:
+      case TargetType::kARM:
+        TargetWrapper<TARGET(kHost)>::MemcpySync(
+            dst, src, size, IoDirection::DtoD);
+        break;
 
 #ifdef LITE_WITH_XPU
-    case TargetType::kXPU:
-      TargetWrapperXPU::MemcpySync(dst, src, size, IoDirection::HtoD);
-      break;
+      case TargetType::kXPU:
+        TargetWrapperXPU::MemcpySync(dst, src, size, IoDirection::HtoD);
+        break;
 #endif
 #ifdef LITE_WITH_OPENCL
-    case TargetType::kOpenCL:
-      TargetWrapperCL::MemcpySync(dst, src, size, IoDirection::DtoD);
-      break;
+      case TargetType::kOpenCL:
+        TargetWrapperCL::MemcpySync(dst, src, size, IoDirection::DtoD);
+        break;
 #endif  // LITE_WITH_OPENCL
 #ifdef LITE_WITH_Metal
-    case TargetType::kMetal:
-      TargetWrapperMetal::MemcpySync(dst, src, size, IoDirection::DtoD);
-      break;
+      case TargetType::kMetal:
+        TargetWrapperMetal::MemcpySync(dst, src, size, IoDirection::DtoD);
+        break;
 #endif
-    default:
-      LOG(FATAL) << "unsupported type";
+      default:
+        LOG(FATAL) << "Unknown supported target:" << TargetToStr(target);
+    }
   }
 }
 

@@ -354,9 +354,7 @@ class LITE_API ConfigBase {
   }
 
   // Set external allocator
-  void set_allocator_malloc_func(void* (*malloc)(size_t));
-  void set_allocator_free_func(void (*free)(void*));
-  void set_allocator_memcpy_func(void (*memcpy)(void*, const void*, size_t));
+  void set_allocator(std::map<TargetType, AllocatorFuncs> allocator_funcs_map);
 };
 
 class LITE_API CxxModelBuffer {
