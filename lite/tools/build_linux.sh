@@ -203,7 +203,7 @@ function init_cmake_mutable_options {
                         -DXPU_XRE_URL=$KUNLUNXIN_XPU_XRE_URL \
                         -DXPU_SDK_ENV=$KUNLUNXIN_XPU_SDK_ENV \
                         -DXPU_SDK_ROOT=$KUNLUNXIN_XPU_SDK_ROOT \
-                        -DLITE_WITH_XFT=$WITH_KUNLUNXIN_XFT \
+                        -DXPU_WITH_XFT=$WITH_KUNLUNXIN_XFT \
                         -DXPU_XFT_ENV=$KUNLUNXIN_XFT_ENV \
                         -DXPU_XFT_URL=$KUNLUNXIN_XFT_URL \
                         -DXPU_XFT_ROOT=$KUNLUNXIN_XFT_ROOT \
