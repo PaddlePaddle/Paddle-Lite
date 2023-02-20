@@ -1,4 +1,4 @@
-// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,25 +63,6 @@ void TransposeCompute_1to3(int8_t* input,
   }
 }
 
-void TransposeCompute_0213(int8_t* input,
-                           int8_t* output,
-                           int input_n,
-                           int input_c,
-                           int intput_h,
-                           int intput_w) {
-  int out_hw_stride = input_c * intput_w;
-  for (int n = 0; n < input_n; n++) {
-    for (int c = 0; c < input_c; c++) {
-      for (int h = 0; h < intput_h; h++) {
-        memcpy(output + h * out_hw_stride + c * intput_w,
-               input,
-               intput_w * sizeof(int8_t));
-        input += intput_w;
-      }
-    }
-  }
-}
-
 template <>
 void FusedAttentionCompute<PRECISION(kInt8)>::PrepareForRun() {
   ReInitWhenNeeded();
@@ -139,8 +120,7 @@ void FusedAttentionCompute<PType>::ReInitWhenNeeded() {
   fc2_m_ = softmax_out_dim_[2];
   fc2_n_ = transpose_out_dim_[3];
   fc2_k_ = softmax_out_dim_[3];
-  fc2_out_dim_ =
-      DDim({softmax_out_dim_[0], softmax_out_dim_[1], fc2_m_, fc2_n_});
+
   if (param.enable_int8) {
     for (int i = 0; i < fc2_n_; i++) {
       fc2_scale_.push_back(param.fc2_scale.data()[0]);
@@ -155,18 +135,11 @@ template <>
 void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto* input0_data = param.input0->data<float>();
+  auto* input0_data = param.input0->data<int8_t>();
   auto* input1_data = param.input1->data<float>();
-  auto* o_data = param.output->mutable_data<int8_t>();
+  auto* o_data = param.output->mutable_data<float>();
   auto input0_dims = param.input0->dims();
-
-  Tensor calib_t;
-  calib_t.Resize(input0_dims);
-  calib_t.mutable_data<int8_t>();
-  auto* calib_out = const_cast<int8_t*>(calib_t.data<int8_t>());
-  auto scale = param.calib0_scale;
-  lite::arm::math::fp32_to_int8(
-      input0_data, calib_out, scale.data(), 1, 1, input0_dims.production());
+  auto out_dims = param.output->dims();
 
   // fc + dequant_scale, bias, quant_scale
   Tensor fc_t;
@@ -180,7 +153,7 @@ void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
                                    fc_m_,
                                    fc_n_,
                                    fc_k_,
-                                   calib_out,
+                                   input0_data,
                                    w_data,
                                    fc_out,
                                    b_data,
@@ -242,15 +215,12 @@ void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
       fc1_out_dim_.Slice(axis + 1, fc1_out_dim_.size()).production();
   int axis_size = fc1_out_dim_[axis];
 
-  if (inner_num % 8 == 0) {
-    lite::arm::math::softmax_inner8(
-        fc1_out, softmax_out, axis_size, inner_num, outer_num);
-  } else if (inner_num % 4 == 0) {
-    lite::arm::math::softmax_inner4(
-        fc1_out, softmax_out, axis_size, inner_num, outer_num);
+  if (axis_size > 4) {
+    lite::arm::math::softmax_inner1_large_axis(
+        fc1_out, softmax_out, outer_num, axis_size);
   } else {
-    lite::arm::math::softmax_basic(
-        fc1_out, softmax_out, axis_size, inner_num, outer_num);
+    lite::arm::math::softmax_inner1_small_axis(
+        fc1_out, softmax_out, outer_num, axis_size);
   }
   // calib fp32 -> int8
   Tensor calib1_t;
@@ -264,36 +234,25 @@ void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
                                 1,
                                 softmax_out_dim_.production());
 
-  // matmul_v2 fuse calib -> (int8 -> fp32)
-  Tensor matmul2_t;
-  matmul2_t.Resize(fc2_out_dim_);
-  matmul2_t.mutable_data<int8_t>();
-  auto* matmul2_out = const_cast<int8_t*>(matmul2_t.data<int8_t>());
   int fc2_x_inner = fc2_m_ * fc2_k_;
   int fc2_y_inner = fc2_k_ * fc2_n_;
   int fc2_out_inner = fc2_m_ * fc2_n_;
-  for (size_t i = 0; i < fc2_out_dim_[1]; ++i) {
-    lite::arm::math::gemm_s8<int8_t>(false,
-                                     false,
-                                     fc2_m_,
-                                     fc2_n_,
-                                     fc2_k_,
-                                     calib1_out + i * fc2_x_inner,
-                                     v2 + i * fc2_y_inner,
-                                     matmul2_out + i * fc2_out_inner,
-                                     nullptr,
-                                     false,
-                                     lite::arm::math::GemmNBias,
-                                     fc2_scale_.data(),
-                                     act_param_,
-                                     &ctx);
+  for (size_t i = 0; i < out_dims[1]; ++i) {
+    lite::arm::math::gemm_s8<float>(false,
+                                    false,
+                                    fc2_m_,
+                                    fc2_n_,
+                                    fc2_k_,
+                                    calib1_out + i * fc2_x_inner,
+                                    v2 + i * fc2_y_inner,
+                                    o_data + i * fc2_out_inner,
+                                    nullptr,
+                                    false,
+                                    lite::arm::math::GemmNBias,
+                                    fc2_scale_.data(),
+                                    act_param_,
+                                    &ctx);
   }
-  TransposeCompute_0213(matmul2_out,
-                        o_data,
-                        fc2_out_dim_[0],
-                        fc2_out_dim_[1],
-                        fc2_out_dim_[2],
-                        fc2_out_dim_[3]);
 }
 
 }  // namespace arm
@@ -305,10 +264,10 @@ typedef paddle::lite::kernels::arm::FusedAttentionCompute<PRECISION(kInt8)>
 REGISTER_LITE_KERNEL(
     fused_attention, kARM, kInt8, kNCHW, FusedAttentionCompute_Int8, def)
     .BindInput("Input0",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindInput("Input1",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .Finalize();

@@ -1,4 +1,4 @@
-// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -101,8 +101,10 @@ bool FusedAttentionOpLite::InferShape() {
   } else {
     CHECK_EQ(capacity, input_size) << "Invalid shape is given.";
   }
-
-  lite::DDim out_dims = x_dims;
+  lite::DDim out_dims = lite::DDim({reshape_output_dims[0],
+                                    reshape_output_dims[2],
+                                    reshape_output_dims[1],
+                                    reshape_output_dims[3]});
   param_.output->Resize(out_dims);
 
   // share LoD

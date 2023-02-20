@@ -1,4 +1,4 @@
-// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,20 +27,12 @@ void TransformerAttentionFusePass::Apply(
     const std::unique_ptr<SSAGraph>& graph) {
   fusion::TransformerAttentionFuser fuser;
   bool has_int8 = false;
-  bool has_arm = false;
-  bool has_opencl = false;
   for (auto& place : graph->valid_places()) {
     if (place.precision == PRECISION(kInt8)) {
       has_int8 = true;
     }
-    if (place.target == TARGET(kARM)) {
-      has_arm = true;
-    }
-    if (place.target == TARGET(kOpenCL)) {
-      has_opencl = true;
-    }
   }
-  if ((has_arm && has_int8)) {
+  if ((has_int8)) {
     fuser(graph.get());
   } else {
     return;
@@ -51,7 +43,9 @@ void TransformerAttentionFusePass::Apply(
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(lite_transformer_attention_fuse_pass,
+REGISTER_MIR_PASS(transformer_attention_fuse_pass,
                   paddle::lite::mir::TransformerAttentionFusePass)
-    .BindTargets({TARGET(kOpenCL), TARGET(kARM)})
+    .BindTargets({TARGET(kARM)})
+    .ExcludeTargets(
+        {TARGET(kXPU), TARGET(kOpenCL), TARGET(kMetal), TARGET(kNNAdapter)})
     .BindKernel("fused_attention");

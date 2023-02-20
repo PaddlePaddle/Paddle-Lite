@@ -1,4 +1,4 @@
-// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,22 +50,10 @@ namespace fusion {
 *                       matmul_v2
 *                           |
 *                           |
-*                       transpose2
-*                           |
-*                           |
-*                        reshape2
-*                           |
-*                           |
 *                         output
 */
 
 void TransformerAttentionFuser::BuildPattern() {
-  auto transpose_attr_teller = [](const Node* node) -> bool {
-    auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
-    auto axis = op_desc.GetAttr<std::vector<int>>("axis");
-    auto res = (axis[0] == 0 && axis[1] == 2 && axis[2] == 1 && axis[3] == 3);
-    return res;
-  };
   auto matmul0_attr_teller = [](const Node* node) -> bool {
     auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
     auto trans_x = op_desc.GetAttr<bool>("trans_x");
@@ -111,40 +99,30 @@ void TransformerAttentionFuser::BuildPattern() {
   auto* reshape2_out =
       VarNode("reshape2_out")->assert_is_op_output("reshape2", "Out");
 
-  auto* reshape3 = OpNode("reshape3", "reshape2");
-
   auto* xshape0 = VarNode("xshape0")->assert_is_op_output("reshape2", "XShape");
   auto* xshape1 = VarNode("xshape1")->assert_is_op_output("reshape2", "XShape");
   auto* xshape2 = VarNode("xshape2")->assert_is_op_output("reshape2", "XShape");
-  auto* xshape6 = VarNode("xshape6")->assert_is_op_output("reshape2", "XShape");
   // transpose2
   auto* transpose0 = OpNode("transpose0", "transpose2")
-                         ->assert_node_satisfied(transpose_attr_teller);
+                         ->assert_op_attr("axis", std::vector<int>{0, 2, 1, 3});
   auto* transpose0_out =
       VarNode("transpose0_out")->assert_is_op_output("transpose2", "Out");
   auto* xshape3 =
       VarNode("xshape3")->assert_is_op_output("transpose2", "XShape");
 
   auto* transpose1 = OpNode("transpose1", "transpose2")
-                         ->assert_node_satisfied(transpose_attr_teller);
+                         ->assert_op_attr("axis", std::vector<int>{0, 2, 1, 3});
   auto* transpose1_out =
       VarNode("transpose1_out")->assert_is_op_output("transpose2", "Out");
   auto* xshape4 =
       VarNode("xshape4")->assert_is_op_output("transpose2", "XShape");
 
   auto* transpose2 = OpNode("transpose2", "transpose2")
-                         ->assert_node_satisfied(transpose_attr_teller);
+                         ->assert_op_attr("axis", std::vector<int>{0, 2, 1, 3});
   auto* transpose2_out =
       VarNode("transpose2_out")->assert_is_op_output("transpose2", "Out");
   auto* xshape5 =
       VarNode("xshape5")->assert_is_op_output("transpose2", "XShape");
-
-  auto* transpose3 = OpNode("transpose3", "transpose2")
-                         ->assert_node_satisfied(transpose_attr_teller);
-  auto* transpose3_out =
-      VarNode("transpose3_out")->assert_is_op_output("transpose2", "Out");
-  auto* xshape7 =
-      VarNode("xshape7")->assert_is_op_output("transpose2", "XShape");
 
   // scale
   auto* scale0 = OpNode("scale0", "scale");
@@ -171,8 +149,6 @@ void TransformerAttentionFuser::BuildPattern() {
   // matmul_v2
   auto* matmul1 = OpNode("matmul1", "matmul_v2")
                       ->assert_node_satisfied(matmul1_attr_teller);
-  auto* matmul1_out =
-      VarNode("matmul1_out")->assert_is_op_output("matmul_v2", "Out");
 
   auto* Out = VarNode("Out");
 
@@ -188,11 +164,9 @@ void TransformerAttentionFuser::BuildPattern() {
   *reshape0 >> *xshape0;
   *reshape1 >> *xshape1;
   *reshape2 >> *xshape2;
-  *reshape3 >> *xshape6;
   *transpose0 >> *xshape3;
   *transpose1 >> *xshape4;
   *transpose2 >> *xshape5;
-  *transpose3 >> *xshape7;
 
   std::vector<PMNode*> matmul0_inputs{scale0_out, transpose1_out};
   matmul0_inputs >> *matmul0 >> *matmul0_out;
@@ -200,8 +174,7 @@ void TransformerAttentionFuser::BuildPattern() {
   add0_inputs >> *add >> *add0_out >> *softmax0 >> *softmax0_out;
 
   std::vector<PMNode*> matmul1_inputs{softmax0_out, transpose2_out};
-  matmul1_inputs >> *matmul1 >> *matmul1_out >> *transpose3 >>
-      *transpose3_out >> *reshape3 >> *Out;
+  matmul1_inputs >> *matmul1 >> *Out;
 
   xshape0->AsIntermediate();
   xshape1->AsIntermediate();
@@ -209,8 +182,6 @@ void TransformerAttentionFuser::BuildPattern() {
   xshape3->AsIntermediate();
   xshape4->AsIntermediate();
   xshape5->AsIntermediate();
-  xshape6->AsIntermediate();
-  xshape7->AsIntermediate();
   fc0->AsIntermediate();
   fc0_out->AsIntermediate();
   reshape0->AsIntermediate();
@@ -238,10 +209,6 @@ void TransformerAttentionFuser::BuildPattern() {
   softmax0->AsIntermediate();
   softmax0_out->AsIntermediate();
   matmul1->AsIntermediate();
-  matmul1_out->AsIntermediate();
-  transpose3->AsIntermediate();
-  transpose3_out->AsIntermediate();
-  reshape3->AsIntermediate();
 }
 
 template <typename T>
@@ -352,24 +319,19 @@ void TransformerAttentionFuser::InsertNewNode(SSAGraph* graph,
   auto fc0_op_desc = matched.at("fc0")->stmt()->op_info();
   auto fc1_op_desc = matched.at("fc1")->stmt()->op_info();
   auto fc2_op_desc = matched.at("fc2")->stmt()->op_info();
-  bool enable_int8 = fc0_op_desc->HasAttr("enable_int8") ? true : false;
+  bool enable_int8 = fc0_op_desc->HasAttr("enable_int8") &&
+                     fc0_op_desc->GetAttr<bool>("enable_int8");
   // concat fc0_w fc1_w fc2_w
-  auto weight0_t = scope->FindVar(matched.at("fc0_w")->arg()->name)
-                       ->GetMutable<lite::Tensor>();
-  auto weight1_t = scope->FindVar(matched.at("fc1_w")->arg()->name)
-                       ->GetMutable<lite::Tensor>();
-  auto weight2_t = scope->FindVar(matched.at("fc2_w")->arg()->name)
-                       ->GetMutable<lite::Tensor>();
+  auto weight0_t = scope->FindMutableTensor(matched.at("fc0_w")->arg()->name);
+  auto weight1_t = scope->FindMutableTensor(matched.at("fc1_w")->arg()->name);
+  auto weight2_t = scope->FindMutableTensor(matched.at("fc2_w")->arg()->name);
   auto weight0_dims = weight0_t->dims();
   Tensor weight_tensor;
   weight_tensor.Resize({weight0_dims[0], weight0_dims[1] * 3});
   // concat fc0_bias fc1_bias fc2_bias
-  auto bias0_t = scope->FindVar(matched.at("fc0_bias")->arg()->name)
-                     ->GetMutable<lite::Tensor>();
-  auto bias1_t = scope->FindVar(matched.at("fc1_bias")->arg()->name)
-                     ->GetMutable<lite::Tensor>();
-  auto bias2_t = scope->FindVar(matched.at("fc2_bias")->arg()->name)
-                     ->GetMutable<lite::Tensor>();
+  auto bias0_t = scope->FindMutableTensor(matched.at("fc0_bias")->arg()->name);
+  auto bias1_t = scope->FindMutableTensor(matched.at("fc1_bias")->arg()->name);
+  auto bias2_t = scope->FindMutableTensor(matched.at("fc2_bias")->arg()->name);
   auto bias0_dims = bias0_t->dims();
   Tensor bias_tensor;
   bias_tensor.Resize({bias0_dims[0] * 3});
@@ -378,10 +340,8 @@ void TransformerAttentionFuser::InsertNewNode(SSAGraph* graph,
   auto matmul1_op_desc = matched.at("matmul1")->stmt()->op_info();
   auto scale0_op_desc = matched.at("scale0")->stmt()->op_info();
   auto scale0_scale = scale0_op_desc->GetAttr<float>("scale");
-  auto reshape3_op_desc = matched.at("reshape3")->stmt()->op_info();
   if (enable_int8) {
-    op_desc.SetAttr<bool>("enable_int8",
-                          fc0_op_desc->GetAttr<bool>("enable_int8"));
+    op_desc.SetAttr<bool>("enable_int8", true);
     op_desc.SetAttr<std::vector<float>>(
         "calib0_scale", fc0_op_desc->GetAttr<std::vector<float>>("X0_scale"));
     ComputeNewWeight<int8_t>(&weight_tensor,
@@ -442,11 +402,8 @@ void TransformerAttentionFuser::InsertNewNode(SSAGraph* graph,
     fc1_scale_data.push_back(matmul0_scale_x[0] * matmul0_scale_y[0]);
     op_desc.SetAttr<std::vector<float>>("fc1_scale", fc1_scale_data);
     // fc 2 == matmul 1
-    auto reshape3_scale =
-        reshape3_op_desc->GetAttr<std::vector<float>>("X0_scale");
     std::vector<float> fc2_scale_data;
-    fc2_scale_data.push_back(matmul1_scale_x[0] * matmul1_scale_y[0] /
-                             reshape3_scale[0]);
+    fc2_scale_data.push_back(matmul1_scale_x[0] * matmul1_scale_y[0]);
     op_desc.SetAttr<std::vector<float>>("fc2_scale", fc2_scale_data);
   } else {
     ComputeNewWeight<float>(&weight_tensor,
