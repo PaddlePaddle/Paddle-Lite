@@ -284,7 +284,7 @@ struct LITE_API Place {
   std::string DebugString() const;
 };
 
-struct LITE_API AllocatorFuncs {
+struct LITE_API CustomAllocator {
   void* (*malloc)(size_t) = nullptr;
   void (*free)(void*) = nullptr;
   void (*memcpy)(void*, const void*, size_t) = nullptr;

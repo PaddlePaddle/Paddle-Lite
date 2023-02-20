@@ -24,14 +24,8 @@ namespace lite {
 
 void* TargetMalloc(TargetType target, size_t size) {
   void* data{nullptr};
-  if (lite::Allocator::Global().GetAllocatorFuncsMap().count(target)) {
-    auto allocator_malloc_func =
-        lite::Allocator::Global().GetAllocatorFuncsMap()[target].malloc;
-    if (allocator_malloc_func) {
-      data = allocator_malloc_func(size);
-    } else {
-      LOG(FATAL) << "The [malloc] function of Allocator is not set";
-    }
+  if (lite::Allocator::Global().GetCustomAllocator().malloc) {
+    data = lite::Allocator::Global().GetCustomAllocator().malloc(size);
   } else {
     switch (target) {
       case TargetType::kHost:
@@ -63,14 +57,8 @@ void* TargetMalloc(TargetType target, size_t size) {
 }
 
 void TargetFree(TargetType target, void* data, std::string free_flag) {
-  if (lite::Allocator::Global().GetAllocatorFuncsMap().count(target)) {
-    auto allocator_free_func =
-        lite::Allocator::Global().GetAllocatorFuncsMap()[target].free;
-    if (allocator_free_func) {
-      allocator_free_func(data);
-    } else {
-      LOG(FATAL) << "The [free] function of Allocator is not set";
-    }
+  if (lite::Allocator::Global().GetCustomAllocator().free) {
+    lite::Allocator::Global().GetCustomAllocator().free(data);
   } else {
     switch (target) {
       case TargetType::kHost:
@@ -109,14 +97,8 @@ void TargetFree(TargetType target, void* data, std::string free_flag) {
 }
 
 void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
-  if (lite::Allocator::Global().GetAllocatorFuncsMap().count(target)) {
-    auto allocator_memcpy_func =
-        lite::Allocator::Global().GetAllocatorFuncsMap()[target].memcpy;
-    if (allocator_memcpy_func) {
-      allocator_memcpy_func(dst, src, size);
-    } else {
-      LOG(FATAL) << "The [memcpy] function of Allocator is not set";
-    }
+  if (lite::Allocator::Global().GetCustomAllocator().malloc) {
+    lite::Allocator::Global().GetCustomAllocator().memcpy(dst, src, size);
   } else {
     switch (target) {
       case TargetType::kHost:

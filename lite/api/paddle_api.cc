@@ -380,9 +380,10 @@ void ConfigBase::add_discarded_pass(const std::string pass) {
 }
 
 // Set external allocator
-void ConfigBase::set_allocator(
-    std::map<TargetType, AllocatorFuncs> allocator_funcs_map) {
-  lite::Allocator::Global().SetAllocatorFuncsMap(allocator_funcs_map);
+void ConfigBase::set_custom_allocator(TargetType target_type,
+                                      CustomAllocator custom_allocator) {
+  // TODO(shentanyue): TargetType will be supported in the future.
+  lite::Allocator::Global().SetCustomAllocator(custom_allocator);
 }
 
 #ifdef LITE_WITH_X86

@@ -35,7 +35,7 @@ using lite_api::DataLayoutToStr;
 using lite_api::TargetRepr;
 using lite_api::PrecisionRepr;
 using lite_api::DataLayoutRepr;
-using lite_api::AllocatorFuncs;
+using lite_api::CustomAllocator;
 
 namespace host {
 const int MALLOC_ALIGN = 64;
@@ -103,16 +103,14 @@ class Allocator {
     return *alloc;
   }
 
-  void SetAllocatorFuncsMap(std::map<TargetType, AllocatorFuncs> funcs_map) {
-    funcs_map_ = funcs_map;
+  void SetCustomAllocator(CustomAllocator custom_allocator) {
+    custom_allocator_ = custom_allocator;
   }
 
-  std::map<TargetType, AllocatorFuncs> GetAllocatorFuncsMap() {
-    return funcs_map_;
-  }
+  CustomAllocator GetCustomAllocator() { return custom_allocator_; }
 
  private:
-  std::map<TargetType, AllocatorFuncs> funcs_map_;
+  CustomAllocator custom_allocator_;
   Allocator() = default;
 };
 

@@ -354,7 +354,8 @@ class LITE_API ConfigBase {
   }
 
   // Set external allocator
-  void set_allocator(std::map<TargetType, AllocatorFuncs> allocator_funcs_map);
+  void set_custom_allocator(TargetType target_type,
+                            CustomAllocator custom_allocator);
 };
 
 class LITE_API CxxModelBuffer {
