@@ -15,7 +15,6 @@
 #pragma once
 #include <cstring>
 #include <iostream>
-#include <map>
 #include <sstream>
 #include <string>
 #include "lite/api/paddle_place.h"

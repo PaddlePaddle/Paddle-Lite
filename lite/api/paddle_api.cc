@@ -379,7 +379,7 @@ void ConfigBase::add_discarded_pass(const std::string pass) {
   return;
 }
 
-// Set external allocator
+// Set external custom allocator
 void ConfigBase::set_custom_allocator(TargetType target_type,
                                       CustomAllocator custom_allocator) {
   // TODO(shentanyue): TargetType will be supported in the future.
