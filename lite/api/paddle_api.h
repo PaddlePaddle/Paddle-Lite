@@ -353,7 +353,7 @@ class LITE_API ConfigBase {
     return target_configs_;
   }
 
-  // Set external allocator
+  // Set external custom allocator
   void set_custom_allocator(TargetType target_type,
                             CustomAllocator custom_allocator);
 };
