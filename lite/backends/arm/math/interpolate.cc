@@ -497,6 +497,133 @@ void nearest_interp(const float* src,
   }
 }
 
+void linear_interp(const float* din,
+                   float* dout,
+                   float ratio_w,
+                   int in_w,
+                   int n,
+                   int c,
+                   int out_w,
+                   bool align_corners,
+                   int align_mode,
+                   DataLayoutType data_layout) {
+  bool align_flag = (align_mode == 0 && !align_corners);
+  std::vector<int> vx_w, vx_e;
+  std::vector<float> vd_w, vd_e;
+  vx_w.reserve(out_w);
+  vx_e.reserve(out_w);
+  vd_w.reserve(out_w);
+  vd_e.reserve(out_w);
+  for (int l = 0; l < out_w; l++) {
+    int x_w = align_flag ? static_cast<int>(ratio_w * (l + 0.5) - 0.5)
+                         : static_cast<int>(ratio_w * l);
+    x_w = (x_w > 0) ? x_w : 0;                       // w
+    int x_e = (x_w < (in_w - 1)) ? (x_w + 1) : x_w;  // w_id
+    float idx_src_x = ratio_w * (l + 0.5) - 0.5;
+    idx_src_x = (idx_src_x > 0) ? idx_src_x : 0;
+    float d_w = align_flag ? idx_src_x - x_w : ratio_w * l - x_w;  // w1lambda
+    float d_e = 1.f - d_w;                                         // w2lambda
+    {
+      vx_w[l] = x_w;
+      vx_e[l] = x_e;
+      vd_w[l] = d_w;
+      vd_e[l] = d_e;
+    }
+  }
+  int count = n * c;
+  if (data_layout == DATALAYOUT(kNCHW)) {
+    LITE_PARALLEL_BEGIN(i, tid, count) {
+      auto input_data = din + i * in_w;
+      for (int l = 0; l < out_w; l++) {
+        dout[i * out_w + l] =
+            input_data[vx_w[l]] * vd_e[l] + input_data[vx_e[l]] * vd_w[l];
+      }
+    }
+    LITE_PARALLEL_END()
+  } else {
+    LITE_PARALLEL_BEGIN(i, tid, n) {  // loop for batches
+      for (int j = 0; j < c; j++) {   // loop for channels
+        for (int l = 0; l < out_w; l++) {
+          int idx = i * c * out_w + vx_w[l] * c + j;
+          int idy = i * c * out_w + vx_e[l] * c + j;
+          int idout = i * c * out_w + l * c + j;
+          dout[idout] = din[idx] * vd_e[l] + din[idy] * vd_w[l];
+        }
+      }
+    }
+    LITE_PARALLEL_END()
+  }
+}
+
+void interpolate_linear(lite::Tensor* X,
+                        lite::Tensor* OutSize,
+                        std::vector<const lite::Tensor*> SizeTensor,
+                        lite::Tensor* Scale,
+                        lite::Tensor* Out,
+                        int out_w,
+                        float scale,
+                        bool align_corners,
+                        int align_mode,
+                        DataLayoutType data_layout) {
+  int in_w, in_c, in_n;
+  if (data_layout == DATALAYOUT(kNCHW)) {
+    in_n = X->dims()[0];
+    in_c = X->dims()[1];
+    in_w = X->dims()[2];
+  } else {
+    in_n = X->dims()[0];
+    in_c = X->dims()[2];
+    in_w = X->dims()[1];
+  }
+  if (SizeTensor.size() > 0) {
+    auto new_size = get_new_shape(SizeTensor);
+    out_w = new_size[0];
+  } else {
+    float scale_tmp;
+    if (Scale) {
+      auto scale_data = get_new_data_from_tensor<float>(Scale);
+      scale_tmp = scale_data[0];
+    } else {
+      scale_tmp = scale;
+    }
+    if (scale_tmp > 0) {
+      out_w = static_cast<int>(in_w * scale_tmp);
+    }
+    if (OutSize) {
+      auto out_size_data = get_new_data_from_tensor<int>(OutSize);
+      out_w = out_size_data[0];
+    }
+  }
+  CHECK_GT(out_w, 0) << "out_w in Attr(out_shape) of Op(interpolate)"
+                     << "should be greater than 0.";
+  if (data_layout == DATALAYOUT(kNCHW)) {
+    Out->Resize({in_n, in_c, out_w});
+  } else {
+    Out->Resize({in_n, out_w, in_c});
+  }
+  float* dout = Out->mutable_data<float>();
+  const float* din = X->data<float>();
+  if (in_w == out_w) {
+    memcpy(dout, din, Out->numel() * sizeof(float));
+    return;
+  }
+  float ratio_w = 0.f;
+  if (out_w > 1) {
+    ratio_w = (align_corners) ? static_cast<float>(in_w - 1) / (out_w - 1)
+                              : static_cast<float>(in_w) / out_w;
+  }
+  linear_interp(din,
+                dout,
+                ratio_w,
+                in_w,
+                in_n,
+                in_c,
+                out_w,
+                align_corners,
+                align_mode,
+                data_layout);
+}
+
 void interpolate(lite::Tensor* X,
                  lite::Tensor* OutSize,
                  std::vector<const lite::Tensor*> SizeTensor,
