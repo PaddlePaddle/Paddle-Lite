@@ -94,6 +94,16 @@ void CalibComputeInt64ToFp32<Ptype, DLType>::Run() {
   }
 }
 
+template <PrecisionType Ptype, DataLayoutType DLType>
+void CalibComputeFp16ToFp32<Ptype, DLType>::Run() {
+  auto& param = this->template Param<operators::CalibParam>();
+  const auto* din = param.input->template data<float16>();
+  auto* dout = param.output->template mutable_data<float>();
+  for (auto i = 0; i < param.input->numel(); ++i) {
+    dout[i] = static_cast<float>(din[i]);
+  }
+}
+
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite
@@ -159,6 +169,14 @@ REGISTER_LITE_KERNEL(
                 {LiteType::GetTensorTy(TARGET(kX86),
                                        PRECISION(kInt32),
                                        DATALAYOUT(kNCHW))})
+    .Finalize();
+
+typedef paddle::lite::kernels::x86::CalibComputeFp16ToFp32<PRECISION(kFloat),
+                                                           DATALAYOUT(kNCHW)>
+    fp_fp16_to_fp32;
+REGISTER_LITE_KERNEL(calib, kX86, kFloat, kNCHW, fp_fp16_to_fp32, fp16_to_fp32)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
 
 typedef paddle::lite::kernels::x86::CalibComputeInt64ToFp32<PRECISION(kFloat),
