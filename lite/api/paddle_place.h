@@ -285,9 +285,9 @@ struct LITE_API Place {
 };
 
 struct LITE_API CustomAllocator {
-  void* (*malloc)(size_t) = nullptr;
-  void (*free)(void*) = nullptr;
-  void (*memcpy)(void*, const void*, size_t) = nullptr;
+  void* (*malloc)(size_t size) = nullptr;
+  void (*free)(void* ptr) = nullptr;
+  void (*copy)(void* dst, const void* src, size_t size) = nullptr;
 };
 
 }  // namespace lite_api

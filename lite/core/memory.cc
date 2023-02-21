@@ -97,8 +97,8 @@ void TargetFree(TargetType target, void* data, std::string free_flag) {
 }
 
 void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
-  if (lite::Allocator::Global().GetCustomAllocator().malloc) {
-    lite::Allocator::Global().GetCustomAllocator().memcpy(dst, src, size);
+  if (lite::Allocator::Global().GetCustomAllocator().copy) {
+    lite::Allocator::Global().GetCustomAllocator().copy(dst, src, size);
   } else {
     switch (target) {
       case TargetType::kHost:
