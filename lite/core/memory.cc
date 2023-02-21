@@ -24,8 +24,9 @@ namespace lite {
 
 void* TargetMalloc(TargetType target, size_t size) {
   void* data{nullptr};
-  if (lite::Allocator::Global().GetCustomAllocator().malloc) {
-    data = lite::Allocator::Global().GetCustomAllocator().malloc(size);
+  if (lite::Allocator::Global().GetCustomAllocator().alloc) {
+    data = lite::Allocator::Global().GetCustomAllocator().alloc(
+        size, host::MALLOC_ALIGN);
   } else {
     switch (target) {
       case TargetType::kHost:
@@ -97,35 +98,31 @@ void TargetFree(TargetType target, void* data, std::string free_flag) {
 }
 
 void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
-  if (lite::Allocator::Global().GetCustomAllocator().copy) {
-    lite::Allocator::Global().GetCustomAllocator().copy(dst, src, size);
-  } else {
-    switch (target) {
-      case TargetType::kHost:
-      case TargetType::kX86:
-      case TargetType::kARM:
-        TargetWrapper<TARGET(kHost)>::MemcpySync(
-            dst, src, size, IoDirection::DtoD);
-        break;
+  switch (target) {
+    case TargetType::kHost:
+    case TargetType::kX86:
+    case TargetType::kARM:
+      TargetWrapper<TARGET(kHost)>::MemcpySync(
+          dst, src, size, IoDirection::DtoD);
+      break;
 
 #ifdef LITE_WITH_XPU
-      case TargetType::kXPU:
-        TargetWrapperXPU::MemcpySync(dst, src, size, IoDirection::HtoD);
-        break;
+    case TargetType::kXPU:
+      TargetWrapperXPU::MemcpySync(dst, src, size, IoDirection::HtoD);
+      break;
 #endif
 #ifdef LITE_WITH_OPENCL
-      case TargetType::kOpenCL:
-        TargetWrapperCL::MemcpySync(dst, src, size, IoDirection::DtoD);
-        break;
+    case TargetType::kOpenCL:
+      TargetWrapperCL::MemcpySync(dst, src, size, IoDirection::DtoD);
+      break;
 #endif  // LITE_WITH_OPENCL
 #ifdef LITE_WITH_Metal
-      case TargetType::kMetal:
-        TargetWrapperMetal::MemcpySync(dst, src, size, IoDirection::DtoD);
-        break;
+    case TargetType::kMetal:
+      TargetWrapperMetal::MemcpySync(dst, src, size, IoDirection::DtoD);
+      break;
 #endif
-      default:
-        LOG(FATAL) << "Unknown supported target:" << TargetToStr(target);
-    }
+    default:
+      LOG(FATAL) << "Unknown supported target:" << TargetToStr(target);
   }
 }
 

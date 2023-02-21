@@ -98,8 +98,8 @@ enum class IoDirection {
 class Allocator {
  public:
   static Allocator& Global() {
-    static auto* alloc = new Allocator;
-    return *alloc;
+    static auto* allocator = new Allocator;
+    return *allocator;
   }
 
   void SetCustomAllocator(CustomAllocator custom_allocator) {
