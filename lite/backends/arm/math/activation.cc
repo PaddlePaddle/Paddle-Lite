@@ -1096,17 +1096,20 @@ inline float32x4_t tansig_approx_v4(float32x4_t x) {
   float32x4_t v_x_25 = vmlaq_f32(vdupq_n_f32(0.5f), x, vdupq_n_f32(25.f));
 
   int32x4_t tab_i_v = vcvtq_s32_f32(v_x_25);
-  float32x4_t tab_data_v;
-  tab_data_v =
-      vsetq_lane_f32(tansig_table[vgetq_lane_s32(tab_i_v, 0)], tab_data_v, 0);
-  tab_data_v =
-      vsetq_lane_f32(tansig_table[vgetq_lane_s32(tab_i_v, 1)], tab_data_v, 1);
-  tab_data_v =
-      vsetq_lane_f32(tansig_table[vgetq_lane_s32(tab_i_v, 2)], tab_data_v, 2);
-  tab_data_v =
-      vsetq_lane_f32(tansig_table[vgetq_lane_s32(tab_i_v, 3)], tab_data_v, 3);
+  int tab_i_0 = vgetq_lane_s32(tab_i_v, 0);
+  int tab_i_1 = vgetq_lane_s32(tab_i_v, 1);
+  int tab_i_2 = vgetq_lane_s32(tab_i_v, 2);
+  int tab_i_3 = vgetq_lane_s32(tab_i_v, 3);
 
-  x = vmlsq_f32(x, vdupq_n_f32(0.04), vcvtq_f32_s32(tab_i_v));
+  float32x4_t tab_data_v;
+  tab_data_v = vsetq_lane_f32(tansig_table[tab_i_0], tab_data_v, 0);
+  tab_data_v = vsetq_lane_f32(tansig_table[tab_i_1], tab_data_v, 1);
+  tab_data_v = vsetq_lane_f32(tansig_table[tab_i_2], tab_data_v, 2);
+  tab_data_v = vsetq_lane_f32(tansig_table[tab_i_3], tab_data_v, 3);
+
+  float32x4_t tab_i_f = vcvtq_f32_s32(tab_i_v);
+  x = vmlsq_f32(x, vdupq_n_f32(0.04), tab_i_f);
+
   float32x4_t v_dy = vmlsq_f32(vones, tab_data_v, tab_data_v);  // dy
   float32x4_t v_res = vmlsq_f32(vones, tab_data_v, x);
   v_res = vmulq_f32(v_dy, v_res);
@@ -1172,6 +1175,7 @@ inline float32x4_t erff_approx_v4(float32x4_t a) {
   float32x4_t coef4 = vdupq_n_f32(c_erff_r0_p4);
   float32x4_t coef5 = vdupq_n_f32(c_erff_r0_p5);
   float32x4_t coef6 = vdupq_n_f32(c_erff_r0_p6);
+
   float32x4_t vzero_4 = vdupq_n_f32(0.f);
   float32x4_t vones_4 = vdupq_n_f32(1.f);
   float32x4_t vmask_4 = vdupq_n_f32(c_erff_threshold);
@@ -1200,6 +1204,7 @@ inline float32x4_t erff_approx_v4(float32x4_t a) {
   coef3 = vdupq_n_f32(c_erff_r1_p3);
   coef4 = vdupq_n_f32(c_erff_r1_p4);
   coef5 = vdupq_n_f32(c_erff_r1_p5);
+
   r1 = coef0;
   r1 = vmlaq_f32(coef1, r1, s);
   r1 = vmlaq_f32(coef2, r1, s);
@@ -1230,23 +1235,28 @@ void act_gelu<float>(
     float32x4_t coeff_v4 = vdupq_n_f32(0.044715);
     float32x4_t vones_4 = vdupq_n_f32(1.f);
     float32x4_t v05_4 = vdupq_n_f32(0.5f);
+
     for (int i = 0; i < cnt; i++) {
       float32x4_t vx0 = vld1q_f32(din);
       float32x4_t vx1 = vld1q_f32(din + 4);
       float32x4_t vx2 = vld1q_f32(din + 8);
       float32x4_t vx3 = vld1q_f32(din + 12);
+
       float32x4_t vx0_pow = vmulq_f32(vx0, vx0);
       float32x4_t vx1_pow = vmulq_f32(vx1, vx1);
       float32x4_t vx2_pow = vmulq_f32(vx2, vx2);
       float32x4_t vx3_pow = vmulq_f32(vx3, vx3);
+
       vx0_pow = vmulq_f32(vx0_pow, vx0);
       vx1_pow = vmulq_f32(vx1_pow, vx1);
       vx2_pow = vmulq_f32(vx2_pow, vx2);
       vx3_pow = vmulq_f32(vx3_pow, vx3);
+
       vx0_pow = vmlaq_f32(vx0, vx0_pow, coeff_v4);
       vx1_pow = vmlaq_f32(vx1, vx1_pow, coeff_v4);
       vx2_pow = vmlaq_f32(vx2, vx2_pow, coeff_v4);
       vx3_pow = vmlaq_f32(vx3, vx3_pow, coeff_v4);
+
       vx0_pow = vmulq_f32(vx0_pow, sqrt_2_div_pi_v4);
       vx1_pow = vmulq_f32(vx1_pow, sqrt_2_div_pi_v4);
       vx2_pow = vmulq_f32(vx2_pow, sqrt_2_div_pi_v4);
@@ -1261,10 +1271,12 @@ void act_gelu<float>(
       v1_res = vaddq_f32(v1_res, vones_4);
       v2_res = vaddq_f32(v2_res, vones_4);
       v3_res = vaddq_f32(v3_res, vones_4);
+
       v0_res = vmulq_f32(v0_res, vx0);
       v1_res = vmulq_f32(v1_res, vx1);
       v2_res = vmulq_f32(v2_res, vx2);
       v3_res = vmulq_f32(v3_res, vx3);
+
       v0_res = vmulq_f32(v0_res, v05_4);
       v1_res = vmulq_f32(v1_res, v05_4);
       v2_res = vmulq_f32(v2_res, v05_4);
@@ -1296,26 +1308,32 @@ void act_gelu<float>(
       float32x4_t vx1 = vld1q_f32(din + 4);
       float32x4_t vx2 = vld1q_f32(din + 8);
       float32x4_t vx3 = vld1q_f32(din + 12);
+
       float32x4_t v_tmp0 = vmulq_f32(v_sqrt2_rec, vx0);
       float32x4_t v_tmp1 = vmulq_f32(v_sqrt2_rec, vx1);
       float32x4_t v_tmp2 = vmulq_f32(v_sqrt2_rec, vx2);
       float32x4_t v_tmp3 = vmulq_f32(v_sqrt2_rec, vx3);
+
       float32x4_t v_erf0 = erff_approx_v4(v_tmp0);
       float32x4_t v_erf1 = erff_approx_v4(v_tmp1);
       float32x4_t v_erf2 = erff_approx_v4(v_tmp2);
       float32x4_t v_erf3 = erff_approx_v4(v_tmp3);
+
       float32x4_t res0 = vmulq_f32(vdata_0_5, vx0);
       float32x4_t res1 = vmulq_f32(vdata_0_5, vx1);
       float32x4_t res2 = vmulq_f32(vdata_0_5, vx2);
       float32x4_t res3 = vmulq_f32(vdata_0_5, vx3);
+
       v_erf0 = vaddq_f32(vones_4, v_erf0);
       v_erf1 = vaddq_f32(vones_4, v_erf1);
       v_erf2 = vaddq_f32(vones_4, v_erf2);
       v_erf3 = vaddq_f32(vones_4, v_erf3);
+
       res0 = vmulq_f32(res0, v_erf0);
       res1 = vmulq_f32(res1, v_erf1);
       res2 = vmulq_f32(res2, v_erf2);
       res3 = vmulq_f32(res3, v_erf3);
+
       vst1q_f32(dout, res0);
       vst1q_f32(dout + 4, res1);
       vst1q_f32(dout + 8, res2);
