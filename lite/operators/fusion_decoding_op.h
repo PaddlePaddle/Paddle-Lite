@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,11 +37,6 @@ class FusionDecodingOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "fusion_decoding"; }
-
-  // bool InferType() override {
-  //   param_.output->set_precision(param_.x->precision());
-  //   return true;
-  // }
 
  private:
   mutable FusionDecodingParam param_;
