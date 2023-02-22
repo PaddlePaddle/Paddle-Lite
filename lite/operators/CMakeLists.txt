@@ -215,8 +215,12 @@ add_operator(sequence_topk_avg_pooling_op basic SRCS sequence_topk_avg_pooling_o
 add_operator(search_fc_op basic SRCS search_fc_op.cc)
 add_operator(lstm_op extra SRCS lstm_op.cc)
 add_operator(topk_pooling_op extra SRCS topk_pooling_op.cc)
+
 # for deformable-convNet
 add_operator(deformable_conv_op extra SRCS deformable_conv_op.cc)
+
+# for tsm model
+add_operator(temporal_shift_op extra SRCS temporal_shift_op.cc)
 
 # 4. training op
 add_operator(mean_op extra SRCS mean_op.cc)

@@ -171,7 +171,7 @@ void TestTemporalShift(const Place& place,
                        std::string data_format,
                        float abs_error = 2e-5) {
   std::unique_ptr<arena::TestCase> tester(new TemporalShiftComputeTester<T>(
-      place, "def", seg_num, shift_ratio, dims, data_format));
+      place, alias, seg_num, shift_ratio, dims, data_format));
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
 }
@@ -185,7 +185,7 @@ void TestPer(const Place& place,
              std::string data_format,
              float abs_error = 2e-5) {
   std::unique_ptr<arena::TestCase> tester(new TemporalShiftComputeTester<T>(
-      place, "def", seg_num, shift_ratio, dims, data_format));
+      place, alias, seg_num, shift_ratio, dims, data_format));
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPerformance();
 }
@@ -193,8 +193,8 @@ void TestPer(const Place& place,
 TEST(TS_FP32_NCHW, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = TARGET(kHost);
 #else
   return;
 #endif
@@ -203,7 +203,7 @@ TEST(TS_FP32_NCHW, precision) {
     for (float shift_ratio : {0.25f}) {
       for (int seg_num : {1, 2, 4}) {
         TestTemporalShift(place,
-                          "def",
+                          "fp32",
                           seg_num,
                           shift_ratio,
                           DDim(dims),
@@ -217,8 +217,8 @@ TEST(TS_FP32_NCHW, precision) {
 TEST(TS_FP32_NCHW, performance) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = TARGET(kHost);
 #else
   return;
 #endif
@@ -226,13 +226,13 @@ TEST(TS_FP32_NCHW, performance) {
   for (auto dims : std::vector<std::vector<int64_t>>{{1, 8, 3, 4}}) {
     for (float shift_ratio : {0.25f}) {
       for (int seg_num : {1, 2, 4}) {
-        TestTemporalShift(place,
-                          "def",
-                          seg_num,
-                          shift_ratio,
-                          DDim(dims),
-                          data_format,
-                          abs_error);
+        TestPer(place,
+                "fp32",
+                seg_num,
+                shift_ratio,
+                DDim(dims),
+                data_format,
+                abs_error);
       }
     }
   }

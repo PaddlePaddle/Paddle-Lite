@@ -16,7 +16,7 @@
 
 namespace paddle {
 namespace lite {
-namespace arm {
+namespace host {
 namespace math {
 
 template <typename InType>
@@ -41,6 +41,6 @@ void temporalshiftNHWC_func(const InType* input,
                             const int c1,
                             const int c2);
 }  // namespace math
-}  // namespace arm
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle

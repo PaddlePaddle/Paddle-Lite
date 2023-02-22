@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/temporal_shift_compute.h"
+#include "lite/kernels/host/temporal_shift_compute.h"
 #include <string>
-#include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/host/math/temporal_shift.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
@@ -22,7 +22,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 template <>
 void TemporalShiftCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
@@ -69,26 +69,25 @@ void TemporalShiftCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   float* output_data = output->mutable_data<float>();
 
   if (data_layout == DATALAYOUT(kNCHW)) {
-    lite::arm::math::temporalshiftNCHW_func(
+    lite::host::math::temporalshiftNCHW_func(
         input_data, output_data, ntchw, tchw, chw, hw, t, c1, c2);
   } else {
-    lite::arm::math::temporalshiftNHWC_func(
+    lite::host::math::temporalshiftNHWC_func(
         input_data, output_data, ntchw, tchw, chw, t, c, c1, c2);
   }
   return;
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+typedef paddle::lite::kernels::host::TemporalShiftCompute<PRECISION(kFloat),
+                                                          PRECISION(kFloat)>
+    TSfp32;
 
-// now only register arm-float-nchw place
-typedef paddle::lite::kernels::arm::TemporalShiftCompute<PRECISION(kFloat),
-                                                         PRECISION(kFloat)>
-    TemporalShiftFp32;
-REGISTER_LITE_KERNEL(
-    temporal_shift, kARM, kFloat, kNCHW, TemporalShiftFp32, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+REGISTER_LITE_KERNEL(temporal_shift, kHost, kFloat, kNCHW, TSfp32, fp32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .Finalize();

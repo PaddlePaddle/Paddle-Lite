@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/arm/math/temporal_shift.h"
+#include "lite/backends/host/math/temporal_shift.h"
 #include <algorithm>
-#include "lite/backends/arm/math/softmax.h"
-#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
+namespace host {
 namespace math {
 
 template <>
@@ -83,6 +81,6 @@ void temporalshiftNHWC_func<float>(const float* input,
 }
 
 }  // namespace math
-}  // namespace arm
+}  // namespace host
 }  // namespace lite
 }  // namespace paddle

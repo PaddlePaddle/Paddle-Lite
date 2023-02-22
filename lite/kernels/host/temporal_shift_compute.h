@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #pragma once
-#include <algorithm>
 #include "lite/core/kernel.h"
 #include "lite/operators/temporal_shift_op.h"
 #ifdef LITE_WITH_PROFILE
@@ -24,11 +23,13 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-template <PrecisionType Ptype, PrecisionType OutType>
-class TemporalShiftCompute : public KernelLite<TARGET(kARM), Ptype> {
+template <PrecisionType PType, PrecisionType OutType>
+class TemporalShiftCompute : public KernelLite<TARGET(kHost), PType> {
  public:
+  using param_t = operators::TemporalShiftParam;
+
   void Run() override;
 
   virtual ~TemporalShiftCompute() = default;
@@ -42,7 +43,7 @@ class TemporalShiftCompute : public KernelLite<TARGET(kARM), Ptype> {
 #endif
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
