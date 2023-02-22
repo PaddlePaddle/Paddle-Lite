@@ -38,11 +38,13 @@ void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
   static_cast<void**>(r)[-1] = p;
   return r;
 }
+
 void TargetWrapper<TARGET(kHost)>::Free(void* ptr) {
   if (ptr) {
     free(static_cast<void**>(ptr)[-1]);
   }
 }
+
 void TargetWrapper<TARGET(kHost)>::MemcpySync(void* dst,
                                               const void* src,
                                               size_t size,

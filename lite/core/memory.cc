@@ -24,67 +24,76 @@ namespace lite {
 
 void* TargetMalloc(TargetType target, size_t size) {
   void* data{nullptr};
-  switch (target) {
-    case TargetType::kHost:
-    case TargetType::kX86:
-    case TargetType::kARM:
-      data = TargetWrapper<TARGET(kHost)>::Malloc(size);
-      break;
+  if (lite::Allocator::Global().GetCustomAllocator().alloc) {
+    data = lite::Allocator::Global().GetCustomAllocator().alloc(
+        size, host::MALLOC_ALIGN);
+  } else {
+    switch (target) {
+      case TargetType::kHost:
+      case TargetType::kX86:
+      case TargetType::kARM:
+        data = TargetWrapper<TARGET(kHost)>::Malloc(size);
+        break;
 #ifdef LITE_WITH_OPENCL
-    case TargetType::kOpenCL:
-      data = TargetWrapperCL::Malloc(size);
-      break;
+      case TargetType::kOpenCL:
+        data = TargetWrapperCL::Malloc(size);
+        break;
 #endif  // LITE_WITH_OPENCL
 #ifdef LITE_WITH_XPU
-    case TargetType::kXPU:
-      data = TargetWrapperXPU::Malloc(size);
-      break;
+      case TargetType::kXPU:
+        data = TargetWrapperXPU::Malloc(size);
+        break;
 #endif  // LITE_WITH_XPU
 #ifdef LITE_WITH_METAL
-    case TargetType::kMetal: {
-      data = TargetWrapperMetal::Malloc(size);
-      break;
-    }
+      case TargetType::kMetal: {
+        data = TargetWrapperMetal::Malloc(size);
+        break;
+      }
 #endif  // LITE_WITH_METAL
-    default:
-      LOG(FATAL) << "Unknown supported target " << TargetToStr(target);
+      default:
+        LOG(FATAL) << "Unknown supported target " << TargetToStr(target);
+    }
   }
   return data;
 }
 
 void TargetFree(TargetType target, void* data, std::string free_flag) {
-  switch (target) {
-    case TargetType::kHost:
-    case TargetType::kX86:
-    case TargetType::kARM:
-      TargetWrapper<TARGET(kHost)>::Free(data);
-      break;
+  if (lite::Allocator::Global().GetCustomAllocator().free) {
+    lite::Allocator::Global().GetCustomAllocator().free(data);
+  } else {
+    switch (target) {
+      case TargetType::kHost:
+      case TargetType::kX86:
+      case TargetType::kARM:
+        TargetWrapper<TARGET(kHost)>::Free(data);
+        break;
 
 #ifdef LITE_WITH_OPENCL
-    case TargetType::kOpenCL:
-      if (free_flag == "cl_use_image2d_") {
-        TargetWrapperCL::FreeImage(data);
-      } else {
-        TargetWrapperCL::Free(data);
-      }
-      break;
+      case TargetType::kOpenCL:
+        if (free_flag == "cl_use_image2d_") {
+          TargetWrapperCL::FreeImage(data);
+        } else {
+          TargetWrapperCL::Free(data);
+        }
+        break;
 #endif  // LITE_WITH_OPENCL
 #ifdef LITE_WITH_XPU
-    case TargetType::kXPU:
-      TargetWrapperXPU::Free(data);
-      break;
+      case TargetType::kXPU:
+        TargetWrapperXPU::Free(data);
+        break;
 #endif  // LITE_WITH_XPU
 #ifdef LITE_WITH_METAL
-    case TargetType::kMetal:
-      if (free_flag == "metal_use_image2d_") {
-        TargetWrapperMetal::FreeImage(data);
-      } else {
-        TargetWrapperMetal::Free(data);
-      }
-      break;
+      case TargetType::kMetal:
+        if (free_flag == "metal_use_image2d_") {
+          TargetWrapperMetal::FreeImage(data);
+        } else {
+          TargetWrapperMetal::Free(data);
+        }
+        break;
 #endif
-    default:
-      LOG(FATAL) << "Unknown type";
+      default:
+        LOG(FATAL) << "Unknown supported target:" << TargetToStr(target);
+    }
   }
 }
 
@@ -113,7 +122,7 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
       break;
 #endif
     default:
-      LOG(FATAL) << "unsupported type";
+      LOG(FATAL) << "Unknown supported target:" << TargetToStr(target);
   }
 }
 
