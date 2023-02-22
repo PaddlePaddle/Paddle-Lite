@@ -284,5 +284,10 @@ struct LITE_API Place {
   std::string DebugString() const;
 };
 
+struct LITE_API CustomAllocator {
+  void* (*alloc)(size_t size, size_t alignment) = nullptr;
+  void (*free)(void* ptr) = nullptr;
+};
+
 }  // namespace lite_api
 }  // namespace paddle

@@ -226,12 +226,27 @@ void winograd_transform_weights(
     void* dout, const void* din, int ch_out, int ch_in, void* work_space);
 
 // new winograd
+void weight_trans_c4_10x10(
+    float* dest, const float* src, int ic, int oc, void* workspace);
 void weight_trans_c4_8x8(
     float* dest, const float* src, int ic, int oc, void* workspace);
 void weight_trans_c4_6x6(
     float* dest, const float* src, int ic, int oc, void* workspace);
 void weight_trans_c4_4x4(
     float* dest, const float* src, int ic, int oc, void* workspace);
+void conv_compute_8x8_3x3(const float* input,
+                          float* output,
+                          int num,
+                          int chout,
+                          int hout,
+                          int wout,
+                          int chin,
+                          int hin,
+                          int win,
+                          const float* weight,
+                          const float* bias,
+                          const operators::ConvParam& param,
+                          ARMContext* ctx);
 void conv_compute_6x6_3x3(const float* input,
                           float* output,
                           int num,
