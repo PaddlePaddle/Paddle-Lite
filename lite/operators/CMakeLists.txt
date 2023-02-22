@@ -172,6 +172,7 @@ add_operator(log_softmax_op extra SRCS log_softmax_op.cc)
 add_operator(roll_op extra SRCS roll_op.cc)
 add_operator(share_data extra SRCS share_data_op.cc)
 add_operator(round extra SRCS round_op.cc)
+add_operator(fused_attention_op extra SRCS fused_attention_op.cc)
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc)

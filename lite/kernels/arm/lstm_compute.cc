@@ -170,6 +170,7 @@ void LSTMComputeRun(const operators::LstmParam& param,
                                  o_data.get(),
                                  nullptr,
                                  false,
+                                 lite::arm::math::GemmNoBias,
                                  scales.data(),
                                  act_param,
                                  ctx);
