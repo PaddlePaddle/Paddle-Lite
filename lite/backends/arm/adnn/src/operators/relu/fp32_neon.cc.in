@@ -11,11 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 $assert ARCH == "aarch32" or ARCH == "aarch64"
 $assert BATCH_TILE == 4 or BATCH_TILE == 8 or BATCH_TILE == 16
 $CODE = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 
+// This file was automatically generated, Do not edit it!
+// Template file: ${TEMPLATE_FILE}
+// Output file: ${OUTPUT_FILE}
+// Command args: ${COMMAND_ARGS}
 #include "adnn/core/types.h"
 #include <assert.h>
 #include <arm_neon.h>
