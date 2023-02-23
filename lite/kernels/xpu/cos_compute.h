@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include <vector>
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -22,14 +21,14 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T, PrecisionType PType>
-class SliceCompute : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kAny)> {
+template <typename InType, PrecisionType PType>
+class CosCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
-  using param_t = operators::SliceParam;
+  using param_t = operators::CosParam;
 
   virtual void Run();
 
-  virtual ~SliceCompute() = default;
+  virtual ~CosCompute() = default;
 };
 
 }  // namespace xpu

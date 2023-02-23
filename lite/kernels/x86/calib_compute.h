@@ -21,6 +21,7 @@ namespace lite {
 namespace kernels {
 namespace x86 {
 
+typedef uint16_t float16;
 template <PrecisionType Ptype, DataLayoutType DLType>
 class CalibComputeFp32ToInt8 : public KernelLite<TARGET(kX86), Ptype, DLType> {
  public:
@@ -29,6 +30,30 @@ class CalibComputeFp32ToInt8 : public KernelLite<TARGET(kX86), Ptype, DLType> {
   void Run() override;
 
   ~CalibComputeFp32ToInt8() override{};
+
+ private:
+};
+
+template <PrecisionType Ptype, DataLayoutType DLType>
+class CalibComputeFp32ToFp16 : public KernelLite<TARGET(kX86), Ptype, DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeFp32ToFp16() override{};
+
+ private:
+};
+
+template <PrecisionType Ptype, DataLayoutType DLType>
+class CalibComputeFp16ToFp32 : public KernelLite<TARGET(kX86), Ptype, DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeFp16ToFp32() override{};
 
  private:
 };
@@ -103,6 +128,29 @@ class CalibComputeInt64ToFp32 : public KernelLite<TARGET(kX86), Ptype, DLType> {
   void Run() override;
 
   ~CalibComputeInt64ToFp32() override{};
+
+ private:
+};
+
+template <PrecisionType Ptype, DataLayoutType DLType>
+class CalibComputeInt32ToFp16 : public KernelLite<TARGET(kX86), Ptype, DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeInt32ToFp16() override{};
+
+ private:
+};
+template <PrecisionType Ptype, DataLayoutType DLType>
+class CalibComputeFp16ToInt32 : public KernelLite<TARGET(kX86), Ptype, DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeFp16ToInt32() override{};
 
  private:
 };
