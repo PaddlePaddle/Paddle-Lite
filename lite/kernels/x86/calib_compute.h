@@ -107,18 +107,6 @@ class CalibComputeInt64ToFp32 : public KernelLite<TARGET(kX86), Ptype, DLType> {
  private:
 };
 
-template <PrecisionType Ptype, DataLayoutType DLType>
-class CalibComputeFp16ToFp32 : public KernelLite<TARGET(kX86), Ptype, DLType> {
- public:
-  using param_t = operators::CalibParam;
-
-  void Run() override;
-
-  ~CalibComputeFp16ToFp32() override{};
-
- private:
-};
-
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite
