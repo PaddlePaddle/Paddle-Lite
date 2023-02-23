@@ -117,6 +117,36 @@ struct FcParam : ParamBase {
   WITH_INT8_CONFIG
 };
 
+struct FusedAttentionParam : ParamBase {
+  lite::Tensor* input0{nullptr};
+  lite::Tensor* input1{nullptr};
+  lite::Tensor* fc_w{nullptr};
+  lite::Tensor* fc_bias{nullptr};
+  lite::Tensor* output{nullptr};
+
+  bool padding_weights{false};
+  std::vector<int> reshape_shape{};
+  int softmax_axis{-1};
+
+  // fc
+  std::string activation_type{""};
+  float alpha{6.f};
+  std::string op_type{"mul"};
+  int in_num_col_dims{1};
+
+  // for int8
+  bool enable_int8{false};
+  std::vector<float> calib0_scale{};
+  std::vector<float> calib1_scale{};
+  std::vector<float> fc0_scale{};
+  std::vector<float> fc1_scale{};
+  std::vector<float> fc2_scale{};
+  int bit_length{8};
+
+  // for float/fp16
+  float scale{1.f};
+};
+
 struct SearchSeqFcParam : ParamBase {
   lite::Tensor* x{nullptr};
   lite::Tensor* w{nullptr};
@@ -2359,6 +2389,125 @@ struct ShareDataParam : ParamBase {
 struct RoundParam : ParamBase {
   const lite::Tensor* X{};
   lite::Tensor* Out{};
+};
+
+struct FusionDecodingParam : ParamBase {
+  const lite::Tensor* Input{};
+  const lite::Tensor* Memseqlen{};
+  const lite::Tensor* word_embedding{};
+  const lite::Tensor* position_embedding{};
+  std::vector<const lite::Tensor*> self_ln_weight{};
+  std::vector<const lite::Tensor*> self_ln_bias{};
+  std::vector<const lite::Tensor*> self_q_weight{};
+  std::vector<const lite::Tensor*> self_q_bias{};
+  std::vector<const lite::Tensor*> self_k_weight{};
+  std::vector<const lite::Tensor*> self_k_bias{};
+  std::vector<const lite::Tensor*> self_v_weight{};
+  std::vector<const lite::Tensor*> self_v_bias{};
+  std::vector<const lite::Tensor*> self_out_weight{};
+  std::vector<const lite::Tensor*> self_out_bias{};
+  std::vector<const lite::Tensor*> cross_ln_weight{};
+  std::vector<const lite::Tensor*> cross_ln_bias{};
+  std::vector<const lite::Tensor*> cross_q_weight{};
+  std::vector<const lite::Tensor*> cross_q_bias{};
+  std::vector<const lite::Tensor*> cross_k_weight{};
+  std::vector<const lite::Tensor*> cross_k_bias{};
+  std::vector<const lite::Tensor*> cross_v_weight{};
+  std::vector<const lite::Tensor*> cross_v_bias{};
+  std::vector<const lite::Tensor*> cross_out_weight{};
+  std::vector<const lite::Tensor*> cross_out_bias{};
+  std::vector<const lite::Tensor*> ffn_ln_weight{};
+  std::vector<const lite::Tensor*> ffn_ln_bias{};
+  std::vector<const lite::Tensor*> ffn_inter_weight{};
+  std::vector<const lite::Tensor*> ffn_inter_bias{};
+  std::vector<const lite::Tensor*> ffn_out_weight{};
+  std::vector<const lite::Tensor*> ffn_out_bias{};
+  const lite::Tensor* decoder_ln_weight{};
+  const lite::Tensor* decoder_ln_bias{};
+  const lite::Tensor* emb_weight{};
+  const lite::Tensor* emb_bias{};
+  lite::Tensor* OutIds{};
+  lite::Tensor* ParentIds{};
+  lite::Tensor* SequenceLength{};
+  float alpha;
+  float beam_search_diversity_rate;
+  int beam_size;
+  int bos_id;
+  std::string decoding_strategy;
+  int eos_id;
+  int64_t max_len;
+  int num_layer;
+  int n_head;
+  bool rel_len;
+  int size_per_head;
+  int topk;
+  float topp;
+};
+
+struct FusionUnifiedDecodingParam : ParamBase {
+  const lite::Tensor* input_ids_{};
+  const lite::Tensor* attn_mask_{};
+  const lite::Tensor* mem_seq_len_{};
+  const lite::Tensor* type_id_{};
+  const lite::Tensor* decoder_type_id_{};
+  const lite::Tensor* logits_mask_{};
+  const lite::Tensor* word_embedding_{};
+  std::vector<const lite::Tensor*> self_ln_weight_;
+  std::vector<const lite::Tensor*> self_ln_bias_;
+  std::vector<const lite::Tensor*> self_q_weight_;
+  std::vector<const lite::Tensor*> self_q_bias_;
+  std::vector<const lite::Tensor*> self_k_weight_;
+  std::vector<const lite::Tensor*> self_k_bias_;
+  std::vector<const lite::Tensor*> self_v_weight_;
+  std::vector<const lite::Tensor*> self_v_bias_;
+  std::vector<const lite::Tensor*> self_out_weight_;
+  std::vector<const lite::Tensor*> self_out_bias_;
+  std::vector<const lite::Tensor*> ffn_ln_weight_;
+  std::vector<const lite::Tensor*> ffn_ln_bias_;
+  std::vector<const lite::Tensor*> ffn_inter_weight_;
+  std::vector<const lite::Tensor*> ffn_inter_bias_;
+  std::vector<const lite::Tensor*> ffn_out_weight_;
+  std::vector<const lite::Tensor*> ffn_out_bias_;
+  const lite::Tensor* decoder_ln_weight_{};
+  const lite::Tensor* decoder_ln_bias_{};
+  const lite::Tensor* trans_weight_{};
+  const lite::Tensor* trans_bias_{};
+  const lite::Tensor* lm_ln_weight_{};
+  const lite::Tensor* lm_ln_bias_{};
+  const lite::Tensor* embedding_weight_{};
+  const lite::Tensor* embedding_bias_{};
+  const lite::Tensor* positional_embedding_weight_{};
+  const lite::Tensor* type_embedding_weight_{};
+  const lite::Tensor* role_id_{};
+  const lite::Tensor* decoder_role_id_{};
+  const lite::Tensor* role_embedding_table_{};
+  const lite::Tensor* position_ids_{};
+  const lite::Tensor* decoder_position_ids_{};
+  lite::Tensor* output_ids_{};
+  lite::Tensor* output_scores_{};
+  lite::Tensor* parent_ids_{};
+  lite::Tensor* sequence_length_{};
+  std::string decoding_strategy_;
+  int32_t beam_size_{};
+  int32_t topk_{};
+  float topp_{};
+  int32_t n_head_{};
+  int32_t size_per_head_{};
+  int32_t num_layer_{};
+  int32_t bos_id_{};
+  int32_t eos_id_{};
+  int64_t max_len_{};
+  float beam_search_diversity_rate_{};
+  int32_t unk_id_{};
+  int32_t mask_id_{};
+  float temperature_{};
+  float len_penalty_{};
+  bool normalize_before_{};
+  bool pos_bias_{};
+  std::string hidden_act_;
+  bool rel_len_{};
+  bool early_stopping_{};
+  int32_t min_length_{};
 };
 
 }  // namespace operators

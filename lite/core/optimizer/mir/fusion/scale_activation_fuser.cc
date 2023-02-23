@@ -69,9 +69,28 @@ cpp::OpDesc ScaleActivationFuser::GenOpDesc(const key2nodes_t& matched) {
   } else if (act_type_ == "relu6") {
     float alpha = act_op_desc->GetAttr<float>("threshold");
     op_desc.SetAttr("alpha", alpha);
+    op_desc.SetAttr("threshold", alpha);
   } else if (act_type_ == "leaky_relu") {
     float alpha = act_op_desc->GetAttr<float>("alpha");
     op_desc.SetAttr("alpha", alpha);
+  } else if (act_type_ == "hard_swish") {
+    float threshold = act_op_desc->GetAttr<float>("threshold");
+    float scale = act_op_desc->GetAttr<float>("scale");
+    float offset = act_op_desc->GetAttr<float>("offset");
+    op_desc.SetAttr("threshold", threshold);
+    op_desc.SetAttr("scale", scale);
+    op_desc.SetAttr("offset", offset);
+  } else if (act_type_ == "hard_sigmoid") {
+    float slope = act_op_desc->GetAttr<float>("slope");
+    float offset = act_op_desc->GetAttr<float>("offset");
+    op_desc.SetAttr("slope", slope);
+    op_desc.SetAttr("offset", offset);
+  } else if (act_type_ == "prelu") {
+    auto prelu_mode = act_op_desc->GetAttr<std::string>("mode");
+    op_desc.SetAttr("mode", prelu_mode);
+  } else if (act_type_ == "swish") {
+    float scale = act_op_desc->GetAttr<float>("beta");
+    op_desc.SetAttr("beta", scale);
   }
   auto& out_name = matched.at("output")->arg()->name;
   op_desc.SetOutput("Out", {out_name});
