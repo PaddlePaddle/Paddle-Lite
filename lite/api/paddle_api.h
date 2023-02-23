@@ -346,6 +346,10 @@ class LITE_API ConfigBase {
   const std::vector<std::string> get_discarded_passes() const {
     return discarded_passes_;
   }
+
+  // Set external custom allocator
+  void set_custom_allocator(TargetType target_type,
+                            CustomAllocator custom_allocator);
 };
 
 class LITE_API CxxModelBuffer {
