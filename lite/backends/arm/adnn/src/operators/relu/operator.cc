@@ -18,6 +18,7 @@
 #include "operators/relu/kernels.h"
 
 namespace adnn {
+namespace operators {
 
 template <>
 ADNN_DLL_EXPORT Status
@@ -48,4 +49,5 @@ ADNN_DLL_EXPORT Status relu_qs8(Context* context,
   return status;
 }
 
+}  // namespace operators
 }  // namespace adnn

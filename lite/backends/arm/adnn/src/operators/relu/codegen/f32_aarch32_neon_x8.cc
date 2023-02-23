@@ -21,6 +21,7 @@
 #include "adnn/core/types.h"
 
 namespace adnn {
+namespace operators {
 namespace kernels {
 
 Status relu_fp32_aarch32_neon_x8(Context* context,
@@ -80,4 +81,5 @@ Status relu_fp32_aarch32_neon_x8(Context* context,
 }
 
 }  // namespace kernels
+}  // namespace operators
 }  // namespace adnn

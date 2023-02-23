@@ -14,18 +14,23 @@
 
 #pragma once
 
-#include "adnn/core/types.h"
+#include "runtime/context.h"
 
 namespace adnn {
 namespace runtime {
 
-ADNN_DLL_EXPORT Device* open_device(const char* properties = nullptr,
-                                    const Callback* callback = nullptr);
-ADNN_DLL_EXPORT void close_device();
+Context::Context(Device* device, const char* properties) : device_(device) {
+  ANN_CHECK(device_);
+  context_ = device_->CreateContext(properties);
+}
 
-ADNN_DLL_EXPORT Context* create_context(Device* device,
-                                        const char* properties = nullptr);
-ADNN_DLL_EXPORT void destroy_context(Context* context);
+Device::~Device() {
+  if (device_ && context_) {
+    device_->DestroyContext(context_);
+  }
+  device_ = nullptr;
+  context_ = nullptr;
+}
 
 }  // namespace runtime
 }  // namespace adnn

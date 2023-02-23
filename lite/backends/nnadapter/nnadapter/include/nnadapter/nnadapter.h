@@ -2512,7 +2512,7 @@ int NNAdapter_getDeviceCount(uint32_t* numDevices);
  *
  * Available since version 1.
  */
-int NNAdapterDevice_Acquire(const char* name, NNAdapterDevice** device);
+int NNAdapterDevice_acquire(const char* name, NNAdapterDevice** device);
 /**
  * Release the target device.
  *

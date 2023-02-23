@@ -18,6 +18,7 @@
 #include "adnn/core/types.h"
 
 namespace adnn {
+namespace operators {
 
 template <typename T>
 ADNN_DLL_EXPORT Status
@@ -45,4 +46,5 @@ concat_qs8(Context* context,
            float y_scale,
            int64_t axis);
 
+}  // namespace operators
 }  // namespace adnn

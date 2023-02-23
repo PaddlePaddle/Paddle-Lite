@@ -19,13 +19,23 @@
 namespace adnn {
 namespace runtime {
 
-ADNN_DLL_EXPORT Device* open_device(const char* properties = nullptr,
-                                    const Callback* callback = nullptr);
-ADNN_DLL_EXPORT void close_device();
+class Device {
+ public:
+  explicit Device(const char* properties, const Callback* callback);
+  ~Device();
+  void* CreateContext(const char* properties);
+  void DestroyContext(void* context);
+  void* Alloc(size_t size);
+  void Free(void* ptr);
+  void* AlignedAlloc(size_t alignment, size_t size);
+  void AlignedFree(void* context, void* ptr);
 
-ADNN_DLL_EXPORT Context* create_context(Device* device,
-                                        const char* properties = nullptr);
-ADNN_DLL_EXPORT void destroy_context(Context* context);
+ private:
+  const Callback* callback_{nullptr};
+  void* device_{nullptr};
+  Device(const Device&) = delete;
+  Device& operator=(const Device&) = delete;
+};
 
 }  // namespace runtime
 }  // namespace adnn

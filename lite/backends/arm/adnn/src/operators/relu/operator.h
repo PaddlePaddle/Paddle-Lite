@@ -17,7 +17,9 @@
 #include "adnn/core/types.h"
 
 namespace adnn {
+namespace operators {
 
 // Utility functions
 
+}  // namespace operators
 }  // namespace adnn

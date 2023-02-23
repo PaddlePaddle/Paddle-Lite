@@ -24,6 +24,7 @@ $CODE = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 #include <arm_neon.h>
 
 namespace adnn {
+namespace operators {
 namespace kernels {
 
 Status relu_fp32_${ARCH}_neon_x${BATCH_TILE}(
@@ -106,4 +107,5 @@ Status relu_fp32_${ARCH}_neon_x${BATCH_TILE}(
 }
 
 }  // namespace kernels
+}  // namespace operators
 }  // namespace adnn

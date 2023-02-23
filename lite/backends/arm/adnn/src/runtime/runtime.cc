@@ -14,20 +14,32 @@
 
 #pragma once
 
-#include "adnn_types.h"  // NOLINT
+#include "adnn/core/types.h"
 
 namespace adnn {
+namespace runtime {
 
-Status initialize(const struct Device* device) { return SUCCESS; }
+Device* open_device(const char* properties, const Callback* callback) {
+  return reinterpret_cast<Device*>(
+      new adnn::runtime::Device(properties, callback));
+}
 
-void finalize() {}
-
-Context* create_context() { return new Context(); }
-
-void destroy_context(Context* context) {
-  if (context) {
-    delete context;
+void close_device(Device* device) {
+  if (device) {
+    delete reinterpret_cast<nnadapter::runtime::Device*>(device);
   }
 }
 
+Context* create_context(Device* device, const char* properties) {
+  return reinterpret_cast<Context*>(new adnn::runtime::Context(
+      reinterpret_cast<nnadapter::runtime::Device*>(device), properties));
+}
+
+void destroy_context(Context* context) {
+  if (context) {
+    delete reinterpret_cast<nnadapter::runtime::Context*>(device);
+  }
+}
+
+}  // namespace runtime
 }  // namespace adnn

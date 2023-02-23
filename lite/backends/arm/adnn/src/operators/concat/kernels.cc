@@ -17,5 +17,7 @@
 #include "adnn/core/types.h"
 
 namespace adnn {
+namespace operators {
 namespace kernels {}  // namespace kernels
+}  // namespace operators
 }  // namespace adnn

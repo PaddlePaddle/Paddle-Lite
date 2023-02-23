@@ -28,20 +28,18 @@ typedef enum {
   FEATURE_NOT_SUPPORTED = 3
 } Status;
 
-typedef struct Context Context;
-
-typedef struct Device {
-  Status (*initialize)();
-  void (*finalize)();
-  void* (*create_context)(const char* properties);
+typedef struct {
+  void* (*open_device)(const char* properties);
+  void (*close_device)();
+  void* (*create_context)(void* device, const char* properties);
   void (*destroy_context)(void* context);
   void* (*alloc)(void* context, size_t size);
   void (*free)(void* context, void* ptr);
-  void* (*aligned_alloc)(void* context,
-                         size_t ptr,
-                         size_t alignment,
-                         size_t size);
+  void* (*aligned_alloc)(void* context, size_t alignment, size_t size);
   void (*aligned_free)(void* context, void* ptr);
-} Device;
+} Callback;
+
+typedef struct Device Device;
+typedef struct Context Context;
 
 }  // namespace adnn

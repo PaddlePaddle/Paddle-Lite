@@ -15,4 +15,3 @@
 #pragma once
 
 #include "adnn/operators/operators.h"
-#include "adnn/runtime/runtime.h"

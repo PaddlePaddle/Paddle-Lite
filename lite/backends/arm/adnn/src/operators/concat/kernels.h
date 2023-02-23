@@ -19,6 +19,7 @@
 #include "adnn/core/types.h"  // NOLINT
 
 namespace adnn {
+namespace operators {
 namespace kernels {
 
 // Reference implementation
@@ -34,4 +35,5 @@ ADNN_DLL_EXPORT Status concat(Context* context,
 // Architecture-dependent implementation
 
 }  // namespace kernels
+}  // namespace operators
 }  // namespace adnn

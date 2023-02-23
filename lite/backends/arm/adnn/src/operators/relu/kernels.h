@@ -18,6 +18,7 @@
 #include "adnn/core/types.h"  // NOLINT
 
 namespace adnn {
+namespace operators {
 namespace kernels {
 
 // Reference implementation
@@ -63,4 +64,5 @@ Status relu_fp32_aarch64_neon_x16(Context* context,
                                   size_t size);
 
 }  // namespace kernels
+}  // namespace operators
 }  // namespace adnn

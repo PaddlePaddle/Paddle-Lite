@@ -1,0 +1,135 @@
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#pragma once
+
+#include "runtime/device.h"
+
+namespace adnn {
+namespace runtime {
+
+void* OpenDevice(const char* properties) { return nullptr; }
+
+void CloseDevice(void* device) {}
+
+void* CreateContext(void* device, const char* properties) { return nullptr; }
+
+void DestroyContext(void* context) {}
+
+void* Alloc(void* context, size_t size) { return malloc(size); }
+
+void Free(void* context, void* ptr) {
+  if (ptr) {
+    free(ptr);
+  }
+}
+
+void* AlignedAlloc(void* context, size_t alignment, size_t size) {
+  size_t offset = sizeof(void*) + alignment - 1;
+  char* p = static_cast<char*>(malloc(offset + size));
+  // Byte alignment
+  void* r = reinterpret_cast<void*>(reinterpret_cast<size_t>(p + offset) &
+                                    (~(alignment - 1)));
+  static_cast<void**>(r)[-1] = p;
+  return r;
+}
+
+void AlignedFree(void* context, void* ptr) {
+  if (ptr) {
+    free(static_cast<void**>(ptr)[-1]);
+  }
+}
+
+}  // namespace runtime
+}  // namespace adnn
+
+Device gDefaultCallback = {
+    .open_device = adnn::runtime::OpenDevice,
+    .close_device = adnn::runtime::CloseDevice,
+    .create_context = adnn::runtime::CreateContext,
+    .destroy_context = adnn::runtime::DestroyContext,
+    .alloc = adnn::runtime::Alloc,
+    .free = adnn::runtime::Free,
+    .aligned_alloc = adnn::runtime::AlignedAlloc,
+    .aligned_free = adnn::runtime::AlignedFree,
+};
+
+namespace adnn {
+namespace runtime {
+
+Device::Device(const char* properties, Callback* callback)
+    : callback_(callback) {
+  if (!callback_) {
+    call_back_ = &gDefaultCallback;
+  }
+  ANN_CHECK(callback_->open_device);
+  device_ = callback_->open_device(properties);
+}
+
+void* Device::CreateContext(const char* properties) {
+  if (callback_) {
+    ANN_CHECK(callback_->create_context);
+    return callback_->create_context(device_, properties);
+  }
+  return nullptr;
+}
+
+void Device::DestroyContext(void* context) {
+  if (callback_) {
+    ANN_CHECK(callback_->destroy_context);
+    callback_->destroy_context(context);
+  }
+}
+
+void* Device::Alloc(size_t size) {
+  if (callback_) {
+    ANN_CHECK(callback_->alloc);
+    return callback_->alloc(size);
+  }
+  return nullptr;
+}
+
+void Device::Free(void* ptr) {
+  if (callback_) {
+    ANN_CHECK(callback_->free);
+    callback_->free(ptr);
+  }
+}
+
+void* Device::AlignedAlloc(size_t alignment, size_t size) {
+  if (callback_) {
+    ANN_CHECK(callback_->aligned_alloc);
+    return callback_->aligned_alloc(alignment, size);
+  }
+  return nullptr;
+}
+
+void Device::AlignedFree(void* context, void* ptr) {
+  if (callback_) {
+    ANN_CHECK(callback_->aligned_free);
+    callback_->aligned_free(ptr);
+  }
+}
+
+Device::~Device() {
+  if (callback_) {
+    ANN_CHECK(callback_->close_device);
+    callback_->close_device(device_);
+  }
+  callback_ = nullptr;
+  device_ = nullptr;
+}
+
+}  // namespace runtime
+}  // namespace adnn
