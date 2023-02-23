@@ -26,6 +26,7 @@ add_operator(interpolate_v2_op basic SRCS interpolate_v2_op.cc)
 add_operator(argmax_op basic SRCS argmax_op.cc)
 add_operator(prior_box_op basic SRCS prior_box_op.cc)
 add_operator(concat_op basic SRCS concat_op.cc)
+add_operator(pad_op basic SRCS pad_op.cc)
 add_operator(pad2d_op basic SRCS pad2d_op.cc)
 add_operator(calib_op basic SRCS calib_op.cc)
 add_operator(calib_inplace_op basic SRCS calib_inplace_op.cc)
@@ -171,6 +172,7 @@ add_operator(log_softmax_op extra SRCS log_softmax_op.cc)
 add_operator(roll_op extra SRCS roll_op.cc)
 add_operator(share_data extra SRCS share_data_op.cc)
 add_operator(round extra SRCS round_op.cc)
+add_operator(fused_attention_op extra SRCS fused_attention_op.cc)
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc)
@@ -249,6 +251,11 @@ add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_o
 add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc)
 add_operator(__xpu__dynamic_lstm_fuse_op extra SRCS __xpu__dynamic_lstm_fuse_op.cc)
 add_operator(__xpu__multi_softmax_op extra SRCS __xpu__multi_softmax_op.cc)
+
+if(XPU_WITH_XFT)
+    add_operator(fusion_decoding_op extra SRCS fusion_decoding_op.cc)
+    add_operator(fusion_unified_decoding_op extra SRCS fusion_unified_decoding_op.cc)
+endif()
 
 add_library(ops STATIC ${OPS_SRC} op_params.cc)
 add_dependencies(ops utils)

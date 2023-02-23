@@ -94,6 +94,17 @@ void nearest_interp_v2_compute(const T* src,
   }
 }
 
+void interpolate_linear(lite::Tensor* X,
+                        lite::Tensor* OutSize,
+                        std::vector<const lite::Tensor*> SizeTensor,
+                        lite::Tensor* Scale,
+                        lite::Tensor* Out,
+                        int out_w,
+                        float scale,
+                        bool align_corners,
+                        int align_mode,
+                        DataLayoutType data_layout);
+
 void interpolate(lite::Tensor* X,
                  lite::Tensor* OutSize,
                  std::vector<const lite::Tensor*> SizeTensor,

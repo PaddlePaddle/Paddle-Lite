@@ -30,7 +30,7 @@ OutType TransOp(InType in) {
 }
 
 NNADAPTER_EXPORT bool ValidateCast(const core::Operation* operation) {
-  return false;
+  return true;
 }
 
 NNADAPTER_EXPORT int ExecuteCast(core::Operation* operation) {
@@ -54,6 +54,11 @@ NNADAPTER_EXPORT int ExecuteCast(core::Operation* operation) {
     auto input_data = reinterpret_cast<float*>(input_operand->buffer);
     auto output_data = reinterpret_cast<float*>(output_buffer);
     memcpy(output_data, input_data, sizeof(float) * size);
+  } else if (input_precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER &&
+             dtype == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
+    auto input_data = reinterpret_cast<int8_t*>(input_operand->buffer);
+    auto output_data = reinterpret_cast<int8_t*>(output_buffer);
+    memcpy(output_data, input_data, sizeof(int8_t) * size);
   } else if (input_precision == NNADAPTER_INT32 && dtype == NNADAPTER_INT64) {
     auto input_data = reinterpret_cast<int32_t*>(input_operand->buffer);
     auto output_data = reinterpret_cast<int64_t*>(output_buffer);

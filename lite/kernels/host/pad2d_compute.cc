@@ -150,5 +150,7 @@ REGISTER_LITE_KERNEL(pad2d,
                      paddle::lite::kernels::host::Pad2dCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Paddings",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

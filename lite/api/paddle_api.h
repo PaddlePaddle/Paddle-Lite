@@ -352,6 +352,10 @@ class LITE_API ConfigBase {
   std::map<TargetType, std::shared_ptr<void>> target_configs() const {
     return target_configs_;
   }
+
+  // Set external custom allocator
+  void set_custom_allocator(TargetType target_type,
+                            CustomAllocator custom_allocator);
 };
 
 class LITE_API CxxModelBuffer {
