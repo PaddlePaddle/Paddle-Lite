@@ -21,8 +21,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <class T>
-void Pad2dCompute<T>::PrepareForRun() {
+template <typename T, PrecisionType PType>
+void Pad2dCompute<T, PType>::PrepareForRun() {
   int cur_dev_idx = 0;
 
   XPU_CALL(xpu_current_device(&cur_dev_idx));
@@ -38,8 +38,8 @@ void Pad2dCompute<T>::PrepareForRun() {
   }
 }
 
-template <class T>
-void Pad2dCompute<T>::Run() {
+template <typename T, PrecisionType PType>
+void Pad2dCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto& pads = param.paddings;
@@ -118,14 +118,21 @@ void Pad2dCompute<T>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(pad2d,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::Pad2dCompute<float>,
-                     def)
+namespace xpu = paddle::lite::kernels::xpu;
+
+using Pad2d_FP32 = xpu::Pad2dCompute<float, PRECISION(kFloat)>;
+using Pad2d_FP16 = xpu::Pad2dCompute<float16, PRECISION(kFP16)>;
+
+REGISTER_LITE_KERNEL(pad2d, kXPU, kFloat, kNCHW, Pad2d_FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Paddings",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(pad2d, kXPU, kFP16, kNCHW, Pad2d_FP16, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindInput("Paddings",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .Finalize();

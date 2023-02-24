@@ -21,8 +21,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <class T>
-class Pad2dCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class Pad2dCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::Pad2dParam;
 

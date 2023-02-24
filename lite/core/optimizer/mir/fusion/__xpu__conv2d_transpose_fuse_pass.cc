@@ -303,6 +303,11 @@ class XPUConv2dTransFuser : public FuseBase {
           "padding_algorithm",
           conv_op_desc->GetAttr<std::string>("padding_algorithm"));
     }
+    if ((conv_op_desc->HasAttr("output_size"))) {
+      op_desc.SetAttr<std::vector<int>>(
+          "output_size",
+          conv_op_desc->GetAttr<std::vector<int>>("output_size"));
+    }
     op_desc.SetAttr<int>("groups", conv_op_desc->GetAttr<int>("groups"));
     op_desc.SetAttr<std::vector<int>>(
         "paddings", conv_op_desc->GetAttr<std::vector<int>>("paddings"));
@@ -357,7 +362,7 @@ class XPUConv2dTransFusePass : public ProgramPass {
     for (auto with_conv_bias : {true, false}) {
       for (auto with_ew_bias : {true, false}) {
         for (auto with_bn : {true, false}) {
-          for (auto act_type : {"relu"}) {
+          for (auto act_type : {"relu", "linear"}) {
             fusion::XPUConv2dTransFuser fuser(
                 act_type, with_conv_bias, with_ew_bias, with_bn);
             fuser(graph.get());
