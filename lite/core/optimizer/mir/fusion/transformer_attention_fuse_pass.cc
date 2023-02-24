@@ -34,8 +34,6 @@ void TransformerAttentionFusePass::Apply(
   }
   if ((has_int8)) {
     fuser(graph.get());
-  } else {
-    return;
   }
 }
 

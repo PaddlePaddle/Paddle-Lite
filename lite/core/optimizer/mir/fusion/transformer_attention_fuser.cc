@@ -68,8 +68,7 @@ void TransformerAttentionFuser::BuildPattern() {
     auto res = (trans_x == false && trans_y == false);
     return res;
   };
-  auto* input0 =
-      VarNode("input0")->assert_is_op_input("fc", "Input")->AsInput();
+  auto* input = VarNode("input")->assert_is_op_input("fc", "Input")->AsInput();
   // fc
   auto* fc0_w = VarNode("fc0_w")->assert_is_op_input("fc", "W");
   auto* fc0_bias = VarNode("fc0_bias")->assert_is_op_input("fc", "Bias");
@@ -135,8 +134,9 @@ void TransformerAttentionFuser::BuildPattern() {
       VarNode("matmul0_out")->assert_is_op_output("matmul_v2", "Out");
 
   // elementwise_add
-  auto* input1 =
-      VarNode("input1")->assert_is_op_input("elementwise_add", "Y")->AsInput();
+  auto* residual = VarNode("residual")
+                       ->assert_is_op_input("elementwise_add", "Y")
+                       ->AsInput();
   auto* add = OpNode("add", "elementwise_add");
   auto* add0_out =
       VarNode("add0_out")->assert_is_op_output("elementwise_add", "Out");
@@ -152,9 +152,9 @@ void TransformerAttentionFuser::BuildPattern() {
 
   auto* Out = VarNode("Out");
 
-  std::vector<PMNode*> fc0_inputs{input0, fc0_w, fc0_bias};
-  std::vector<PMNode*> fc1_inputs{input0, fc1_w, fc1_bias};
-  std::vector<PMNode*> fc2_inputs{input0, fc2_w, fc2_bias};
+  std::vector<PMNode*> fc0_inputs{input, fc0_w, fc0_bias};
+  std::vector<PMNode*> fc1_inputs{input, fc1_w, fc1_bias};
+  std::vector<PMNode*> fc2_inputs{input, fc2_w, fc2_bias};
   fc0_inputs >> *fc0 >> *fc0_out >> *reshape0 >> *reshape0_out >> *transpose0 >>
       *transpose0_out >> *scale0 >> *scale0_out;
   fc1_inputs >> *fc1 >> *fc1_out >> *reshape1 >> *reshape1_out >> *transpose1 >>
@@ -170,7 +170,7 @@ void TransformerAttentionFuser::BuildPattern() {
 
   std::vector<PMNode*> matmul0_inputs{scale0_out, transpose1_out};
   matmul0_inputs >> *matmul0 >> *matmul0_out;
-  std::vector<PMNode*> add0_inputs{matmul0_out, input1};
+  std::vector<PMNode*> add0_inputs{matmul0_out, residual};
   add0_inputs >> *add >> *add0_out >> *softmax0 >> *softmax0_out;
 
   std::vector<PMNode*> matmul1_inputs{softmax0_out, transpose2_out};
@@ -312,8 +312,8 @@ void TransformerAttentionFuser::InsertNewNode(SSAGraph* graph,
   auto* scope = fc->scope();
 
   // set input
-  op_desc.SetInput("Input0", {matched.at("input0")->arg()->name});
-  op_desc.SetInput("Input1", {matched.at("input1")->arg()->name});
+  op_desc.SetInput("Input", {matched.at("input")->arg()->name});
+  op_desc.SetInput("Residual", {matched.at("residual")->arg()->name});
 
   // fc
   auto fc0_op_desc = matched.at("fc0")->stmt()->op_info();
@@ -393,6 +393,7 @@ void TransformerAttentionFuser::InsertNewNode(SSAGraph* graph,
                     scale0_scale,
                     bias0_dims[0]);
     op_desc.SetAttr<std::vector<float>>("fc0_scale", fuse_scales);
+    op_desc.SetAttr<std::vector<float>>("Input0_scale", fc0_scale_x);
     // fc 1
     auto matmul0_scale_x =
         matmul0_op_desc->GetAttr<std::vector<float>>("X0_scale");
@@ -424,6 +425,8 @@ void TransformerAttentionFuser::InsertNewNode(SSAGraph* graph,
   op_desc.SetInput("Bias", {matched.at("fc0_bias")->arg()->name});
   op_desc.SetAttr<std::string>("op_type",
                                fc0_op_desc->GetAttr<std::string>("op_type"));
+  op_desc.SetAttr<int32_t>("in_num_col_dims",
+                           fc0_op_desc->GetAttr<int32_t>("in_num_col_dims"));
   // reshape
   auto reshape_op_desc = matched.at("reshape0")->stmt()->op_info();
   op_desc.SetAttr<std::vector<int>>(
@@ -440,8 +443,8 @@ void TransformerAttentionFuser::InsertNewNode(SSAGraph* graph,
   fused_attention_op->Attach(op_desc, scope);
   auto* new_op_node =
       graph->GraphCreateInstructNode(fused_attention_op, valid_places);
-  DirectedLink(matched.at("input0"), new_op_node);
-  DirectedLink(matched.at("input1"), new_op_node);
+  DirectedLink(matched.at("input"), new_op_node);
+  DirectedLink(matched.at("residual"), new_op_node);
   DirectedLink(matched.at("fc0_w"), new_op_node);
   DirectedLink(matched.at("fc0_bias"), new_op_node);
   DirectedLink(new_op_node, matched.at("Out"));
