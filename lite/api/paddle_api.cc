@@ -734,17 +734,20 @@ void MobileConfig::set_model_from_file(const std::string &x) {
 }
 
 void MobileConfig::set_model_from_buffer(const std::string &x) {
-  lite_model_file_ = x;
+  lite_model_buffer_ = x.c_str();
+  lite_model_buffer_size_ = x.length();
   model_from_memory_ = true;
 }
 
 void MobileConfig::set_model_from_buffer(std::string &&x) {
-  lite_model_file_.assign(std::forward<std::string>(x));
+  lite_model_buffer_ = std::forward<std::string>(x).c_str();
+  lite_model_buffer_size_ = std::forward<std::string>(x).length();
   model_from_memory_ = true;
 }
 
 void MobileConfig::set_model_from_buffer(const char *buffer, size_t length) {
-  lite_model_file_.assign(buffer, length);
+  lite_model_buffer_ = buffer;
+  lite_model_buffer_size_ = length;
   model_from_memory_ = true;
 }
 
