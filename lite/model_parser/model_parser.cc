@@ -936,6 +936,7 @@ void LoadModelNaiveFromMemory(const char *model_buffer,
       break;
   }
 }
+
 #ifndef LITE_ON_TINY_PUBLISH
 void LoadModelNaiveV0FromMemory(const std::string &model_buffer,
                                 Scope *scope,

@@ -44,15 +44,19 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
                            config.is_model_from_memory(),
                            lite_api::LiteModelType::kNaiveBuffer,
                            use_low_precision));
+  } else if (!config.lite_model_file().empty() &&
+             !config.is_model_from_memory()) {
+    raw_predictor_.reset(
+        new LightPredictor(config.lite_model_file(), use_low_precision));
+  } else if (!config.lite_model_file().empty() &&
+             config.is_model_from_memory()) {
+    raw_predictor_.reset(new LightPredictor(config.lite_model_file().c_str(),
+                                            config.lite_model_file().length(),
+                                            use_low_precision));
   } else {
-    if (config.is_model_from_memory()) {
-      raw_predictor_.reset(new LightPredictor(config.lite_model_buffer(),
-                                              config.lite_model_buffer_size(),
-                                              use_low_precision));
-    } else {
-      raw_predictor_.reset(
-          new LightPredictor(config.lite_model_file(), use_low_precision));
-    }
+    raw_predictor_.reset(new LightPredictor(config.lite_model_buffer(),
+                                            config.lite_model_buffer_size(),
+                                            use_low_precision));
   }
 
   mode_ = config.power_mode();
