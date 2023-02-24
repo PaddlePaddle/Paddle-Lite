@@ -744,7 +744,7 @@ void MobileConfig::set_model_from_buffer(std::string &&x) {
 }
 
 void MobileConfig::set_model_from_buffer(const char *buffer, size_t length) {
-  lite_model_buffer_ = buffer;
+  lite_model_buffer_ptr_ = buffer;
   lite_model_buffer_size_ = length;
   model_from_memory_ = true;
 }

@@ -36,7 +36,7 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   // LightPredictor Only support NaiveBuffer backend in publish lib
   auto use_low_precision =
       config.precision_mode() == lite_api::LITE_PRECISION_LOW ? true : false;
-  if (config.lite_model_file().empty() && !config.lite_model_buffer()) {
+  if (config.lite_model_file().empty() && !config.lite_model_buffer_ptr()) {
     raw_predictor_.reset(
         new LightPredictor(config.model_dir(),
                            config.model_buffer(),
@@ -54,7 +54,7 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
                                             config.lite_model_file().length(),
                                             use_low_precision));
   } else {
-    raw_predictor_.reset(new LightPredictor(config.lite_model_buffer(),
+    raw_predictor_.reset(new LightPredictor(config.lite_model_buffer_ptr(),
                                             config.lite_model_buffer_size(),
                                             use_low_precision));
   }

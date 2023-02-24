@@ -545,7 +545,7 @@ class LITE_API MobileConfig : public ConfigBase {
   // model data readed from file in combined format.
   std::string lite_model_file_;
   // model data readed from memory buffer in combined format.
-  const char* lite_model_buffer_ = nullptr;
+  const char* lite_model_buffer_ptr_ = nullptr;
   size_t lite_model_buffer_size_{0};
 
   // NOTE: This is a deprecated variable and will be removed in latter release.
@@ -565,7 +565,7 @@ class LITE_API MobileConfig : public ConfigBase {
   // return model file path.
   const std::string& lite_model_file() const { return lite_model_file_; }
   // return model buffer data, which is in combined format.
-  const char* lite_model_buffer() const { return lite_model_buffer_; }
+  const char* lite_model_buffer_ptr() const { return lite_model_buffer_ptr_; }
   size_t lite_model_buffer_size() const { return lite_model_buffer_size_; }
 
   // return model_from_memory_, which indicates whether to load model from
