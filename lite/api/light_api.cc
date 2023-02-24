@@ -35,9 +35,9 @@ void LightPredictor::Build(const std::string& lite_model_file) {
   PrepareFeedFetch();
 }
 
-void LightPredictor::Build(const char* lite_model_buffer,
+void LightPredictor::Build(const char* lite_model_buffer_ptr,
                            size_t lite_model_buffer_size) {
-  LoadModelNaiveFromMemory(lite_model_buffer,
+  LoadModelNaiveFromMemory(lite_model_buffer_ptr,
                            lite_model_buffer_size,
                            scope_.get(),
                            program_desc_.get());

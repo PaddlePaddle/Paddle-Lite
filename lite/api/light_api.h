@@ -51,13 +51,13 @@ class LITE_API LightPredictor {
     Build(lite_model_file);
   }
 
-  LightPredictor(const char* lite_model_buffer,
+  LightPredictor(const char* lite_model_buffer_ptr,
                  size_t lite_model_buffer_size,
                  bool use_low_precision = false) {
     use_low_precision_ = use_low_precision;
     scope_ = std::make_shared<Scope>();
     program_desc_ = std::make_shared<cpp::ProgramDesc>();
-    Build(lite_model_buffer, lite_model_buffer_size);
+    Build(lite_model_buffer_ptr, lite_model_buffer_size);
   }
 
   // NOTE: This is a deprecated API and will be removed in latter release.
@@ -127,7 +127,7 @@ class LITE_API LightPredictor {
   void CheckInputValid();
 
   void Build(const std::string& lite_model_file);
-  void Build(const char* lite_model_buffer, size_t lite_model_buffer_size);
+  void Build(const char* lite_model_buffer_ptr, size_t lite_model_buffer_size);
 
   // NOTE: This is a deprecated API and will be removed in latter release.
   void Build(
