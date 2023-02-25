@@ -43,15 +43,17 @@ class XPUUnetSpatialTransformerCompute
 
   private:
   std::vector<const int16_t *> arg_fc_weight_int16_;
+  std::vector<const int16_t *> arg_conv_filter_int16_;
   std::vector<const float *> arg_fc_bias_;
   std::vector<const float *> arg_ln_scale_;
   std::vector<const float *> arg_ln_bias_;
   std::vector<const float *> arg_gn_scale_;
   std::vector<const float *> arg_gn_bias_;
-  std::vector<const float *> arg_conv_weight_;
   std::vector<const float *> arg_conv_bias_;
   std::vector<const float *> fc_weight_max_;
+  std::vector<const float *> conv_filter_max_;
   XPUScratchPadGuard weight_max_guard_;
+  XPUScratchPadGuard filter_max_guard_;
   
   template <typename T>
   std::vector<const T *> *get_weight() {
@@ -67,7 +69,24 @@ class XPUUnetSpatialTransformerCompute
     return &arg_fc_weight_int16_;
   }
 
+  template <typename T>
+  std::vector<const T *> *get_filter() {
+    return get_filter_identity(identity<T>());
+  }
+  template <typename T>
+  std::vector<const T *> *get_filter_identity(identity<T>) {
+    LOG(FATAL) << "Invalid Weight Type";
+    return nullptr;
+  }
+
+  std::vector<const int16_t*>* get_filter_identity(identity<int16_t>) {
+    return &arg_conv_filter_int16_;
+  }
+
   void prepare_weight_max(const std::vector<lite::Tensor *> &weight_max,
+                          int max_ptr_len,
+                          std::vector<const float *> &max_xpu_ptrs);
+  void prepare_filter_max(const std::vector<lite::Tensor *> &filter_max,
                           int max_ptr_len,
                           std::vector<const float *> &max_xpu_ptrs);
 };

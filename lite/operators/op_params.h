@@ -1780,6 +1780,12 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<int> slice_decrease_axis{};
   std::vector<float> input_max{};
   std::vector<lite::Tensor*> weight_max{};
+  std::vector<lite::Tensor*> conv_max{};
+  std::vector<int> conv_groups{};
+  std::vector<std::vector<int>> strides{};
+  std::vector<std::vector<int>> paddings{};
+  std::vector<std::vector<int>> dilations{};
+  std::vector<std::vector<int>> filter_dims{};
   std::vector<std::string> quant_types{};
   int n_layers{};
   int head_num{};
@@ -1814,7 +1820,7 @@ sstruct XPUUnetSpatialTransformerParam : ParamBase {
   int size_per_head{};
   int hidden_dim{};
   int embedding_dim{};
-  int gelu_dim{};
+  int geglu_dim{};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
