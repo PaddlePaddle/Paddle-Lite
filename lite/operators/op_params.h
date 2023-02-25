@@ -1797,6 +1797,26 @@ struct XPUMultiEncoderParam : ParamBase {
   bool already_qkv_fusion{false};  // qkv is already fusion in graph
 };
 
+sstruct XPUUnetSpatialTransformerParam : ParamBase {
+  lite::Tensor* input{};
+  lite::Tensor* embedding{};
+  std::vector<lite::Tensor*> fc_weight;
+  std::vector<lite::Tensor*> fc_bias;
+  std::vector<lite::Tensor*> ln_scale;
+  std::vector<lite::Tensor*> ln_bias;
+  std::vector<lite::Tensor*> conv_weight;
+  std::vector<lite::Tensor*> conv_bias;
+  std::vector<lite::Tensor*> gn_scale;
+  std::vector<lite::Tensor*> gn_bias;
+  lite::Tensor* output{nullptr};
+  std::vector<lite::Tensor*> weight_max{};
+  int head_num{};
+  int size_per_head{};
+  int hidden_dim{};
+  int embedding_dim{};
+  int gelu_dim{};
+};
+
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   std::vector<lite::Tensor*> Ids;
   std::vector<lite::Tensor*> Tables;
