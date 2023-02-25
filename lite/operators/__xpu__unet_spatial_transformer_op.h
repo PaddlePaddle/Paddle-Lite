@@ -47,3 +47,4 @@ class XPUUnetSpatialTransformerOp : public OpLite {
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
+
