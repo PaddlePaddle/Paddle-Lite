@@ -24,6 +24,16 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
+static std::vector<int> vec2DTo1D_int(const std::vector<std::vector<int>>& vec) {
+  std::vector<int> res;
+  for (const auto& v : vec) {
+    for(const auto& ele : v) {
+      res.emplace_back(ele);
+    }
+  }
+  return res;
+}
+
 class UnetSpatialTransformerfuser : public FuseBase {
 public:
   void BuildPattern() override {
@@ -234,6 +244,7 @@ public:
     // OpDesc
     cpp::OpDesc op_desc;
     op_desc.SetType("__xpu__unet_spatial_transformer");
+    auto* gn_op_info = matched.at("gn")->stmt()->op_info();
     auto* mhsa_op_info = matched.at("__xpu__unet_mhsa")->stmt()->op_info();
     auto* mhca_op_info = matched.at("__xpu__unet_mhca")->stmt()->op_info();
     auto* geglu_op_info = matched.at("__xpu__unet_geglu")->stmt()->op_info();
@@ -299,10 +310,8 @@ public:
     op_desc.SetInput("FCBias", fc_bias_names);
     op_desc.SetInput("LNScale", ln_scale_names);
     op_desc.SetInput("LNBias", ln_bias_names);
-    op_desc.SetInput("ConvWeight", {
-      matched.at("pre__xpu__conv2d_filter")->arg()->name,
-      matched.at("post__xpu__conv2d_filter")->arg()->name
-    });
+    op_desc.SetAttr<int>("groups", gn_op_info->GetAttr<int>("groups"));
+    op_desc.SetAttr<float>("epsilon", gn_op_info->GetAttr<float>("epsilon"));
     op_desc.SetInput("ConvBias", {
       matched.at("pre__xpu__conv2d_bias")->arg()->name,
       matched.at("post__xpu__conv2d_bias")->arg()->name
@@ -313,6 +322,16 @@ public:
     op_desc.SetInput("GNBias", {
       matched.at("gn_bias")->arg()->name
     });
+    std::vector<std::string> conv_filter_names = {
+      matched.at("pre__xpu__conv2d_filter")->arg()->name,
+      matched.at("post__xpu__conv2d_filter")->arg()->name
+    };
+    op_desc.SetInput("ConvWeight", conv_filter_names);
+    std::vector<std::string> conv_filter_maxptr_names = {
+      matched.at("pre__xpu__conv2d_filter")->arg()->name + "_max",
+      matched.at("post__xpu__conv2d_filter")->arg()->name + "_max"
+    };
+    op_desc.SetAttr<std::vector<std::string>>("ConvFilterMax", conv_filter_maxptr_names);
     op_desc.SetOutput("Output", {matched.at("post__xpu__conv2d_output")->arg()->name});
     op_desc.SetAttr<std::vector<std::string>>("FCWeightMax", fc_weight_maxptr_names);
 
@@ -322,8 +341,34 @@ public:
     op_desc.SetAttr<int>("embedding_dim", mhca_op_info->GetAttr<int>("embedding_dim"));
     op_desc.SetAttr<int>("gelu_dim", geglu_op_info->GetAttr<int>("gelu_dim"));
 
+    std::vector<std::vector<int>> strides;
+    std::vector<std::vector<int>> paddings;
+    std::vector<std::vector<int>> dilations;
+    std::vector<std::vector<int>> filter_dims;
+    std::vector<int> groups;
+    std::vector<std::string> conv_vec = {"pre__xpu__conv2d", "post__xpu__conv2d"};
+    for(auto pm_name : conv_vec) {
+      auto* conv_op_info = matched.at(pm_name)->stmt()->op_info();
+      auto strides_tmp = conv_op_info->GetAttr<std::vector<int>>("strides");
+      strides.emplace_back(std::move(strides_tmp));
+      auto paddings_tmp = conv_op_info->GetAttr<std::vector<int>>("paddings");
+      paddings.emplace_back(std::move(paddings_tmp));
+      auto dilations_tmp = conv_op_info->GetAttr<std::vector<int>>("dilations");
+      dilations.emplace_back(std::move(dilations_tmp));
+      std::vector<int> groups_tmp = conv_op_info->GetAttr<std::vector<int>>("groups");
+      groups.push_back(groups_tmp[0]);
+      auto filter_dims_tmp = conv_op_info->GetAttr<std::vector<int>>("filter_dims");
+      filter_dims.emplace_back(std::move(filter_dims_tmp));
+    }
+    op_desc.SetAttr<std::vector<int>>("Conv_Groups", groups);
+    op_desc.SetAttr<std::vector<int>>("Strides", vec2DTo1D_int(strides));
+    op_desc.SetAttr<std::vector<int>>("Paddings", vec2DTo1D_int(paddings));
+    op_desc.SetAttr<std::vector<int>>("Dilations", vec2DTo1D_int(dilations));
+    op_desc.SetAttr<std::vector<int>>("FilterDims", vec2DTo1D_int(filter_dims));
+
     auto spatial_transformer_op = LiteOpRegistry::Global().Create(op_desc.Type());
     auto* scope = matched.at("gn")->stmt()->op()->scope();
+    update_weight(scope, conv_filter_names, conv_filter_maxptr_names, false);
     spatial_transformer_op->Attach(op_desc, scope);
     spatial_transformer_op->SetValidPlaces(matched.at("gn")->stmt()->op()->valid_places());
     auto kernels = spatial_transformer_op->CreateKernels(spatial_transformer_op->valid_places());
@@ -366,6 +411,54 @@ public:
 
     IR_OP_VAR_LINK(new_op_node, matched.at("post__xpu__conv2d_output"));
 
+  }
+  private:
+  void update_weight(Scope* scope,
+                     const std::vector<std::string>& fc_weight_names,
+                     const std::vector<std::string>& fc_weight_max_names,
+                     bool trans) {
+    std::vector<Tensor*> weight_tensor_vec(fc_weight_names.size(), nullptr);
+    std::vector<DDimLite> weight_dims_vec(fc_weight_names.size());
+    std::vector<int> weight_len_vec(fc_weight_names.size());
+
+    for (size_t i = 0; i < fc_weight_names.size(); ++i) {
+      weight_tensor_vec[i] =
+        scope->FindMutableTensor(fc_weight_names[i]);
+        CHECK(weight_tensor_vec[i] != nullptr);
+        weight_dims_vec[i] = weight_tensor_vec[i]->dims();
+        weight_len_vec[i] = weight_tensor_vec[i]->numel();
+        if (trans && i > 0) {
+          CHECK_EQ(weight_dims_vec[i][0], weight_dims_vec[i - 1][0]);
+        }
+    }    
+    for (size_t i = 0; i < fc_weight_names.size(); ++i) {
+      float* weight_host_ptr = weight_tensor_vec[i]->mutable_data<float>();
+      std::unique_ptr<float[]> weight_host_trans(new float[weight_len_vec[i]]);
+      std::unique_ptr<int16_t[]> weight_host_trans_int16(new int16_t[weight_len_vec[i]]);
+      if (trans) {
+        paddle::lite::xpu::math::Transpose<float>(weight_host_ptr,
+                                                    weight_host_trans.get(),
+                                                    weight_dims_vec[i][0],
+                                                    weight_dims_vec[i][1]);
+      } else {
+        memcpy(weight_host_trans.get(), weight_host_ptr, weight_len_vec[i] * sizeof(float));
+      }
+      float max_f = paddle::lite::xpu::math::FindMaxAbs(weight_host_trans.get(), weight_len_vec[i]);
+      paddle::lite::xpu::math::ConvertFP32ToInt16(weight_host_trans.get(),
+                                                   weight_host_trans_int16.get(),
+                                                   max_f,
+                                                   weight_len_vec[i]);
+      memcpy(weight_tensor_vec[i]->mutable_data<int16_t>(),
+                 weight_host_trans_int16.get(),
+                 weight_len_vec[i] * sizeof(int16_t));
+      scope->NewTensor(fc_weight_max_names[i]);
+      Tensor* weight_maxptr_tensor = scope->FindMutableTensor(fc_weight_max_names[i]);
+      weight_maxptr_tensor->Resize({6});
+      std::vector<float> weight_maxptr_host(6, max_f);
+      memcpy(weight_maxptr_tensor->mutable_data<float>(),
+                 weight_maxptr_host.data(),
+                 weight_maxptr_host.size() * sizeof(float));
+    }
   }
 };
 

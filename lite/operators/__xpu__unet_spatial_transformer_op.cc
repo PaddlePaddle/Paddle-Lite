@@ -20,6 +20,18 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
+static std::vector<std::vector<int>> vec1DTo2D_int(const std::vector<int>& vec, int dim) {
+  std::vector<std::vector<int>> res;
+  for (size_t i = 0 ; i < vec.size(); i += dim) {
+    std::vector<int> tmp;
+    for (size_t j = 0; j < dim ; j++) {
+      tmp.push_back(vec[i + j]);
+    }
+    res.emplace_back(std::move(tmp));
+  }
+  return res;
+}
+
 bool XPUUnetSpatialTransformerOp::CheckShape() const {
   CHECK_EQ(param_.input->dims().size(), 4UL);
   return true;
@@ -89,6 +101,7 @@ bool XPUUnetSpatialTransformerOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.head_num = op_desc.GetAttr<int>("head_num");
   param_.size_per_head = op_desc.GetAttr<int>("size_per_head");
   param_.embedding_dim = op_desc.GetAttr<int>("embedding_dim");
+  param_.geglu_dim = op_desc.GetAttr<int>("gelu_dim");
   param_.groups = op_desc.GetAttr<int>("groups");
   param_.epsilon = op_desc.GetAttr<float>("epsilon");
 
@@ -99,6 +112,18 @@ bool XPUUnetSpatialTransformerOp::AttachImpl(const cpp::OpDesc& op_desc,
     CHECK(tensor != nullptr);
     param_.weight_max.push_back(tensor);
   }
+  param_.conv_max.clear();
+  for (const auto& weight_max_tensor :
+       op_desc.GetAttr<std::vector<std::string>>("ConvFilterMax")) {
+    auto tensor = scope->FindMutableTensor(weight_max_tensor);
+    CHECK(tensor != nullptr);
+    param_.conv_max.push_back(tensor);
+  }
+  param_.conv_groups = op_desc.GetAttr<std::vector<int>>("Conv_Groups");
+  param_.strides = vec1DTo2D_int(op_desc.GetAttr<std::vector<int>>("Strides"), 2);
+  param_.paddings = vec1DTo2D_int(op_desc.GetAttr<std::vector<int>>("Paddings"), 4);
+  param_.dilations = vec1DTo2D_int(op_desc.GetAttr<std::vector<int>>("Dilations"), 2);
+  param_.filter_dims = vec1DTo2D_int(op_desc.GetAttr<std::vector<int>>("FilterDims"), 4);
   return true;
 }
 
