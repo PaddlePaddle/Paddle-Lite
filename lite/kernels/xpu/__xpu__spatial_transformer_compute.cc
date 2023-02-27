@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/__xpu__unet_spatial_transformer_compute.h"
+#include "lite/kernels/xpu/__xpu__spatial_transformer_compute.h"
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
@@ -36,7 +36,7 @@ template <typename InType, PrecisionType PType>
 void XPUSpatialTransformerCompute<InType, PType>::prepare_weight_max(
     const std::vector<lite::Tensor*>* weight_max,
     int max_ptr_len,
-    std::vector<const float*>* max_xpu_ptrs) {
+    std::vector<const float*>& max_xpu_ptrs) {
   int max_value_num = 0;
   for (auto max_tensor : weight_max) {
     max_value_num += max_tensor->numel();
