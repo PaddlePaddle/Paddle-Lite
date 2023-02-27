@@ -89,6 +89,7 @@ USE_MIR_PASS(__xpu__conv2d_fuse_pass);
 USE_MIR_PASS(__xpu__conv2d_transpose_fuse_pass);
 USE_MIR_PASS(__xpu__conv2d_scale_fuse_pass);
 USE_MIR_PASS(__xpu__softmax_topk_fuse_pass);
+USE_MIR_PASS(__xpu__unet_resblock_fuse_pass);
 USE_MIR_PASS(__xpu__multi_encoder_adaptive_seqlen_fuse_pass);
 USE_MIR_PASS(__xpu__multi_encoder_adaptive_seqlen_v2_fuse_pass);
 USE_MIR_PASS(__xpu__roformer_relative_pos_fuse_pass);
