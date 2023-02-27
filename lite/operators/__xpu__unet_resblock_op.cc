@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/operators/__xpu__unet_resblock_op.h"
 #include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
+#include "lite/operators/__xpu__spatial_transformer_resblock_op.h"
 
 namespace paddle {
 namespace lite {
