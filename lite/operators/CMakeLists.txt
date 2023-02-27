@@ -253,6 +253,8 @@ add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc)
 add_operator(__xpu__dynamic_lstm_fuse_op extra SRCS __xpu__dynamic_lstm_fuse_op.cc)
 add_operator(__xpu__multi_softmax_op extra SRCS __xpu__multi_softmax_op.cc)
 add_operator(__xpu__gn_silu_op extra SRCS __xpu__gn_silu_op.cc)
+add_operator(__xpu__multihead_self_attn_op extra SRCS __xpu__multihead_self_attn_op.cc)
+add_operator(__xpu__multihead_cross_attn_op extra SRCS __xpu__multihead_cross_attn_op.cc)
 
 if(XPU_WITH_XFT)
     add_operator(fusion_decoding_op extra SRCS fusion_decoding_op.cc)
