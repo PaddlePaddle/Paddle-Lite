@@ -24,24 +24,23 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template<typename T>
-struct identity { 
-  typedef T type; 
+template <typename T>
+struct identity {
+  typedef T type;
 };
 
 template <typename InType, PrecisionType PType>
-class XPUUnetSpatialTransformerCompute
-    : public KernelLite<TARGET(kXPU), PType> {
+class XPUSpatialTransformerCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
-  using param_t = operators::XPUUnetSpatialTransformerParam;
+  using param_t = operators::XPUSpatialTransformerParam;
 
   virtual void PrepareForRun();
 
   virtual void Run();
 
-  virtual ~XPUUnetSpatialTransformerCompute() = default;
+  virtual ~XPUSpatialTransformerCompute() = default;
 
-  private:
+ private:
   std::vector<const int16_t *> arg_fc_weight_int16_;
   std::vector<const int16_t *> arg_conv_filter_int16_;
   std::vector<const float *> arg_fc_bias_;
@@ -54,7 +53,7 @@ class XPUUnetSpatialTransformerCompute
   std::vector<const float *> conv_filter_max_;
   XPUScratchPadGuard weight_max_guard_;
   XPUScratchPadGuard filter_max_guard_;
-  
+
   template <typename T>
   std::vector<const T *> *get_weight() {
     return get_weight_identity(identity<T>());
@@ -65,7 +64,7 @@ class XPUUnetSpatialTransformerCompute
     return nullptr;
   }
 
-  std::vector<const int16_t*>* get_weight_identity(identity<int16_t>) {
+  std::vector<const int16_t *> *get_weight_identity(identity<int16_t>) {
     return &arg_fc_weight_int16_;
   }
 
@@ -79,16 +78,16 @@ class XPUUnetSpatialTransformerCompute
     return nullptr;
   }
 
-  std::vector<const int16_t*>* get_filter_identity(identity<int16_t>) {
+  std::vector<const int16_t *> *get_filter_identity(identity<int16_t>) {
     return &arg_conv_filter_int16_;
   }
 
   void prepare_weight_max(const std::vector<lite::Tensor *> &weight_max,
                           int max_ptr_len,
-                          std::vector<const float *> &max_xpu_ptrs);
-  void prepare_filter_max(const std::vector<lite::Tensor *> &filter_max,
+                          std::vector<const float *> *max_xpu_ptrs);
+  void prepare_filter_max(const std::vector<lite::Tensor *> *filter_max,
                           int max_ptr_len,
-                          std::vector<const float *> &max_xpu_ptrs);
+                          std::vector<const float *> *max_xpu_ptrs);
 };
 
 }  // namespace xpu

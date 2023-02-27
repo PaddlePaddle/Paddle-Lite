@@ -21,11 +21,11 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class XPUUnetSpatialTransformerOp : public OpLite {
+class XPUSpatialTransformerOp : public OpLite {
  public:
-  XPUUnetSpatialTransformerOp() {}
+  XPUSpatialTransformerOp() {}
 
-  explicit XPUUnetSpatialTransformerOp(const std::string &op_type)
+  explicit XPUSpatialTransformerOp(const std::string &op_type)
       : OpLite(op_type) {}
 
   bool CheckShape() const override;
@@ -36,15 +36,12 @@ class XPUUnetSpatialTransformerOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override {
-    return "XPUUnetSpatialTransformer";
-  }
+  std::string DebugString() const override { return "XPUSpatialTransformer"; }
 
  private:
-  mutable XPUUnetSpatialTransformerParam param_;
+  mutable XPUSpatialTransformerParam param_;
 };
 
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
-

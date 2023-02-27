@@ -24,230 +24,357 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-static std::vector<int> vec2DTo1D_int(const std::vector<std::vector<int>>& vec) {
+static std::vector<int> vec2DTo1D_int(
+    const std::vector<std::vector<int>>& vec) {
   std::vector<int> res;
   for (const auto& v : vec) {
-    for(const auto& ele : v) {
+    for (const auto& ele : v) {
       res.emplace_back(ele);
     }
   }
   return res;
 }
 
-class UnetSpatialTransformerfuser : public FuseBase {
-public:
+class SpatialTransformerfuser : public FuseBase {
+ public:
   void BuildPattern() override {
-    auto* input = VarNode("input")->assert_is_op_input("group_norm", "X")
-                                  ->assert_is_op_input("__xpu__conv2d", "Branch")
-                                  ->AsInput();
+    auto* input = VarNode("input")
+                      ->assert_is_op_input("group_norm", "X")
+                      ->assert_is_op_input("__xpu__conv2d", "Branch")
+                      ->AsInput();
 
     // image to sequence
     auto* gn_scale = VarNode("gn_scale")
-                            ->assert_is_op_input("group_norm", "Scale")
-                            ->AsInput();
-    auto* gn_bias = VarNode("gn_bias")
-                           ->assert_is_op_input("group_norm", "Bias")
-                           ->AsInput();
+                         ->assert_is_op_input("group_norm", "Scale")
+                         ->AsInput();
+    auto* gn_bias =
+        VarNode("gn_bias")->assert_is_op_input("group_norm", "Bias")->AsInput();
     auto* gn = OpNode("gn", "group_norm")->AsIntermediate();
     auto* gn_out = VarNode("gn_out")
-                          ->assert_is_op_output("group_norm", "Y")
-                          ->assert_is_op_input("__xpu__conv2d", "Input")
-                          ->AsIntermediate();
+                       ->assert_is_op_output("group_norm", "Y")
+                       ->assert_is_op_input("__xpu__conv2d", "Input")
+                       ->AsIntermediate();
     auto* gn_mean = VarNode("gn_mean")
-                           ->assert_is_op_output("group_norm", "Mean")
-                           ->AsIntermediate();
+                        ->assert_is_op_output("group_norm", "Mean")
+                        ->AsIntermediate();
     auto* gn_var = VarNode("gn_var")
-                          ->assert_is_op_output("group_norm", "Variance")
-                          ->AsIntermediate();
+                       ->assert_is_op_output("group_norm", "Variance")
+                       ->AsIntermediate();
 
-    auto* pre_xpu_conv2d = OpNode("pre__xpu__conv2d", "__xpu__conv2d")->AsIntermediate();
-    auto* pre_xpu_conv2d_bias = VarNode("pre__xpu__conv2d_bias")
-                           ->assert_is_op_input("__xpu__conv2d", "Bias")
-                           ->AsInput();
-    auto* pre_xpu_conv2d_filter = VarNode("pre__xpu__conv2d_filter")
-                           ->assert_is_op_input("__xpu__conv2d", "Filter")
-                           ->AsInput();
-    auto* pre_xpu_conv2d_output = VarNode("pre__xpu__conv2d_output")->AsIntermediate()
-                            ->assert_is_op_input("transpose2", "X")
-                            ->assert_is_op_output("__xpu__conv2d", "Output");
-    auto* pre_xpu_conv2d_output_max = VarNode("pre__xpu__conv2d_output_max")->AsIntermediate()
-                            ->assert_is_op_output("__xpu__conv2d", "OutputMax");
-    
+    auto* pre_xpu_conv2d =
+        OpNode("pre__xpu__conv2d", "__xpu__conv2d")->AsIntermediate();
+    auto* pre_xpu_conv2d_bias =
+        VarNode("pre__xpu__conv2d_bias")
+            ->assert_is_op_input("__xpu__conv2d", "Bias")
+            ->AsInput();
+    auto* pre_xpu_conv2d_filter =
+        VarNode("pre__xpu__conv2d_filter")
+            ->assert_is_op_input("__xpu__conv2d", "Filter")
+            ->AsInput();
+    auto* pre_xpu_conv2d_output =
+        VarNode("pre__xpu__conv2d_output")
+            ->AsIntermediate()
+            ->assert_is_op_input("transpose2", "X")
+            ->assert_is_op_output("__xpu__conv2d", "Output");
+    auto* pre_xpu_conv2d_output_max =
+        VarNode("pre__xpu__conv2d_output_max")
+            ->AsIntermediate()
+            ->assert_is_op_output("__xpu__conv2d", "OutputMax");
+
     auto* transpose2 = OpNode("transpose2", "transpose2")->AsIntermediate();
-    auto* transpose2_output = VarNode("transpose2_output")->AsIntermediate()
-                            ->assert_is_op_output("transpose2", "Out")
-                            ->assert_is_op_input("flatten_contiguous_range", "X");
-    auto* transpose2_output_xshape = VarNode("transpose2_output_xshape")->AsIntermediate()
-                            ->assert_is_op_output("transpose2", "XShape");
+    auto* transpose2_output =
+        VarNode("transpose2_output")
+            ->AsIntermediate()
+            ->assert_is_op_output("transpose2", "Out")
+            ->assert_is_op_input("flatten_contiguous_range", "X");
+    auto* transpose2_output_xshape =
+        VarNode("transpose2_output_xshape")
+            ->AsIntermediate()
+            ->assert_is_op_output("transpose2", "XShape");
 
-    auto* flatten = OpNode("flatten_contiguous_range", "flatten_contiguous_range")->AsIntermediate();
-    auto* flatten_output =  VarNode("flatten_output")->AsIntermediate()
-                            ->assert_is_op_output("flatten_contiguous_range", "Out")
-                            ->assert_is_op_input("__xpu__unet_mhsa", "Input")
-                            ->assert_is_op_input("elementwise_add", "Y");
-    auto* flatten_output_xshape =  VarNode("flatten_output_xshape")->AsIntermediate()
-                            ->assert_is_op_output("flatten_contiguous_range", "XShape");
+    auto* flatten =
+        OpNode("flatten_contiguous_range", "flatten_contiguous_range")
+            ->AsIntermediate();
+    auto* flatten_output =
+        VarNode("flatten_output")
+            ->AsIntermediate()
+            ->assert_is_op_output("flatten_contiguous_range", "Out")
+            ->assert_is_op_input("__xpu__spatial_transformer_mhsa", "Input")
+            ->assert_is_op_input("elementwise_add", "Y");
+    auto* flatten_output_xshape =
+        VarNode("flatten_output_xshape")
+            ->AsIntermediate()
+            ->assert_is_op_output("flatten_contiguous_range", "XShape");
 
-    // __xpu__unet_mhsa
-    auto* __xpu__unet_mhsa = OpNode("__xpu__unet_mhsa", "__xpu__unet_mhsa")->AsIntermediate();
-    auto* __xpu__unet_mhsa_fcbias = VarNode("__xpu__unet_mhsa_fcbias")
-                           ->assert_is_op_input("__xpu__unet_mhsa", "FCBias")
-                           ->AsInput();
-    auto* __xpu__unet_mhsa_lnbias = VarNode("__xpu__unet_mhsa_lnbias")
-                           ->assert_is_op_input("__xpu__unet_mhsa", "LNBias")
-                           ->AsInput();
-    auto* __xpu__unet_mhsa_lnscale = VarNode("__xpu__unet_mhsa_lnscale")
-                           ->assert_is_op_input("__xpu__unet_mhsa", "LNScale")
-                           ->AsInput();
-    auto* __xpu__unet_mhsa_fcweight0 = VarNode("__xpu__unet_mhsa_fcweight0")
-                           ->assert_is_op_nth_input("__xpu__unet_mhsa", "FCWeight", 0)
-                           ->AsInput();
-    auto* __xpu__unet_mhsa_fcweight1 = VarNode("__xpu__unet_mhsa_fcweight1")
-                           ->assert_is_op_nth_input("__xpu__unet_mhsa", "FCWeight", 1)
-                           ->AsInput();
-    auto* __xpu__unet_mhsa_fcweight2 = VarNode("__xpu__unet_mhsa_fcweight2")
-                           ->assert_is_op_nth_input("__xpu__unet_mhsa", "FCWeight", 2)
-                           ->AsInput();
-    auto* __xpu__unet_mhsa_fcweight3 = VarNode("__xpu__unet_mhsa_fcweight3")
-                           ->assert_is_op_nth_input("__xpu__unet_mhsa", "FCWeight", 3)
-                           ->AsInput();
-    auto* __xpu__unet_mhsa_output = VarNode("__xpu__unet_mhsa_output")->AsIntermediate()
-                                    ->assert_is_op_output("__xpu__unet_mhsa", "Output")
-                                    ->assert_is_op_input("elementwise_add", "X");
-    auto* residual_add = OpNode("elementwise_add", "elementwise_add")->AsIntermediate();
-    auto* residual_add_output = VarNode("residual_add_output")->AsIntermediate()
-                                ->assert_is_op_output("elementwise_add", "Out")
-                                ->assert_is_op_input("elementwise_add", "Y")
-                                ->assert_is_op_input("__xpu__unet_mhca", "Input");
+    // __xpu__spatial_transformer_mhsa
+    auto* __xpu__spatial_transformer_mhsa =
+        OpNode("__xpu__spatial_transformer_mhsa",
+               "__xpu__spatial_transformer_mhsa")
+            ->AsIntermediate();
+    auto* __xpu__spatial_transformer_mhsa_fcbias =
+        VarNode("__xpu__spatial_transformer_mhsa_fcbias")
+            ->assert_is_op_input("__xpu__spatial_transformer_mhsa", "FCBias")
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhsa_lnbias =
+        VarNode("__xpu__spatial_transformer_mhsa_lnbias")
+            ->assert_is_op_input("__xpu__spatial_transformer_mhsa", "LNBias")
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhsa_lnscale =
+        VarNode("__xpu__spatial_transformer_mhsa_lnscale")
+            ->assert_is_op_input("__xpu__spatial_transformer_mhsa", "LNScale")
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhsa_fcweight0 =
+        VarNode("__xpu__spatial_transformer_mhsa_fcweight0")
+            ->assert_is_op_nth_input(
+                "__xpu__spatial_transformer_mhsa", "FCWeight", 0)
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhsa_fcweight1 =
+        VarNode("__xpu__spatial_transformer_mhsa_fcweight1")
+            ->assert_is_op_nth_input(
+                "__xpu__spatial_transformer_mhsa", "FCWeight", 1)
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhsa_fcweight2 =
+        VarNode("__xpu__spatial_transformer_mhsa_fcweight2")
+            ->assert_is_op_nth_input(
+                "__xpu__spatial_transformer_mhsa", "FCWeight", 2)
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhsa_fcweight3 =
+        VarNode("__xpu__spatial_transformer_mhsa_fcweight3")
+            ->assert_is_op_nth_input(
+                "__xpu__spatial_transformer_mhsa", "FCWeight", 3)
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhsa_output =
+        VarNode("__xpu__spatial_transformer_mhsa_output")
+            ->AsIntermediate()
+            ->assert_is_op_output("__xpu__spatial_transformer_mhsa", "Output")
+            ->assert_is_op_input("elementwise_add", "X");
+    auto* residual_add =
+        OpNode("elementwise_add", "elementwise_add")->AsIntermediate();
+    auto* residual_add_output =
+        VarNode("residual_add_output")
+            ->AsIntermediate()
+            ->assert_is_op_output("elementwise_add", "Out")
+            ->assert_is_op_input("elementwise_add", "Y")
+            ->assert_is_op_input("__xpu__spatial_transformer_mhca", "Input");
 
-    // __xpu__unet_mhca
-    auto* __xpu__unet_mhca = OpNode("__xpu__unet_mhca", "__xpu__unet_mhca")->AsIntermediate();
-    auto* __xpu__unet_mhca_embedding = VarNode("__xpu__unet_mhca_embedding")
-                           ->assert_is_op_input("__xpu__unet_mhca", "Embedding")
-                           ->AsInput();
-    auto* __xpu__unet_mhca_fcbias = VarNode("__xpu__unet_mhca_fcbias")
-                           ->assert_is_op_input("__xpu__unet_mhca", "FCBias")
-                           ->AsInput();
-    auto* __xpu__unet_mhca_lnbias = VarNode("__xpu__unet_mhca_lnbias")
-                           ->assert_is_op_input("__xpu__unet_mhca", "LNBias")
-                           ->AsInput();
-    auto* __xpu__unet_mhca_lnscale = VarNode("__xpu__unet_mhca_lnscale")
-                           ->assert_is_op_input("__xpu__unet_mhca", "LNScale")
-                           ->AsInput();
-    auto* __xpu__unet_mhca_fcweight0 = VarNode("__xpu__unet_mhca_fcweight0")
-                           ->assert_is_op_nth_input("__xpu__unet_mhca", "FCWeight", 0)
-                           ->AsInput();
-    auto* __xpu__unet_mhca_fcweight1 = VarNode("__xpu__unet_mhca_fcweight1")
-                           ->assert_is_op_nth_input("__xpu__unet_mhca", "FCWeight", 1)
-                           ->AsInput();
-    auto* __xpu__unet_mhca_fcweight2 = VarNode("__xpu__unet_mhca_fcweight2")
-                           ->assert_is_op_nth_input("__xpu__unet_mhca", "FCWeight", 2)
-                           ->AsInput();
-    auto* __xpu__unet_mhca_fcweight3 = VarNode("__xpu__unet_mhca_fcweight3")
-                           ->assert_is_op_nth_input("__xpu__unet_mhca", "FCWeight", 3)
-                           ->AsInput();
-    auto* __xpu__unet_mhca_output = VarNode("__xpu__unet_mhca_output")->AsIntermediate()
-                                    ->assert_is_op_output("__xpu__unet_mhca", "Output")
-                                    ->assert_is_op_input("elementwise_add", "X");
-    auto* residual_add2 = OpNode("elementwise_add2", "elementwise_add")->AsIntermediate();
-    auto* residual_add2_output = VarNode("residual2_add_output")->AsIntermediate()
-                                ->assert_is_op_output("elementwise_add", "Out")
-                                ->assert_is_op_input("elementwise_add", "Y")
-                                ->assert_is_op_input("__xpu__unet_geglu", "Input");
+    // __xpu__spatial_transformer_mhca
+    auto* __xpu__spatial_transformer_mhca =
+        OpNode("__xpu__spatial_transformer_mhca",
+               "__xpu__spatial_transformer_mhca")
+            ->AsIntermediate();
+    auto* __xpu__spatial_transformer_mhca_embedding =
+        VarNode("__xpu__spatial_transformer_mhca_embedding")
+            ->assert_is_op_input("__xpu__spatial_transformer_mhca", "Embedding")
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhca_fcbias =
+        VarNode("__xpu__spatial_transformer_mhca_fcbias")
+            ->assert_is_op_input("__xpu__spatial_transformer_mhca", "FCBias")
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhca_lnbias =
+        VarNode("__xpu__spatial_transformer_mhca_lnbias")
+            ->assert_is_op_input("__xpu__spatial_transformer_mhca", "LNBias")
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhca_lnscale =
+        VarNode("__xpu__spatial_transformer_mhca_lnscale")
+            ->assert_is_op_input("__xpu__spatial_transformer_mhca", "LNScale")
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhca_fcweight0 =
+        VarNode("__xpu__spatial_transformer_mhca_fcweight0")
+            ->assert_is_op_nth_input(
+                "__xpu__spatial_transformer_mhca", "FCWeight", 0)
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhca_fcweight1 =
+        VarNode("__xpu__spatial_transformer_mhca_fcweight1")
+            ->assert_is_op_nth_input(
+                "__xpu__spatial_transformer_mhca", "FCWeight", 1)
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhca_fcweight2 =
+        VarNode("__xpu__spatial_transformer_mhca_fcweight2")
+            ->assert_is_op_nth_input(
+                "__xpu__spatial_transformer_mhca", "FCWeight", 2)
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhca_fcweight3 =
+        VarNode("__xpu__spatial_transformer_mhca_fcweight3")
+            ->assert_is_op_nth_input(
+                "__xpu__spatial_transformer_mhca", "FCWeight", 3)
+            ->AsInput();
+    auto* __xpu__spatial_transformer_mhca_output =
+        VarNode("__xpu__spatial_transformer_mhca_output")
+            ->AsIntermediate()
+            ->assert_is_op_output("__xpu__spatial_transformer_mhca", "Output")
+            ->assert_is_op_input("elementwise_add", "X");
+    auto* residual_add2 =
+        OpNode("elementwise_add2", "elementwise_add")->AsIntermediate();
+    auto* residual_add2_output =
+        VarNode("residual2_add_output")
+            ->AsIntermediate()
+            ->assert_is_op_output("elementwise_add", "Out")
+            ->assert_is_op_input("elementwise_add", "Y")
+            ->assert_is_op_input("__xpu__spatial_transformer_geglu", "Input");
 
     // geglu
-    auto* __xpu__unet_geglu = OpNode("__xpu__unet_geglu", "__xpu__unet_geglu")->AsIntermediate();
-    auto* __xpu__unet_geglu_fcbias0 = VarNode("__xpu__unet_geglu_fcbias0")
-                           ->assert_is_op_nth_input("__xpu__unet_geglu", "FCBias", 0)
-                           ->AsInput();
-    auto* __xpu__unet_geglu_fcbias1 = VarNode("__xpu__unet_geglu_fcbias1")
-                           ->assert_is_op_nth_input("__xpu__unet_geglu", "FCBias", 1)
-                           ->AsInput();
-    auto* __xpu__unet_geglu_lnbias = VarNode("__xpu__unet_geglu_lnbias")
-                           ->assert_is_op_input("__xpu__unet_geglu", "LNBias")
-                           ->AsInput();
-    auto* __xpu__unet_geglu_lnscale = VarNode("__xpu__unet_geglu_lnscale")
-                           ->assert_is_op_input("__xpu__unet_geglu", "LNScale")
-                           ->AsInput();
-    auto* __xpu__unet_geglu_fcweight0 = VarNode("__xpu__unet_geglu_fcweight0")
-                           ->assert_is_op_nth_input("__xpu__unet_geglu", "FCWeight", 0)
-                           ->AsInput();
-    auto* __xpu__unet_geglu_fcweight1 = VarNode("__xpu__unet_geglu_fcweight1")
-                           ->assert_is_op_nth_input("__xpu__unet_geglu", "FCWeight", 1)
-                           ->AsInput();
-    auto* __xpu__unet_geglu_output = VarNode("__xpu__unet_geglu_output")->AsIntermediate()
-                                    ->assert_is_op_output("__xpu__unet_geglu", "Output")
-                                    ->assert_is_op_input("elementwise_add", "X");
-    auto* residual_add3 = OpNode("elementwise_add3", "elementwise_add")->AsIntermediate();
-    auto* residual_add3_output = VarNode("residual3_add_output")->AsIntermediate()
-                                ->assert_is_op_output("elementwise_add", "Out")
-                                ->assert_is_op_input("reshape2", "X");
-
+    auto* __xpu__spatial_transformer_geglu =
+        OpNode("__xpu__spatial_transformer_geglu",
+               "__xpu__spatial_transformer_geglu")
+            ->AsIntermediate();
+    auto* __xpu__spatial_transformer_geglu_fcbias0 =
+        VarNode("__xpu__spatial_transformer_geglu_fcbias0")
+            ->assert_is_op_nth_input(
+                "__xpu__spatial_transformer_geglu", "FCBias", 0)
+            ->AsInput();
+    auto* __xpu__spatial_transformer_geglu_fcbias1 =
+        VarNode("__xpu__spatial_transformer_geglu_fcbias1")
+            ->assert_is_op_nth_input(
+                "__xpu__spatial_transformer_geglu", "FCBias", 1)
+            ->AsInput();
+    auto* __xpu__spatial_transformer_geglu_lnbias =
+        VarNode("__xpu__spatial_transformer_geglu_lnbias")
+            ->assert_is_op_input("__xpu__spatial_transformer_geglu", "LNBias")
+            ->AsInput();
+    auto* __xpu__spatial_transformer_geglu_lnscale =
+        VarNode("__xpu__spatial_transformer_geglu_lnscale")
+            ->assert_is_op_input("__xpu__spatial_transformer_geglu", "LNScale")
+            ->AsInput();
+    auto* __xpu__spatial_transformer_geglu_fcweight0 =
+        VarNode("__xpu__spatial_transformer_geglu_fcweight0")
+            ->assert_is_op_nth_input(
+                "__xpu__spatial_transformer_geglu", "FCWeight", 0)
+            ->AsInput();
+    auto* __xpu__spatial_transformer_geglu_fcweight1 =
+        VarNode("__xpu__spatial_transformer_geglu_fcweight1")
+            ->assert_is_op_nth_input(
+                "__xpu__spatial_transformer_geglu", "FCWeight", 1)
+            ->AsInput();
+    auto* __xpu__spatial_transformer_geglu_output =
+        VarNode("__xpu__spatial_transformer_geglu_output")
+            ->AsIntermediate()
+            ->assert_is_op_output("__xpu__spatial_transformer_geglu", "Output")
+            ->assert_is_op_input("elementwise_add", "X");
+    auto* residual_add3 =
+        OpNode("elementwise_add3", "elementwise_add")->AsIntermediate();
+    auto* residual_add3_output =
+        VarNode("residual3_add_output")
+            ->AsIntermediate()
+            ->assert_is_op_output("elementwise_add", "Out")
+            ->assert_is_op_input("reshape2", "X");
 
     // sequence to image
     auto* reshape = OpNode("reshape2", "reshape2")->AsIntermediate();
-    auto* reshape_output = VarNode("reshape_output")->AsIntermediate()
-                            ->assert_is_op_input("transpose2", "X")
-                            ->assert_is_op_output("reshape2", "Out");
-    auto* reshape_output_xshape = VarNode("reshape_output_xshape")->AsIntermediate()
-                            ->assert_is_op_output("reshape2", "XShape");
+    auto* reshape_output = VarNode("reshape_output")
+                               ->AsIntermediate()
+                               ->assert_is_op_input("transpose2", "X")
+                               ->assert_is_op_output("reshape2", "Out");
+    auto* reshape_output_xshape =
+        VarNode("reshape_output_xshape")
+            ->AsIntermediate()
+            ->assert_is_op_output("reshape2", "XShape");
     auto* transpose2_2 = OpNode("transpose2_2", "transpose2")->AsIntermediate();
-    auto* transpose2_2_output = VarNode("transpose2_2_output")->AsIntermediate()
-                            ->assert_is_op_input("__xpu__conv2d", "Input")
-                            ->assert_is_op_output("transpose2", "Out");
-    auto* transpose2_2_output_xshape = VarNode("transpose2_2_output_xshape")->AsIntermediate()
-                            ->assert_is_op_output("transpose2", "XShape");
-    auto* post_xpu_conv2d = OpNode("post__xpu__conv2d", "__xpu__conv2d")->AsIntermediate();
-    auto* post_xpu_conv2d_bias = VarNode("post__xpu__conv2d_bias")
-                           ->assert_is_op_input("__xpu__conv2d", "Bias")
-                           ->AsInput();
-    auto* post_xpu_conv2d_filter = VarNode("post__xpu__conv2d_filter")
-                           ->assert_is_op_input("__xpu__conv2d", "Filter")
-                           ->AsInput();
-    auto* post_xpu_conv2d_output = VarNode("post__xpu__conv2d_output")->AsOutput()
-                            ->assert_is_op_output("__xpu__conv2d", "Output");
-    auto* post_xpu_conv2d_outputmax = VarNode("post__xpu__conv2d_output_max")->AsIntermediate()
-                            ->assert_is_op_output("__xpu__conv2d", "OutputMax");
+    auto* transpose2_2_output =
+        VarNode("transpose2_2_output")
+            ->AsIntermediate()
+            ->assert_is_op_input("__xpu__conv2d", "Input")
+            ->assert_is_op_output("transpose2", "Out");
+    auto* transpose2_2_output_xshape =
+        VarNode("transpose2_2_output_xshape")
+            ->AsIntermediate()
+            ->assert_is_op_output("transpose2", "XShape");
+    auto* post_xpu_conv2d =
+        OpNode("post__xpu__conv2d", "__xpu__conv2d")->AsIntermediate();
+    auto* post_xpu_conv2d_bias =
+        VarNode("post__xpu__conv2d_bias")
+            ->assert_is_op_input("__xpu__conv2d", "Bias")
+            ->AsInput();
+    auto* post_xpu_conv2d_filter =
+        VarNode("post__xpu__conv2d_filter")
+            ->assert_is_op_input("__xpu__conv2d", "Filter")
+            ->AsInput();
+    auto* post_xpu_conv2d_output =
+        VarNode("post__xpu__conv2d_output")
+            ->AsOutput()
+            ->assert_is_op_output("__xpu__conv2d", "Output");
+    auto* post_xpu_conv2d_outputmax =
+        VarNode("post__xpu__conv2d_output_max")
+            ->AsIntermediate()
+            ->assert_is_op_output("__xpu__conv2d", "OutputMax");
 
     std::vector<PMNode*> gn_input{input, gn_bias, gn_scale};
     std::vector<PMNode*> gn_output{gn_out, gn_mean, gn_var};
     gn_input >> *gn >> gn_output;
-    std::vector<PMNode*> pre_conv2d_input{gn_out, pre_xpu_conv2d_bias, pre_xpu_conv2d_filter};
-    std::vector<PMNode*> pre_conv2d_output{pre_xpu_conv2d_output, pre_xpu_conv2d_output_max};
+    std::vector<PMNode*> pre_conv2d_input{
+        gn_out, pre_xpu_conv2d_bias, pre_xpu_conv2d_filter};
+    std::vector<PMNode*> pre_conv2d_output{pre_xpu_conv2d_output,
+                                           pre_xpu_conv2d_output_max};
     pre_conv2d_input >> *pre_xpu_conv2d >> pre_conv2d_output;
-    *pre_xpu_conv2d_output >> *transpose2 >> *transpose2_output >> *flatten >> *flatten_output;
+    *pre_xpu_conv2d_output >> *transpose2 >> *transpose2_output >> *flatten >>
+        *flatten_output;
     *transpose2 >> *transpose2_output_xshape;
     *flatten >> *flatten_output_xshape;
 
-    std::vector<PMNode*> mhsa_input{flatten_output, __xpu__unet_mhsa_fcbias, __xpu__unet_mhsa_fcweight0, __xpu__unet_mhsa_fcweight1, __xpu__unet_mhsa_fcweight2, __xpu__unet_mhsa_fcweight3, __xpu__unet_mhsa_lnbias, __xpu__unet_mhsa_lnscale};
-    mhsa_input >> *__xpu__unet_mhsa >> *__xpu__unet_mhsa_output >> *residual_add >> *residual_add_output;
+    std::vector<PMNode*> mhsa_input{flatten_output,
+                                    __xpu__spatial_transformer_mhsa_fcbias,
+                                    __xpu__spatial_transformer_mhsa_fcweight0,
+                                    __xpu__spatial_transformer_mhsa_fcweight1,
+                                    __xpu__spatial_transformer_mhsa_fcweight2,
+                                    __xpu__spatial_transformer_mhsa_fcweight3,
+                                    __xpu__spatial_transformer_mhsa_lnbias,
+                                    __xpu__spatial_transformer_mhsa_lnscale};
+    mhsa_input >> *__xpu__spatial_transformer_mhsa >>
+        *__xpu__spatial_transformer_mhsa_output >> *residual_add >>
+        *residual_add_output;
     *flatten_output >> *residual_add;
 
-    std::vector<PMNode*> mhca_input{residual_add_output, __xpu__unet_mhca_embedding, __xpu__unet_mhca_fcbias, __xpu__unet_mhca_lnbias, __xpu__unet_mhca_lnscale, __xpu__unet_mhca_fcweight0, __xpu__unet_mhca_fcweight1, __xpu__unet_mhca_fcweight2, __xpu__unet_mhca_fcweight3};
-    mhca_input >> *__xpu__unet_mhca >> *__xpu__unet_mhca_output >> *residual_add2 >> *residual_add2_output;
+    std::vector<PMNode*> mhca_input{residual_add_output,
+                                    __xpu__spatial_transformer_mhca_embedding,
+                                    __xpu__spatial_transformer_mhca_fcbias,
+                                    __xpu__spatial_transformer_mhca_lnbias,
+                                    __xpu__spatial_transformer_mhca_lnscale,
+                                    __xpu__spatial_transformer_mhca_fcweight0,
+                                    __xpu__spatial_transformer_mhca_fcweight1,
+                                    __xpu__spatial_transformer_mhca_fcweight2,
+                                    __xpu__spatial_transformer_mhca_fcweight3};
+    mhca_input >> *__xpu__spatial_transformer_mhca >>
+        *__xpu__spatial_transformer_mhca_output >> *residual_add2 >>
+        *residual_add2_output;
     *residual_add_output >> *residual_add2;
 
-    std::vector<PMNode*> geglu_input{residual_add2_output, __xpu__unet_geglu_fcbias0, __xpu__unet_geglu_fcbias1, __xpu__unet_geglu_lnbias, __xpu__unet_geglu_lnscale, __xpu__unet_geglu_fcweight0, __xpu__unet_geglu_fcweight1};
-    geglu_input >> *__xpu__unet_geglu >> *__xpu__unet_geglu_output >> *residual_add3 >> *residual_add3_output;
+    std::vector<PMNode*> geglu_input{
+        residual_add2_output,
+        __xpu__spatial_transformer_geglu_fcbias0,
+        __xpu__spatial_transformer_geglu_fcbias1,
+        __xpu__spatial_transformer_geglu_lnbias,
+        __xpu__spatial_transformer_geglu_lnscale,
+        __xpu__spatial_transformer_geglu_fcweight0,
+        __xpu__spatial_transformer_geglu_fcweight1};
+    geglu_input >> *__xpu__spatial_transformer_geglu >>
+        *__xpu__spatial_transformer_geglu_output >> *residual_add3 >>
+        *residual_add3_output;
     *residual_add2_output >> *residual_add3;
 
-    *residual_add3_output >> *reshape >> *reshape_output >> *transpose2_2 >> *transpose2_2_output;
+    *residual_add3_output >> *reshape >> *reshape_output >> *transpose2_2 >>
+        *transpose2_2_output;
     *reshape >> *reshape_output_xshape;
     *transpose2_2 >> *transpose2_2_output_xshape;
 
-    std::vector<PMNode*> post_conv2d_input{transpose2_2_output, post_xpu_conv2d_bias, input, post_xpu_conv2d_filter};
-    std::vector<PMNode*> post_conv2d_output{post_xpu_conv2d_output, post_xpu_conv2d_outputmax};
+    std::vector<PMNode*> post_conv2d_input{transpose2_2_output,
+                                           post_xpu_conv2d_bias,
+                                           input,
+                                           post_xpu_conv2d_filter};
+    std::vector<PMNode*> post_conv2d_output{post_xpu_conv2d_output,
+                                            post_xpu_conv2d_outputmax};
     post_conv2d_input >> *post_xpu_conv2d >> post_conv2d_output;
   }
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
     // OpDesc
     cpp::OpDesc op_desc;
-    op_desc.SetType("__xpu__unet_spatial_transformer");
+    op_desc.SetType("__xpu__spatial_transformer");
     auto* gn_op_info = matched.at("gn")->stmt()->op_info();
-    auto* mhsa_op_info = matched.at("__xpu__unet_mhsa")->stmt()->op_info();
-    auto* mhca_op_info = matched.at("__xpu__unet_mhca")->stmt()->op_info();
-    auto* geglu_op_info = matched.at("__xpu__unet_geglu")->stmt()->op_info();
+    auto* mhsa_op_info =
+        matched.at("__xpu__spatial_transformer_mhsa")->stmt()->op_info();
+    auto* mhca_op_info =
+        matched.at("__xpu__spatial_transformer_mhca")->stmt()->op_info();
+    auto* geglu_op_info =
+        matched.at("__xpu__spatial_transformer_geglu")->stmt()->op_info();
 
     std::vector<std::string> fc_weight_names;
     for (const auto& name : mhsa_op_info->Input("FCWeight")) {
@@ -262,13 +389,16 @@ public:
     CHECK_EQ(fc_weight_names.size(), 10);
 
     std::vector<std::string> fc_weight_maxptr_names;
-    for (const auto& name : mhsa_op_info->GetAttr<std::vector<std::string>>("FCWeightMax")) {
+    for (const auto& name :
+         mhsa_op_info->GetAttr<std::vector<std::string>>("FCWeightMax")) {
       fc_weight_maxptr_names.push_back(name);
     }
-    for (const auto& name : mhca_op_info->GetAttr<std::vector<std::string>>("FCWeightMax")) {
+    for (const auto& name :
+         mhca_op_info->GetAttr<std::vector<std::string>>("FCWeightMax")) {
       fc_weight_maxptr_names.push_back(name);
     }
-    for (const auto& name : geglu_op_info->GetAttr<std::vector<std::string>>("FCWeightMax")) {
+    for (const auto& name :
+         geglu_op_info->GetAttr<std::vector<std::string>>("FCWeightMax")) {
       fc_weight_maxptr_names.push_back(name);
     }
     CHECK_EQ(fc_weight_maxptr_names.size(), 10);
@@ -312,33 +442,32 @@ public:
     op_desc.SetInput("LNBias", ln_bias_names);
     op_desc.SetAttr<int>("groups", gn_op_info->GetAttr<int>("groups"));
     op_desc.SetAttr<float>("epsilon", gn_op_info->GetAttr<float>("epsilon"));
-    op_desc.SetInput("ConvBias", {
-      matched.at("pre__xpu__conv2d_bias")->arg()->name,
-      matched.at("post__xpu__conv2d_bias")->arg()->name
-    });
-    op_desc.SetInput("GNScale", {
-      matched.at("gn_scale")->arg()->name
-    });
-    op_desc.SetInput("GNBias", {
-      matched.at("gn_bias")->arg()->name
-    });
+    op_desc.SetInput("ConvBias",
+                     {matched.at("pre__xpu__conv2d_bias")->arg()->name,
+                      matched.at("post__xpu__conv2d_bias")->arg()->name});
+    op_desc.SetInput("GNScale", {matched.at("gn_scale")->arg()->name});
+    op_desc.SetInput("GNBias", {matched.at("gn_bias")->arg()->name});
     std::vector<std::string> conv_filter_names = {
-      matched.at("pre__xpu__conv2d_filter")->arg()->name,
-      matched.at("post__xpu__conv2d_filter")->arg()->name
-    };
+        matched.at("pre__xpu__conv2d_filter")->arg()->name,
+        matched.at("post__xpu__conv2d_filter")->arg()->name};
     op_desc.SetInput("ConvWeight", conv_filter_names);
     std::vector<std::string> conv_filter_maxptr_names = {
-      matched.at("pre__xpu__conv2d_filter")->arg()->name + "_max",
-      matched.at("post__xpu__conv2d_filter")->arg()->name + "_max"
-    };
-    op_desc.SetAttr<std::vector<std::string>>("ConvFilterMax", conv_filter_maxptr_names);
-    op_desc.SetOutput("Output", {matched.at("post__xpu__conv2d_output")->arg()->name});
-    op_desc.SetAttr<std::vector<std::string>>("FCWeightMax", fc_weight_maxptr_names);
+        matched.at("pre__xpu__conv2d_filter")->arg()->name + "_max",
+        matched.at("post__xpu__conv2d_filter")->arg()->name + "_max"};
+    op_desc.SetAttr<std::vector<std::string>>("ConvFilterMax",
+                                              conv_filter_maxptr_names);
+    op_desc.SetOutput("Output",
+                      {matched.at("post__xpu__conv2d_output")->arg()->name});
+    op_desc.SetAttr<std::vector<std::string>>("FCWeightMax",
+                                              fc_weight_maxptr_names);
 
     op_desc.SetAttr<int>("head_num", mhsa_op_info->GetAttr<int>("head_num"));
-    op_desc.SetAttr<int>("size_per_head", mhsa_op_info->GetAttr<int>("size_per_head"));
-    op_desc.SetAttr<int>("hidden_dim", mhsa_op_info->GetAttr<int>("hidden_dim"));
-    op_desc.SetAttr<int>("embedding_dim", mhca_op_info->GetAttr<int>("embedding_dim"));
+    op_desc.SetAttr<int>("size_per_head",
+                         mhsa_op_info->GetAttr<int>("size_per_head"));
+    op_desc.SetAttr<int>("hidden_dim",
+                         mhsa_op_info->GetAttr<int>("hidden_dim"));
+    op_desc.SetAttr<int>("embedding_dim",
+                         mhca_op_info->GetAttr<int>("embedding_dim"));
     op_desc.SetAttr<int>("gelu_dim", geglu_op_info->GetAttr<int>("gelu_dim"));
 
     std::vector<std::vector<int>> strides;
@@ -346,8 +475,9 @@ public:
     std::vector<std::vector<int>> dilations;
     std::vector<std::vector<int>> filter_dims;
     std::vector<int> groups;
-    std::vector<std::string> conv_vec = {"pre__xpu__conv2d", "post__xpu__conv2d"};
-    for(auto pm_name : conv_vec) {
+    std::vector<std::string> conv_vec = {"pre__xpu__conv2d",
+                                         "post__xpu__conv2d"};
+    for (auto pm_name : conv_vec) {
       auto* conv_op_info = matched.at(pm_name)->stmt()->op_info();
       auto strides_tmp = conv_op_info->GetAttr<std::vector<int>>("strides");
       strides.emplace_back(std::move(strides_tmp));
@@ -355,9 +485,11 @@ public:
       paddings.emplace_back(std::move(paddings_tmp));
       auto dilations_tmp = conv_op_info->GetAttr<std::vector<int>>("dilations");
       dilations.emplace_back(std::move(dilations_tmp));
-      std::vector<int> groups_tmp = conv_op_info->GetAttr<std::vector<int>>("groups");
+      std::vector<int> groups_tmp =
+          conv_op_info->GetAttr<std::vector<int>>("groups");
       groups.push_back(groups_tmp[0]);
-      auto filter_dims_tmp = conv_op_info->GetAttr<std::vector<int>>("filter_dims");
+      auto filter_dims_tmp =
+          conv_op_info->GetAttr<std::vector<int>>("filter_dims");
       filter_dims.emplace_back(std::move(filter_dims_tmp));
     }
     op_desc.SetAttr<std::vector<int>>("Conv_Groups", groups);
@@ -366,13 +498,17 @@ public:
     op_desc.SetAttr<std::vector<int>>("Dilations", vec2DTo1D_int(dilations));
     op_desc.SetAttr<std::vector<int>>("FilterDims", vec2DTo1D_int(filter_dims));
 
-    auto spatial_transformer_op = LiteOpRegistry::Global().Create(op_desc.Type());
+    auto spatial_transformer_op =
+        LiteOpRegistry::Global().Create(op_desc.Type());
     auto* scope = matched.at("gn")->stmt()->op()->scope();
     update_weight(scope, conv_filter_names, conv_filter_maxptr_names, false);
     spatial_transformer_op->Attach(op_desc, scope);
-    spatial_transformer_op->SetValidPlaces(matched.at("gn")->stmt()->op()->valid_places());
-    auto kernels = spatial_transformer_op->CreateKernels(spatial_transformer_op->valid_places());
-    auto* new_op_node = graph->GraphCreateInstructNode(spatial_transformer_op, spatial_transformer_op->valid_places());
+    spatial_transformer_op->SetValidPlaces(
+        matched.at("gn")->stmt()->op()->valid_places());
+    auto kernels = spatial_transformer_op->CreateKernels(
+        spatial_transformer_op->valid_places());
+    auto* new_op_node = graph->GraphCreateInstructNode(
+        spatial_transformer_op, spatial_transformer_op->valid_places());
 
     std::vector<std::string> froms = {
         "input",
@@ -380,39 +516,38 @@ public:
         "gn_bias",
         "pre__xpu__conv2d_bias",
         "pre__xpu__conv2d_filter",
-        "__xpu__unet_mhsa_fcbias",
-        "__xpu__unet_mhsa_lnbias",
-        "__xpu__unet_mhsa_lnscale",
-        "__xpu__unet_mhsa_fcweight0",
-        "__xpu__unet_mhsa_fcweight1",
-        "__xpu__unet_mhsa_fcweight2",
-        "__xpu__unet_mhsa_fcweight3",
-        "__xpu__unet_mhca_embedding",
-        "__xpu__unet_mhca_fcbias",
-        "__xpu__unet_mhca_lnbias",
-        "__xpu__unet_mhca_lnscale",
-        "__xpu__unet_mhca_fcweight0",
-        "__xpu__unet_mhca_fcweight1",
-        "__xpu__unet_mhca_fcweight2",
-        "__xpu__unet_mhca_fcweight3",
-        "__xpu__unet_geglu_fcbias0",
-        "__xpu__unet_geglu_fcbias1",
-        "__xpu__unet_geglu_lnbias",
-        "__xpu__unet_geglu_lnscale",
-        "__xpu__unet_geglu_fcweight0",
-        "__xpu__unet_geglu_fcweight1",
+        "__xpu__spatial_transformer_mhsa_fcbias",
+        "__xpu__spatial_transformer_mhsa_lnbias",
+        "__xpu__spatial_transformer_mhsa_lnscale",
+        "__xpu__spatial_transformer_mhsa_fcweight0",
+        "__xpu__spatial_transformer_mhsa_fcweight1",
+        "__xpu__spatial_transformer_mhsa_fcweight2",
+        "__xpu__spatial_transformer_mhsa_fcweight3",
+        "__xpu__spatial_transformer_mhca_embedding",
+        "__xpu__spatial_transformer_mhca_fcbias",
+        "__xpu__spatial_transformer_mhca_lnbias",
+        "__xpu__spatial_transformer_mhca_lnscale",
+        "__xpu__spatial_transformer_mhca_fcweight0",
+        "__xpu__spatial_transformer_mhca_fcweight1",
+        "__xpu__spatial_transformer_mhca_fcweight2",
+        "__xpu__spatial_transformer_mhca_fcweight3",
+        "__xpu__spatial_transformer_geglu_fcbias0",
+        "__xpu__spatial_transformer_geglu_fcbias1",
+        "__xpu__spatial_transformer_geglu_lnbias",
+        "__xpu__spatial_transformer_geglu_lnscale",
+        "__xpu__spatial_transformer_geglu_fcweight0",
+        "__xpu__spatial_transformer_geglu_fcweight1",
         "post__xpu__conv2d_bias",
-        "post__xpu__conv2d_filter"
-    };
+        "post__xpu__conv2d_filter"};
 
     for (auto& from : froms) {
-       IR_NODE_LINK_TO(matched.at(from), new_op_node);
+      IR_NODE_LINK_TO(matched.at(from), new_op_node);
     }
 
     IR_OP_VAR_LINK(new_op_node, matched.at("post__xpu__conv2d_output"));
-
   }
-  private:
+
+ private:
   void update_weight(Scope* scope,
                      const std::vector<std::string>& fc_weight_names,
                      const std::vector<std::string>& fc_weight_max_names,
@@ -422,53 +557,57 @@ public:
     std::vector<int> weight_len_vec(fc_weight_names.size());
 
     for (size_t i = 0; i < fc_weight_names.size(); ++i) {
-      weight_tensor_vec[i] =
-        scope->FindMutableTensor(fc_weight_names[i]);
-        CHECK(weight_tensor_vec[i] != nullptr);
-        weight_dims_vec[i] = weight_tensor_vec[i]->dims();
-        weight_len_vec[i] = weight_tensor_vec[i]->numel();
-        if (trans && i > 0) {
-          CHECK_EQ(weight_dims_vec[i][0], weight_dims_vec[i - 1][0]);
-        }
-    }    
+      weight_tensor_vec[i] = scope->FindMutableTensor(fc_weight_names[i]);
+      CHECK(weight_tensor_vec[i] != nullptr);
+      weight_dims_vec[i] = weight_tensor_vec[i]->dims();
+      weight_len_vec[i] = weight_tensor_vec[i]->numel();
+      if (trans && i > 0) {
+        CHECK_EQ(weight_dims_vec[i][0], weight_dims_vec[i - 1][0]);
+      }
+    }
     for (size_t i = 0; i < fc_weight_names.size(); ++i) {
       float* weight_host_ptr = weight_tensor_vec[i]->mutable_data<float>();
       std::unique_ptr<float[]> weight_host_trans(new float[weight_len_vec[i]]);
-      std::unique_ptr<int16_t[]> weight_host_trans_int16(new int16_t[weight_len_vec[i]]);
+      std::unique_ptr<int16_t[]> weight_host_trans_int16(
+          new int16_t[weight_len_vec[i]]);
       if (trans) {
         paddle::lite::xpu::math::Transpose<float>(weight_host_ptr,
-                                                    weight_host_trans.get(),
-                                                    weight_dims_vec[i][0],
-                                                    weight_dims_vec[i][1]);
+                                                  weight_host_trans.get(),
+                                                  weight_dims_vec[i][0],
+                                                  weight_dims_vec[i][1]);
       } else {
-        memcpy(weight_host_trans.get(), weight_host_ptr, weight_len_vec[i] * sizeof(float));
+        memcpy(weight_host_trans.get(),
+               weight_host_ptr,
+               weight_len_vec[i] * sizeof(float));
       }
-      float max_f = paddle::lite::xpu::math::FindMaxAbs(weight_host_trans.get(), weight_len_vec[i]);
+      float max_f = paddle::lite::xpu::math::FindMaxAbs(weight_host_trans.get(),
+                                                        weight_len_vec[i]);
       paddle::lite::xpu::math::ConvertFP32ToInt16(weight_host_trans.get(),
-                                                   weight_host_trans_int16.get(),
-                                                   max_f,
-                                                   weight_len_vec[i]);
+                                                  weight_host_trans_int16.get(),
+                                                  max_f,
+                                                  weight_len_vec[i]);
       memcpy(weight_tensor_vec[i]->mutable_data<int16_t>(),
-                 weight_host_trans_int16.get(),
-                 weight_len_vec[i] * sizeof(int16_t));
+             weight_host_trans_int16.get(),
+             weight_len_vec[i] * sizeof(int16_t));
       scope->NewTensor(fc_weight_max_names[i]);
-      Tensor* weight_maxptr_tensor = scope->FindMutableTensor(fc_weight_max_names[i]);
+      Tensor* weight_maxptr_tensor =
+          scope->FindMutableTensor(fc_weight_max_names[i]);
       weight_maxptr_tensor->Resize({6});
       std::vector<float> weight_maxptr_host(6, max_f);
       memcpy(weight_maxptr_tensor->mutable_data<float>(),
-                 weight_maxptr_host.data(),
-                 weight_maxptr_host.size() * sizeof(float));
+             weight_maxptr_host.data(),
+             weight_maxptr_host.size() * sizeof(float));
     }
   }
 };
 
 }  // namespace fusion
 
-class XPUUnetSpatialTransformerfusePass : public ProgramPass {
+class XPUUSpatialTransformerfusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
-    fusion::UnetSpatialTransformerfuser fuser;
+    fusion::SpatialTransformerfuser fuser;
     fuser(graph.get());
   }
 };
@@ -477,6 +616,6 @@ class XPUUnetSpatialTransformerfusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__unet_spatial_transformer_fuse_pass,
-                  paddle::lite::mir::XPUUnetSpatialTransformerfusePass)
+REGISTER_MIR_PASS(__xpu__spatial_transformer_fuse_pass,
+                  paddle::lite::mir::XPUSpatialTransformerfusePass)
     .BindTargets({TARGET(kXPU)});

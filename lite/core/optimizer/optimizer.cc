@@ -202,7 +202,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__mmdnn_fuse_pass",
        "__xpu__bigru_fuse_pass",
        "__xpu__roformer_relative_pos_fuse_pass",
-       "__xpu__unet_spatial_transformer_fuse_pass",
+       "__xpu__spatial_transformer_fuse_pass",
        "__xpu__quick_gelu_fuse_pass",
        "__xpu__multi_encoder_fuse_pass",
        "__xpu__embedding_with_eltwise_add_fuse_pass",

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/__xpu__unet_spatial_transformer_op.h"
+#include <utility>
 #include <vector>
 #include "lite/core/op_registry.h"
 
@@ -20,11 +21,12 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-static std::vector<std::vector<int>> vec1DTo2D_int(const std::vector<int>& vec, int dim) {
+static std::vector<std::vector<int>> vec1DTo2D_int(const std::vector<int>& vec,
+                                                   int dim) {
   std::vector<std::vector<int>> res;
-  for (size_t i = 0 ; i < vec.size(); i += dim) {
+  for (size_t i = 0; i < vec.size(); i += dim) {
     std::vector<int> tmp;
-    for (size_t j = 0; j < dim ; j++) {
+    for (size_t j = 0; j < dim; j++) {
       tmp.push_back(vec[i + j]);
     }
     res.emplace_back(std::move(tmp));
@@ -32,12 +34,12 @@ static std::vector<std::vector<int>> vec1DTo2D_int(const std::vector<int>& vec, 
   return res;
 }
 
-bool XPUUnetSpatialTransformerOp::CheckShape() const {
+bool XPUSpatialTransformerOp::CheckShape() const {
   CHECK_EQ(param_.input->dims().size(), 4UL);
   return true;
 }
 
-bool XPUUnetSpatialTransformerOp::InferShapeImpl() const {
+bool XPUSpatialTransformerOp::InferShapeImpl() const {
   auto input_shape = param_.input->dims();
   auto batch_size = input_shape[0];
   auto channel = input_shape[1];
@@ -47,8 +49,8 @@ bool XPUUnetSpatialTransformerOp::InferShapeImpl() const {
   return true;
 }
 
-bool XPUUnetSpatialTransformerOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                                lite::Scope* scope) {
+bool XPUSpatialTransformerOp::AttachImpl(const cpp::OpDesc& op_desc,
+                                         lite::Scope* scope) {
   param_.input =
       scope->FindVar(op_desc.Input("Input").front())->GetMutable<Tensor>();
   param_.embedding =
@@ -120,10 +122,14 @@ bool XPUUnetSpatialTransformerOp::AttachImpl(const cpp::OpDesc& op_desc,
     param_.conv_max.push_back(tensor);
   }
   param_.conv_groups = op_desc.GetAttr<std::vector<int>>("Conv_Groups");
-  param_.strides = vec1DTo2D_int(op_desc.GetAttr<std::vector<int>>("Strides"), 2);
-  param_.paddings = vec1DTo2D_int(op_desc.GetAttr<std::vector<int>>("Paddings"), 4);
-  param_.dilations = vec1DTo2D_int(op_desc.GetAttr<std::vector<int>>("Dilations"), 2);
-  param_.filter_dims = vec1DTo2D_int(op_desc.GetAttr<std::vector<int>>("FilterDims"), 4);
+  param_.strides =
+      vec1DTo2D_int(op_desc.GetAttr<std::vector<int>>("Strides"), 2);
+  param_.paddings =
+      vec1DTo2D_int(op_desc.GetAttr<std::vector<int>>("Paddings"), 4);
+  param_.dilations =
+      vec1DTo2D_int(op_desc.GetAttr<std::vector<int>>("Dilations"), 2);
+  param_.filter_dims =
+      vec1DTo2D_int(op_desc.GetAttr<std::vector<int>>("FilterDims"), 4);
   return true;
 }
 
@@ -131,5 +137,5 @@ bool XPUUnetSpatialTransformerOp::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(__xpu__unet_spatial_transformer,
-                 paddle::lite::operators::XPUUnetSpatialTransformerOp);
+REGISTER_LITE_OP(__xpu__spatial_transformer,
+                 paddle::lite::operators::XPUSpatialTransformerOp);
