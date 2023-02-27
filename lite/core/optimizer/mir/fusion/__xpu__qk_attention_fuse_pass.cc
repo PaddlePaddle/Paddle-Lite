@@ -212,16 +212,48 @@ class XPUQkAttentionFuser : public FuseBase {
     }
     if (quant) {
       quant_type = "per_tensor";
-      op_desc.SetAttr<std::vector<float>>(
-          "input_scale",
-          {matched.at("q_reshape2")
-               ->stmt()
-               ->op_info()
-               ->GetAttr<float>("out_threshold"),
-           matched.at("k_reshape2")
-               ->stmt()
-               ->op_info()
-               ->GetAttr<float>("out_threshold")});
+      std::vector<float> input_scale;
+      if (matched.at("q_reshape2")
+              ->stmt()
+              ->op_info()
+              ->HasAttr("out_threshold")) {
+        input_scale.push_back(matched.at("q_reshape2")
+                                  ->stmt()
+                                  ->op_info()
+                                  ->GetAttr<float>("out_threshold"));
+      } else if (matched.at("q_transpose2")
+                     ->stmt()
+                     ->op_info()
+                     ->HasAttr("out_threshold")) {
+        input_scale.push_back(matched.at("q_transpose2")
+                                  ->stmt()
+                                  ->op_info()
+                                  ->GetAttr<float>("out_threshold"));
+      } else {
+        LOG(FATAL)
+            << "Could not find the input quant scale for qk_attention op.";
+      }
+      if (matched.at("k_reshape2")
+              ->stmt()
+              ->op_info()
+              ->HasAttr("out_threshold")) {
+        input_scale.push_back(matched.at("k_reshape2")
+                                  ->stmt()
+                                  ->op_info()
+                                  ->GetAttr<float>("out_threshold"));
+      } else if (matched.at("k_transpose2")
+                     ->stmt()
+                     ->op_info()
+                     ->HasAttr("out_threshold")) {
+        input_scale.push_back(matched.at("k_transpose2")
+                                  ->stmt()
+                                  ->op_info()
+                                  ->GetAttr<float>("out_threshold"));
+      } else {
+        LOG(FATAL)
+            << "Could not find the input quant scale for qk_attention op.";
+      }
+      op_desc.SetAttr<std::vector<float>>("input_scale", input_scale);
       op_desc.SetAttr<std::vector<float>>(
           "output_scale",
           {matched.at("qk_softmax")

@@ -31,9 +31,6 @@ bool XPUEncoderOp::CheckShape() const {
   if (param_.do_slice) {
     CHECK(!param_.do_padding);
   }
-  if (!param_.do_slice && param_.adaptive_seqlen) {
-    CHECK(param_.do_padding);
-  }
   return true;
 }
 
