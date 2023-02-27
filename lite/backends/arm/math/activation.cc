@@ -1227,7 +1227,7 @@ template <>
 void act_gelu<float>(
     const float* din, float* dout, int size, bool approximate, int threads) {
   int cnt = size >> 4;
-  int remain = size & 16;
+  int remain = size & 15;
   if (approximate) {
     const float pi = std::atan(1) * 4;
     const float sqrt_2_div_pi = std::sqrt(2 / pi);
