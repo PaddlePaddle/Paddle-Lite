@@ -43,6 +43,22 @@ using param_t = Any;
   float output_scale{1.0f};          \
   int bit_length{8};
 
+#define XPU_QUANT_CONFIG                  \
+  std::vector<float> weight_max{};        \
+  const lite::Tensor* input_max{nullptr}; \
+  lite::Tensor* output_max{nullptr};      \
+  std::vector<float> quant_input_max{};   \
+  std::vector<float> quant_output_max{};  \
+  std::string precision{};                \
+  std::string quant_type{};
+// bool local_quant{false};
+
+#define XPU_ENCODER_QUANT_CONFIG         \
+  std::vector<float> weight_max{};       \
+  std::vector<float> io_max{};           \
+  std::vector<std::string> quant_type{}; \
+  std::vector<std::string> precision{};
+
 /// ----------------------- Functional operators ------------------------------
 struct FeedParam : ParamBase {
   std::vector<lite::Tensor>* feed_list{};
@@ -1181,6 +1197,7 @@ struct SequenceUnpadParam : ParamBase {
   const lite::Tensor* X{};
   const lite::Tensor* Length{};
   lite::Tensor* Out{};
+  bool before_xpu_encoder{false};
 };
 
 struct SequenceMaskParam : ParamBase {
@@ -1762,7 +1779,34 @@ struct XPUBlockFuseParam : ParamBase {
   float quant_branch_max{0.f};
 };
 
-struct XPUMultiEncoderParam : ParamBase {
+struct CalculateLodParam : ParamBase {
+  const lite::Tensor* Mask{nullptr};
+  lite::Tensor* SeqLod{nullptr};
+  lite::Tensor* SeqLen{nullptr};
+  lite::Tensor* PadSeqLen{nullptr};
+};
+
+struct XPUQkAttentionParam : ParamBase {
+  const lite::Tensor* q{nullptr};
+  const lite::Tensor* k{nullptr};
+  const lite::Tensor* mask{nullptr};
+  lite::Tensor* output{nullptr};
+  float alpha{0.0f};
+  int head_num{1};
+  int head_dim{1};
+  XPU_QUANT_CONFIG
+};
+
+struct XPUQkVAttentionParam : ParamBase {
+  const lite::Tensor* qk{nullptr};
+  const lite::Tensor* v{nullptr};
+  lite::Tensor* output{nullptr};
+  int head_num{1};
+  int head_dim{1};
+  XPU_QUANT_CONFIG
+};
+
+struct XPUEncoderParam : ParamBase {
   lite::Tensor* input{};
   std::vector<lite::Tensor*> fc_weight;
   std::vector<lite::Tensor*> fc_bias;
@@ -1770,39 +1814,33 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<lite::Tensor*> ln_bias;
   std::vector<lite::Tensor*> roformer_embedding;
   const lite::Tensor* mask{nullptr};
-  const lite::Tensor* SeqLod{nullptr};
-  const lite::Tensor* PadSeqLen{nullptr};
+  const lite::Tensor* seqLod{nullptr};
+  const lite::Tensor* padSeqLen{nullptr};
   lite::Tensor* output{nullptr};
 
-  std::vector<int> slice_axes{};
-  std::vector<int> slice_starts{};
-  std::vector<int> slice_ends{};
-  std::vector<int> slice_decrease_axis{};
-  std::vector<float> input_max{};
-  std::vector<lite::Tensor*> weight_max{};
-  std::vector<std::string> quant_types{};
   int n_layers{};
   int head_num{};
-  int size_per_head{};
+  int head_dim{};
   int hidden_dim{};
-  int ffn_hidden_dim_scale{4};
-  std::string act_type{};
-  int relative_type{0};
-  int max_pos_len{512};  // relative embedding [max_pos_len, head_dim]
-  std::string precision{};
+  int intermediate_size{};
+  int act_type{};
+  float alpha{};
+
   bool enable_qkv_fusion{false};
-  bool norm_before{false};
+  bool norm_before{false};  ///
   bool adaptive_seqlen{false};
-  bool per_channel{false};
-  bool already_qkv_fusion{false};  // qkv is already fusion in graph
+  bool do_slice{false};
+  bool has_slice_decrease_axis{false};
+  bool do_padding{false};
+
+  XPU_ENCODER_QUANT_CONFIG
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   std::vector<lite::Tensor*> Ids;
   std::vector<lite::Tensor*> Tables;
-  const lite::Tensor* Mask{nullptr};
-  lite::Tensor* SeqLod{nullptr};
-  lite::Tensor* PadSeqLen{nullptr};
+  const lite::Tensor* SeqLod{nullptr};
+  const lite::Tensor* PadSeqLen{nullptr};
   lite::Tensor* Out{nullptr};
   int64_t padding_idx{-1};
   int mask_dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
@@ -1817,27 +1855,21 @@ struct XPUFcParam : ParamBase {
   const lite::Tensor* input{nullptr};
   const lite::Tensor* w{nullptr};
   const lite::Tensor* bias{nullptr};
-  const lite::Tensor* input_max{nullptr};
+  // const lite::Tensor* input_max{nullptr};
   lite::Tensor* output{nullptr};
-  lite::Tensor* output_max{nullptr};
+  // lite::Tensor* output_max{nullptr};
   lite::DDim in_mat_dims;
 
   int act_type;
   float act_param;
-  std::vector<float> weight_max{};
-  std::string precision{};
+  // std::vector<float> weight_max{};
   bool has_bias{false};
   int in_num_col_dims{1};
   bool transpose_x{false};
   bool transpose_w{true};
-
-  // int8/int16
-  bool enable_int8{false};
-  bool enable_int16{false};
-  float quant_input_max{0.f};
-  float quant_output_max{0.f};
-  bool per_channel{false};
   float alpha{1.0f};
+
+  XPU_QUANT_CONFIG
 };
 
 struct XPURoformerRelativeEmbeddingParam : ParamBase {

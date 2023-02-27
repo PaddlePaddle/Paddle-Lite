@@ -32,17 +32,7 @@ bool XPUEmbeddingWithEltwiseAddOp::CheckShape() const {
       CHECK_EQ(ids_dim[j], param_.Ids[i]->dims()[j]);
     }
   }
-  if (param_.Mask != nullptr) {
-    if (id_rank != param_.Mask->dims().size()) {
-      CHECK(id_rank == 2 && param_.Mask->dims().size() == 3 &&
-            param_.Mask->dims()[2] == 1)
-          << "unsupported id_rank: " << id_rank
-          << "mask_dims_size: " << param_.Mask->dims().size();
-    }
-    for (size_t j = 0; j < id_rank; j++) {
-      CHECK_EQ(ids_dim[j], param_.Mask->dims()[j]);
-    }
-    CHECK(param_.SeqLod != nullptr);
+  if (param_.SeqLod != nullptr) {
     CHECK(param_.PadSeqLen != nullptr);
   }
   return true;
@@ -56,9 +46,6 @@ bool XPUEmbeddingWithEltwiseAddOp::InferShapeImpl() const {
 
   param_.Out->Resize(lite::DDim(out_shape));
   param_.Out->set_lod(param_.Ids[0]->lod());
-  if (param_.Mask != nullptr) {
-    param_.PadSeqLen->Resize({1});
-  }
   return true;
 }
 
@@ -82,33 +69,27 @@ bool XPUEmbeddingWithEltwiseAddOp::AttachImpl(const cpp::OpDesc& op_desc,
 
   // optional params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
-  if (std::find(input_arg_names.begin(), input_arg_names.end(), "Mask") !=
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "SeqLod") !=
       input_arg_names.end()) {
-    auto arguments = op_desc.Input("Mask");
+    auto arguments = op_desc.Input("SeqLod");
     if (arguments.size() > 0) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
-        param_.Mask = &(arg_var->Get<lite::Tensor>());
+        param_.SeqLod = &(arg_var->Get<lite::Tensor>());
       }
     }
   }
-  // find optional mask dtype
-  if (op_desc.HasAttr("mask_dtype")) {
-    param_.mask_dtype = op_desc.GetAttr<int>("mask_dtype");
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "PadSeqLen") !=
+      input_arg_names.end()) {
+    auto arguments = op_desc.Input("PadSeqLen");
+    if (arguments.size() > 0) {
+      auto arg_var = scope->FindVar(arguments.front());
+      if (arg_var != nullptr) {
+        param_.PadSeqLen = &(arg_var->Get<lite::Tensor>());
+      }
+    }
   }
-
   std::vector<std::string> output_arg_names = op_desc.OutputArgumentNames();
-  if (std::find(output_arg_names.begin(), output_arg_names.end(), "SeqLod") !=
-      output_arg_names.end()) {
-    auto seqlod_name = op_desc.Output("SeqLod").front();
-    param_.SeqLod = GetMutableVar<lite::Tensor>(scope, seqlod_name);
-  }
-  if (std::find(output_arg_names.begin(),
-                output_arg_names.end(),
-                "PadSeqLen") != output_arg_names.end()) {
-    auto padseqlen_name = op_desc.Output("PadSeqLen").front();
-    param_.PadSeqLen = GetMutableVar<lite::Tensor>(scope, padseqlen_name);
-  }
 
   param_.padding_idx = op_desc.GetAttr<int64_t>("padding_idx");
 

@@ -61,6 +61,7 @@ add_kernel(range_compute_xpu XPU extra SRCS range_compute.cc)
 add_kernel(where_compute_xpu XPU extra SRCS where_compute.cc)
 add_kernel(gather_nd_compute_xpu XPU extra SRCS gather_nd_compute.cc)
 add_kernel(meshgrid_compute_xpu XPU basic SRCS meshgrid_compute.cc)
+add_kernel(calculate_lod_compute_xpu XPU basic SRCS calculate_lod_compute.cc)
 
 # extra
 add_kernel(lookup_table_compute_xpu XPU extra SRCS lookup_table_compute.cc)
@@ -113,7 +114,10 @@ add_kernel(deformable_conv_compute_xpu XPU extra SRCS deformable_conv_compute.cc
 
 # extra(fused kernel)
 add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc)
-add_kernel(__xpu__multi_encoder_compute_xpu XPU extra SRCS __xpu__multi_encoder_compute.cc)
+#add_kernel(__xpu__multi_encoder_compute_xpu XPU extra SRCS __xpu__multi_encoder_compute.cc)
+add_kernel(__xpu__encoder_compute_xpu XPU extra SRCS __xpu__encoder_compute.cc)
+add_kernel(__xpu__qk_attention_compute_xpu XPU extra SRCS __xpu__qk_attention_compute.cc)
+add_kernel(__xpu__qk_v_attention_compute_xpu XPU extra SRCS __xpu__qk_v_attention_compute.cc)
 add_kernel(__xpu__embedding_with_eltwise_add_compute_xpu XPU extra SRCS __xpu__embedding_with_eltwise_add_compute.cc)
 add_kernel(__xpu__fc_compute_xpu XPU extra SRCS __xpu__fc_compute.cc)
 add_kernel(__xpu__quick_gelu_compute_xpu XPU extra SRCS __xpu__quick_gelu_compute.cc)

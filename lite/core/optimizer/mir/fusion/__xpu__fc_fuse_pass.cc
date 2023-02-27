@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>  // std::transform
 #include <memory>
 #include <string>
+#include <vector>
 #include "lite/backends/xpu/math.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
@@ -119,76 +121,136 @@ class XPUFcFuser : public FuseBase {
       output_name = matched.at("mul_out")->arg()->name;
       output_node_name = "mul_out";
     }
-    bool per_channel = false;
-    int weight_scale_size = 1;
+
     auto* op_info = matched.at("mul")->stmt()->op_info();
     auto mul_input_y_name = op_info->Input("Y").front();
     auto mul_y_shape = scope->FindMutableTensor(mul_input_y_name)->dims();
     CHECK_EQ(mul_y_shape.size(), 2) << "mul_y_shape.size: "
                                     << mul_y_shape.size();
-    const bool quant = op_info->HasAttr("enable_int8") &&
-                       op_info->GetAttr<bool>("enable_int8");
-    op_desc.SetAttr<bool>("enable_int8", quant);
-    // int 8
-    // X0_scale is already in op_desc when copy from mul
+    std::string precision;
+    std::string quant_type;
+    int bit_len = 32;
+    bool quant =
+        matched.at("mul")->stmt()->op_info()->HasAttr("enable_quant") &&
+        matched.at("mul")->stmt()->op_info()->GetAttr<bool>("enable_quant");
     if (quant) {
-      CHECK(op_info->HasAttr("Y0_scale")) << "quant model no Y0_scale";
-      weight_scale_size =
-          op_info->GetAttr<std::vector<float>>("Y0_scale").size();
-      CHECK_EQ(weight_scale_size, mul_y_shape[1])
-          << "weight_scale_size: " << weight_scale_size
-          << ", mul_y_shape:" << mul_y_shape;
-      CHECK_GE(weight_scale_size, 1) << weight_scale_size;
-      std::vector<float> weight_max;
-      if (is_per_tensor(op_info->GetAttr<std::vector<float>>("Y0_scale"))) {
-        per_channel = false;
-        VLOG(3) << "xpu fc per tensor";
-        weight_max.push_back(
-            op_info->GetAttr<std::vector<float>>("Y0_scale")[0] * 127);
+      bit_len =
+          matched.at("mul")->stmt()->op_info()->GetAttr<int>("bit_length");
+      if (bit_len == 8) {
+        precision = "int8";
+      } else if (bit_len == 16) {
+        precision = "int16";
       } else {
-        per_channel = true;
-        VLOG(3) << "xpu fc per channel, first channel max:"
-                << op_info->GetAttr<std::vector<float>>("Y0_scale")[0] * 127
-                << ", last channel max: "
-                << op_info->GetAttr<std::vector<float>>(
-                       "Y0_scale")[weight_scale_size - 1] *
-                       127;
-        for (auto wm : op_info->GetAttr<std::vector<float>>("Y0_scale")) {
-          weight_max.push_back(wm * 127);
-        }
+        LOG(FATAL) << "Unsupported quant bit length: " << bit_len;
       }
-      VLOG(3) << "weight_max size:" << weight_max.size();
-      op_desc.SetAttr<std::vector<float>>("Filter0_scale", weight_max);
-      op_desc.SetAttr<bool>("per_channel", per_channel);
-
-      op_desc.SetAttr<std::vector<float>>(
-          "Input0_scale",
-          {127 *
-           matched.at("mul")->stmt()->op_info()->GetInputScale(
-               matched.at("x")->arg()->name)[0]});
-      // don't need * 127
-      op_desc.SetAttr<std::vector<float>>(
-          "Output0_scale",
-          {matched.at("mul")->stmt()->op_info()->GetAttr<float>(
-              "out_threshold")});
     }
-
-    // conv2d int16
+    // TODO(TingShen): Remove encable_int16 & enable_int8.
+    //                Use enable_quant and bit_length instead.
     if (matched.at("mul")->stmt()->op_info()->HasAttr("enable_int16") &&
         matched.at("mul")->stmt()->op_info()->GetAttr<bool>("enable_int16")) {
       op_desc.SetAttr<bool>("enable_int16", true);
+      quant = true;
+      bit_len = 16;
+      precision = "int16";
+    }
+    if (matched.at("mul")->stmt()->op_info()->HasAttr("enable_int8") &&
+        matched.at("mul")->stmt()->op_info()->GetAttr<bool>("enable_int8")) {
+      op_desc.SetAttr<bool>("enable_int8", true);
+      quant = true;
+      bit_len = 8;
+      precision = "int8";
+    }
+    if (quant) {
       op_desc.SetAttr<std::vector<float>>(
           "Input0_scale",
-          {((2 << 15) - 1) *
+          {((1 << (bit_len - 1)) - 1) *
            matched.at("mul")->stmt()->op_info()->GetInputScale(
                matched.at("x")->arg()->name)[0]});
-
-      op_desc.SetAttr<std::vector<float>>(
-          "Filter0_scale",
-          {((2 << 15) - 1) *
-           matched.at("mul")->stmt()->op_info()->GetInputScale(
-               matched.at("W")->arg()->name)[0]});
+      bool per_channel =
+          matched.at("mul")->stmt()->op_info()->HasAttr("per_channel") &&
+          matched.at("mul")->stmt()->op_info()->GetAttr<bool>("per_channel");
+      op_desc.SetAttr<bool>("per_channel", per_channel);
+      std::vector<float> weight_max;
+      if (per_channel) {
+        weight_max = matched.at("mul")->stmt()->op_info()->GetInputScale(
+            matched.at("W")->arg()->name);
+        std::transform(
+            weight_max.begin(),
+            weight_max.end(),
+            weight_max.begin(),
+            [bit_len](float& s) { return s * ((1 << (bit_len - 1)) - 1); });
+        quant_type = "per_channel";
+      } else {
+        weight_max = {((1 << (bit_len - 1)) - 1) *
+                      matched.at("mul")->stmt()->op_info()->GetInputScale(
+                          matched.at("W")->arg()->name)[0]};
+        quant_type = "per_tensor";
+      }
+      op_desc.SetAttr<std::vector<float>>("Filter0_scale", weight_max);
+      if (act_type_ != "linear") {
+        if (matched.at("act")->stmt()->op_info()->HasAttr("out_threshold")) {
+          op_desc.SetAttr<std::vector<float>>(
+              "Output0_scale",
+              {matched.at("act")->stmt()->op_info()->GetAttr<float>(
+                  "out_threshold")});
+        }
+      } else if (with_bias_) {
+        if (matched.at("add")->stmt()->op_info()->HasAttr("out_threshold")) {
+          if (matched.at("add")->stmt()->op_info()->GetAttrType(
+                  "out_threshold") == OpDescAPI::AttrType::FLOAT) {
+            op_desc.SetAttr<std::vector<float>>(
+                "Output0_scale",
+                {matched.at("add")->stmt()->op_info()->GetAttr<float>(
+                    "out_threshold")});
+          } else {
+            LOG(WARNING)
+                << "The type of elementwise_add's out_threshold is not float.";
+            op_desc.SetAttr<std::vector<float>>(
+                "Output0_scale",
+                {matched.at("mul")->stmt()->op_info()->GetAttr<float>(
+                    "out_threshold")});
+            // A workaround for MEG_SEARCH_dqa_SOPXPU-111/dqa_int8_pc_quant
+            // model.
+          }
+        }
+      } else {
+        if (matched.at("mul")->stmt()->op_info()->HasAttr("out_threshold")) {
+          op_desc.SetAttr<std::vector<float>>(
+              "Output0_scale",
+              {matched.at("mul")->stmt()->op_info()->GetAttr<float>(
+                  "out_threshold")});
+        }
+      }
+    } else {
+      precision = "int31";
+      quant_type = "no_quant";
+#ifdef LITE_WITH_XPU
+      /* To suppress linkage error, we use #ifdef here.*/
+      /* TODO(TingShen): Add a global precision parameter. For compatibility, we
+         now temporarily use multi_encoder_precision as the global precision
+         setup
+         for matrix multiplication ops.*/
+      if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
+          lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision ==
+              "int31") {
+        precision = "int31";
+      } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
+                 lite::TargetWrapperXPU::xpu_runtime_ptr
+                         ->multi_encoder_precision == "int8") {
+        precision = "int8";
+      } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") ==
+                     "local_quant" ||
+                 lite::TargetWrapperXPU::xpu_runtime_ptr
+                         ->multi_encoder_precision == "local_quant") {
+        precision = "local_quant";
+        quant_type = "local_quant";
+      } else {
+        precision = "int16";
+      }
+#endif
     }
+    op_desc.SetAttr<std::string>("precision", precision);
+    op_desc.SetAttr<std::string>("quant_type", quant_type);
 
     op_desc.SetOutput("Output", {output_name});
     std::map<std::string, int> act_map{{"linear", 0},

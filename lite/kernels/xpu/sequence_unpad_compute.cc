@@ -38,10 +38,21 @@ void SequenceUnpadCompute::Run() {
   // XXX(miaotianxiang): Target of tensor |Length| is |kHost|.
   auto* seq_len_ptr = param.Length->template data<int64_t>();
   int64_t batch_size = len_dims[0];
-  std::vector<uint64_t> out_lod0(batch_size + 1, 0);
-  for (int64_t i = 0; i < batch_size; ++i) {
-    out_lod0[i + 1] = out_lod0[i] + seq_len_ptr[i];
+  std::vector<uint64_t> out_lod0;
+  if (batch_size == 1 && x_dims[0] > 1) {
+    VLOG(3) << "xpu_sequence_unpad broadcast with x_dims[0]:" << x_dims[0];
+    batch_size = x_dims[0];
+    out_lod0 = std::vector<uint64_t>(batch_size + 1, 0);
+    for (int64_t i = 0; i < batch_size; ++i) {
+      out_lod0[i] = i * seq_len_ptr[0];
+    }
+  } else {
+    out_lod0 = std::vector<uint64_t>(batch_size + 1, 0);
+    for (int64_t i = 0; i < batch_size; ++i) {
+      out_lod0[i + 1] = out_lod0[i] + seq_len_ptr[i];
+    }
   }
+
   paddle::lite::LoD out_lod;
   out_lod.push_back(out_lod0);
 
@@ -57,12 +68,13 @@ void SequenceUnpadCompute::Run() {
   param.Out->Resize(out_dims);
   param.Out->set_lod(out_lod);
 
-  lod_cpu_ = {0};
+  lod_cpu_ = std::vector<int>(out_lod0.begin(), out_lod0.end());
+  /*lod_cpu_ = {0};
   for (int64_t i = 0; i < batch_size; ++i) {
     int offset =
         lod_cpu_.back() + static_cast<int>(param.Length->data<int64_t>()[i]);
     lod_cpu_.push_back(offset);
-  }
+  }*/
   lod_xpu_addr = reinterpret_cast<int*>(lod_xpu_guard_->addr_);
   XPU_CALL(xpu_memcpy(lod_xpu_addr,
                       lod_cpu_.data(),

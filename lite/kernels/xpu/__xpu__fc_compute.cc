@@ -34,9 +34,13 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
   auto w_ptr = param.w->template data<float>();
   auto weight_dims = param.w->dims();
   bool w_trans = param.transpose_w;
-  enable_int8_ = param.enable_int8;
-  per_channel_ = param.per_channel;
-  quant_int16_ = param.enable_int16;
+  enable_int8_ =
+      (param.quant_type == "per_channel" || param.quant_type == "per_tensor") &&
+      (param.precision == "int8");
+  per_channel_ = param.quant_type == "per_channel";
+  quant_int16_ =
+      (param.quant_type == "per_channel" || param.quant_type == "per_tensor") &&
+      (param.precision == "int16");
   CHECK(!(enable_int8_ && quant_int16_))
       << "param enable_int8 and enable_int16 can't be both true";
   // max
@@ -55,7 +59,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
             per_channel_ ? param.weight_max.size() : max_ptr_size);
     CHECK(xpu_quant_weight_.max_ptr_ != nullptr)
         << "slim int8 quant xpu_quant_weight_max_ptr should't be null";
-    std::vector<float> cpu_input_max(max_ptr_size, param.quant_input_max);
+    std::vector<float> cpu_input_max(max_ptr_size, param.quant_input_max[0]);
     lite::TargetWrapperXPU::MemcpySync(input_max_guard_->addr_,
                                        cpu_input_max.data(),
                                        sizeof(float) * max_ptr_size,
@@ -92,7 +96,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
                                        cpu_w_max.data(),
                                        sizeof(float) * max_ptr_size,
                                        IoDirection::HtoD);
-    std::vector<float> cpu_input_max(max_ptr_size, param.quant_input_max);
+    std::vector<float> cpu_input_max(max_ptr_size, param.quant_input_max[0]);
     lite::TargetWrapperXPU::MemcpySync(input_max_guard_->addr_,
                                        cpu_input_max.data(),
                                        sizeof(float) * max_ptr_size,

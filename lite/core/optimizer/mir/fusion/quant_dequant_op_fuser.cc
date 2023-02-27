@@ -319,11 +319,16 @@ void DequantOpFuser::InsertNewNode(SSAGraph* graph,
   switch (bit_length) {
     case 8:
       op_desc.SetAttr("enable_int8", true);
+      op_desc.SetAttr("enable_quant", true);
+      op_desc.SetAttr("bit_length", 8);
       break;
     case 16:
       op_desc.SetAttr("enable_int16", true);
+      op_desc.SetAttr("enable_quant", true);
+      op_desc.SetAttr("bit_length", 16);
       break;
   }
+  op_desc.SetAttr("per_channel", false);
   op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
@@ -419,11 +424,16 @@ void ChannelWiseDequantOpFuser::InsertNewNode(SSAGraph* graph,
   switch (weight_bit_length) {
     case 8:
       op_desc.SetAttr("enable_int8", true);
+      op_desc.SetAttr("enable_quant", true);
+      op_desc.SetAttr("bit_length", 8);
       break;
     case 16:
       op_desc.SetAttr("enable_int16", true);
+      op_desc.SetAttr("enable_quant", true);
+      op_desc.SetAttr("bit_length", 16);
       break;
   }
+  op_desc.SetAttr("per_channel", true);
   op_desc.SetInputScale(weight_name, weight_scale);
 
   // change the weight from the float type to int8 type.
