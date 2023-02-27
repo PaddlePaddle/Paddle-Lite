@@ -1797,7 +1797,7 @@ struct XPUMultiEncoderParam : ParamBase {
   bool already_qkv_fusion{false};  // qkv is already fusion in graph
 };
 
-struct XPUUnetResBlockParam : ParamBase {
+struct XPUSpatialTransformerResBlockParam : ParamBase {
   lite::Tensor* input1{};
   lite::Tensor* input2{};
   std::vector<lite::Tensor*> fc_weight;

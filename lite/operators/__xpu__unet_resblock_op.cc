@@ -34,9 +34,9 @@ static std::vector<std::vector<int>> vec1DTo2D_int(const std::vector<int>& vec,
   return res;
 }
 
-bool XPUUnetResBlockOp::CheckShape() const { return true; }
+bool XPUSpatialTransformerResBlockOp::CheckShape() const { return true; }
 
-bool XPUUnetResBlockOp::InferShapeImpl() const {
+bool XPUSpatialTransformerResBlockOp::InferShapeImpl() const {
   auto input_shape = param_.input1->dims();
   auto batch_size = input_shape[0];
   auto channel_out = param_.filter_dims[0][0];
@@ -46,8 +46,8 @@ bool XPUUnetResBlockOp::InferShapeImpl() const {
   return true;
 }
 
-bool XPUUnetResBlockOp::AttachImpl(const cpp::OpDesc& op_desc,
-                                   lite::Scope* scope) {
+bool XPUSpatialTransformerResBlockOp::AttachImpl(const cpp::OpDesc& op_desc,
+                                                 lite::Scope* scope) {
   param_.input1 =
       scope->FindVar(op_desc.Input("Input1").front())->GetMutable<Tensor>();
   param_.input2 =
@@ -125,5 +125,5 @@ bool XPUUnetResBlockOp::AttachImpl(const cpp::OpDesc& op_desc,
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_OP(__xpu__unet_resblock,
-                 paddle::lite::operators::XPUUnetResBlockOp);
+REGISTER_LITE_OP(__xpu__spatial_transformer_resblock,
+                 paddle::lite::operators::XPUSpatialTransformerResBlockOp);

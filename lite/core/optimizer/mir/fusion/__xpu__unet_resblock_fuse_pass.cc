@@ -35,9 +35,9 @@ static std::vector<int> vec2DTo1D_int(
   return res;
 }
 
-class UnetResBlockfuser : public FuseBase {
+class SpatialTransformerResBlockfuser : public FuseBase {
  public:
-  explicit UnetResBlockfuser(bool conv_fix, bool input_max)
+  explicit SpatialTransformerResBlockfuser(bool conv_fix, bool input_max)
       : conv_fix_(conv_fix), input_max_(input_max) {}
 
   void BuildPattern() override {
@@ -181,7 +181,7 @@ class UnetResBlockfuser : public FuseBase {
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
     cpp::OpDesc op_desc;
-    op_desc.SetType("__xpu__unet_resblock");
+    op_desc.SetType("__xpu__spatial_transformer_resblock");
     std::vector<std::string> fc_weight_names = {
         matched.at("fc_weight")->arg()->name,
     };
@@ -380,18 +380,18 @@ class UnetResBlockfuser : public FuseBase {
 
 }  // namespace fusion
 
-class XPUUnetResBlockfusePass : public ProgramPass {
+class XPUSpatialTransformerResBlockfusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     for (auto conv_fix : {false, true}) {
       if (conv_fix == true) {
         for (auto input_max : {false, true}) {
-          fusion::UnetResBlockfuser fuser(conv_fix, input_max);
+          fusion::SpatialTransformerResBlockfuser fuser(conv_fix, input_max);
           fuser(graph.get());
         }
       } else {
-        fusion::UnetResBlockfuser fuser(conv_fix, false);
+        fusion::SpatialTransformerResBlockfuser fuser(conv_fix, false);
         fuser(graph.get());
       }
     }
@@ -402,6 +402,6 @@ class XPUUnetResBlockfusePass : public ProgramPass {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(__xpu__unet_resblock_fuse_pass,
-                  paddle::lite::mir::XPUUnetResBlockfusePass)
+REGISTER_MIR_PASS(__xpu__spatial_transformer_resblock_fuse_pass,
+                  paddle::lite::mir::XPUSpatialTransformerResBlockfusePass)
     .BindTargets({TARGET(kXPU)});

@@ -30,15 +30,16 @@ struct identity {
 };
 
 template <typename InType, PrecisionType PType>
-class XPUUnetResBlockCompute : public KernelLite<TARGET(kXPU), PType> {
+class XPUSpatialTransformerResBlockCompute
+    : public KernelLite<TARGET(kXPU), PType> {
  public:
-  using param_t = operators::XPUUnetResBlockParam;
+  using param_t = operators::XPUSpatialTransformerResBlockParam;
 
   virtual void PrepareForRun();
 
   virtual void Run();
 
-  virtual ~XPUUnetResBlockCompute() = default;
+  virtual ~XPUSpatialTransformerResBlockCompute() = default;
 
  private:
   std::vector<const int16_t *> arg_fc_weight_int16_;

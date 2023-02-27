@@ -33,7 +33,7 @@ static std::vector<const T*> prepare_weight(
 }
 
 template <typename InType, PrecisionType PType>
-void XPUUnetResBlockCompute<InType, PType>::prepare_weight_max(
+void XPUSpatialTransformerResBlockCompute<InType, PType>::prepare_weight_max(
     const std::vector<lite::Tensor*>* weight_max,
     int max_ptr_len,
     std::vector<const float*>* max_xpu_ptrs) {
@@ -63,7 +63,7 @@ void XPUUnetResBlockCompute<InType, PType>::prepare_weight_max(
 }
 
 template <typename InType, PrecisionType PType>
-void XPUUnetResBlockCompute<InType, PType>::prepare_filter_max(
+void XPUSpatialTransformerResBlockCompute<InType, PType>::prepare_filter_max(
     const std::vector<lite::Tensor*>& filter_max,
     int max_ptr_len,
     std::vector<const float*>* max_xpu_ptrs) {
@@ -93,7 +93,7 @@ void XPUUnetResBlockCompute<InType, PType>::prepare_filter_max(
 }
 
 template <typename InType, PrecisionType PType>
-void XPUUnetResBlockCompute<InType, PType>::PrepareForRun() {
+void XPUSpatialTransformerResBlockCompute<InType, PType>::PrepareForRun() {
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->template Param<param_t>();
   // prepare bias
@@ -127,7 +127,7 @@ void XPUUnetResBlockCompute<InType, PType>::PrepareForRun() {
 }
 
 template <typename InType, PrecisionType PType>
-void XPUUnetResBlockCompute<InType, PType>::Run() {
+void XPUSpatialTransformerResBlockCompute<InType, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   const InType* in1 = param.input1->template data<InType>();
@@ -138,33 +138,34 @@ void XPUUnetResBlockCompute<InType, PType>::Run() {
   int nh = static_cast<int>(param.input1->dims()[2]);
   int nw = static_cast<int>(param.input1->dims()[3]);
   int input2_dim = static_cast<int>(param.input2->dims()[1]);
-  int r = xdnn::unet_resblock_fusion<InType, int16_t, InType, int16_t>(
-      ctx.GetRawContext(),
-      in1,
-      in2,
-      *(XPUUnetResBlockCompute::get_weight<int16_t>()),
-      *(XPUUnetResBlockCompute::get_filter<int16_t>()),
-      out,
-      arg_fc_bias_,
-      arg_conv_bias_,
-      arg_gn_scale_,
-      arg_gn_bias_,
-      fc_weight_max_,
-      conv_filter_max_,
-      input_max_,
-      batch,
-      channel,
-      nh,
-      nw,
-      param.groups,
-      param.filter_dims,
-      param.dilations,
-      param.paddings,
-      param.strides,
-      param.gn_groups,
-      param.gn_eps,
-      input2_dim,
-      param.conv_fix);
+  int r = xdnn::
+      spatial_transformer_resblock_fusion<InType, int16_t, InType, int16_t>(
+          ctx.GetRawContext(),
+          in1,
+          in2,
+          *(XPUSpatialTransformerResBlockCompute::get_weight<int16_t>()),
+          *(XPUSpatialTransformerResBlockCompute::get_filter<int16_t>()),
+          out,
+          arg_fc_bias_,
+          arg_conv_bias_,
+          arg_gn_scale_,
+          arg_gn_bias_,
+          fc_weight_max_,
+          conv_filter_max_,
+          input_max_,
+          batch,
+          channel,
+          nh,
+          nw,
+          param.groups,
+          param.filter_dims,
+          param.dilations,
+          param.paddings,
+          param.strides,
+          param.gn_groups,
+          param.gn_eps,
+          input2_dim,
+          param.conv_fix);
   CHECK_EQ(r, 0);
 }
 
@@ -175,12 +176,16 @@ void XPUUnetResBlockCompute<InType, PType>::Run() {
 
 namespace xpu = paddle::lite::kernels::xpu;
 
-using XPUUnetResBlock_FP32 =
-    xpu::XPUUnetResBlockCompute<float, PRECISION(kFloat)>;
-using XPUUnetResBlock_FP16 =
-    xpu::XPUUnetResBlockCompute<float16, PRECISION(kFP16)>;
-REGISTER_LITE_KERNEL(
-    __xpu__unet_resblock, kXPU, kFloat, kNCHW, XPUUnetResBlock_FP32, def)
+using XPUSpatialTransformerResBlock_FP32 =
+    xpu::XPUSpatialTransformerResBlockCompute<float, PRECISION(kFloat)>;
+using XPUSpatialTransformerResBlock_FP16 =
+    xpu::XPUSpatialTransformerResBlockCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(__xpu__spatial_transformer_resblock,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     XPUSpatialTransformerResBlock_FP32,
+                     def)
     .BindInput("Input1", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Input2", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -192,8 +197,12 @@ REGISTER_LITE_KERNEL(
     .BindInput("GNBias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
-REGISTER_LITE_KERNEL(
-    __xpu__unet_resblock, kXPU, kFP16, kNCHW, XPUUnetResBlock_FP16, def)
+REGISTER_LITE_KERNEL(__xpu__spatial_transformer_resblock,
+                     kXPU,
+                     kFP16,
+                     kNCHW,
+                     XPUSpatialTransformerResBlock_FP16,
+                     def)
     .BindInput("Input1",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindInput("Input2",
