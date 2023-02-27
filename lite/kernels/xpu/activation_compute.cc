@@ -429,11 +429,11 @@ using softplusFP32 =
     paddle::lite::kernels::xpu::SoftplusCompute<float, PRECISION(kFloat)>;
 using softplusFP16 =
     paddle::lite::kernels::xpu::SoftplusCompute<float16, PRECISION(kFP16)>;
-REGISTER_LITE_KERNEL(softplus, kXPU, kFloat, kNCHW, softplusFP32, def)
+REGISTER_LITE_KERNEL(softplus, kXPU, kFloat, kNCHW, softplusFP32, DISABLE_XPU1_softplusFP32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
-REGISTER_LITE_KERNEL(softplus, kXPU, kFP16, kNCHW, softplusFP16, softplus_fp16_def)
+REGISTER_LITE_KERNEL(softplus, kXPU, kFP16, kNCHW, softplusFP16, DISABLE_XPU1_softplusFP16)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
