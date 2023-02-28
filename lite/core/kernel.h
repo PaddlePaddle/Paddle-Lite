@@ -102,21 +102,20 @@ class KernelBase {
 #endif
 
 #ifdef LITE_WITH_PROFILE
-    if (!is_kernel_test_) {
+    if (!is_kernel_test_ ) {
       profiler_->StopTiming(profile::Type::kCreate, profile_id_, ctx_.get());
       profiler_->StartTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
     }
+#endif
 
     Run();
 
+#ifdef LITE_WITH_PROFILE
     // skip test
-    if (!is_kernel_test_) {
+    if (!is_kernel_test_ ) {
       SetProfileRuntimeKernelInfo(profiler_->GetOpCharacter(profile_id_));
       profiler_->StopTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
     }
-
-#else
-    Run();
 #endif
   }
 
