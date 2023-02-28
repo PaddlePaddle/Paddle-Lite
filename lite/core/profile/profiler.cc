@@ -94,9 +94,10 @@ int Profiler::GetKernelFuncCalledTimes(const std::string& op_type,
   return count;
 }
 
-float Profiler::GetKernelFuncSummaryMFLOPs(const std::string& op_type,
-                                         const std::string& kernel_attr,
-                                         const std::string& kernel_func_name) {
+float Profiler::GetKernelFuncSummaryMFLOPs(
+    const std::string& op_type,
+    const std::string& kernel_attr,
+    const std::string& kernel_func_name) {
   float MFLOPs = 0.f;
   for (size_t i = 0; i < units_.size(); ++i) {
     if ((units_[i].character.kernel_func_name == kernel_func_name) &&
@@ -128,8 +129,8 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
        << " first-epoch =====" << std::endl;
   }
   ss << setw(30) << left << "OperatorType"
-     << " " << setw(30) << left << "KerneAttr(Place)"
-     << " " << setw(24) << left << "KernelFuncName";
+     << " " << setw(20) << left << "KerneAttr(Place)"
+     << " " << setw(30) << left << "KernelFuncName";
   if (!concise) {
     ss << " " << setw(26) << left << "Remark"
        << " " << setw(15) << left << "InDim"
@@ -142,8 +143,8 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
   if (!concise) {
     ss << " " << setw(7) << left << "Cur(ms)";
   }
-  ss << " " << setw(7) << left << "Avg(%)"
-     << " " << setw(7) << left << "MFLOPs";
+  ss << " " << setw(7) << left << "Per(%)"
+     << " " << setw(10) << left << "MFLOPs";
   if (!concise) {
     ss << " " << setw(7) << left << "GOPS";
   }
@@ -209,16 +210,16 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
       }
       // clang-format off
       ss << setw(30) << left << fixed << item.first.op_type
-         << " " << setw(30) << left << fixed << item.first.kernel_attr
-         << " " << setw(24) << left << fixed << item.first.kernel_func_name
+         << " " << setw(20) << left << fixed << item.first.kernel_attr
+         << " " << setw(30) << left << fixed << item.first.kernel_func_name
          << " " << setw(7) << left << fixed << setprecision(3)
          << item.second.avg
          << " " << setw(7) << left << fixed << setprecision(3)
          << item.second.min
          << " " << setw(7) << left << fixed << setprecision(3)
          << item.second.max
-         << " " << setprecision(2) << percent << "%   "
-         << " " << setw(7) << left << fixed << setprecision(3)
+         << " " << setw(7) << left << fixed << setprecision(2) << percent << "%"
+         << " " << setw(10) << left << fixed << setprecision(3)
          << GetKernelFuncSummaryMFLOPs(item.first.op_type,
                                      item.first.kernel_attr,
                                      item.first.kernel_func_name)
@@ -274,8 +275,8 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
 
       // clang-format off
       ss << setw(30) << left << fixed << unit.Character().op_type
-         << " " << setw(30) << left << fixed << unit.Character().kernel_attr
-         << " " << setw(24) << left << fixed
+         << " " << setw(20) << left << fixed << unit.Character().kernel_attr
+         << " " << setw(30) << left << fixed
          << unit.Character().kernel_func_name
          << " " << setw(26) << left << fixed << unit.Character().remark
          << " " << setw(15) << left << fixed << unit.Character().input_shape
@@ -286,7 +287,7 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
          << " " << setw(7) << left << fixed << setprecision(3) << times.Max(w)
          << " " << setw(7) << left << fixed << setprecision(3) << times.Last(w)
          << " " << left << setprecision(2) << percent << "%   "
-         << " " << setw(7) << left << fixed << setprecision(3)
+         << " " << setw(10) << left << fixed << setprecision(3)
                 << 1e-6f * unit.Character().macs
          << " " << setw(7) << left << fixed << setprecision(2)
                 << 1e-6f * unit.Character().macs / times.Avg(w);

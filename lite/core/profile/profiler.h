@@ -66,7 +66,7 @@ struct OpCharacter {
   float macs_ps{0.f};
   // TODO[wz1qqx] add more performance paramaters of ops
   // MACs(MB)
-  float macs_{0.f}; 
+  float macs_{0.f};
   // I = MFLOPS(MFLOPs) / MACs(MB)
   float arith_intense{0.f};
 
@@ -138,8 +138,8 @@ class Profiler final {
                                const std::string& kernel_attr,
                                const std::string& kernel_func_name);
   float GetKernelFuncSummaryMFLOPs(const std::string& op_type,
-                                 const std::string& kernel_attr,
-                                 const std::string& kernel_func_name);
+                                   const std::string& kernel_attr,
+                                   const std::string& kernel_func_name);
   OpCharacter* GetOpCharacter(const size_t index);
 
  private:

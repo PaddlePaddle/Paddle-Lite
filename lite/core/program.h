@@ -206,7 +206,7 @@ class LITE_API RuntimeProgram {
     CLRuntime::Global()->SaveTuned();
 #endif  // LITE_WITH_OPENCL
 #ifdef LITE_WITH_PROFILE
-    // exclude data of first epoch 
+    // exclude data of first epoch
     LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 1);
     // exclude data of 10 warm-up
     LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);
