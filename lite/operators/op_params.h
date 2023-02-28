@@ -1802,6 +1802,13 @@ struct XPURoformerRelativeEmbeddingParam : ParamBase {
   int max_pos_len{512};
 };
 
+struct XPUMaskAdaptiveParam : ParamBase {
+  const lite::Tensor* Mask{nullptr};
+  lite::Tensor* SeqLod{nullptr};
+  lite::Tensor* PadSeqLen{nullptr};
+  lite::Tensor* Length{nullptr};
+};
+
 struct XPUResNetCbamParam : ParamBase {
   lite::Tensor* input{};
   std::vector<lite::Tensor*> filter;
