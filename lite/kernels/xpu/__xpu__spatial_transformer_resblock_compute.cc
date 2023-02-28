@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/kernels/xpu/__xpu__spatial_transformer_resblock_compute.h"
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
-#include "lite/kernels/xpu/__xpu__spatial_transformer_resblock_compute.h"
 
 namespace paddle {
 namespace lite {
