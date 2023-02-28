@@ -2272,8 +2272,7 @@ class XPUMultiEncoderFusePass : public ProgramPass {
         }
       }
     }
-
-    for (auto& act_type : {"gelu"}) {
+    for (auto& act_type : {"gelu", "__xpu__quick_gelu"}) {
       for (auto& input_pos : {"X"}) {
         for (auto& qkv_ln_2_out_pos : {"X"}) {
           for (auto& matmul_type : matmul_types) {

@@ -80,6 +80,7 @@ USE_MIR_PASS(assign_value_calc_offline_pass);
 USE_MIR_PASS(__xpu__graph_dedup_pass);
 USE_MIR_PASS(__xpu__resnet_fuse_pass);
 USE_MIR_PASS(__xpu__spatial_transformer_fuse_pass);
+USE_MIR_PASS(__xpu__gn_silu_fuse_pass);
 USE_MIR_PASS(__xpu__multi_encoder_fuse_pass);
 USE_MIR_PASS(__xpu__embedding_with_eltwise_add_fuse_pass);
 USE_MIR_PASS(__xpu__fc_fuse_pass);
