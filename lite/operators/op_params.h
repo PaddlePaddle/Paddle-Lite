@@ -1820,6 +1820,15 @@ struct XPUSpatialTransformerResBlockParam : ParamBase {
   bool conv_fix{};
 };
 
+struct XPUGnSiluParam : ParamBase {
+  lite::Tensor* input{};
+  std::vector<lite::Tensor*> gn_scale;
+  std::vector<lite::Tensor*> gn_bias;
+  lite::Tensor* output{nullptr};
+  int groups{};
+  float epsilon{};
+};
+
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   std::vector<lite::Tensor*> Ids;
   std::vector<lite::Tensor*> Tables;
@@ -1869,6 +1878,13 @@ struct XPURoformerRelativeEmbeddingParam : ParamBase {
   lite::Tensor* sin_embedding{nullptr};
   lite::Tensor* output{nullptr};
   int max_pos_len{512};
+};
+
+struct XPUMaskAdaptiveParam : ParamBase {
+  const lite::Tensor* Mask{nullptr};
+  lite::Tensor* SeqLod{nullptr};
+  lite::Tensor* PadSeqLen{nullptr};
+  lite::Tensor* Length{nullptr};
 };
 
 struct XPUResNetCbamParam : ParamBase {

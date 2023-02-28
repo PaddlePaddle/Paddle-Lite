@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,25 +14,33 @@
 
 #pragma once
 
-#include <vector>
-#include "lite/core/kernel.h"
+#include <string>
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
+namespace operators {
 
-template <typename T, PrecisionType PType>
-class SliceCompute : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kAny)> {
+class XPUMaskAdaptiveOp : public OpLite {
  public:
-  using param_t = operators::SliceParam;
+  XPUMaskAdaptiveOp() {}
 
-  virtual void Run();
+  explicit XPUMaskAdaptiveOp(const std::string &op_type) : OpLite(op_type) {}
 
-  virtual ~SliceCompute() = default;
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "XPUMaskAdaptive"; }
+
+ private:
+  mutable XPUMaskAdaptiveParam param_;
 };
 
-}  // namespace xpu
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle
