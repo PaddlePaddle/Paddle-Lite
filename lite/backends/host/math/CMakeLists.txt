@@ -14,4 +14,5 @@ lite_cc_library(math_host SRCS
     inverse.cc
     reverse.cc
     topk.cc
+    temporal_shift.cc
     DEPS core)

@@ -379,6 +379,13 @@ void ConfigBase::add_discarded_pass(const std::string pass) {
   return;
 }
 
+// Set external custom allocator
+void ConfigBase::set_custom_allocator(TargetType target_type,
+                                      CustomAllocator custom_allocator) {
+  // TODO(shentanyue): TargetType will be supported in the future.
+  lite::Allocator::Global().SetCustomAllocator(custom_allocator);
+}
+
 #ifdef LITE_WITH_X86
 void ConfigBase::set_x86_math_num_threads(int threads) {
   x86_math_num_threads_ = threads;

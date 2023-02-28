@@ -172,6 +172,7 @@ add_operator(log_softmax_op extra SRCS log_softmax_op.cc)
 add_operator(roll_op extra SRCS roll_op.cc)
 add_operator(share_data extra SRCS share_data_op.cc)
 add_operator(round extra SRCS round_op.cc)
+add_operator(fused_attention_op extra SRCS fused_attention_op.cc)
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc)
@@ -216,8 +217,12 @@ add_operator(sequence_topk_avg_pooling_op basic SRCS sequence_topk_avg_pooling_o
 add_operator(search_fc_op basic SRCS search_fc_op.cc)
 add_operator(lstm_op extra SRCS lstm_op.cc)
 add_operator(topk_pooling_op extra SRCS topk_pooling_op.cc)
+
 # for deformable-convNet
 add_operator(deformable_conv_op extra SRCS deformable_conv_op.cc)
+
+# for tsm model
+add_operator(temporal_shift_op extra SRCS temporal_shift_op.cc)
 
 # 4. training op
 add_operator(mean_op extra SRCS mean_op.cc)
@@ -246,6 +251,11 @@ add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_o
 add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc)
 add_operator(__xpu__dynamic_lstm_fuse_op extra SRCS __xpu__dynamic_lstm_fuse_op.cc)
 add_operator(__xpu__multi_softmax_op extra SRCS __xpu__multi_softmax_op.cc)
+
+if(XPU_WITH_XFT)
+    add_operator(fusion_decoding_op extra SRCS fusion_decoding_op.cc)
+    add_operator(fusion_unified_decoding_op extra SRCS fusion_unified_decoding_op.cc)
+endif()
 
 add_library(ops STATIC ${OPS_SRC} op_params.cc)
 add_dependencies(ops utils)

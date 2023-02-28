@@ -24,6 +24,20 @@ namespace arm {
 namespace math {
 
 const int KBLOCK_INT8 = 4;
+typedef enum {
+  GemmNoBias = 0,
+  GemmMBias = 1,
+  GemmNBias = 2,
+  GemmMNBias = 3,
+} GemmBiasDirection;
+
+typedef enum {
+  GemmNoScale = 0,
+  GemmMScale = 1,
+  GemmNScale = 2,
+  GemmMNScale = 3,
+} GemmScaleDirection;
+
 #ifdef __aarch64__
 // for int7/int8 gemm
 // const int HBLOCK = 4;
@@ -94,6 +108,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
                        int N,
                        int K,
                        bool is_bias,
+                       GemmBiasDirection bias_direction,
                        bool is_transB,
                        const float* scale,
                        const operators::ActivationParam act_param,

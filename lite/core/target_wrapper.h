@@ -34,6 +34,7 @@ using lite_api::DataLayoutToStr;
 using lite_api::TargetRepr;
 using lite_api::PrecisionRepr;
 using lite_api::DataLayoutRepr;
+using lite_api::CustomAllocator;
 
 namespace host {
 const int MALLOC_ALIGN = 64;
@@ -91,6 +92,25 @@ enum class IoDirection {
   HtoD,      // Host to device
   DtoH,      // Device to host
   DtoD,      // Device to device
+};
+
+// Allocator
+class Allocator {
+ public:
+  static Allocator& Global() {
+    static auto* allocator = new Allocator;
+    return *allocator;
+  }
+
+  void SetCustomAllocator(CustomAllocator custom_allocator) {
+    custom_allocator_ = custom_allocator;
+  }
+
+  CustomAllocator GetCustomAllocator() { return custom_allocator_; }
+
+ private:
+  CustomAllocator custom_allocator_;
+  Allocator() = default;
 };
 
 // This interface should be specified by each kind of target.

@@ -55,8 +55,7 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       }
     }
   }
-  if (!(has_int8 && has_weight_quant) && has_arm && !is_nnadapter) {
-    // only support FP32/FP16
+  if (has_arm && !is_nnadapter) {
     mul_types.push_back("matmul");
     mul_types.push_back("matmul_v2");
   }

@@ -78,6 +78,11 @@ KUNLUNXIN_XPU_XDNN_URL=""
 KUNLUNXIN_XPU_XRE_URL=""
 KUNLUNXIN_XPU_SDK_ENV=""
 KUNLUNXIN_XPU_SDK_ROOT=""
+# options of compiling baidu XFT lib (XFT depends on XDNN and XRE).
+WITH_KUNLUNXIN_XFT=OFF
+KUNLUNXIN_XFT_ENV=""
+KUNLUNXIN_XFT_URL=""
+KUNLUNXIN_XFT_ROOT=""
 # options of adding training ops
 WITH_TRAIN=OFF
 # options of building tiny publish so
@@ -157,6 +162,12 @@ function init_cmake_mutable_options {
         WITH_TINY_PUBLISH=OFF
     fi
 
+    if [ "${WITH_KUNLUNXIN_XFT}" == "ON" ]; then
+        WITH_KUNLUNXIN_XPU=ON
+        WITH_EXTRA=ON
+        WITH_TINY_PUBLISH=OFF
+    fi
+
     if [ "${DNNADAPTER_WITH_KUNLUNXIN_XTCL}" == "ON" ]; then
         WITH_EXTRA=ON
         WITH_TINY_PUBLISH=OFF
@@ -192,6 +203,10 @@ function init_cmake_mutable_options {
                         -DXPU_XRE_URL=$KUNLUNXIN_XPU_XRE_URL \
                         -DXPU_SDK_ENV=$KUNLUNXIN_XPU_SDK_ENV \
                         -DXPU_SDK_ROOT=$KUNLUNXIN_XPU_SDK_ROOT \
+                        -DXPU_WITH_XFT=$WITH_KUNLUNXIN_XFT \
+                        -DXPU_XFT_ENV=$KUNLUNXIN_XFT_ENV \
+                        -DXPU_XFT_URL=$KUNLUNXIN_XFT_URL \
+                        -DXPU_XFT_ROOT=$KUNLUNXIN_XFT_ROOT \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN  \
                         -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
                         -DNNADAPTER_WITH_ROCKCHIP_NPU=$NNADAPTER_WITH_ROCKCHIP_NPU \
@@ -442,6 +457,15 @@ function print_usage {
     echo -e "|             default is bdcentos_x86_64(if x86) / kylin_aarch64(if arm)                                                                               |"
     echo -e "|     --kunlunxin_xpu_sdk_root: (path to kunlunxin_xpu DDK file) optional, default is None                                                             |"
     echo -e "|  detailed information about Paddle-Lite KUNLUNXIN XPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/kunlunxin_xpu.html                  |"
+    echo -e "|                                                                                                                                                      |"
+    echo -e "|  arguments of kunlunxin xpu-xft library compiling:                                                                                                   |"
+    echo -e "|     --with_kunlunxin_xft: (OFF|ON); controls whether to enable xpu-xft lib for kunlunxin_xpu, default is OFF.                                        |"
+    echo -e "|     --kunlunxin_xft_env: (bdcentos6u3_x86_64_gcc82|bdcentos7u5_x86_64_gcc82|ubuntu1604_x86_64)                                                       |"
+    echo -e "|             'mandatory if --with_kunlunxin_xft=ON and --kunlunxin_xft_url is not empty                                                               |"
+    echo -e "|     --kunlunxin_xft_url: (kunlunxinj_xft sdk download url) optional, default is                                                                      |"
+    echo -e "|             'https://klx-sdk-release-public.su.bcebos.com/xft/dev/latest/'.                                                                          |"
+    echo -e "|     --kunlunxin_xft_root: (path to kunlunxin_xft file) optional, default is None                                                                     |"
+    echo -e "|             'if --kunlunxin_xft_root is not empty, we omit --kunlunxin_xft_url and --kunlunxin_xft_env'                                              |"
     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
@@ -718,6 +742,26 @@ function main {
                 KUNLUNXIN_XPU_SDK_ROOT="${i#*=}"
                 if [ -n "${KUNLUNXIN_XPU_SDK_ROOT}" ]; then
                     KUNLUNXIN_XPU_SDK_ROOT=$(readlink -f ${KUNLUNXIN_XPU_SDK_ROOT})
+                fi
+                shift
+                ;;
+            # compiling lib which can operate on kunlunxin-xft .
+            --with_kunlunxin_xft=*)
+                WITH_KUNLUNXIN_XFT="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xft_env=*)
+                KUNLUNXIN_XFT_ENV="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xft_url=*)
+                KUNLUNXIN_XFT_URL="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xft_root=*)
+                KUNLUNXIN_XFT_ROOT="${i#*=}"
+                if [ -n "${KUNLUNXIN_XFT_ROOT}" ]; then
+                    KUNLUNXIN_XFT_ROOT=$(readlink -f ${KUNLUNXIN_XFT_ROOT})
                 fi
                 shift
                 ;;

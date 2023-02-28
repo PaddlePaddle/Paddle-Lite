@@ -95,8 +95,44 @@ void ConvScaleFuser::InsertNewNode(SSAGraph* graph,
   std::string activation_type{""};
   if (scale_op_desc->HasAttr("activation_type")) {
     activation_type = scale_op_desc->GetAttr<std::string>("activation_type");
+    conv_op_desc->SetAttr("with_act", true);
+    conv_op_desc->SetAttr("act_type", activation_type);
+    if (activation_type == "relu") {
+      conv_op_desc->SetAttr("fuse_relu", true);
+    } else if (activation_type == "relu6") {
+      float alpha = scale_op_desc->GetAttr<float>("threshold");
+      conv_op_desc->SetAttr("fuse_brelu_threshold", alpha);
+    } else if (activation_type == "leaky_relu") {
+      float alpha = scale_op_desc->GetAttr<float>("alpha");
+      conv_op_desc->SetAttr("leaky_relu_alpha", alpha);
+    } else if (activation_type == "hard_swish") {
+      float threshold = scale_op_desc->GetAttr<float>("threshold");
+      float scale = scale_op_desc->GetAttr<float>("scale");
+      float offset = scale_op_desc->GetAttr<float>("offset");
+      conv_op_desc->SetAttr("hard_swish_threshold", threshold);
+      conv_op_desc->SetAttr("hard_swish_scale", scale);
+      conv_op_desc->SetAttr("hard_swish_offset", offset);
+    } else if (activation_type == "hard_sigmoid") {
+      float slope = scale_op_desc->GetAttr<float>("slope");
+      float offset = scale_op_desc->GetAttr<float>("offset");
+      conv_op_desc->SetAttr("slope", slope);
+      conv_op_desc->SetAttr("offset", offset);
+    } else if (activation_type == "prelu") {
+      auto prelu_mode = scale_op_desc->GetAttr<std::string>("mode");
+      conv_op_desc->SetAttr("prelu_mode", prelu_mode);
+      conv_op_desc->SetInput("Prelu_alpha", {matched.at("alpha")->arg()->name});
+    } else if (activation_type == "sigmoid") {
+      conv_op_desc->SetAttr("fuse_sigmoid", true);
+    } else if (activation_type == "tanh") {
+      conv_op_desc->SetAttr("fuse_tanh", true);
+    } else if (activation_type == "swish") {
+      float scale = scale_op_desc->GetAttr<float>("beta");
+      conv_op_desc->SetAttr("swish_scale", scale);
+      conv_op_desc->SetAttr("fuse_swish", true);
+    } else if (activation_type == "abs") {
+      conv_op_desc->SetAttr("fuse_abs", true);
+    }
   }
-  conv_op_desc->SetAttr<std::string>("scale_activation_type", activation_type);
 
   // compute new conv_weight
   auto conv_weight_d = conv_weight_t->mutable_data<float>();
