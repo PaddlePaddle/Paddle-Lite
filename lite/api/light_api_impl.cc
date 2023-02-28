@@ -34,21 +34,29 @@ namespace lite {
 
 void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
   // LightPredictor Only support NaiveBuffer backend in publish lib
-  if (config.lite_model_file().empty()) {
-    raw_predictor_.reset(new LightPredictor(
-        config.model_dir(),
-        config.model_buffer(),
-        config.param_buffer(),
-        config.is_model_from_memory(),
-        lite_api::LiteModelType::kNaiveBuffer,
-        (config.precision_mode() == lite_api::LITE_PRECISION_LOW) ? true
-                                                                  : false));
+  auto use_low_precision =
+      config.precision_mode() == lite_api::LITE_PRECISION_LOW ? true : false;
+  if (config.lite_model_file().empty() && !config.lite_model_buffer_ptr()) {
+    raw_predictor_.reset(
+        new LightPredictor(config.model_dir(),
+                           config.model_buffer(),
+                           config.param_buffer(),
+                           config.is_model_from_memory(),
+                           lite_api::LiteModelType::kNaiveBuffer,
+                           use_low_precision));
+  } else if (!config.lite_model_file().empty() &&
+             !config.is_model_from_memory()) {
+    raw_predictor_.reset(
+        new LightPredictor(config.lite_model_file(), use_low_precision));
+  } else if (!config.lite_model_file().empty() &&
+             config.is_model_from_memory()) {
+    raw_predictor_.reset(new LightPredictor(config.lite_model_file().c_str(),
+                                            config.lite_model_file().length(),
+                                            use_low_precision));
   } else {
-    raw_predictor_.reset(new LightPredictor(
-        config.lite_model_file(),
-        config.is_model_from_memory(),
-        (config.precision_mode() == lite_api::LITE_PRECISION_LOW) ? true
-                                                                  : false));
+    raw_predictor_.reset(new LightPredictor(config.lite_model_buffer_ptr(),
+                                            config.lite_model_buffer_size(),
+                                            use_low_precision));
   }
 
   mode_ = config.power_mode();

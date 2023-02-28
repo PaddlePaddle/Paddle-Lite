@@ -69,6 +69,12 @@ void StringBufferReader::Read(void* dst, size_t size) const {
   cur_ += size;
 }
 
+void CharBufferReader::Read(void* dst, size_t size) const {
+  CHECK(dst);
+  lite::TargetCopy(TargetType::kHost, dst, buf_ + cur_, size);
+  cur_ += size;
+}
+
 }  // namespace model_parser
 }  // namespace lite
 }  // namespace paddle
