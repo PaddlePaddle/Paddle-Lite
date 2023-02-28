@@ -34,7 +34,7 @@ static std::vector<const T*> prepare_weight(
 
 template <typename InType, PrecisionType PType>
 void XPUSpatialTransformerResBlockCompute<InType, PType>::prepare_weight_max(
-    const std::vector<lite::Tensor*>* weight_max,
+    const std::vector<lite::Tensor*>& weight_max,
     int max_ptr_len,
     std::vector<const float*>* max_xpu_ptrs) {
   int max_value_num = 0;
@@ -98,20 +98,43 @@ void XPUSpatialTransformerResBlockCompute<InType, PType>::PrepareForRun() {
   auto& param = this->template Param<param_t>();
   // prepare bias
   for (auto* fc_bias : param.fc_bias) {
+#ifdef USE_XFT
+    xft_fc_bias.emplace_back(
+        const_cast<float*>(fc_bias->template data<float>()),
+        xft::xftVec<float>::dim_t{fc_bias->dims()[0]});
+#else
     arg_fc_bias_.push_back(fc_bias->template data<float>());
+#endif
   }
   for (auto* conv_bias : param.conv_bias) {
+#ifdef USE_XFT
+    xft_conv_bias.emplace_back(
+        const_cast<float*>(conv_bias->template data<float>()),
+        xft::xftVec<float>::dim_t{conv_bias->dims()[0]});
+#else
     arg_conv_bias_.push_back(conv_bias->template data<float>());
+#endif
   }
   // prepare scale
   for (auto* gn_scale : param.gn_scale) {
+#ifdef USE_XFT
+    xft_gn_weight.emplace_back(
+        const_cast<float*>(gn_scale->template data<float>()),
+        xft::xftVec<float>::dim_t{gn_scale->dims()[0]});
+#else
     arg_gn_scale_.push_back(gn_scale->template data<float>());
+#endif
   }
   // prepare gn_bias
   for (auto* gn_bias : param.gn_bias) {
+#ifdef USE_XFT
+    xft_gn_bias.emplace_back(
+        const_cast<float*>(gn_bias->template data<float>()),
+        xft::xftVec<float>::dim_t{gn_bias->dims()[0]});
+#else
     arg_gn_bias_.push_back(gn_bias->template data<float>());
+#endif
   }
-
   for (auto* input_max : param.input_max) {
     input_max_.push_back(input_max->template data<float>());
   }
@@ -122,8 +145,35 @@ void XPUSpatialTransformerResBlockCompute<InType, PType>::PrepareForRun() {
   arg_fc_weight_int16_ = prepare_weight<int16_t>(param.fc_weight);
   arg_conv_filter_int16_ = prepare_weight<int16_t>(param.conv_filter);
   const int XPU_QUANT_SCALE_NUM = ctx.GetRawContext()->max_ptr_size();
-  prepare_weight_max(param.weight_max, XPU_QUANT_SCALE_NUM, &fc_weight_max_);
-  prepare_filter_max(param.filter_max, XPU_QUANT_SCALE_NUM, &conv_filter_max_);
+  prepare_weight_max(param.weight_max, XPU_QUANT_SCALE_NUM, fc_weight_max_);
+  prepare_filter_max(param.filter_max, XPU_QUANT_SCALE_NUM, conv_filter_max_);
+#ifdef USE_XFT
+  int input2_dim = static_cast<int>(param.input2->dims()[1]);
+  int channel = static_cast<int>(param.input1->dims()[1]);
+  for (size_t i = 0; i < arg_fc_weight_int16_.size(); i++) {
+    int xn = param.filter_dims[i][0];
+    xft_fc_weights.emplace_back(const_cast<int16_t*>(arg_fc_weight_int16_[i]),
+                                const_cast<float*>(fc_weight_max_[i]),
+                                xft::xftMat<int16_t>::dim_t{xn, input2_dim});
+  }
+  for (size_t i = 0; i < arg_conv_filter_int16_.size(); i++) {
+    int xn = param.filter_dims[i][0];
+    int nh = param.filter_dims[i][2];
+    int nw = param.filter_dims[i][3];
+    xft_conv_weights.emplace_back(
+        const_cast<int16_t*>(arg_conv_filter_int16_[i]),
+        const_cast<float*>(conv_filter_max_[i]),
+        xft::xftTensor<int16_t, 4>::dim_t{channel, xn, nh, nw});
+  }
+  resblock_param.conv_fix = param.conv_fix;
+  resblock_param.conv_groups = param.groups;
+  resblock_param.kernel_dims = param.filter_dims;
+  resblock_param.dilations = param.dilations;
+  resblock_param.paddings = param.paddings;
+  resblock_param.strides = param.strides;
+  resblock_param.gn_groups = param.gn_groups;
+  resblock_param.gn_eps = param.gn_eps;
+#endif
 }
 
 template <typename InType, PrecisionType PType>
@@ -138,35 +188,57 @@ void XPUSpatialTransformerResBlockCompute<InType, PType>::Run() {
   int nh = static_cast<int>(param.input1->dims()[2]);
   int nw = static_cast<int>(param.input1->dims()[3]);
   int input2_dim = static_cast<int>(param.input2->dims()[1]);
-  int r = xdnn::
-      spatial_transformer_resblock_fusion<InType, int16_t, InType, int16_t>(
-          ctx.GetRawContext(),
-          in1,
-          in2,
-          *(XPUSpatialTransformerResBlockCompute::get_weight<int16_t>()),
-          *(XPUSpatialTransformerResBlockCompute::get_filter<int16_t>()),
-          out,
-          arg_fc_bias_,
-          arg_conv_bias_,
-          arg_gn_scale_,
-          arg_gn_bias_,
-          fc_weight_max_,
-          conv_filter_max_,
-          input_max_,
-          batch,
-          channel,
-          nh,
-          nw,
-          param.groups,
-          param.filter_dims,
-          param.dilations,
-          param.paddings,
-          param.strides,
-          param.gn_groups,
-          param.gn_eps,
-          input2_dim,
-          param.conv_fix);
+#ifdef USE_XFT
+  // input
+  xft::xftTensor<InType, 4> in_tensor(const_cast<InType*>(in1),
+                                      const_cast<float*>(input_max_[0]),
+                                      {batch, channel, nh, nw});
+  xft::xftMat<InType> in_silu_tensor(
+      const_cast<InType*>(in2), nullptr, {batch, input2_dim});
+  // output
+  xft::xftTensor<InType, 4> output_tensor(out, {batch, channel, nh, nw});
+  int r = xft::st_resblock_fusion<InType, int16_t, int16_t>(ctx.GetRawContext(),
+                                                            in_tensor,
+                                                            in_silu_tensor,
+                                                            xft_gn_weight,
+                                                            xft_gn_bias,
+                                                            xft_fc_weights,
+                                                            xft_fc_bias,
+                                                            xft_conv_weights,
+                                                            xft_conv_bias,
+                                                            &output_tensor,
+                                                            resblock_param);
   CHECK_EQ(r, 0);
+#else
+  int r = xdnn::unet_resblock_fusion<InType, int16_t, InType, int16_t>(
+      ctx.GetRawContext(),
+      in1,
+      in2,
+      *(XPUSpatialTransformerResBlockCompute::get_weight<int16_t>()),
+      *(XPUSpatialTransformerResBlockCompute::get_filter<int16_t>()),
+      out,
+      arg_fc_bias_,
+      arg_conv_bias_,
+      arg_gn_scale_,
+      arg_gn_bias_,
+      fc_weight_max_,
+      conv_filter_max_,
+      input_max_,
+      batch,
+      channel,
+      nh,
+      nw,
+      param.groups,
+      param.filter_dims,
+      param.dilations,
+      param.paddings,
+      param.strides,
+      param.gn_groups,
+      param.gn_eps,
+      input2_dim,
+      param.conv_fix);
+  CHECK_EQ(r, 0);
+#endif
 }
 
 }  // namespace xpu
@@ -201,7 +273,7 @@ REGISTER_LITE_KERNEL(__xpu__spatial_transformer_resblock,
                      kXPU,
                      kFP16,
                      kNCHW,
-                     XPUSpatialTransformerResBlock_FP16,
+                     XPUSpatial_transformerResBlock_FP16,
                      def)
     .BindInput("Input1",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})

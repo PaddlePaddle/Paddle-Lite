@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include "lite/operators/__xpu__spatial_transformer_resblock_op.h"
 #include <utility>
 #include <vector>
@@ -117,7 +116,6 @@ bool XPUSpatialTransformerResBlockOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.gn_groups = op_desc.GetAttr<std::vector<int>>("GNGroups");
   param_.gn_eps = op_desc.GetAttr<std::vector<float>>("GNEps");
   param_.conv_fix = op_desc.GetAttr<bool>("ConvFix");
-
   return true;
 }
 
