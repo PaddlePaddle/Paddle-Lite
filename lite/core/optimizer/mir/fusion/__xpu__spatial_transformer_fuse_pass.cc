@@ -387,7 +387,6 @@ class SpatialTransformerfuser : public FuseBase {
       fc_weight_names.push_back(name);
     }
     CHECK_EQ(fc_weight_names.size(), 10);
-
     std::vector<std::string> fc_weight_maxptr_names;
     for (const auto& name :
          mhsa_op_info->GetAttr<std::vector<std::string>>("FCWeightMax")) {
@@ -460,7 +459,6 @@ class SpatialTransformerfuser : public FuseBase {
                       {matched.at("post__xpu__conv2d_output")->arg()->name});
     op_desc.SetAttr<std::vector<std::string>>("FCWeightMax",
                                               fc_weight_maxptr_names);
-
     op_desc.SetAttr<int>("head_num", mhsa_op_info->GetAttr<int>("head_num"));
     op_desc.SetAttr<int>("size_per_head",
                          mhsa_op_info->GetAttr<int>("size_per_head"));

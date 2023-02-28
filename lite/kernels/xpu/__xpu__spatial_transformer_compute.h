@@ -18,11 +18,18 @@
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#define USE_XFT
+
+#ifdef USE_XFT
+#include "layers/spatial_transformer.h"
+#endif
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
+
+namespace xft = baidu::xpu::xft;
 
 template <typename T>
 struct identity {
@@ -41,14 +48,31 @@ class XPUSpatialTransformerCompute : public KernelLite<TARGET(kXPU), PType> {
   virtual ~XPUSpatialTransformerCompute() = default;
 
  private:
-  std::vector<const int16_t *> arg_fc_weight_int16_;
-  std::vector<const int16_t *> arg_conv_filter_int16_;
+#ifdef USE_XFT
+  xft::SpatialTransformerFusionParam st_param;
+  std::vector<xft::xftVec<float>> xft_gn_weights;
+  std::vector<xft::xftVec<float>> xft_gn_bias;
+  std::vector<xft::xftVec<float>> xft_ln_weights;
+  std::vector<xft::xftVec<float>> xft_ln_bias;
+  std::vector<xft::xftMat<int16_t>> xft_q_weights;
+  std::vector<xft::xftMat<int16_t>> xft_k_weights;
+  std::vector<xft::xftMat<int16_t>> xft_v_weights;
+  std::vector<xft::xftMat<int16_t>> xft_attn_fc_weights;
+  std::vector<xft::xftVec<float>> xft_attn_fc_bias;
+  std::vector<xft::xftMat<int16_t>> xft_geglu_fc_weights;
+  std::vector<xft::xftVec<float>> xft_geglu_fc_bias;
+  std::vector<xft::xftTensor<int16_t, 4>> xft_conv_weights;
+  std::vector<xft::xftVec<float>> xft_conv_bias;
+#else
   std::vector<const float *> arg_fc_bias_;
   std::vector<const float *> arg_ln_scale_;
   std::vector<const float *> arg_ln_bias_;
   std::vector<const float *> arg_gn_scale_;
   std::vector<const float *> arg_gn_bias_;
   std::vector<const float *> arg_conv_bias_;
+#endif
+  std::vector<const int16_t *> arg_fc_weight_int16_;
+  std::vector<const int16_t *> arg_conv_filter_int16_;
   std::vector<const float *> fc_weight_max_;
   std::vector<const float *> conv_filter_max_;
   XPUScratchPadGuard weight_max_guard_;

@@ -21,8 +21,8 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
-
 template <typename T>
+
 static std::vector<const T*> prepare_weight(
     const std::vector<lite::Tensor*>& fc_weight) {
   std::vector<const T*> result;
@@ -96,38 +96,150 @@ template <typename InType, PrecisionType PType>
 void XPUSpatialTransformerCompute<InType, PType>::PrepareForRun() {
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->template Param<param_t>();
-  // prepare bias
+// prepare fc bias
+#ifdef USE_XFT
+  xft_attn_fc_bias.emplace_back(
+      const_cast<float*>(param.fc_bias[0]->template data<float>()),
+      xft::xftVec<float>::dim_t{param.fc_bias[0]->dims()[0]});
+  xft_attn_fc_bias.emplace_back(
+      const_cast<float*>(param.fc_bias[1]->template data<float>()),
+      xft::xftVec<float>::dim_t{param.fc_bias[1]->dims()[0]});
+  xft_geglu_fc_bias.emplace_back(
+      const_cast<float*>(param.fc_bias[2]->template data<float>()),
+      xft::xftVec<float>::dim_t{param.fc_bias[2]->dims()[0]});
+  xft_geglu_fc_bias.emplace_back(
+      const_cast<float*>(param.fc_bias[3]->template data<float>()),
+      xft::xftVec<float>::dim_t{param.fc_bias[3]->dims()[0]});
+#else
   for (auto* fc_bias : param.fc_bias) {
     arg_fc_bias_.push_back(fc_bias->template data<float>());
   }
+#endif
   // prepare scale
   for (auto* ln_scale : param.ln_scale) {
+#ifdef USE_XFT
+    xft_ln_weights.emplace_back(
+        const_cast<float*>(ln_scale->template data<float>()),
+        xft::xftVec<float>::dim_t{ln_scale->dims()[0]});
+#else
     arg_ln_scale_.push_back(ln_scale->template data<float>());
+#endif
   }
   // prepare ln_bias
   for (auto* ln_bias : param.ln_bias) {
+#ifdef USE_XFT
+    xft_ln_bias.emplace_back(
+        const_cast<float*>(ln_bias->template data<float>()),
+        xft::xftVec<float>::dim_t{ln_bias->dims()[0]});
+#else
     arg_ln_bias_.push_back(ln_bias->template data<float>());
+#endif
   }
 
   // prepare gn_scale
   for (auto* gn_scale : param.gn_scale) {
+#ifdef USE_XFT
+    xft_gn_weights.emplace_back(
+        const_cast<float*>(gn_scale->template data<float>()),
+        xft::xftVec<float>::dim_t{gn_scale->dims()[0]});
+#else
     arg_gn_scale_.push_back(gn_scale->template data<float>());
+#endif
   }
   // prepare gn_bias
   for (auto* gn_bias : param.gn_bias) {
+#ifdef USE_XFT
+    xft_gn_bias.emplace_back(
+        const_cast<float*>(gn_bias->template data<float>()),
+        xft::xftVec<float>::dim_t{gn_bias->dims()[0]});
+#else
     arg_gn_bias_.push_back(gn_bias->template data<float>());
+#endif
   }
-
   // prepare conv bias
   for (auto* conv_bias : param.conv_bias) {
+#ifdef USE_XFT
+    xft_conv_bias.emplace_back(
+        const_cast<float*>(conv_bias->template data<float>()),
+        xft::xftVec<float>::dim_t{conv_bias->dims()[0]});
+#else
     arg_conv_bias_.push_back(conv_bias->template data<float>());
+#endif
   }
 
   arg_fc_weight_int16_ = prepare_weight<int16_t>(param.fc_weight);
   arg_conv_filter_int16_ = prepare_weight<int16_t>(param.conv_weight);
   const int XPU_QUANT_SCALE_NUM = ctx.GetRawContext()->max_ptr_size();
-  prepare_weight_max(param.weight_max, XPU_QUANT_SCALE_NUM, &fc_weight_max_);
-  prepare_filter_max(param.conv_max, XPU_QUANT_SCALE_NUM, &conv_filter_max_);
+  prepare_weight_max(param.weight_max, XPU_QUANT_SCALE_NUM, fc_weight_max_);
+  prepare_filter_max(param.conv_max, XPU_QUANT_SCALE_NUM, conv_filter_max_);
+#ifdef USE_XFT
+  int channel = static_cast<int>(param.input->dims()[1]);
+  int xh = static_cast<int>(param.input->dims()[2]);
+  int xw = static_cast<int>(param.input->dims()[3]);
+  int hidden_dim = xh * xw;
+  int embedding_dim = static_cast<int>(param.embedding->dims()[2]);
+
+  // xft fc weights
+  xft_q_weights.emplace_back(
+      const_cast<int16_t*>(arg_fc_weight_int16_[0]),
+      const_cast<float*>(fc_weight_max_[0]),
+      xft::xftMat<int16_t>::dim_t{hidden_dim, hidden_dim});
+  xft_q_weights.emplace_back(
+      const_cast<int16_t*>(arg_fc_weight_int16_[4]),
+      const_cast<float*>(fc_weight_max_[4]),
+      xft::xftMat<int16_t>::dim_t{hidden_dim, hidden_dim});
+  xft_k_weights.emplace_back(
+      const_cast<int16_t*>(arg_fc_weight_int16_[1]),
+      const_cast<float*>(fc_weight_max_[1]),
+      xft::xftMat<int16_t>::dim_t{hidden_dim, hidden_dim});
+  xft_k_weights.emplace_back(
+      const_cast<int16_t*>(arg_fc_weight_int16_[5]),
+      const_cast<float*>(fc_weight_max_[5]),
+      xft::xftMat<int16_t>::dim_t{hidden_dim, embedding_dim});
+  xft_v_weights.emplace_back(
+      const_cast<int16_t*>(arg_fc_weight_int16_[2]),
+      const_cast<float*>(fc_weight_max_[2]),
+      xft::xftMat<int16_t>::dim_t{hidden_dim, hidden_dim});
+  xft_v_weights.emplace_back(
+      const_cast<int16_t*>(arg_fc_weight_int16_[6]),
+      const_cast<float*>(fc_weight_max_[6]),
+      xft::xftMat<int16_t>::dim_t{hidden_dim, embedding_dim});
+  xft_attn_fc_weights.emplace_back(
+      const_cast<int16_t*>(arg_fc_weight_int16_[3]),
+      const_cast<float*>(fc_weight_max_[3]),
+      xft::xftMat<int16_t>::dim_t{hidden_dim, hidden_dim});
+  xft_attn_fc_weights.emplace_back(
+      const_cast<int16_t*>(arg_fc_weight_int16_[7]),
+      const_cast<float*>(fc_weight_max_[7]),
+      xft::xftMat<int16_t>::dim_t{hidden_dim, hidden_dim});
+  xft_geglu_fc_weights.emplace_back(
+      const_cast<int16_t*>(arg_fc_weight_int16_[8]),
+      const_cast<float*>(fc_weight_max_[8]),
+      xft::xftMat<int16_t>::dim_t{param.geglu_dim * 2, hidden_dim});
+  xft_geglu_fc_weights.emplace_back(
+      const_cast<int16_t*>(arg_fc_weight_int16_[9]),
+      const_cast<float*>(fc_weight_max_[9]),
+      xft::xftMat<int16_t>::dim_t{hidden_dim, param.geglu_dim});
+  for (size_t i = 0; i < arg_conv_filter_int16_.size(); i++) {
+    int kh = param.filter_dims[i][2];
+    int kw = param.filter_dims[i][3];
+    xft_conv_weights.emplace_back(
+        const_cast<int16_t*>(arg_conv_filter_int16_[i]),
+        const_cast<float*>(conv_filter_max_[i]),
+        xft::xftTensor<int16_t, 4>::dim_t{channel, hidden_dim, kh, kw});
+  }
+  st_param.n_head = param.head_num;
+  st_param.size_per_head = param.size_per_head,
+  st_param.geglu_dim = param.geglu_dim;
+  st_param.add_res = true;
+  st_param.conv_groups = param.conv_groups;
+  st_param.kernel_dims = param.filter_dims;
+  st_param.dilations = param.dilations;
+  st_param.paddings = param.paddings;
+  st_param.strides = param.strides;
+  st_param.gn_groups.push_back(param.groups);
+  st_param.gn_eps.push_back(param.epsilon);
+#endif
 }
 
 template <typename InType, PrecisionType PType>
@@ -139,9 +251,42 @@ void XPUSpatialTransformerCompute<InType, PType>::Run() {
   InType* out = param.output->template mutable_data<InType>(TARGET(kXPU));
   int batch = static_cast<int>(param.input->dims()[0]);
   int hidden_dim = static_cast<int>(param.input->dims()[1]);
+  int channel = hidden_dim;
   int xh = static_cast<int>(param.input->dims()[2]);
   int xw = static_cast<int>(param.input->dims()[3]);
   int embedding_seq = static_cast<int>(param.embedding->dims()[1]);
+  int embedding_dim = static_cast<int>(param.embedding->dims()[2]);
+#ifdef USE_XFT
+  // input
+  xft::xftTensor<InType, 4> in_tensor(
+      const_cast<InType*>(in), nullptr, {batch, channel, xh, xw});
+  xft::xftTensor<InType, 3> embedding_tensor(
+      const_cast<InType*>(embedding),
+      nullptr,
+      {batch, embedding_seq, embedding_dim});
+  // output
+  xft::xftTensor<InType, 4> output_tensor(out, {batch, channel, xh, xw});
+  int r = xft::st_spatial_transformer_fusion<InType, int16_t, int16_t>(
+      ctx.GetRawContext(),
+      in_tensor,
+      embedding_tensor,
+      xft_ln_weights,
+      xft_ln_bias,
+      xft_gn_weights,
+      xft_gn_bias,
+      xft_q_weights,
+      xft_k_weights,
+      xft_v_weights,
+      xft_attn_fc_weights,
+      xft_attn_fc_bias,
+      xft_geglu_fc_weights,
+      xft_geglu_fc_bias,
+      xft_conv_weights,
+      xft_conv_bias,
+      &output_tensor,
+      st_param);
+  CHECK_EQ(r, 0);
+#else
   int r = xdnn::spatial_transformer_fusion<InType, int16_t, InType, int16_t>(
       ctx.GetRawContext(),
       in,
@@ -174,6 +319,7 @@ void XPUSpatialTransformerCompute<InType, PType>::Run() {
       param.epsilon,
       param.geglu_dim);
   CHECK_EQ(r, 0);
+#endif
 }
 
 }  // namespace xpu
