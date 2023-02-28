@@ -14,7 +14,9 @@
 
 #pragma once
 
-#include "adnn/core/config.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/cdefs.h>
 
 namespace adnn {
 
@@ -29,9 +31,9 @@ typedef enum {
 } Status;
 
 typedef struct {
-  void* (*open_device)(const char* properties);
-  void (*close_device)();
-  void* (*create_context)(void* device, const char* properties);
+  void* (*open_device)(int thread_num);
+  void (*close_device)(void* device);
+  void* (*create_context)(void* device, int thread_num);
   void (*destroy_context)(void* context);
   void* (*alloc)(void* context, size_t size);
   void (*free)(void* context, void* ptr);

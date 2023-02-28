@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.0)
+SET(CMAKE_SYSTEM_NAME Linux)
+SET(CMAKE_SYSTEM_PROCESSOR armv7l)
+SET(CMAKE_CROSSCOMPILING TRUE)
 
-SET(AARCH32_SRCS "${AARCH32_SRCS} codegen/f32_aarch32_neon_x8.cc")
-SET(AARCH64_SRCS "${AARCH64_SRCS} codegen/f32_aarch64_neon_x16.cc")
+SET(CMAKE_C_COMPILER "arm-linux-gnueabihf-gcc")
+SET(CMAKE_ASM_COMPILER "arm-linux-gnueabihf-gcc")
+SET(CMAKE_CXX_COMPILER "arm-linux-gnueabihf-g++")

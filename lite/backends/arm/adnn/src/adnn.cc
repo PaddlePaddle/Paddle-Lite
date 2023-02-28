@@ -12,34 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include "adnn/core/types.h"
+#include "runtime/context.h"
+#include "runtime/device.h"
+#include "utilities/dll_export.h"
 
 namespace adnn {
-namespace runtime {
 
-Device* open_device(const char* properties, const Callback* callback) {
-  return reinterpret_cast<Device*>(
-      new adnn::runtime::Device(properties, callback));
+ADNN_DLL_EXPORT Device* open_device(int thread_num, const Callback* callback) {
+  return reinterpret_cast<Device*>(new runtime::Device(thread_num, callback));
 }
 
-void close_device(Device* device) {
+ADNN_DLL_EXPORT void close_device(Device* device) {
   if (device) {
-    delete reinterpret_cast<nnadapter::runtime::Device*>(device);
+    delete reinterpret_cast<runtime::Device*>(device);
   }
 }
 
-Context* create_context(Device* device, const char* properties) {
-  return reinterpret_cast<Context*>(new adnn::runtime::Context(
-      reinterpret_cast<nnadapter::runtime::Device*>(device), properties));
+ADNN_DLL_EXPORT Context* create_context(Device* device, int thread_num) {
+  return reinterpret_cast<Context*>(new runtime::Context(
+      reinterpret_cast<runtime::Device*>(device), thread_num));
 }
 
-void destroy_context(Context* context) {
+ADNN_DLL_EXPORT void destroy_context(Context* context) {
   if (context) {
-    delete reinterpret_cast<nnadapter::runtime::Context*>(device);
+    delete reinterpret_cast<runtime::Context*>(context);
   }
 }
 
-}  // namespace runtime
 }  // namespace adnn

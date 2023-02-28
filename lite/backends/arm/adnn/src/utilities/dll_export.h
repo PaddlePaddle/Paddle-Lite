@@ -14,6 +14,15 @@
 
 #pragma once
 
-#include "adnn/core/types.h"
-
-namespace adnn {}  // namespace adnn
+#if defined _WIN32 || defined __CYGWIN__
+#define ADNN_DLL_EXPORT __declspec(dllexport)
+#define ADNN_DLL_IMPORT __declspec(dllimport)
+#else
+#if __GNUC__ >= 4
+#define ADNN_DLL_EXPORT __attribute__((visibility("default")))
+#define ADNN_DLL_IMPORT __attribute__((visibility("default")))
+#else
+#define ADNN_DLL_EXPORT
+#define ADNN_DLL_IMPORT
+#endif
+#endif

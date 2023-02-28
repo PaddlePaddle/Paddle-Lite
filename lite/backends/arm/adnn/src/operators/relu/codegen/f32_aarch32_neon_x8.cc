@@ -19,26 +19,28 @@
 #include <arm_neon.h>
 #include <assert.h>
 #include "adnn/core/types.h"
+#include "runtime/context.h"
+#include "utilities/thread_pool.h"
 
 namespace adnn {
 namespace operators {
 namespace kernels {
 
-Status relu_fp32_aarch32_neon_x8(Context* context,
+Status relu_fp32_aarch32_neon_x8(runtime::Context* context,
                                  const float* input_data,
                                  float* output_data,
                                  size_t size) {
   assert(input_data != NULL);
   assert(output_data != NULL);
   assert(size != 0);
-  int thread_num = context->thread_num;
+  int thread_num = context->GetThreadNum();
   int size_per_thread = size / thread_num;
   int remain = size - thread_num * size_per_thread;
   int loop_per_thread = size_per_thread / 8;
   int remain_per_thread = size_per_thread - (loop_per_thread * 8);
 
   const float32x4_t vzero = vmovq_n_f32(0.0f);
-  ADNN_THREAD_POOL_COMMON_TASK_BEGIN(i, tid, thread_num) {
+  ADNN_THREAD_POOL_SIMPLE_TASK_BEGIN(i, tid, thread_num) {
     const float* input_ptr_in_thread = input_data + i * size_per_thread;
     float* output_ptr_in_thread = output_data + i * size_per_thread;
     int loop_in_thread = loop_per_thread;
@@ -69,7 +71,7 @@ Status relu_fp32_aarch32_neon_x8(Context* context,
       output_ptr_in_thread++;
     }
   }
-  ADNN_THREAD_POOL_COMMON_TASK_END();
+  ADNN_THREAD_POOL_SIMPLE_TASK_END();
   float* output_ptr = output_data + thread_num * size_per_thread;
   const float* input_ptr = input_data + thread_num * size_per_thread;
   for (int j = 0; j < remain; j++) {

@@ -12,4 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.0)
+SET(CMAKE_SYSTEM_NAME Linux)
+SET(CMAKE_SYSTEM_PROCESSOR aarch64)
+SET(CMAKE_CROSSCOMPILING TRUE)
+
+SET(CMAKE_C_COMPILER "aarch64-linux-gnu-gcc")
+SET(CMAKE_ASM_COMPILER "aarch64-linux-gnu-gcc")
+SET(CMAKE_CXX_COMPILER "aarch64-linux-gnu-g++")

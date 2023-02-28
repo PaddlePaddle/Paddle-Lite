@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "utilities/log.h"
+#include "utilities/logging.h"
 #include <iomanip>
-#include "adnn/core/config.h"
+#include "utilities/dll_export.h"
 
 namespace adnn {
 

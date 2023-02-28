@@ -14,29 +14,30 @@
 
 #include "utilities/thread_pool.h"
 #include <string.h>
-#include "utilities/log.h"
+#include "utilities/logging.h"
 
 namespace adnn {
 
-ThreadPool* ThreadPool::gInstance = nullptr;
-static std::mutex gInitMutex;  // confirm thread-safe when use singleton mode
+ThreadPool* ThreadPool::g_ThreadPoolInstance = nullptr;
+static std::mutex
+    g_ThreadPoolInitMutex;  // confirm thread-safe when use singleton mode
 int ThreadPool::Initialize(int thread_num) {
-  // Don't instantiate ThreadPool when compile ThreadPool and only use 1 thread
+  // Don't instantiate ThreadPool when compile ThreadPool and only use 1 thread.
   if (thread_num <= 1) {
     return 1;
   }
-  std::lock_guard<std::mutex> _l(gInitMutex);
-  if (nullptr == gInstance) {
-    gInstance = new ThreadPool(thread_num);
+  std::lock_guard<std::mutex> lock(g_ThreadPoolInitMutex);
+  if (nullptr == g_ThreadPoolInstance) {
+    g_ThreadPoolInstance = new ThreadPool(thread_num);
   }
-  return gInstance->thread_num_;
+  return g_ThreadPoolInstance->thread_num_;
 }
 
 void ThreadPool::Destroy() {
-  std::lock_guard<std::mutex> _l(gInitMutex);
-  if (nullptr != gInstance) {
-    delete gInstance;
-    gInstance = nullptr;
+  std::lock_guard<std::mutex> lock(g_ThreadPoolInitMutex);
+  if (nullptr != g_ThreadPoolInstance) {
+    delete g_ThreadPoolInstance;
+    g_ThreadPoolInstance = nullptr;
   }
 }
 
@@ -69,57 +70,58 @@ ThreadPool::~ThreadPool() {
 }
 
 void ThreadPool::Acquire() {
-  if (nullptr == gInstance) {
+  if (nullptr == g_ThreadPoolInstance) {
     return;
   }
   ADNN_VLOG(5) << "ThreadPool::Acquire()\n";
-  std::unique_lock<std::mutex> _l(gInstance->mutex_);
-  while (!gInstance->ready_) gInstance->cv_.wait(_l);
-  gInstance->ready_ = false;
+  std::unique_lock<std::mutex> lock(g_ThreadPoolInstance->mutex_);
+  while (!g_ThreadPoolInstance->ready_) g_ThreadPoolInstance->cv_.wait(lock);
+  g_ThreadPoolInstance->ready_ = false;
   return;
 }
 
 void ThreadPool::Release() {
-  if (nullptr == gInstance) {
+  if (nullptr == g_ThreadPoolInstance) {
     return;
   }
   ADNN_VLOG(5) << "ThreadPool::Release()\n";
-  std::unique_lock<std::mutex> _l(gInstance->mutex_);
-  gInstance->ready_ = true;
-  gInstance->cv_.notify_all();
+  std::unique_lock<std::mutex> lock(g_ThreadPoolInstance->mutex_);
+  g_ThreadPoolInstance->ready_ = true;
+  g_ThreadPoolInstance->cv_.notify_all();
 }
 
 void ThreadPool::Enqueue(SIMPLE_TASK&& task) {
-  if (task.second <= 1 || (nullptr == gInstance)) {
+  if (task.second <= 1 || (nullptr == g_ThreadPoolInstance)) {
     for (int i = 0; i < task.second; ++i) {
       task.first(i, 0);
     }
     return;
   }
   int work_size = task.second;
-  if (work_size > gInstance->thread_num_) {
-    gInstance->tasks_.first = [work_size, &task](int index, int tId) {
-      for (int v = tId; v < work_size; v += gInstance->thread_num_) {
+  if (work_size > g_ThreadPoolInstance->thread_num_) {
+    g_ThreadPoolInstance->tasks_.first = [work_size, &task](int index,
+                                                            int tId) {
+      for (int v = tId; v < work_size; v += g_ThreadPoolInstance->thread_num_) {
         task.first(v, tId);  // nested lambda func
       }
     };
-    work_size = gInstance->thread_num_;
+    work_size = g_ThreadPoolInstance->thread_num_;
   } else {
-    gInstance->tasks_.first = std::move(task.first);
+    g_ThreadPoolInstance->tasks_.first = std::move(task.first);
   }
   for (int i = 1; i < work_size; ++i) {
-    *(gInstance->tasks_.second[i]) = true;
+    *(g_ThreadPoolInstance->tasks_.second[i]) = true;
   }
   // Invoke tid 0 callback in main thread, other tid task is invoked in child
   // thread
-  gInstance->tasks_.first(0, 0);
+  g_ThreadPoolInstance->tasks_.first(0, 0);
   bool complete = true;
   // Check tid 1 to thread_num - 1 all work completed in child thread
   do {
     std::this_thread::yield();
     complete = true;
     for (int i = 1; i < work_size; ++i) {
-      if (*gInstance->tasks_.second[i]) {
+      if (*g_ThreadPoolInstance->tasks_.second[i]) {
         complete = false;
         break;
       }
@@ -132,40 +134,40 @@ void ThreadPool::Enqueue(COMMON_TASK&& task) {
   int start = std::get<2>(task);
   int step = std::get<3>(task);
   int work_size = (end - start + step - 1) / step;
-  if (work_size <= 1 || (nullptr == gInstance)) {
+  if (work_size <= 1 || (nullptr == g_ThreadPoolInstance)) {
     for (int v = start; v < end; v += step) {
       std::get<0>(task)(v, 0);
     }
     return;
   }
-  if (work_size > gInstance->thread_num_) {
-    gInstance->tasks_.first = ([=, &task](int index, int tId) {
-      auto start_index = start + tId * step;
-      auto stride = gInstance->thread_num_ * step;
+  if (work_size > g_ThreadPoolInstance->thread_num_) {
+    g_ThreadPoolInstance->tasks_.first = ([=, &task](int index, int tid) {
+      auto start_index = start + tid * step;
+      auto stride = g_ThreadPoolInstance->thread_num_ * step;
       for (int v = start_index; v < end; v += stride) {
-        std::get<0>(task)(v, tId);  // nested lambda func
+        std::get<0>(task)(v, tid);  // nested lambda func
       }
     });
-    work_size = gInstance->thread_num_;
+    work_size = g_ThreadPoolInstance->thread_num_;
   } else {
-    gInstance->tasks_.first = ([=, &task](int index, int tId) {
-      auto v = start + tId * step;
-      std::get<0>(task)(v, tId);  // nested lambda func
+    g_ThreadPoolInstance->tasks_.first = ([=, &task](int index, int tid) {
+      auto v = start + tid * step;
+      std::get<0>(task)(v, tid);  // nested lambda func
     });
   }
   for (int i = 1; i < work_size; ++i) {
-    *(gInstance->tasks_.second[i]) = true;
+    *(g_ThreadPoolInstance->tasks_.second[i]) = true;
   }
   // Invoke tid 0 callback in main thread, other tid task is invoked in new
   // thread
-  gInstance->tasks_.first(0, 0);
+  g_ThreadPoolInstance->tasks_.first(0, 0);
   bool complete = true;
   // Check tid 1 to thread_num - 1 all work completed in new thread
   do {
     std::this_thread::yield();
     complete = true;
     for (int i = 1; i < work_size; ++i) {
-      if (*gInstance->tasks_.second[i]) {
+      if (*g_ThreadPoolInstance->tasks_.second[i]) {
         complete = false;
         break;
       }

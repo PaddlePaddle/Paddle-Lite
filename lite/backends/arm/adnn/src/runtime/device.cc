@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
 #include "runtime/device.h"
+#include <stdlib.h>
+#include "utilities/logging.h"
 
 namespace adnn {
 namespace runtime {
 
-void* OpenDevice(const char* properties) { return nullptr; }
+void* OpenDevice(int thread_num) { return nullptr; }
 
 void CloseDevice(void* device) {}
 
-void* CreateContext(void* device, const char* properties) { return nullptr; }
+void* CreateContext(void* device, int thread_num) { return nullptr; }
 
 void DestroyContext(void* context) {}
 
@@ -54,7 +54,7 @@ void AlignedFree(void* context, void* ptr) {
 }  // namespace runtime
 }  // namespace adnn
 
-Device gDefaultCallback = {
+adnn::Callback g_DefaultCallback = {
     .open_device = adnn::runtime::OpenDevice,
     .close_device = adnn::runtime::CloseDevice,
     .create_context = adnn::runtime::CreateContext,
@@ -68,63 +68,63 @@ Device gDefaultCallback = {
 namespace adnn {
 namespace runtime {
 
-Device::Device(const char* properties, Callback* callback)
-    : callback_(callback) {
+Device::Device(int thread_num, const Callback* callback)
+    : thread_num_(thread_num), callback_(callback) {
   if (!callback_) {
-    call_back_ = &gDefaultCallback;
+    callback_ = &g_DefaultCallback;
   }
-  ANN_CHECK(callback_->open_device);
-  device_ = callback_->open_device(properties);
+  ADNN_CHECK(callback_->open_device);
+  device_ = callback_->open_device(thread_num_);
 }
 
-void* Device::CreateContext(const char* properties) {
+void* Device::CreateContext(int thread_num) {
   if (callback_) {
-    ANN_CHECK(callback_->create_context);
-    return callback_->create_context(device_, properties);
+    ADNN_CHECK(callback_->create_context);
+    return callback_->create_context(device_, thread_num);
   }
   return nullptr;
 }
 
 void Device::DestroyContext(void* context) {
   if (callback_) {
-    ANN_CHECK(callback_->destroy_context);
+    ADNN_CHECK(callback_->destroy_context);
     callback_->destroy_context(context);
   }
 }
 
-void* Device::Alloc(size_t size) {
+void* Device::Alloc(void* context, size_t size) {
   if (callback_) {
-    ANN_CHECK(callback_->alloc);
-    return callback_->alloc(size);
+    ADNN_CHECK(callback_->alloc);
+    return callback_->alloc(context, size);
   }
   return nullptr;
 }
 
-void Device::Free(void* ptr) {
+void Device::Free(void* context, void* ptr) {
   if (callback_) {
-    ANN_CHECK(callback_->free);
-    callback_->free(ptr);
+    ADNN_CHECK(callback_->free);
+    callback_->free(context, ptr);
   }
 }
 
-void* Device::AlignedAlloc(size_t alignment, size_t size) {
+void* Device::AlignedAlloc(void* context, size_t alignment, size_t size) {
   if (callback_) {
-    ANN_CHECK(callback_->aligned_alloc);
-    return callback_->aligned_alloc(alignment, size);
+    ADNN_CHECK(callback_->aligned_alloc);
+    return callback_->aligned_alloc(context, alignment, size);
   }
   return nullptr;
 }
 
 void Device::AlignedFree(void* context, void* ptr) {
   if (callback_) {
-    ANN_CHECK(callback_->aligned_free);
-    callback_->aligned_free(ptr);
+    ADNN_CHECK(callback_->aligned_free);
+    callback_->aligned_free(context, ptr);
   }
 }
 
 Device::~Device() {
   if (callback_) {
-    ANN_CHECK(callback_->close_device);
+    ADNN_CHECK(callback_->close_device);
     callback_->close_device(device_);
   }
   callback_ = nullptr;

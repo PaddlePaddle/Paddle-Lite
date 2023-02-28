@@ -71,6 +71,8 @@ WITH_PRECISION_PROFILE=OFF
 WITH_BENCHMARK=OFF
 # option of convert_to_ssa_graph
 WITH_CONVERT_TO_SSA=ON
+# use Arm DNN library instead of built-in math library, defaults to OFF.
+WITH_ADNN=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -270,7 +272,8 @@ function make_tiny_publish_so {
       -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
       -DANDROID_STL_TYPE=$ANDROID_STL \
       -DLITE_THREAD_POOL=$WITH_THREAD_POOL \
-      -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA"
+      -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA \
+      -DLITE_WITH_ADNN=$WITH_ADNN"
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
@@ -366,7 +369,8 @@ function make_full_publish_so {
       -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
       -DLITE_WITH_PRECISION_PROFILE=$WITH_PRECISION_PROFILE \
       -DANDROID_STL_TYPE=$ANDROID_STL \
-      -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA"
+      -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA \
+      -DLITE_WITH_ADNN=$WITH_ADNN"
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
@@ -527,15 +531,6 @@ function main {
                 WITH_OPENCL="${i#*=}"
                 shift
                 ;;
-            # compiling lib which can operate on mediatek apu.
-            --with_mediatek_apu=*)
-                WITH_MEDIATEK_APU="${i#*=}"
-                shift
-                ;;
-            --mediatek_apu_sdk_root=*)
-                MEDIATEK_APU_SDK_ROOT="${i#*=}"
-                shift
-                ;;
             # compiling lib which can operate on nnadapter.
             --with_nnadapter=*)
                 WITH_NNADAPTER="${i#*=}"
@@ -658,6 +653,11 @@ function main {
                 ;;
             --with_arm_dotprod=*)
                 WITH_ARM_DOTPROD="${i#*=}"
+                shift
+                ;;
+             # use Arm DNN library
+            --with_adnn=*)
+                WITH_ADNN="${i#*=}"
                 shift
                 ;;
             help)

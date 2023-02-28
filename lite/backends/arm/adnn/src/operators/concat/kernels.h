@@ -16,7 +16,9 @@
 
 #include <assert.h>
 #include <vector>
-#include "adnn/core/types.h"  // NOLINT
+#include "adnn/core/types.h"
+#include "runtime/context.h"
+#include "utilities/thread_pool.h"
 
 namespace adnn {
 namespace operators {
@@ -24,11 +26,11 @@ namespace kernels {
 
 // Reference implementation
 template <typename T>
-ADNN_DLL_EXPORT Status concat(Context* context,
-                              const std::vector<const T*>& x_datas,
-                              const std::vector<std::vector<int64_t>>& x_shapes,
-                              T* y_data,
-                              int64_t axis) {
+Status concat(runtime::Context* context,
+              const std::vector<const T*>& x_datas,
+              const std::vector<std::vector<int64_t>>& x_shapes,
+              T* y_data,
+              int64_t axis) {
   return FEATURE_NOT_SUPPORTED;
 }
 

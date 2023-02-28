@@ -15,18 +15,25 @@
 #pragma once
 
 #include "adnn/core/types.h"
+#include "runtime/device.h"
 
 namespace adnn {
 namespace runtime {
 
 class Context {
  public:
-  explicit Context(Device* device, const char* properties);
+  explicit Context(Device* device, int thread_num);
   ~Context();
+  void* Alloc(size_t size);
+  void Free(void* ptr);
+  void* AlignedAlloc(size_t alignment, size_t size);
+  void AlignedFree(void* ptr);
+  int GetThreadNum() { return thread_num_; }
 
  private:
   Device* device_{nullptr};
   void* context_{nullptr};
+  int thread_num_{1};
   Context(const Context&) = delete;
   Context& operator=(const Context&) = delete;
 };

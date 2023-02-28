@@ -12,20 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "utilities/platform.h"
 
-#include "adnn/core/types.h"
-
-namespace adnn {
-namespace runtime {
-
-ADNN_DLL_EXPORT Device* open_device(const char* properties = nullptr,
-                                    const Callback* callback = nullptr);
-ADNN_DLL_EXPORT void close_device();
-
-ADNN_DLL_EXPORT Context* create_context(Device* device,
-                                        const char* properties = nullptr);
-ADNN_DLL_EXPORT void destroy_context(Context* context);
-
-}  // namespace runtime
-}  // namespace adnn
+namespace adnn {}  // namespace adnn

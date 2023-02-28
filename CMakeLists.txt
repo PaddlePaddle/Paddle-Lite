@@ -85,6 +85,7 @@ lite_option(LITE_WITH_ARM8_SVE2                "Enable SVE2 instructions in ARMv
 lite_option(LITE_WITH_ARM82_INT8_SDOT          "when compile with arm v8.2 int8, it's ON."                            OFF)
 lite_option(LITE_WITH_CODE_META_INFO           "include git version in the header file."                              ON)
 lite_option(WITH_NODE_RAW_FS                   "(Only available when compiling by Emscripten) Whether build with NODERAWFS"               OFF)
+lite_option(LITE_WITH_ADNN                     "Use Arm DNN library instead of built-in math library."                OFF)
 
 find_package(Git REQUIRED)
 find_package(Threads REQUIRED)

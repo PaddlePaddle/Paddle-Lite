@@ -21,18 +21,20 @@ namespace runtime {
 
 class Device {
  public:
-  explicit Device(const char* properties, const Callback* callback);
+  explicit Device(int thread_num, const Callback* callback);
   ~Device();
-  void* CreateContext(const char* properties);
+  void* CreateContext(int thread_num);
   void DestroyContext(void* context);
-  void* Alloc(size_t size);
-  void Free(void* ptr);
-  void* AlignedAlloc(size_t alignment, size_t size);
+  void* Alloc(void* context, size_t size);
+  void Free(void* context, void* ptr);
+  void* AlignedAlloc(void* context, size_t alignment, size_t size);
   void AlignedFree(void* context, void* ptr);
+  int GetThreadNum() { return thread_num_; }
 
  private:
   const Callback* callback_{nullptr};
   void* device_{nullptr};
+  int thread_num_{1};
   Device(const Device&) = delete;
   Device& operator=(const Device&) = delete;
 };

@@ -17,6 +17,9 @@
 #ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
+#ifdef LITE_WITH_ADNN
+#include "adnn/adnn.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -98,8 +101,17 @@ void ReluCompute<PRECISION(kFloat)>::Run() {
   auto x_dims = param.X->dims();
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
+#ifdef LITE_WITH_ADNN
+  auto device = adnn::open_device(4);
+  auto context = adnn::create_context(device, ctx.threads());
+  adnn::operators::relu<float>(
+      context, x_data, output_data, x_dims.production());
+  adnn::destroy_context(context);
+  adnn::close_device(device);
+#else
   lite::arm::math::act_relu<float>(
       x_data, output_data, x_dims.production(), ctx.threads());
+#endif
 }
 
 template <>

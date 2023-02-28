@@ -12,19 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
 #include "runtime/context.h"
+#include "utilities/logging.h"
 
 namespace adnn {
 namespace runtime {
 
-Context::Context(Device* device, const char* properties) : device_(device) {
-  ANN_CHECK(device_);
-  context_ = device_->CreateContext(properties);
+Context::Context(Device* device, int thread_num)
+    : device_(device), thread_num_(thread_num) {
+  ADNN_CHECK(device_);
+  context_ = device_->CreateContext(thread_num_);
 }
 
-Device::~Device() {
+void* Context::Alloc(size_t size) {
+  ADNN_CHECK(device_);
+  return device_->Alloc(context_, size);
+}
+
+void Context::Free(void* ptr) {
+  ADNN_CHECK(device_);
+  return device_->Free(context_, ptr);
+}
+
+void* Context::AlignedAlloc(size_t alignment, size_t size) {
+  ADNN_CHECK(device_);
+  return device_->AlignedAlloc(context_, alignment, size);
+}
+
+void Context::AlignedFree(void* ptr) {
+  ADNN_CHECK(device_);
+  return device_->AlignedFree(context_, ptr);
+}
+
+Context::~Context() {
   if (device_ && context_) {
     device_->DestroyContext(context_);
   }

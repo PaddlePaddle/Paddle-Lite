@@ -15,3 +15,13 @@
 #pragma once
 
 #include "adnn/operators/operators.h"
+
+namespace adnn {
+
+Device* open_device(int thread_num, const Callback* callback = nullptr);
+void close_device(Device* device);
+
+Context* create_context(Device* device, int thread_num);
+void destroy_context(Context* context);
+
+}  // namespace adnn

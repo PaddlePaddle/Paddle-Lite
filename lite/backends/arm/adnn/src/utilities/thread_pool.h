@@ -39,7 +39,7 @@ class ThreadPool {
   static void Destroy();
 
  private:
-  static ThreadPool* gInstance;
+  static ThreadPool* g_ThreadPoolInstance;
   explicit ThreadPool(int thread_num = 0);
   ~ThreadPool();
 
@@ -49,7 +49,6 @@ class ThreadPool {
   std::pair<TASK, std::vector<std::atomic<bool>*>> tasks_;
   std::condition_variable cv_;
   std::mutex mutex_;
-
   int thread_num_ = 0;
 };
 

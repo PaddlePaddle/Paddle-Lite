@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include "adnn/core/types.h"  // NOLINT
+#include "operators/concat/operator.h"
+#include "adnn/core/types.h"
+#include "adnn/operators/operators.h"
 #include "operators/concat/kernels.h"
+#include "runtime/context.h"
+#include "utilities/dll_export.h"
+#include "utilities/logging.h"
+#include "utilities/platform.h"
 
 namespace adnn {
 namespace operators {
@@ -28,9 +32,11 @@ concat<float>(Context* context,
               float* y_data,
               int64_t axis) {
   Status status = SUCCESS;
+  auto ctx = reinterpret_cast<runtime::Context*>(context);
+  ADNN_CHECK(ctx);
   ADNN_VLOG(5)
       << "concat<float>() is not accelerated on the current architecture!";
-  status = kernels::concat<float>(context, x_datas, x_shapes, y_data, axis);
+  status = kernels::concat<float>(ctx, x_datas, x_shapes, y_data, axis);
   return status;
 }
 
@@ -43,9 +49,11 @@ concat_qs8(Context* context,
            float y_scale,
            int64_t axis) {
   Status status = SUCCESS;
+  auto ctx = reinterpret_cast<runtime::Context*>(context);
+  ADNN_CHECK(ctx);
   ADNN_VLOG(5)
       << "concat_qs8() is not accelerated on the current architecture!";
-  status = kernels::concat<int8_t>(context, x_datas, x_shapes, y_data, axis);
+  status = kernels::concat<int8_t>(ctx, x_datas, x_shapes, y_data, axis);
   return status;
 }
 

@@ -21,30 +21,28 @@ namespace adnn {
 namespace operators {
 
 template <typename T>
-ADNN_DLL_EXPORT Status
-relu(Context* context, const T* x_data, T* y_data, size_t size);
+Status relu(Context* context, const T* x_data, T* y_data, size_t size);
 // 8-bit symmetric quantization
-ADNN_DLL_EXPORT Status relu_qs8(Context* context,
-                                const int8_t* x_data,
-                                float x_scale,
-                                int8_t* y_data,
-                                float y_scale,
-                                size_t size);
+Status relu_qs8(Context* context,
+                const int8_t* x_data,
+                float x_scale,
+                int8_t* y_data,
+                float y_scale,
+                size_t size);
 
 template <typename T>
-ADNN_DLL_EXPORT Status concat(Context* context,
-                              const std::vector<const T*>& x_datas,
-                              const std::vector<std::vector<int64_t>>& x_shapes,
-                              T* y_data,
-                              int64_t axis);
-ADNN_DLL_EXPORT Status
-concat_qs8(Context* context,
-           const std::vector<const int8_t*>& x_datas,
-           const std::vector<std::vector<int64_t>>& x_shapes,
-           const std::vector<std::vector<float>>& x_scales,
-           int8_t* y_data,
-           float y_scale,
-           int64_t axis);
+Status concat(Context* context,
+              const std::vector<const T*>& x_datas,
+              const std::vector<std::vector<int64_t>>& x_shapes,
+              T* y_data,
+              int64_t axis);
+Status concat_qs8(Context* context,
+                  const std::vector<const int8_t*>& x_datas,
+                  const std::vector<std::vector<int64_t>>& x_shapes,
+                  const std::vector<std::vector<float>>& x_scales,
+                  int8_t* y_data,
+                  float y_scale,
+                  int64_t axis);
 
 }  // namespace operators
 }  // namespace adnn
