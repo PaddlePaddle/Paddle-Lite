@@ -24,8 +24,8 @@ namespace xpu {
 
 template <typename T>
 void NormCompute<T>::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto x_dims = param.X->dims();
   int axis = param.axis;
   float epsilon = param.epsilon;
@@ -44,8 +44,8 @@ void NormCompute<T>::Run() {
   }
 
   int r = xdnn::l2_norm<T>(ctx.GetRawContext(),
-                           param.X->data<T>(),
-                           param.Out->mutable_data<T>(TARGET(kXPU)),
+                           param.X->template data<T>(),
+                           param.Out->template mutable_data<T>(TARGET(kXPU)),
                            nullptr,
                            xshape,
                            axis,

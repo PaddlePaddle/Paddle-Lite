@@ -22,7 +22,7 @@ namespace xpu {
 
 void UnsqueezeCompute::Run() {
   auto& param = Param<operators::UnsqueezeParam>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto x = param.X;
   auto output = param.Out;
   auto output_dims = output->dims();

@@ -88,7 +88,7 @@ class WhereComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("where");
     op_desc->SetInput("X", {x_});
     op_desc->SetInput("Y", {y_});
@@ -130,6 +130,10 @@ TEST(where, precision) {
   abs_error = 1e-2;
   // TODO(liusiyuan): support later
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
 #else
   return;
 #endif

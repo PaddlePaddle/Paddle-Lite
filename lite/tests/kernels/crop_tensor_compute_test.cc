@@ -128,7 +128,7 @@ class CropTensorComputeTester : public arena::TestCase {
     slice_ref(x_data, x_shape, axes, starts, ends, out_data);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("crop_tensor");
     op_desc->SetInput("X", {x_});
     if (!shape_.empty()) op_desc->SetInput("Shape", {shape_});

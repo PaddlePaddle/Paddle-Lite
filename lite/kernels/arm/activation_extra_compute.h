@@ -31,7 +31,8 @@ class ReluClippedCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~ReluClippedCompute() = default;
 };
 
-class SwishCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType PType>
+class SwishCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   using param_t = operators::ActivationParam;
 

@@ -1,38 +1,77 @@
-# Android 工程示例
+# Android apps
 
 ## 多种应用场景
 
-我们提供的 Paddle Lite 示例工程[ Paddle Lite-Demo ](https://github.com/PaddlePaddle/Paddle-Lite-Demo)，其中包含[ Android ](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo)、[ iOS ](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-ios-demo)和[ Armlinux ](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-armlinux-demo)平台的示例工程。
+Paddle-Lite 提供了多个应用场景的 Android Demo：
+* 图像分类
+    * 基于 [mobilenet_v1](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224.tar.gz) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/image_classification/android)
+     
+* 目标检测
+    * 基于 [ssd_mobilenetv1](https://paddlelite-demo.bj.bcebos.com/demo/object_detection/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/object_detection/android/app/cxx/ssd_mobilenetv1_detection_demo)
 
-Android demo涵盖涵盖[人脸识别](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/face_detection_demo)、[人像分割](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/human_segmentation_demo)、[图像分类](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/image_classification_demo)、[目标检测](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/object_detection_demo) 4 个应用场景。
+    * 基于 [yolov3_mobilenet_v3](https://paddlemodels.bj.bcebos.com/object_detection/mobile_models/lite/yolov3_mobilenet_v3.tar) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/object_detection/android/app/cxx/yolo_detection_demo)
+     
+    * 基于 [yolov5](https://paddlelite-demo.bj.bcebos.com/models/yolov5n/yolov5n.zip) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/object_detection/android/app/cxx/yolov5n_detection_demo)
+
+    * 基于 [pp_picodet](https://paddlelite-demo.bj.bcebos.com/demo/object_detection/models/picodet_s_320_coco_for_cpu.tar.gz) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/object_detection/android/app/cxx/picodet_detection_demo)
+    
+* 文字识别
+    * 基于 [pp_ocr_det](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_det_slim_infer.tar)、[pp_ocr_rec](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_rec_slim_infer.tar) 和 [pp_ocr_cls](https://paddleocr.bj.bcebos.com/dygraph_v2.0/slim/ch_ppocr_mobile_v2.0_cls_slim_infer.tar) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/ocr/android)
+    
+* 人脸检测
+    * 基于 [face-detection](https://paddlelite-demo.bj.bcebos.com/models/facedetection_fp32_240_430_fluid.tar.gz) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/face_detection/android)
+     
+* 人脸关键点检测
+    * 基于 [face-detection](https://paddlelite-demo.bj.bcebos.com/models/facedetection_fp32_240_430_fluid.tar.gz) 和 [face-keypoint](https://paddlelite-demo.bj.bcebos.com/models/facekeypoints_detector_fp32_60_60_fluid.tar.gz) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/face_keypoints_detection/android)
+    
+* 口罩识别
+    * 基于 [pyramidbox](https://paddlelite-demo.bj.bcebos.com/models/pyramidbox_lite_fp32_fluid.tar.gz) + [mask_detect](https://paddlelite-demo.bj.bcebos.com/models/mask_detector_fp32_128_128_fluid.tar.gz) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/mask_detection/android)
+    
+* 人像分割
+    * 基于 [DeeplabV3](https://paddlelite-demo.bj.bcebos.com/models/deeplab_mobilenet_fp32_fluid.tar.gz) 模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/human_segmentation/android)
+
+* PP 识图
+   * 基于 [PPLCNet](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/lite/ppshitu_lite_models_v1.0.tar) 两个模型模型 [Android 示例](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/develop/PP_shitu/android)
+
 
 ### 1. 人脸识别
 
-人脸检测是 Paddle Lite 提供的人像检测 demo ，在移动端上提供了高精度、实时的人脸检测能力，能处理基于人脸检测的业务场景。在移动端预测的效果图如下：
+人脸检测是 Paddle Lite 提供的人像检测 Demo ，在移动端上提供了高精度、实时的人脸检测能力，能处理基于人脸检测的业务场景。在移动端预测的效果图如下：
 
 <p align="center"><img width="300" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/face.jpg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="300" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/face2.jpg"/></p>
 
 
 ### 2. 人像分割
 
-人像分割是 Paddle Lite 提供的图像分割 demo ，在移动端上提供了实时的人像分割能力，可以应用证件照自动抠图、面积测量、智能交通（标记车道和交通标志）等场景。  在移动端预测的效果图如下：
+人像分割是 Paddle Lite 提供的图像分割 Demo ，在移动端上提供了实时的人像分割能力，可以应用证件照自动抠图、面积测量、智能交通（标记车道和交通标志）等场景。  在移动端预测的效果图如下：
 
 <p align="center"><img width="250" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/human.jpg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="250" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/human2.jpg"/></p>
 
 
 ### 3. 图像分类
 
-图像分类是 Paddle Lite 提供的图像处理 demo ，在移动端上提供了实时的物体识别能力，可以应用到生产线自动分拣或质检、识别医疗图像、辅助医生肉眼诊断等场景。在移动端预测的效果图如下：
+图像分类是 Paddle Lite 提供的图像处理 Demo ，在移动端上提供了实时的物体识别能力，可以应用到生产线自动分拣或质检、识别医疗图像、辅助医生肉眼诊断等场景。在移动端预测的效果图如下：
 
 <p align="center"><img width="250" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/tabby_cat.jpg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="250" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/tabby_cat2.jpg"/></p>
 
 
 ### 4. 物体检测
 
-物体检测是 Paddle Lite 提供的图像识别 demo ，在移动端上提供了检测多个物体的位置、名称、位置及数量的能力。可以应用到视频监控（是否有违规物体或行为）、工业质检（微小瑕疵的数量和位置）、医疗诊断（细胞计数、中药识别）等场景。在移动端预测的效果图如下：
+物体检测是 Paddle Lite 提供的图像识别 Demo ，在移动端上提供了检测多个物体的位置、名称、位置及数量的能力。可以应用到视频监控（是否有违规物体或行为）、工业质检（微小瑕疵的数量和位置）、医疗诊断（细胞计数、中药识别）等场景。在移动端预测的效果图如下：
 
 <p align="center"><img width="250" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/dog.jpg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="250" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/demo/dog2.jpg"/></p>
 
+### 5. 文字识别
+
+文字识别是 Paddle Lite 提供的OCR类文字识别 Demo ，在移动端上提供了检测多行文字的位置和名称的能力。可以应用到中英文翻译、词典笔等场景。在移动端预测的效果图如下：
+
+<p align="center"><img width="250" height="250"  src="https://paddlelite-demo.bj.bcebos.com/demo/ocr/docs_img/android/test.jpg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="250" height="250"  src="https://paddlelite-demo.bj.bcebos.com/demo/ocr/docs_img/ios/run_app.jpeg"/></p>
+
+### 6. PP 识图
+
+PP 识图是 Paddle Lite 提供的识别图片内容和位置 Demo ，在移动端上提供了检测多个物体的位置和名称的能力，在移动端预测的效果图如下：
+
+<p align="center"><img width="250" height="250"  src="https://paddlelite-demo.bj.bcebos.com/demo/PP_shitu/doc_img/wu_ling.jpg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<p align="center"><img width="250" height="250"  src="https://paddlelite-demo.bj.bcebos.com/demo/PP_shitu/doc_img/app_interface.jpg"/></p>
 
 ## Android demo部署方法
 
@@ -89,34 +128,30 @@ Android 示例的代码结构如下图所示：
    1、 `Predictor.java`： 预测代码
 
 ```shell
-# 位置：
 object_detection_demo/app/src/main/java/com/baidu/paddle/lite/demo/object_detection/Predictor.java
 ```
 
   2、 `model.nb` : 模型文件 (opt 工具转化后 Paddle Lite 模型), `pascalvoc_label_list`：训练模型时的 `labels` 文件
 
 ```shell
-# 位置：
 object_detection_demo/app/src/main/assets/models/ssd_mobilenet_v1_pascalvoc_for_cpu/model.nb
 object_detection_demo/app/src/main/assets/labels/pascalvoc_label_list
-# 如果要替换模型，可以将新模型放到 `object_detection_demo/app/src/main/assets/models/ssd_mobilenet_v1_pascalvoc_for_cpu` 目录下
+如果要替换模型，可以将新模型放到 `object_detection_demo/app/src/main/assets/models/ssd_mobilenet_v1_pascalvoc_for_cpu` 目录下
 ```
 
   3、 `libpaddle_lite_jni.so、PaddlePredictor.jar`：Paddle Lite Java 预测库与 Jar 包 
 
 ```shell
-# 位置
 object_detection_demo/app/src/main/jniLibs/arm64-v8a/libpaddle_lite_jni.so
 object_detection_demo/app/libs/PaddlePredictor.jar
-# 如果要替换动态库 so 和 jar 文件，则将新的动态库 so 更新到 `object_detection_demo/app/src/main/jniLibs/arm64-v8a/` 目录下，新的 jar 文件更新至 `object_detection_demo/app/libs/` 目录下
+如果要替换动态库 so 和 jar 文件，则将新的动态库 so 更新到 `object_detection_demo/app/src/main/jniLibs/arm64-v8a/` 目录下，新的 jar 文件更新至 `object_detection_demo/app/libs/` 目录下
 ```
 
   4、`build.gradle` : 定义编译过程的 gradle 脚本。（不用改动，定义了自动下载 Paddle Lite 预测和模型的过程）
 
 ```shell
-# 位置
 object_detection_demo/app/build.gradle
-# 如果需要手动更新模型和预测库，则可将 gradle 脚本中的 `download*` 接口注释即可
+如果需要手动更新模型和预测库，则可将 gradle 脚本中的 `download*` 接口注释即可
 ```
 
 ## 代码讲解 （使用 Paddle Lite `Java API` 执行预测）
@@ -211,6 +246,6 @@ Tensor outputTensor = getOutput(0);
   - 多线程使用限制：线程数最大值是手机大核处理器的个数，如小米 9，它由 4 个 A76 大核组成，即最大运行 4 个线程。
   - 多线程预测库：GCC 编译，V7/V8 多线程均支持；clang 编译下，只支持V8 多线程，V7 多线程编译受限于 NDK，当前 NDK >= 17, 编译报错，问题来源 NDK 内部 clang 编译的寄存器数目限制。
 - 如果想用 FP16 模型推理：
-  - 更新预测库：包含FP16 kernel的预测库，可以在 [release 官网](https://github.com/PaddlePaddle/Paddle-Lite/tags)下载，也可以参考[源码编译文档](../source_compile/macos_compile_android.rst)，自行编译。
+  - 更新预测库：包含FP16 kernel的预测库，可以在 [release 官网](https://github.com/PaddlePaddle/Paddle-Lite/tags)下载，也可以参考[macOS 环境下编译适用于 Android 的库](../source_compile/macos_compile_android)，自行编译。
   - 更新 nb 模型：需要使用 OPT 工具，将 `enable_fp16` 设置为 ON，重新转换模型。
   - FP16 预测库和 FP16 模型只在**V8.2 架构以上的手机**上运行，即高端手机，如小米 9，华为 P30 等

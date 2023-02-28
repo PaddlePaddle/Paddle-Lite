@@ -154,6 +154,8 @@ void Conv2DTransposeCompute<PRECISION(kInt8),
   //! update hardswish parameter
   if (param.activation_param.active_type ==
       lite_api::ActivationType::kHardSwish) {
+    param.activation_param.hard_swish_scale =
+        param.activation_param.hard_swish_scale / param.output_scale;
     param.activation_param.hard_swish_offset =
         param.activation_param.hard_swish_offset / param.output_scale;
     param.activation_param.hard_swish_threshold =
@@ -336,6 +338,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                                   n,
                                                   k,
                                                   false,
+                                                  lite::arm::math::GemmNoBias,
                                                   false,
                                                   scale_group,
                                                   act_param,
@@ -436,6 +439,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                                   n,
                                                   k,
                                                   false,
+                                                  lite::arm::math::GemmNoBias,
                                                   false,
                                                   scale_group,
                                                   act_param,

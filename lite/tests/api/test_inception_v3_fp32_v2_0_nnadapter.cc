@@ -30,7 +30,7 @@ static const int32_t inceptionv3_model_input_height = 299;
 namespace paddle {
 namespace lite {
 
-TEST(InceptionV3, test_inceptionv3_fp32_v2_0_nnadapter) {
+TEST(InceptionV3, test_inception_v3_fp32_v2_0_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -49,6 +49,16 @@ TEST(InceptionV3, test_inceptionv3_fp32_v2_0_nnadapter) {
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
   out_accuracy_threshold = 0.74f;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  nnadapter_device_names.emplace_back("intel_openvino");
+  out_accuracy_threshold = 0.73f;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  nnadapter_device_names.emplace_back("huawei_kirin_npu");
+  out_accuracy_threshold = 0.73f;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  FLAGS_iteration = 3;
+  out_accuracy_threshold = 0.3f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

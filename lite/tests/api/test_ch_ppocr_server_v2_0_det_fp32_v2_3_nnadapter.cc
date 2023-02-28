@@ -30,6 +30,8 @@ namespace lite {
 
 TEST(ch_ppocr_server_v2_0_det,
      test_ch_ppocr_server_v2_0_det_fp32_v2_3_nnadapter) {
+  FLAGS_warmup = 1;
+  bool prepare_before_timing = true;
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -46,6 +48,17 @@ TEST(ch_ppocr_server_v2_0_det,
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  nnadapter_device_names.emplace_back("huawei_kirin_npu");
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  nnadapter_device_names.emplace_back("intel_openvino");
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  // 1. Not support dynamic shape
+  // 2. Reduce execute time
+  FLAGS_iteration = 1;
+  FLAGS_warmup = 0;
+  prepare_before_timing = false;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -93,7 +106,6 @@ TEST(ch_ppocr_server_v2_0_det,
         ReadRawData(raw_data_dir, input_names[i], input_shapes[i]));
   }
 
-  FLAGS_warmup = 1;
   for (int i = 0; i < FLAGS_warmup; ++i) {
     fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
     predictor->Run();
@@ -103,7 +115,7 @@ TEST(ch_ppocr_server_v2_0_det,
   std::vector<std::vector<float>> results;
   for (size_t i = 0; i < raw_data.size(); ++i) {
     fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
-    predictor->Run();
+    if (prepare_before_timing) predictor->Run();
 
     double start = GetCurrentUS();
     predictor->Run();

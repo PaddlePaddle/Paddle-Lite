@@ -65,6 +65,10 @@ REGISTER_OPERATION(CONV_2D_TRANSPOSE,
                    PrepareConv2DTranspose,
                    ExecuteConv2DTranspose)
 REGISTER_OPERATION(CUM_SUM, ValidateCumSum, PrepareCumSum, ExecuteCumSum)
+REGISTER_OPERATION(COS,
+                   ValidateUnaryActivations,
+                   PrepareUnaryActivations,
+                   ExecuteUnaryActivations)
 REGISTER_OPERATION(DEFORMABLE_CONV_2D,
                    ValidateDeformableConv2D,
                    PrepareDeformableConv2D,
@@ -95,6 +99,10 @@ REGISTER_OPERATION(FLOOR,
                    ValidateUnaryActivations,
                    PrepareUnaryActivations,
                    ExecuteUnaryActivations)
+REGISTER_OPERATION(FLOOR_DIV,
+                   ValidateElementwise,
+                   PrepareElementwise,
+                   ExecuteElementwise)
 REGISTER_OPERATION(FULLY_CONNECTED,
                    ValidateFullyConnected,
                    PrepareFullyConnected,
@@ -150,6 +158,10 @@ REGISTER_OPERATION(LOG,
                    ValidateUnaryActivations,
                    PrepareUnaryActivations,
                    ExecuteUnaryActivations)
+REGISTER_OPERATION(LOG_SOFTMAX,
+                   ValidateLogSoftmax,
+                   PrepareLogSoftmax,
+                   ExecuteLogSoftmax)
 REGISTER_OPERATION(LP_NORMALIZATION,
                    ValidateLpNormalization,
                    PrepareLpNormalization,
@@ -190,6 +202,7 @@ REGISTER_OPERATION(PRIOR_BOX,
 REGISTER_OPERATION(QUANTIZE, ValidateQuantize, PrepareQuantize, ExecuteQuantize)
 REGISTER_OPERATION(RANGE, ValidateRange, PrepareRange, ExecuteRange)
 REGISTER_OPERATION(REDUCE_MEAN, ValidateReduce, PrepareReduce, ExecuteReduce)
+REGISTER_OPERATION(REDUCE_MAX, ValidateReduce, PrepareReduce, ExecuteReduce)
 REGISTER_OPERATION(REDUCE_SUM, ValidateReduce, PrepareReduce, ExecuteReduce)
 REGISTER_OPERATION(RELU,
                    ValidateUnaryActivations,
@@ -206,8 +219,13 @@ REGISTER_OPERATION(ROI_ALIGN,
                    ValidateRoiAlign,
                    PrepareRoiAlign,
                    ExecuteRoiAlign)
+REGISTER_OPERATION(ROLL, ValidateRoll, PrepareRoll, ExecuteRoll)
 REGISTER_OPERATION(SHAPE, ValidateShape, PrepareShape, ExecuteShape)
 REGISTER_OPERATION(SIGMOID,
+                   ValidateUnaryActivations,
+                   PrepareUnaryActivations,
+                   ExecuteUnaryActivations)
+REGISTER_OPERATION(SIN,
                    ValidateUnaryActivations,
                    PrepareUnaryActivations,
                    ExecuteUnaryActivations)
@@ -244,7 +262,12 @@ REGISTER_OPERATION(UNSQUEEZE,
                    ValidateUnsqueeze,
                    PrepareUnsqueeze,
                    ExecuteUnsqueeze)
+REGISTER_OPERATION(UNSTACK, ValidateUnstack, PrepareUnstack, ExecuteUnstack)
 REGISTER_OPERATION(WHERE, ValidateWhere, PrepareWhere, ExecuteWhere)
 REGISTER_OPERATION(YOLO_BOX, ValidateYoloBox, PrepareYoloBox, ExecuteYoloBox)
+REGISTER_OPERATION(NON_MAX_SUPPRESSION,
+                   ValidateNonMaxSuppression,
+                   PrepareNonMaxSuppression,
+                   ExecuteNonMaxSuppression)
 
 #endif  // NOLINT

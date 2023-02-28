@@ -25,14 +25,17 @@ namespace fusion {
 
 class XPUMultiEncoderSliceLinkFuser : public FuseBase {
  public:
+  explicit XPUMultiEncoderSliceLinkFuser(bool pre_ln = false)
+      : pre_ln_(pre_ln) {}
   void BuildPattern() override {
     auto* xpu_encoder = OpNode("xpu_encoder", "__xpu__multi_encoder");
     auto* encoder_out =
         VarNode("encoder_out")
             ->assert_is_op_output("__xpu__multi_encoder", "Output")
-            ->assert_is_op_input("slice", "Input")
-            ->assert_only_one_output()
-            ->AsIntermediate();
+            ->assert_only_one_output();
+    PMNode* layer_norm = nullptr;
+    PMNode* layer_norm_out = nullptr;
+
     auto* slice = OpNode("slice", "slice")
                       ->assert_op_attr_satisfied<std::vector<int>>(
                           "axes",
@@ -45,13 +48,29 @@ class XPUMultiEncoderSliceLinkFuser : public FuseBase {
                             return attr.size() == 1 && attr[0] == 0;
                           })
                       ->assert_op_attr_satisfied<std::vector<int>>(
-                          "ends",
-                          [](const std::vector<int>& attr) {
+                          "ends", [](const std::vector<int>& attr) {
                             return attr.size() == 1 && attr[0] == 1;
-                          })
-                      ->AsIntermediate();
+                          });
+    if (pre_ln_) {
+      xpu_encoder->assert_op_attr<bool>("norm_before", true);
+      encoder_out->assert_is_op_input("layer_norm", "X");
+      layer_norm = OpNode("layer_norm", "layer_norm");
+      layer_norm_out = VarNode("layer_norm_out")
+                           ->assert_is_op_output("layer_norm", "Y")
+                           ->assert_is_op_input("slice", "Input")
+                           ->assert_only_one_output();
+    } else {
+      xpu_encoder->assert_op_attr<bool>("norm_before", false);
+      encoder_out->assert_is_op_input("slice", "Input")->AsIntermediate();
+      slice->AsIntermediate();
+    }
     auto* slice_out = VarNode("slice_out")->assert_is_op_output("slice", "Out");
-    *xpu_encoder >> *encoder_out >> *slice >> *slice_out;
+    if (pre_ln_) {
+      *xpu_encoder >> *encoder_out >> *layer_norm >> *layer_norm_out >>
+          *slice >> *slice_out;
+    } else {
+      *xpu_encoder >> *encoder_out >> *slice >> *slice_out;
+    }
   }
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
@@ -62,7 +81,9 @@ class XPUMultiEncoderSliceLinkFuser : public FuseBase {
     auto slice_op_desc = *slice_instruct->op_info();
     std::string slice_out_name = matched.at("slice_out")->arg()->name;
 
-    encoder_op_desc.SetOutput("Output", {slice_out_name});
+    if (!pre_ln_) {
+      encoder_op_desc.SetOutput("Output", {slice_out_name});
+    }
     auto slice_axes = slice_op_desc.GetAttr<std::vector<int>>("axes");
     encoder_op_desc.SetAttr("slice_axes", slice_axes);
     if (slice_op_desc.HasAttr("starts")) {
@@ -79,8 +100,13 @@ class XPUMultiEncoderSliceLinkFuser : public FuseBase {
       encoder_op_desc.SetAttr("slice_decrease_axis", slice_decrease_axis);
     }
     encoder_instruct->ResetOp(encoder_op_desc, encoder_op->valid_places());
-    DirectedLink(matched.at("xpu_encoder"), matched.at("slice_out"));
+    if (!pre_ln_) {
+      DirectedLink(matched.at("xpu_encoder"), matched.at("slice_out"));
+    }
   }
+
+ private:
+  bool pre_ln_;
 };
 
 }  // namespace fusion
@@ -88,8 +114,11 @@ class XPUMultiEncoderSliceLinkFuser : public FuseBase {
 class XPUMultiEncoderSliceLinkFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
-    fusion::XPUMultiEncoderSliceLinkFuser fuser;
-    fuser(graph.get());
+    std::vector<bool> pre_lns{true, false};
+    for (auto pre_ln : pre_lns) {
+      fusion::XPUMultiEncoderSliceLinkFuser fuser(pre_ln);
+      fuser(graph.get());
+    }
   }
 };
 

@@ -51,7 +51,7 @@ class WriteToArrayComputeTester : public arena::TestCase {
     memcpy(out_data, x->data<float>(), sizeof(float) * x->numel());
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("write_to_array");
     op_desc->SetInput("X", {x_});
     op_desc->SetInput("I", {idn_});

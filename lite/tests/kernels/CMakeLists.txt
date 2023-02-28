@@ -1,4 +1,4 @@
-if(LITE_WITH_FPGA OR LITE_WITH_BM OR LITE_WITH_MLU OR (NOT LITE_WITH_X86 AND NOT LITE_WITH_ARM))
+if((NOT LITE_WITH_X86 AND NOT LITE_WITH_ARM))
   return()
 endif()
 
@@ -15,6 +15,7 @@ lite_cc_test(test_kernel_decode_bboxes_compute SRCS decode_bboxes_compute_test.c
 lite_cc_test(test_kernel_box_coder_compute SRCS box_coder_compute_test.cc)
 lite_cc_test(test_kernel_activation_compute SRCS activation_compute_test.cc)
 lite_cc_test(test_kernel_argmax_compute SRCS argmax_compute_test.cc)
+lite_cc_test(test_kernel_argmin_compute SRCS argmin_compute_test.cc)
 lite_cc_test(test_kernel_inverse_compute SRCS inverse_compute_test.cc)
 lite_cc_test(test_kernel_reverse_compute SRCS reverse_compute_test.cc)
 lite_cc_test(test_kernel_index_select_compute SRCS index_select_compute_test.cc)
@@ -106,6 +107,7 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_matrix_nms_compute SRCS matrix_nms_compute_test.cc)
 
     lite_cc_test(test_kernel_generate_proposals_compute SRCS generate_proposals_compute_test.cc)
+    lite_cc_test(test_kernel_generate_proposals_v2_compute SRCS generate_proposals_v2_compute_test.cc)
     lite_cc_test(test_kernel_roi_align_compute SRCS roi_align_compute_test.cc)
     lite_cc_test(test_kernel_search_aligned_mat_mul_compute SRCS search_aligned_mat_mul_compute_test.cc)
     lite_cc_test(test_kernel_search_seq_fc_compute SRCS search_seq_fc_compute_test.cc)
@@ -128,6 +130,8 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_select_input_compute SRCS select_input_compute_test.cc)
     lite_cc_test(test_kernel_pow_compute SRCS pow_compute_test.cc)
     lite_cc_test(test_kernel_where_compute SRCS where_compute_test.cc)
+    lite_cc_test(test_kernel_log_softmax_compute SRCS log_softmax_compute_test.cc)
+    lite_cc_test(test_kernel_roll_compute SRCS roll_compute_test.cc)
     # lite_cc_test(test_kernel_tensor_array_to_tensor_compute SRCS tensor_array_to_tensor_compute_test.cc)
     # TODO: fix tensor_array_to_tensor unittest
     

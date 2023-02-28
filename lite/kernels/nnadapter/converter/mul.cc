@@ -26,8 +26,38 @@ int ConvertMul(Converter* converter, OpInfo* op, Scope* scope) {
   std::vector<float> x_scales;
   if (op->HasInputScale(x_scale_name, true)) {
     x_scales = op->GetInputScale(x_scale_name, true);
+    CHECK(IsValidSymmPerLayerQuantParams(x_scales));
   }
-  auto x_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
+  auto x_operand = converter->GetMappedOperand(x_name);
+  int x_num_col_dims = op->GetAttr<int>("x_num_col_dims");
+  if (!x_operand) {
+    auto x_tensor = scope->FindTensor(x_name);
+    CHECK(x_tensor->persistable());
+    auto x_dims = x_tensor->dims();
+    std::vector<int64_t> reshaped_x_shape(x_num_col_dims + 1);
+    for (int i = 0; i < x_num_col_dims; i++) {
+      reshaped_x_shape[i] = x_dims[i];
+    }
+    reshaped_x_shape[x_num_col_dims] =
+        x_dims.Slice(x_num_col_dims, x_dims.size()).production();
+    x_operand = converter->AddConstantOperand(
+        *x_tensor, DDim(reshaped_x_shape), false, x_scales);
+  } else {
+    auto x_rank = converter->GetOperandType(x_operand)->dimensions.count;
+    if (x_rank != x_num_col_dims + 1) {
+      std::vector<int32_t> shape;
+      for (int i = 0; i < x_num_col_dims; i++) {
+        shape.push_back(0);
+      }
+      shape.push_back(-1);
+      auto shape_operand = converter->AddConstantOperand(shape);
+      auto reshaped_x_operand =
+          converter->AddOutputOperand(x_name + "_reshaped", x_scales);
+      converter->AddOperation(
+          NNADAPTER_RESHAPE, {x_operand, shape_operand}, {reshaped_x_operand});
+      x_operand = reshaped_x_operand;
+    }
+  }
 
   // Y operand
   auto y_name = op->Input("Y").front();
@@ -35,15 +65,53 @@ int ConvertMul(Converter* converter, OpInfo* op, Scope* scope) {
   std::vector<float> y_scales;
   if (op->HasInputScale(y_scale_name, true)) {
     y_scales = op->GetInputScale(y_scale_name, true);
+    if (!IsValidSymmPerChannelQuantParams(y_scales)) {
+      y_scales = {y_scales[0]};
+    }
   }
-  auto y_operand = converter->AddInputOperand(scope, y_name, {}, y_scales);
+  auto y_operand = converter->GetMappedOperand(y_name);
+  int y_num_col_dims = op->GetAttr<int>("y_num_col_dims");
+  if (!y_operand) {
+    auto y_tensor = scope->FindTensor(y_name);
+    CHECK(y_tensor->persistable());
+    auto y_dims = y_tensor->dims();
+    std::vector<int64_t> reshaped_y_shape(y_num_col_dims + 1);
+    for (int i = 0; i < y_num_col_dims; i++) {
+      reshaped_y_shape[i] = y_dims[i];
+    }
+    reshaped_y_shape[y_num_col_dims] =
+        y_dims.Slice(y_num_col_dims, y_dims.size()).production();
+    y_operand = converter->AddConstantOperand(
+        *y_tensor, DDim(reshaped_y_shape), false, y_scales);
+  } else {
+    auto y_rank = converter->GetOperandType(y_operand)->dimensions.count;
+    if (y_rank != y_num_col_dims + 1) {
+      std::vector<int32_t> shape;
+      for (int i = 0; i < y_num_col_dims; i++) {
+        shape.push_back(0);
+      }
+      shape.push_back(-1);
+      auto shape_operand = converter->AddConstantOperand(shape);
+      auto reshaped_y_operand =
+          converter->AddOutputOperand(y_name + "_reshaped", y_scales);
+      converter->AddOperation(
+          NNADAPTER_RESHAPE, {y_operand, shape_operand}, {reshaped_y_operand});
+      y_operand = reshaped_y_operand;
+    }
+  }
 
+  // The attribute `transpose_x` and `transpose_y` is not supported by mul op.
   auto transpose_x_operand = converter->AddConstantOperand(false);
   auto transpose_y_operand = converter->AddConstantOperand(false);
 
   // Output operand
   auto out_name = op->Output("Out").front();
-  auto output_operand = converter->AddOutputOperand(out_name);
+  auto out_scale_name = "Out0_scale";
+  std::vector<float> out_scales;
+  if (op->HasOutputScale(out_scale_name, true)) {
+    out_scales = op->GetOutputScale(out_scale_name, true);
+  }
+  auto output_operand = converter->AddOutputOperand(out_name, out_scales);
 
   // Mat_mul operation
   converter->AddOperation(

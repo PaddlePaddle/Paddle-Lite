@@ -20,7 +20,7 @@ IF(WITH_TESTING)
 
     INCLUDE(ExternalProject)
 
-    SET(GTEST_SOURCES_DIR ${CMAKE_SOURCE_DIR}/third-party/googletest)
+    SET(GTEST_SOURCES_DIR ${PADDLE_SOURCE_DIR}/third-party/googletest)
     SET(GTEST_INSTALL_DIR ${THIRD_PARTY_PATH}/install/gtest)
     SET(GTEST_INCLUDE_DIR "${GTEST_INSTALL_DIR}/include" CACHE PATH "gtest include directory." FORCE)
 

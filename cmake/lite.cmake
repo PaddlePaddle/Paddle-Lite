@@ -37,19 +37,13 @@ endfunction()
 function (lite_deps TARGET)
   set(options "")
   set(oneValueArgs "")
-  set(multiValueArgs DEPS X86_DEPS CUDA_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS METAL_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS IMAGINATION_NNA_DEPS APU_DEPS NNADAPTER_DEPS CV_DEPS ARGS)
+  set(multiValueArgs DEPS X86_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS METAL_DEPS XPU_DEPS NNADAPTER_DEPS CV_DEPS ARGS)
   cmake_parse_arguments(lite_deps "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   set(deps ${lite_deps_DEPS})
 
   if(LITE_WITH_X86)
     foreach(var ${lite_deps_X86_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
-  if(LITE_WITH_CUDA)
-    foreach(var ${lite_deps_CUDA_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
   endif()
@@ -95,38 +89,8 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
-  if (LITE_WITH_FPGA)
-    foreach(var ${lite_deps_FPGA_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
-  if (LITE_WITH_INTEL_FPGA)
-    foreach(var ${lite_deps_INTEL_FPGA_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
-  if (LITE_WITH_NPU)
-    foreach(var ${lite_deps_NPU_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
   if (LITE_WITH_XPU)
     foreach(var ${lite_deps_XPU_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
-  if (LITE_WITH_BM)
-    foreach(var ${lite_deps_BM_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
-  if (LITE_WITH_MLU)
-    foreach(var ${lite_deps_MLU_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
   endif()
@@ -146,13 +110,12 @@ add_custom_target(lite_compile_deps COMMAND echo 1)
 
 # Add names for lite libraries for latter compile. We use this name list to avoid compiling
 # the whole fluid project to accelerate the compile speed.
-set(offline_lib_registry_file "${CMAKE_BINARY_DIR}/lite_libs.txt")
+set(offline_lib_registry_file "${PADDLE_BINARY_DIR}/lite_libs.txt")
 file(WRITE ${offline_lib_registry_file} "") # clean
 
 # cc_library with branch support.
 # The branches:
 #  X86_DEPS: works only when LITE_WITH_X86 is ON.
-#  CUDA_DEPS:     LITE_WITH_CUDA
 #  ARM_DEPS:      LITE_WITH_ARM
 #  PROFILE_DEPS:  LITE_WITH_PROFILE
 #  EXCLUDE_COMPILE_DEPS: TARGET will not be included in lite_compile_deps if this is not None
@@ -160,7 +123,7 @@ file(WRITE ${offline_lib_registry_file} "") # clean
 function(lite_cc_library TARGET)
     set(options SHARED shared STATIC static MODULE module)
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS CV_DEPS PROFILE_DEPS LIGHT_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CL_DEPS METAL_DEPS ARM_DEPS XPU_DEPS NNADAPTER_DEPS CV_DEPS PROFILE_DEPS LIGHT_DEPS
       HVY_DEPS EXCLUDE_COMPILE_DEPS ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -168,25 +131,15 @@ function(lite_cc_library TARGET)
     lite_deps(deps
             DEPS ${args_DEPS}
             X86_DEPS ${args_X86_DEPS}
-            CUDA_DEPS ${args_CUDA_DEPS}
             CL_DEPS ${args_CL_DEPS}
             METAL_DEPS ${args_METAL_DEPS}
-            BM_DEPS ${args_BM_DEPS}
-            IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
             NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
-            RKNPU_DEPS ${args_RKNPU_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
             CV_DEPS ${args_CV_DEPS}
-            FPGA_DEPS ${args_FPGA_DEPS}
-            INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
-            NPU_DEPS ${args_NPU_DEPS}
-            APU_DEPS ${args_APU_DEPS}
             XPU_DEPS ${args_XPU_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}
-            MLU_DEPS ${args_MLU_DEPS}
-            HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
             )
 
     if (args_SHARED OR ARGS_shared)
@@ -215,7 +168,7 @@ function(lite_cc_binary TARGET)
         set(options " -g ")
     endif()
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS RKNPU NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CL_DEPS METAL_DEPS ARM_DEPS XPU_DEPS NNADAPTER_DEPS PROFILE_DEPS
       LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS CV_DEPS ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -223,25 +176,15 @@ function(lite_cc_binary TARGET)
     lite_deps(deps
             DEPS ${args_DEPS}
             X86_DEPS ${args_X86_DEPS}
-            CUDA_DEPS ${args_CUDA_DEPS}
             CL_DEPS ${args_CL_DEPS}
             METAL_DEPS ${args_METAL_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
-            FPGA_DEPS ${args_FPGA_DEPS}
-            INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
-            NPU_DEPS ${args_NPU_DEPS}
-            APU_DEPS ${args_APU_DEPS}
             XPU_DEPS ${args_XPU_DEPS}
-            RKNPU_DEPS ${args_RKNPU_DEPS}
-            BM_DEPS ${args_BM_DEPS}
-            IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
             NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}
             CV_DEPS ${CV_DEPS}
-            MLU_DEPS ${args_MLU_DEPS}
-            HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
             )
     cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps})
 
@@ -249,14 +192,14 @@ function(lite_cc_binary TARGET)
     add_dependencies(${TARGET} bundle_full_api)
 
     if(NOT WIN32)
-      target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a)
+      target_link_libraries(${TARGET} ${PADDLE_BINARY_DIR}/libpaddle_api_full_bundled.a)
       target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
       # openmp dynamic lib is required for mkl
       if(WITH_STATIC_MKL)
         target_link_libraries(${TARGET} -L${MKLML_LIB_DIR} -liomp5)
       endif()
     else()
-      target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
+      target_link_libraries(${TARGET} ${PADDLE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
     endif()
 
     # link to dynamic runtime lib
@@ -266,18 +209,8 @@ function(lite_cc_binary TARGET)
     if(LITE_WITH_XPU)
         target_link_libraries(${TARGET} ${xpu_builder_libs} ${xpu_runtime_libs})
     endif()
-    if(LITE_WITH_NPU)
-        target_link_libraries(${TARGET} ${npu_builder_libs} ${npu_runtime_libs})
-    endif()
-    if(LITE_WITH_CUDA)
-        get_property(cuda_deps GLOBAL PROPERTY CUDA_MODULES)
-        target_link_libraries(${TARGET} ${cuda_deps})
-    endif()
-    if(LITE_WITH_INTEL_FPGA)
-        target_link_libraries(${TARGET} ${intel_fpga_deps})
-    endif()
 
-    if (NOT APPLE AND NOT WIN32)
+    if (NOT APPLE AND NOT WIN32 AND NOT EMSCRIPTEN)
         # strip binary target to reduce size
         if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
             add_custom_command(TARGET ${TARGET} POST_BUILD
@@ -356,9 +289,9 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
   list(REMOVE_DUPLICATES static_libs)
 
   set(bundled_tgt_full_name
-    ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
+    ${PADDLE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
 
-  message(STATUS "bundled_tgt_full_name:  ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+  message(STATUS "bundled_tgt_full_name:  ${PADDLE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
   if(WIN32)
     set(dummy_tgt_name dummy_${bundled_tgt_name})
@@ -379,20 +312,20 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
   add_dependencies(${fake_target} ${tgt_name})
 
   if(NOT IOS AND NOT APPLE)
-    file(WRITE ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
+    file(WRITE ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in
       "CREATE ${bundled_tgt_full_name}\n" )
 
     foreach(tgt IN LISTS static_libs)
-      file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
+      file(APPEND ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in
         "ADDLIB $<TARGET_FILE:${tgt}>\n")
     endforeach()
 
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "SAVE\n")
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "END\n")
+    file(APPEND ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in "SAVE\n")
+    file(APPEND ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in "END\n")
 
     file(GENERATE
-      OUTPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
-      INPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in)
+      OUTPUT ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar
+      INPUT ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar.in)
 
     set(ar_tool ${CMAKE_AR})
     if (CMAKE_INTERPROCEDURAL_OPTIMIZATION)
@@ -402,7 +335,7 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
     add_custom_command(
       TARGET ${fake_target} PRE_BUILD
       COMMAND rm -f ${bundled_tgt_full_name}
-      COMMAND ${ar_tool} -M < ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
+      COMMAND ${ar_tool} -M < ${PADDLE_BINARY_DIR}/${bundled_tgt_name}.ar
       COMMENT "Bundling ${bundled_tgt_name}"
       DEPENDS ${tgt_name}
       VERBATIM)

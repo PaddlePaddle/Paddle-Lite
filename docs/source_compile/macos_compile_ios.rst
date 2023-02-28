@@ -15,7 +15,7 @@ macOS 环境下编译适用于 iOS 的库
 
 
    *
-     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改 Paddle Lite 源代码，则可参考本文构建。
+     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <../quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改 Paddle Lite 源代码，则可参考本文构建。
 
    *
      自 release/v2.10 版本起，Paddle Lite 支持了 Metal 后端。
@@ -40,13 +40,13 @@ macOS 环境下编译适用于 iOS 的库
 准备编译环境
 ------------
 
-环境要求
+推荐环境
 ^^^^^^^^
 
 
-* Xcode IDE (10.1 或以上版本)
+* Xcode IDE >= 10.1
+* CMake >= 3.15
 * git、make、wget、python
-* CMake (3.15 或以上版本)
 
 环境安装命令
 ^^^^^^^^^^^^
@@ -90,7 +90,7 @@ Paddle Lite 仓库中\ ``./lite/tools/build_ios.sh``\ 脚本文件用于构建 i
      - OFF / ON
      - OFF
    * - with_extra
-     - 是否编译完整算子（见\ `支持算子 <https://paddle-lite.readthedocs.io/zh/develop/quick_start/support_operation_list.html>`_\ 一节）
+     - 是否编译完整算子（见\ `支持算子 <../quick_start/support_operation_list.html>`_\ 一节）
      - OFF / ON
      - OFF
    * - with_metal

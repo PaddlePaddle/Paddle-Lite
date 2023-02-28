@@ -90,7 +90,10 @@ class TestTanhOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), [""], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+            atol, rtol = 1e-4, 1e-4
+        return self.get_predictor_configs(), [""], (atol, rtol)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):

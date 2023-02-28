@@ -52,8 +52,9 @@ bool string_parse<bool>(const std::string& v) {
   for (size_t i = 0; i < v.length(); i++) {
     char ch = v[i];
     if (ch >= 'a' && ch <= 'z') {
-      upper.push_back(ch - 'a' + 'A');
+      ch = ch - 'a' + 'A';
     }
+    upper.push_back(ch);
   }
   return upper == "TRUE" || upper == "1";
 }

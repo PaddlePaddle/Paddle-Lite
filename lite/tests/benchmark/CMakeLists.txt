@@ -1,4 +1,4 @@
-if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_NNADAPTER AND NOT LITE_WITH_XPU) AND (LITE_WITH_ARM))
+if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_NNADAPTER AND NOT LITE_WITH_XPU) AND (LITE_WITH_ARM))
     lite_cc_test(get_conv_latency SRCS src/get_conv_latency.cc)
     lite_cc_test(get_batchnorm_latency SRCS src/get_batchnorm_latency.cc)
     lite_cc_test(get_pooling_latency SRCS src/get_pooling_latency.cc)
@@ -12,7 +12,7 @@ IF (LITE_WITH_BENCHMARK_TEST)
         SET(GOOGLEBENCHMARK_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/googlebenchmark-source" CACHE STRING "Google Benchmark source directory")
         MESSAGE(STATUS "Auto downloading Google Benchmark , define GOOGLEBENCHMARK_SOURCE_DIR to the src repo to avoid auto downloading")
 
-        CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/DownloadGoogleBenchmark.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/googlebenchmark-download/CMakeLists.txt")
+        CONFIGURE_FILE(${PADDLE_SOURCE_DIR}/cmake/DownloadGoogleBenchmark.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/googlebenchmark-download/CMakeLists.txt")
         EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
                 WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/googlebenchmark-download")
         EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" --build .

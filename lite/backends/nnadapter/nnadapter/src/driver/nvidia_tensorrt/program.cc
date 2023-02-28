@@ -23,7 +23,8 @@
 #include "driver/nvidia_tensorrt/converter/converter.h"
 #include "driver/nvidia_tensorrt/optimizer/remove_reshape_before_fully_connected.h"
 #include "driver/nvidia_tensorrt/optimizer/unpack_op_fusion.h"
-#include "optimizer/fuse_matmul_add_into_fully_connected.h"
+#include "optimizer/fuse_conv2d_add_into_conv2d.h"
+#include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
 #include "optimizer/partition_model_into_submodels.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -34,7 +35,11 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
-Context::Context(void* device, const char* properties) : device_(device) {
+Context::Context(void* device,
+                 const char* properties,
+                 int (*callback)(int event_id, void* user_data))
+    : device_(device) {
+  callback_ = callback;
   // Extract the runtime parameters from the context properties
   NNADAPTER_VLOG(1) << "properties: " << std::string(properties);
   auto key_values = GetKeyValues(properties);
@@ -100,6 +105,17 @@ Context::Context(void* device, const char* properties) : device_(device) {
           ? string_parse<int64_t>(
                 key_values[NVIDIA_TENSORRT_MAX_WORKSPACE_SIZE])
           : GetUInt64FromEnv(NVIDIA_TENSORRT_MAX_WORKSPACE_SIZE);
+}
+
+cudaStream_t Context::CudaStream() {
+  if (callback_) {
+    cudaStream_t cuda_stream;
+    NNADAPTER_CHECK_EQ(
+        callback_(NVIDIA_TENSORRT_GET_EXTERNAL_CUDA_STREAM, &cuda_stream), 0);
+    return cuda_stream;
+  }
+  NNADAPTER_VLOG(1) << "Not find specified cuda_stream.";
+  return nullptr;
 }
 
 void TensorrtProgram::Clear() {
@@ -264,8 +280,9 @@ int TensorrtProgram::BuildFromModel() {
   }
   // 1. Optimize the model_
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model_);
+  FuseConv2DBatchNormIntoConv2D(model_);
+  FuseConv2DAddIntoConv2D(model_);
   UnpackOpFusion(model_);
-  FuseMatMulAddIntoFullyConnected(model_);
   RemoveReshapeBeforeFullyConnected(model_);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model_);
   // 2. Build model_, serialize to plan_, create engnie_
@@ -286,7 +303,7 @@ int TensorrtProgram::BuildFromModel() {
   // Create config_ and set options
   CompleteConfig();
 // Serialize to plan_
-#if TENSORRT_MAJOR_VERSION >= 8
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
   plan_.reset(builder_->buildSerializedNetwork(*network_, *config_));
   NNADAPTER_CHECK(plan_);
   runtime_.reset(nvinfer1::createInferRuntime(*TrtLogger::Global()));
@@ -313,7 +330,8 @@ int TensorrtProgram::BuildFromCache() {
 
 int TensorrtProgram::Execute(
     std::vector<std::shared_ptr<Tensor>>* input_tensors,
-    std::vector<std::shared_ptr<Tensor>>* output_tensors) {
+    std::vector<std::shared_ptr<Tensor>>* output_tensors,
+    cudaStream_t stream) {
   // Set input dims
   int batch_size = 1;
   int input_size = input_types_.size();
@@ -346,7 +364,12 @@ int TensorrtProgram::Execute(
     NNADAPTER_CHECK(ptr);
   }
   // Execute model
-  execution_context_->execute(batch_size, device_ptrs.data());
+  if (!with_dynamic_shape_) {
+    execution_context_->enqueue(
+        batch_size, device_ptrs.data(), stream, nullptr);
+  } else {
+    execution_context_->enqueueV2(device_ptrs.data(), stream, nullptr);
+  }
   return NNADAPTER_NO_ERROR;
 }
 
@@ -379,7 +402,8 @@ int CudaProgram::Build() {
 }
 
 int CudaProgram::Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
-                         std::vector<std::shared_ptr<Tensor>>* output_tensors) {
+                         std::vector<std::shared_ptr<Tensor>>* output_tensors,
+                         cudaStream_t stream) {
   for (auto& operand : model_->operands) {
     if (!tensors_.count(&operand)) {
       tensors_[&operand] = std::shared_ptr<Tensor>(new Tensor());
@@ -396,7 +420,6 @@ int CudaProgram::Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
   for (size_t i = 0; i < kernels_.size(); i++) {
     NNADAPTER_CHECK_EQ(kernels_[i]->Run(operations_[i], &tensors_),
                        NNADAPTER_NO_ERROR);
-    cudaDeviceSynchronize();
   }
   return NNADAPTER_NO_ERROR;
 }
@@ -430,7 +453,9 @@ int HostProgram::Build() {
 }
 
 int HostProgram::Execute(std::vector<std::shared_ptr<Tensor>>* input_tensors,
-                         std::vector<std::shared_ptr<Tensor>>* output_tensors) {
+                         std::vector<std::shared_ptr<Tensor>>* output_tensors,
+                         cudaStream_t stream) {
+  NNADAPTER_CHECK_EQ(cudaStreamSynchronize(stream), cudaSuccess);
   for (auto& operand : model_->operands) {
     if (!tensors_.count(&operand)) {
       tensors_[&operand] = std::shared_ptr<Tensor>(new Tensor());

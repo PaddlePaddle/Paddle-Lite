@@ -57,7 +57,7 @@ class TestFlattenOp(AutoScanTest):
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(
-            device_names=["kunlunxin_xtcl", "cambricon_mlu"])
+            device_names=["cambricon_mlu", "intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -131,6 +131,19 @@ class TestFlattenOp(AutoScanTest):
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
+
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_shape = list(program_config.inputs["input_data"].shape)
+            axis = program_config.ops[0].attrs["axis"]
+            if target_type == TargetType.NNAdapter:
+                if axis == 1 and len(in_shape) == 2:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op when 'axis = 1 and len(in_shape) = 2' on nnadapter."
         )
 
     def test(self, *args, **kwargs):

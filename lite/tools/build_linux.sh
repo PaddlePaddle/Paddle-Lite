@@ -38,6 +38,8 @@ ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://gith
 WITH_NNADAPTER=OFF
 NNADAPTER_WITH_ROCKCHIP_NPU=OFF
 NNADAPTER_ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
+NNADAPTER_WITH_EEASYTECH_NPU=OFF
+NNADAPTER_EEASYTECH_NPU_SDK_ROOT="$(pwd)/eznpu_ddk"
 NNADAPTER_WITH_IMAGINATION_NNA=OFF
 NNADAPTER_IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 NNADAPTER_WITH_HUAWEI_ASCEND_NPU=OFF
@@ -54,6 +56,9 @@ NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="http://paddlelite-demo.bj.bcebos.com/de
 NNADAPTER_WITH_NVIDIA_TENSORRT=OFF
 NNADAPTER_NVIDIA_CUDA_ROOT="/usr/local/cuda"
 NNADAPTER_NVIDIA_TENSORRT_ROOT="/usr/local/tensorrt"
+NNADAPTER_WITH_QUALCOMM_QNN=OFF
+NNADAPTER_QUALCOMM_QNN_SDK_ROOT="/usr/local/qnn"
+NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT=""
 NNADAPTER_WITH_KUNLUNXIN_XTCL=OFF
 NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=""
 NNADAPTER_KUNLUNXIN_XTCL_SDK_URL=""
@@ -62,35 +67,37 @@ NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=""
 NNADAPTER_WITH_INTEL_OPENVINO=OFF
 # /opt/intel/openvino_<version>
 NNADAPTER_INTEL_OPENVINO_SDK_ROOT=""
+NNADAPTER_INTEL_OPENVINO_SDK_VERSION=""
 NNADAPTER_WITH_GOOGLE_XNNPACK=OFF
 NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG="master"
 
 # options of compiling baidu XPU lib.
 WITH_KUNLUNXIN_XPU=OFF
 KUNLUNXIN_XPU_SDK_URL=""
+KUNLUNXIN_XPU_XDNN_URL=""
+KUNLUNXIN_XPU_XRE_URL=""
 KUNLUNXIN_XPU_SDK_ENV=""
 KUNLUNXIN_XPU_SDK_ROOT=""
-# options of compiling intel fpga.
-WITH_INTEL_FPGA=OFF
-INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk"
+# options of compiling baidu XFT lib (XFT depends on XDNN and XRE).
+WITH_KUNLUNXIN_XFT=OFF
+KUNLUNXIN_XFT_ENV=""
+KUNLUNXIN_XFT_URL=""
+KUNLUNXIN_XFT_ROOT=""
 # options of adding training ops
 WITH_TRAIN=OFF
 # options of building tiny publish so
 WITH_TINY_PUBLISH=ON
 # controls whether to include FP16 kernels, default is OFF
 BUILD_ARM82_FP16=OFF
+WITH_ARM_DOTPROD=ON
 # options of profiling
 WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 # option of benchmark, default is OFF
 WITH_BENCHMARK=OFF
-# option of light weight framework, default is OFF
-WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
-
-
 
 
 #####################################################################################################
@@ -98,13 +105,12 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
+readonly THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 
 # absolute path of Paddle-Lite.
-readonly workspace=$PWD/$(dirname $0)/../../
+readonly workspace=$(dirname $(readlink -f "$0"))/../../
 # basic options for linux compiling.
-readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
-                            -DCMAKE_BUILD_TYPE=Release \
+readonly CMAKE_COMMON_OPTIONS="-DCMAKE_BUILD_TYPE=Release \
                             -DWITH_MKLDNN=OFF \
                             -DWITH_TESTING=OFF"
 
@@ -113,16 +119,6 @@ function set_benchmark_options {
   WITH_EXTRA=ON
   WITH_EXCEPTION=ON
   WITH_NNADAPTER=ON
-  if [ "${ARCH}" == "x86" ]; then
-    # Turn off opencl. Additional third party library need to be installed on
-    # Linux. Otherwise opencl is not supported on Linux. See link for more info:
-    # https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
-    WITH_OPENCL=OFF
-    WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
-  else
-    WITH_LIGHT_WEIGHT_FRAMEWORK=ON
-    WITH_OPENCL=ON
-  fi
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
     WITH_LOG=ON
   else
@@ -149,13 +145,11 @@ function init_cmake_mutable_options {
     if [ "${ARCH}" == "x86" ]; then
         with_x86=ON
         arm_target_os=""
-        WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
         WITH_TINY_PUBLISH=OFF
     else
         with_arm=ON
         arm_arch=$ARCH
         arm_target_os=armlinux
-        WITH_LIGHT_WEIGHT_FRAMEWORK=ON
         WITH_AVX=OFF
     fi
 
@@ -164,6 +158,12 @@ function init_cmake_mutable_options {
     fi
 
     if [ "${WITH_KUNLUNXIN_XPU}" == "ON" ]; then
+        WITH_EXTRA=ON
+        WITH_TINY_PUBLISH=OFF
+    fi
+
+    if [ "${WITH_KUNLUNXIN_XFT}" == "ON" ]; then
+        WITH_KUNLUNXIN_XPU=ON
         WITH_EXTRA=ON
         WITH_TINY_PUBLISH=OFF
     fi
@@ -182,7 +182,6 @@ function init_cmake_mutable_options {
                         -DARM_TARGET_ARCH_ABI=$arm_arch \
                         -DARM_TARGET_OS=$arm_target_os \
                         -DARM_TARGET_LANG=$TOOLCHAIN \
-                        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=$WITH_LIGHT_WEIGHT_FRAMEWORK \
                         -DLITE_BUILD_EXTRA=$WITH_EXTRA \
                         -DLITE_WITH_PYTHON=$WITH_PYTHON \
                         -DPY_VERSION=$PY_VERSION \
@@ -200,12 +199,20 @@ function init_cmake_mutable_options {
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
                         -DLITE_WITH_XPU=$WITH_KUNLUNXIN_XPU \
                         -DXPU_SDK_URL=$KUNLUNXIN_XPU_SDK_URL \
+                        -DXPU_XDNN_URL=$KUNLUNXIN_XPU_XDNN_URL \
+                        -DXPU_XRE_URL=$KUNLUNXIN_XPU_XRE_URL \
                         -DXPU_SDK_ENV=$KUNLUNXIN_XPU_SDK_ENV \
                         -DXPU_SDK_ROOT=$KUNLUNXIN_XPU_SDK_ROOT \
+                        -DXPU_WITH_XFT=$WITH_KUNLUNXIN_XFT \
+                        -DXPU_XFT_ENV=$KUNLUNXIN_XFT_ENV \
+                        -DXPU_XFT_URL=$KUNLUNXIN_XFT_URL \
+                        -DXPU_XFT_ROOT=$KUNLUNXIN_XFT_ROOT \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN  \
                         -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
                         -DNNADAPTER_WITH_ROCKCHIP_NPU=$NNADAPTER_WITH_ROCKCHIP_NPU \
                         -DNNADAPTER_ROCKCHIP_NPU_SDK_ROOT=$NNADAPTER_ROCKCHIP_NPU_SDK_ROOT \
+                        -DNNADAPTER_WITH_EEASYTECH_NPU=$NNADAPTER_WITH_EEASYTECH_NPU \
+                        -DNNADAPTER_EEASYTECH_NPU_SDK_ROOT=$NNADAPTER_EEASYTECH_NPU_SDK_ROOT \
                         -DNNADAPTER_WITH_IMAGINATION_NNA=$NNADAPTER_WITH_IMAGINATION_NNA \
                         -DNNADAPTER_IMAGINATION_NNA_SDK_ROOT=$NNADAPTER_IMAGINATION_NNA_SDK_ROOT \
                         -DNNADAPTER_WITH_HUAWEI_ASCEND_NPU=$NNADAPTER_WITH_HUAWEI_ASCEND_NPU \
@@ -224,26 +231,26 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_WITH_NVIDIA_TENSORRT=$NNADAPTER_WITH_NVIDIA_TENSORRT \
                         -DNNADAPTER_NVIDIA_CUDA_ROOT=$NNADAPTER_NVIDIA_CUDA_ROOT \
                         -DNNADAPTER_NVIDIA_TENSORRT_ROOT=$NNADAPTER_NVIDIA_TENSORRT_ROOT \
+                        -DNNADAPTER_WITH_QUALCOMM_QNN=$NNADAPTER_WITH_QUALCOMM_QNN \
+                        -DNNADAPTER_QUALCOMM_QNN_SDK_ROOT=$NNADAPTER_QUALCOMM_QNN_SDK_ROOT \
+                        -DNNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT=$NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT \
                         -DNNADAPTER_WITH_KUNLUNXIN_XTCL=$NNADAPTER_WITH_KUNLUNXIN_XTCL \
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT \
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_URL=$NNADAPTER_KUNLUNXIN_XTCL_SDK_URL \
                         -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV \
                         -DNNADAPTER_WITH_INTEL_OPENVINO=$NNADAPTER_WITH_INTEL_OPENVINO \
                         -DNNADAPTER_INTEL_OPENVINO_SDK_ROOT=$NNADAPTER_INTEL_OPENVINO_SDK_ROOT \
+                        -DNNADAPTER_INTEL_OPENVINO_SDK_VERSION=$NNADAPTER_INTEL_OPENVINO_SDK_VERSION \
                         -DNNADAPTER_WITH_GOOGLE_XNNPACK=$NNADAPTER_WITH_GOOGLE_XNNPACK \
                         -DNNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG=$NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG \
-                        -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
-                        -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
                         -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+                        -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
                         -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
                         -DLITE_ON_TINY_PUBLISH=$WITH_TINY_PUBLISH"
 
 }
 #####################################################################################################
-
-
-
 
 
 ####################################################################################################
@@ -285,6 +292,7 @@ function prepare_opencl_source_code {
 # 3.3 prepare third_party libraries for compiling
 # here we store third_party libraries into Paddle-Lite/third-party
 function prepare_thirdparty {
+    cd $workspace
     if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
         rm -rf $workspace/third-party
         if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
@@ -294,11 +302,9 @@ function prepare_thirdparty {
     else
         git submodule update --init --recursive
     fi
+    cd -
 }
 ####################################################################################################
-
-
-
 
 
 ####################################################################################################
@@ -314,7 +320,10 @@ function make_publish_so {
         prepare_thirdparty
     else
         if [ ! -d third-party ] ; then
+            cd $workspace
+            rm -rf third-party
             git checkout third-party
+            cd -
         fi
     fi
 
@@ -335,6 +344,9 @@ function make_publish_so {
     mkdir -p $build_dir
     cd $build_dir
 
+    rm -f $workspace/lite/api/paddle_use_ops.h
+    rm -f $workspace/lite/api/paddle_use_kernels.h
+
     prepare_workspace $workspace $build_dir
 
     if [ "${WITH_OPENCL}" = "ON" ]; then
@@ -352,8 +364,26 @@ function make_publish_so {
     fi
     cd - > /dev/null
 }
-####################################################################################################
 
+# 4.2 function of opt
+function build_opt {
+    rm -f $workspace/lite/api/paddle_use_ops.h
+    rm -f $workspace/lite/api/paddle_use_kernels.h
+    prepare_thirdparty
+
+    build_dir=$workspace/build.opt
+    rm -rf $build_dir
+    mkdir -p $build_dir
+    cd $build_dir
+    cmake $workspace \
+      -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
+      -DWITH_TESTING=OFF \
+      -DLITE_BUILD_EXTRA=ON \
+      -DWITH_MKL=OFF
+    make opt -j$NUM_PROC
+}
+
+####################################################################################################
 
 
 function print_usage {
@@ -416,11 +446,26 @@ function print_usage {
     echo -e "|     ./lite/tools/build_linux.sh --arch=armv8 --with_kunlunxin_xpu=ON                                                                                 |"
     echo -e "|     --with_kunlunxin_xpu: (OFF|ON); controls whether to compile lib for kunlunxin_xpu, default is OFF.                                               |"
     echo -e "|     --kunlunxin_xpu_sdk_url: (kunlunxin_xpu sdk download url) optional, default is                                                                   |"
-    echo -e "|             'https://baidu-kunlun-product.cdn.bcebos.com/KL-SDK/klsdk-dev_paddle'                                                                    |"
+    echo -e "|             'https://baidu-kunlun-product.cdn.bcebos.com/KL-SDK/klsdk-dev_paddle'.                                                                   |"
+    echo -e "|             'xdnn' and 'xre' will be download from kunlunxin_xpu_sdk_url, so you don't                                                               |"
+    echo -e "|             need to specify 'kunlunxin_xpu_xdnn_url' or 'kunlunxin_xpu_xre_url' separately.                                                          |"
+    echo -e "|     --kunlunxin_xpu_xdnn_url: (kunlunxin_xpu xdnn download url) optional, default is empty.                                                          |"
+    echo -e "|             It has higher priority than 'kunlunxin_xpu_sdk_url'                                                                                      |"
+    echo -e "|     --kunlunxin_xpu_xre_url: (kunlunxin_xpu xre download url) optional, default is empty.                                                            |"
+    echo -e "|             It has higher priority than 'kunlunxin_xpu_sdk_url'                                                                                      |"
     echo -e "|     --kunlunxin_xpu_sdk_env: (bdcentos_x86_64|centos7_x86_64|ubuntu_x86_64|kylin_aarch64) optional,                                                  |"
     echo -e "|             default is bdcentos_x86_64(if x86) / kylin_aarch64(if arm)                                                                               |"
     echo -e "|     --kunlunxin_xpu_sdk_root: (path to kunlunxin_xpu DDK file) optional, default is None                                                             |"
     echo -e "|  detailed information about Paddle-Lite KUNLUNXIN XPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/kunlunxin_xpu.html                  |"
+    echo -e "|                                                                                                                                                      |"
+    echo -e "|  arguments of kunlunxin xpu-xft library compiling:                                                                                                   |"
+    echo -e "|     --with_kunlunxin_xft: (OFF|ON); controls whether to enable xpu-xft lib for kunlunxin_xpu, default is OFF.                                        |"
+    echo -e "|     --kunlunxin_xft_env: (bdcentos6u3_x86_64_gcc82|bdcentos7u5_x86_64_gcc82|ubuntu1604_x86_64)                                                       |"
+    echo -e "|             'mandatory if --with_kunlunxin_xft=ON and --kunlunxin_xft_url is not empty                                                               |"
+    echo -e "|     --kunlunxin_xft_url: (kunlunxinj_xft sdk download url) optional, default is                                                                      |"
+    echo -e "|             'https://klx-sdk-release-public.su.bcebos.com/xft/dev/latest/'.                                                                          |"
+    echo -e "|     --kunlunxin_xft_root: (path to kunlunxin_xft file) optional, default is None                                                                     |"
+    echo -e "|             'if --kunlunxin_xft_root is not empty, we omit --kunlunxin_xft_url and --kunlunxin_xft_env'                                              |"
     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
@@ -576,6 +621,14 @@ function main {
                 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="${i#*=}"
                 shift
                 ;;
+            --nnadapter_with_eeasytech_npu=*)
+                NNADAPTER_WITH_EEASYTECH_NPU="${i#*=}"
+                shift
+                ;;
+            --nnadapter_eeasytech_npu_sdk_root=*)
+                NNADAPTER_EEASYTECH_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
             --nnadapter_with_fake_device=*)
                 NNADAPTER_WITH_FAKE_DEVICE="${i#*=}"
                 shift
@@ -594,6 +647,18 @@ function main {
                 ;;
             --nnadapter_nvidia_tensorrt_root=*)
                 NNADAPTER_NVIDIA_TENSORRT_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_qualcomm_qnn=*)
+                NNADAPTER_WITH_QUALCOMM_QNN="${i#*=}"
+                shift
+                ;;
+            --nnadapter_qualcomm_qnn_sdk_root=*)
+                NNADAPTER_QUALCOMM_QNN_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_qualcomm_hexagon_sdk_root=*)
+                NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             --nnadapter_with_kunlunxin_xtcl=*)
@@ -619,6 +684,10 @@ function main {
                 ;;
             --nnadapter_intel_openvino_sdk_root=*)
                 NNADAPTER_INTEL_OPENVINO_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_intel_openvino_sdk_version=*)
+                NNADAPTER_INTEL_OPENVINO_SDK_VERSION="${i#*=}"
                 shift
                 ;;
             --nnadapter_with_google_xnnpack=*)
@@ -657,6 +726,14 @@ function main {
                 KUNLUNXIN_XPU_SDK_URL="${i#*=}"
                 shift
                 ;;
+            --kunlunxin_xpu_xdnn_url=*)
+                KUNLUNXIN_XPU_XDNN_URL="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xpu_xre_url=*)
+                KUNLUNXIN_XPU_XRE_URL="${i#*=}"
+                shift
+                ;;
             --kunlunxin_xpu_sdk_env=*)
                 KUNLUNXIN_XPU_SDK_ENV="${i#*=}"
                 shift
@@ -668,18 +745,33 @@ function main {
                 fi
                 shift
                 ;;
-            # compiling lib which can operate on intel fpga.
-            --with_intel_fpga=*)
-                WITH_INTEL_FPGA="${i#*=}"
+            # compiling lib which can operate on kunlunxin-xft .
+            --with_kunlunxin_xft=*)
+                WITH_KUNLUNXIN_XFT="${i#*=}"
                 shift
                 ;;
-            --intel_fpga_sdk_root=*)
-                INTEL_FPGA_SDK_ROOT="${i#*=}"
+            --kunlunxin_xft_env=*)
+                KUNLUNXIN_XFT_ENV="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xft_url=*)
+                KUNLUNXIN_XFT_URL="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xft_root=*)
+                KUNLUNXIN_XFT_ROOT="${i#*=}"
+                if [ -n "${KUNLUNXIN_XFT_ROOT}" ]; then
+                    KUNLUNXIN_XFT_ROOT=$(readlink -f ${KUNLUNXIN_XFT_ROOT})
+                fi
                 shift
                 ;;
             # controls whether to include FP16 kernels, default is OFF
             --with_arm82_fp16=*)
                 BUILD_ARM82_FP16="${i#*=}"
+                shift
+                ;;
+            --with_arm_dotprod=*)
+                WITH_ARM_DOTPROD="${i#*=}"
                 shift
                 ;;
             --with_profile=*)
@@ -704,6 +796,11 @@ function main {
             full_publish)
                 WITH_TINY_PUBLISH=OFF
                 make_publish_so
+                exit 0
+                ;;
+            # compile opt
+            build_optimize_tool)
+                build_opt
                 exit 0
                 ;;
             # print help info

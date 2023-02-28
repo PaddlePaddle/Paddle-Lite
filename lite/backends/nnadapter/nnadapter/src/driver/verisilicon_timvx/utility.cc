@@ -168,7 +168,6 @@ std::shared_ptr<tim::vx::Tensor> CreateTimVXTensor(
       quantization.SetType(tim::vx::QuantType::SYMMETRIC_PER_CHANNEL);
       quantization.SetChannelDim(quant_channel_dim);
     } else {
-      NNADAPTER_CHECK_LT(quant_channel_dim, 0);
       quantization.SetType(tim::vx::QuantType::ASYMMETRIC);
     }
     quantization.SetScales(
@@ -229,6 +228,8 @@ std::shared_ptr<tim::vx::Tensor> CreateTimVXTensor(
       quant_scale_count = 1;
       break;
     case NNADAPTER_FLOAT32:
+    case NNADAPTER_INT32:
+    case NNADAPTER_BOOL8:
       break;
     default:
       NNADAPTER_LOG(FATAL) << "Can't add a tim::vx::Tensor with precision="

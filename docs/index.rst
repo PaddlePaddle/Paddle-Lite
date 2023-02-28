@@ -60,6 +60,7 @@ Welcome to Paddle-Lite's documentation!
   user_guides/quant_aware
   user_guides/model_visualization
   user_guides/profiler
+  user_guides/sparse
 
 .. toctree::
   :maxdepth: 1
@@ -73,19 +74,18 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/x86
   demo_guides/opencl
   demo_guides/metal
-  demo_guides/fpga
   demo_guides/huawei_kirin_npu
   demo_guides/huawei_ascend_npu
-  demo_guides/baidu_xpu
-  demo_guides/rockchip_npu
-  demo_guides/amlogic_npu
+  demo_guides/kunlunxin_xpu
+  demo_guides/kunlunxin_xtcl
+  demo_guides/qualcomm_qnn
+  demo_guides/cambricon_mlu
   demo_guides/verisilicon_timvx
+  demo_guides/android_nnapi
   demo_guides/mediatek_apu
   demo_guides/imagination_nna
-  demo_guides/bitmain
-  demo_guides/intel_fpga
   demo_guides/intel_openvino
-  demo_guides/nvidia_tensorrt
+  demo_guides/eeasytech_npu
 
 .. toctree::
   :maxdepth: 1

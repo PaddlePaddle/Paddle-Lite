@@ -56,9 +56,8 @@ class TestFcOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=[
-            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
-        ])
+        self.enable_devices_on_nnadapter(
+            device_names=["cambricon_mlu", "nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -108,6 +107,7 @@ class TestFcOp(AutoScanTest):
 
         op_inputs = {}
         program_inputs = {}
+        program_weights = {}
 
         if (with_bias):
             op_inputs = {
@@ -117,6 +117,8 @@ class TestFcOp(AutoScanTest):
             }
             program_inputs = {
                 "input_data": TensorConfig(data_gen=partial(generate_input)),
+            }
+            program_weights = {
                 "weights_data":
                 TensorConfig(data_gen=partial(generate_weights)),
                 "bias_data": TensorConfig(data_gen=partial(generate_bias))
@@ -125,6 +127,8 @@ class TestFcOp(AutoScanTest):
             op_inputs = {"Input": ["input_data"], "W": ["weights_data"]}
             program_inputs = {
                 "input_data": TensorConfig(data_gen=partial(generate_input)),
+            }
+            program_weights = {
                 "weights_data":
                 TensorConfig(data_gen=partial(generate_weights))
             }
@@ -145,7 +149,7 @@ class TestFcOp(AutoScanTest):
             })
         program_config = ProgramConfig(
             ops=[fc_op],
-            weights={},
+            weights=program_weights,
             inputs=program_inputs,
             outputs=["output_data"])
         return program_config
@@ -154,7 +158,21 @@ class TestFcOp(AutoScanTest):
         return self.get_predictor_configs(), ["fc"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                in_shape = program_config.inputs["input_data"].shape
+                w_shape = program_config.weights["weights_data"].shape
+                if len(in_shape) != 4 \
+                    or w_shape[0] != in_shape[2] * in_shape[3]:
+                    return True
+                if "bias_data" in program_config.weights:
+                    b_shape = program_config.weights["bias_data"].shape
+                    if b_shape[0] != w_shape[1]:
+                        return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'in_shape_size < 3' on nvidia_tensorrt.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

@@ -87,7 +87,7 @@ class PatternMatcher {
     bool MatchAllConditions(const Node* node) const;
     // Utility conditions
     Pattern* IsOperand();
-    Pattern* IsOperation(NNAdapterOperationType type);
+    Pattern* IsOperation(NNAdapterOperationType type = NNADAPTER_UNKNOWN);
     Pattern* IsConstantOperand();
     Pattern* IsVariableOperand();
     Pattern* IsConstantCopyOperand();
@@ -98,6 +98,12 @@ class PatternMatcher {
                                      int index = -1);
     Pattern* IsOperationOutputOperand(NNAdapterOperationType type,
                                       int index = -1);
+    Pattern* IsModelInputOperand();
+    Pattern* IsModelOutputOperand();
+    Pattern* IsNotModelInputOperand();
+    Pattern* IsNotModelOutputOperand();
+    Pattern* CheckInputCount(int num);
+    Pattern* CheckOutputCount(int num);
     // Mark the pattern matched node to be deleted, so its inlinks and outlinks
     // should be inside a matched subgraph.
     Pattern* IsIntermediate();
@@ -122,8 +128,11 @@ class PatternMatcher {
                          NNAdapterOperationType type = NNADAPTER_UNKNOWN);
 
  protected:
-  virtual void InsertNewNode(core::Model* model,
-                             const std::map<std::string, Node*>& nodes) = 0;
+  // Handling the matched subgraphs, such as inserting a new operation and some
+  // operands, then delete the intermediate operand and operations if returns
+  // true, otherwise ignore it.
+  virtual bool HandleMatchedResults(
+      core::Model* model, const std::map<std::string, Node*>& nodes) = 0;
   // Convert the operands and operations of the core::Model to the nodes with
   // inlinks and outlinks
   void BuildNodes(core::Model* model, std::list<Node>* nodes);

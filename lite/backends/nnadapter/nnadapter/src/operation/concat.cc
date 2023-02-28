@@ -27,7 +27,66 @@ namespace nnadapter {
 namespace operation {
 
 NNADAPTER_EXPORT bool ValidateConcat(const core::Operation* operation) {
-  return false;
+  return true;
+}
+
+NNADAPTER_EXPORT int ExecuteConcat(core::Operation* operation) {
+  CONCAT_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Allocate and calculate the output operands
+  int status = -1;
+  auto output_buffer = AllocateOperand(output_operand);
+  auto input_precision = input_operands[0]->type.precision;
+  std::vector<std::vector<int32_t>> input_shapes;
+  for (int i = 0; i < input_count - 1; i++) {
+    auto in_dims = input_operands[i]->type.dimensions.data;
+    auto in_dims_count = input_operands[i]->type.dimensions.count;
+    input_shapes.push_back(
+        std::vector<int32_t>(in_dims, in_dims + in_dims_count));
+  }
+  switch (input_precision) {
+    case NNADAPTER_INT32: {
+      std::vector<int32_t*> input_datas;
+      for (int i = 0; i < input_count - 1; i++) {
+        input_datas.push_back(
+            reinterpret_cast<int32_t*>(input_operands[i]->buffer));
+      }
+      status = math::concat(input_datas,
+                            input_shapes,
+                            axis,
+                            reinterpret_cast<int32_t*>(output_buffer));
+    } break;
+    case NNADAPTER_FLOAT32: {
+      std::vector<float*> input_datas;
+      for (int i = 0; i < input_count - 1; i++) {
+        input_datas.push_back(
+            reinterpret_cast<float*>(input_operands[i]->buffer));
+      }
+      status = math::concat(input_datas,
+                            input_shapes,
+                            axis,
+                            reinterpret_cast<float*>(output_buffer));
+    } break;
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER: {
+      std::vector<int8_t*> input_datas;
+      for (int i = 0; i < input_count - 1; i++) {
+        input_datas.push_back(
+            reinterpret_cast<int8_t*>(input_operands[i]->buffer));
+      }
+      status = math::concat(input_datas,
+                            input_shapes,
+                            axis,
+                            reinterpret_cast<int8_t*>(output_buffer));
+    } break;
+    default:
+      NNADAPTER_LOG(FATAL) << "Unsupported precision code("
+                           << OperandPrecisionCodeToString(input_precision)
+                           << ") for " << OperationTypeToString(operation->type)
+                           << " is found!";
+      break;
+  }
+  NNADAPTER_CHECK_EQ(status, 0);
+  return NNADAPTER_NO_ERROR;
 }
 
 NNADAPTER_EXPORT int PrepareConcat(core::Operation* operation) {
@@ -135,12 +194,22 @@ NNADAPTER_EXPORT int PrepareConcat(core::Operation* operation) {
     output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
     SetTemporaryShape(output_operand, dimension_type);
   }
+
+  // Check if inputs are all constant.
+  bool all_input_constant = true;
+  for (int i = 0; i < input_count - 1; i++) {
+    if (!IsConstantOperand(input_operands[i])) {
+      all_input_constant = false;
+      break;
+    }
+  }
+  if (all_input_constant) {
+    ExecuteConcat(operation);
+    output_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+  }
+
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
-}
-
-NNADAPTER_EXPORT int ExecuteConcat(core::Operation* operation) {
-  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

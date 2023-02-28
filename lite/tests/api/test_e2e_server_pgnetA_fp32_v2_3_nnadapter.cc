@@ -45,6 +45,14 @@ TEST(e2e_server_pgnetA, test_e2e_server_pgnetA_fp32_v2_3_nnadapter) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  nnadapter_device_names.emplace_back("intel_openvino");
+// TODO(hong19860320) Fix core dump
+// 1. error info: A single op (1b22a00000017) requires 0x404800 bytes of TCM,
+// which is greater than the TCM size of 0x400000!
+// 2. Shape may be too large?
+// #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+//   nnadapter_device_names.emplace_back("qualcomm_qnn");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

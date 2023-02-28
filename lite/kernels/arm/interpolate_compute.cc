@@ -47,6 +47,21 @@ namespace arm {
       align_mode, interp_method, scale_v
 
 template <>
+void LinearInterpCompute<PRECISION(kFloat)>::Run() {
+  INIT_PARAM("Linear")
+  lite::arm::math::interpolate_linear(X,
+                                      OutSize,
+                                      SizeTensor,
+                                      Scale,
+                                      Out,
+                                      out_w,
+                                      scale,
+                                      align_corners,
+                                      align_mode,
+                                      param.data_layout);
+}
+
+template <>
 void BilinearInterpCompute<PRECISION(kFloat)>::Run() {
   INIT_PARAM("Bilinear")
   lite::arm::math::interpolate(INTERP_PARAM);
@@ -146,12 +161,25 @@ typedef paddle::lite::kernels::arm::BilinearInterpCompute<PRECISION(kFloat)>
     bilinear_interp_fp32;
 typedef paddle::lite::kernels::arm::NearestInterpCompute<PRECISION(kFloat)>
     nearest_interp_fp32;
+typedef paddle::lite::kernels::arm::LinearInterpCompute<PRECISION(kFloat)>
+    linear_interp_fp32;
 
 typedef paddle::lite::kernels::arm::NearestInterpComputeV2<PRECISION(kFloat)>
     nearest_interp_v2_fp32;
 
 REGISTER_LITE_KERNEL(
     bilinear_interp, kARM, kFloat, kNCHW, bilinear_interp_fp32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    linear_interp, kARM, kFloat, kNCHW, linear_interp_fp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
@@ -174,6 +202,17 @@ REGISTER_LITE_KERNEL(
 
 REGISTER_LITE_KERNEL(
     bilinear_interp_v2, kARM, kFloat, kNCHW, bilinear_interp_fp32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    linear_interp_v2, kARM, kFloat, kNCHW, linear_interp_fp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})

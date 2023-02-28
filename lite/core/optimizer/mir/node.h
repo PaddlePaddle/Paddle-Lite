@@ -166,11 +166,15 @@ class Node {
   bool IsStmt() const { return role_ == Role::kStmt; }
   bool IsArg() const { return role_ == Role::kArg; }
 
+  void set_id(int id) { id_ = id; }
+  int get_id() { return id_; }
+
  private:
   // Either stmt_ or argument_ is used.
   std::unique_ptr<Stmt> stmt_;
   std::unique_ptr<Arg> arg_;
   Role role_{Role::kUnk};
+  int id_;
 };
 }  // namespace mir
 }  // namespace lite

@@ -39,7 +39,7 @@ inline xdnn::Activation_t GetActType(const std::string& act_type) {
 }
 
 void GRUCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   auto weight = param.weight;
   auto weight_ptr = weight->data<float>();
   auto weight_dims = weight->dims();
@@ -56,15 +56,18 @@ void GRUCompute::PrepareForRun() {
       paddle::lite::xpu::math::FindMaxAbs(weight_s1_ptr, weight_s1_len);
   weight_s2_abs_max_ =
       paddle::lite::xpu::math::FindMaxAbs(weight_s2_ptr, weight_s2_len);
-  std::vector<float> weight_max_vector(8);
-  for (int i = 0; i < 4; i++) {
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
+  std::vector<float> weight_max_vector(max_ptr_size * 2);
+  for (int i = 0; i < max_ptr_size; i++) {
     weight_max_vector[i] = weight_s1_abs_max_;
-    weight_max_vector[i + 4] = weight_s2_abs_max_;
+    weight_max_vector[i + max_ptr_size] = weight_s2_abs_max_;
   }
-  weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(8 * sizeof(float));
+  weight_max_guard_ =
+      TargetWrapperXPU::MallocScratchPad(max_ptr_size * 2 * sizeof(float));
   XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(weight_max_guard_->addr_),
                       weight_max_vector.data(),
-                      8 * sizeof(float),
+                      max_ptr_size * 2 * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   // quant
   quant_weight_guard_ =
@@ -87,7 +90,7 @@ void GRUCompute::PrepareForRun() {
 }
 
 void GRUCompute::Run() {
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = *param_.get_mutable<operators::GRUParam>();
 
   bool origin_mode = param.origin_mode;

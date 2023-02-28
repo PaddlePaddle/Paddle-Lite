@@ -18,7 +18,12 @@
 #include "driver/huawei_ascend_npu/optimizer/fix_no_inputs_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_quantized_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_reduce_ops_scalar_output.h"
+#include "optimizer/fuse_conv2d_activation_into_conv2d.h"
+#include "optimizer/fuse_conv2d_add_into_conv2d.h"
+#include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
+#include "optimizer/fuse_matmul_dequant_add_into_fully_connected_dequant.h"
+#include "optimizer/fuse_reshape_transpose_reshape_into_channel_shuffle.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -227,7 +232,12 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FixMultipleOutputsOps(model);
     FixNoInputsOps(model);
     FixReduceOpsScalarOutput(model);
-    FuseMatMulAddIntoFullyConnected(model);
+    FuseConv2DBatchNormIntoConv2D(model);
+    FuseConv2DAddIntoConv2D(model);
+    FuseConv2DActivationIntoConv2D(model);
+    FuseMatMulDequantAddIntoFullyConnectedDequant(model);
+    FuseMatMulAddIntoFullyConnected(model, true);
+    FuseReshapeTransposeReshapeIntoChannelShuffle(model);
     FixQuantizedOps(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph
@@ -354,7 +364,7 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
     // Get actual type
     auto& arg = input_arguments[i];
     NNAdapterOperandType type;
-    arg.access(arg.memory, &type);
+    arg.access(arg.memory, &type, nullptr);
     // Check dimensions count
     uint32_t count = type.dimensions.count;
     int32_t* data = type.dimensions.data;

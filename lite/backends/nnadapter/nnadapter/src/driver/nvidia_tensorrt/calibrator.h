@@ -27,12 +27,15 @@ class Int8EntropyCalibrator : public nvinfer1::IInt8EntropyCalibrator2 {
   Int8EntropyCalibrator(int batch_size,
                         std::string dataset_path,
                         std::string table_path);
-  virtual ~Int8EntropyCalibrator() {}
+  virtual ~Int8EntropyCalibrator() TRT_NOEXCEPT {}
 
-  int getBatchSize() const override { return batch_size_; }
-  bool getBatch(void* bindings[], const char* names[], int nbBindings) override;
-  const void* readCalibrationCache(size_t& length) override;
-  void writeCalibrationCache(const void* cache, size_t length) override;
+  int getBatchSize() const TRT_NOEXCEPT override { return batch_size_; }
+  bool getBatch(void* bindings[],
+                const char* names[],
+                int nb_bindings) TRT_NOEXCEPT override;
+  const void* readCalibrationCache(size_t& length) TRT_NOEXCEPT override;
+  void writeCalibrationCache(const void* cache,
+                             size_t length) TRT_NOEXCEPT override;
 
  private:
   int batch_size_{1};

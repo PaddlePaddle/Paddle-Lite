@@ -85,28 +85,58 @@ int ConvertFillConstantBatchSizeLike(Converter* converter,
       converter->AddInputOperand(scope, input_name, {}, input_scales);
   uint32_t input_rank =
       converter->GetOperandType(input_operand)->dimensions.count;
+  std::vector<int64_t> out_shape;
+  int32_t shape_count = 1;
+  shape[output_dim_idx] = 1;
+  for (size_t i = 0; i < shape_size; i++) {
+    out_shape.push_back(shape[i]);
+    shape_count *= shape[i];
+  }
+  // Dummy input operand for Elementwise add operation
+  NNAdapterOperand* dummy_input_operand = nullptr;
   // Value operand
   float zero_value = 0.0f;
   NNAdapterOperand* zero_value_operand = nullptr;
   switch (dtype) {
     case static_cast<int32_t>(lite::core::FluidType::FP32):
       zero_value_operand = converter->AddConstantOperand(zero_value);
+      dummy_input_operand = converter->AddConstantOperand(
+          std::vector<float>(shape_count, value), DDim(out_shape), out_scales);
       break;
     case static_cast<int32_t>(lite::core::FluidType::INT8):
       zero_value_operand = converter->AddConstantOperand(
           static_cast<int8_t>(zero_value), out_scales);
+      dummy_input_operand = converter->AddConstantOperand(
+          std::vector<int8_t>(shape_count, static_cast<int8_t>(value)),
+          DDim(out_shape),
+          out_scales);
       break;
     case static_cast<int32_t>(lite::core::FluidType::INT32):
       zero_value_operand =
           converter->AddConstantOperand(static_cast<int32_t>(zero_value));
+      dummy_input_operand = converter->AddConstantOperand(
+          std::vector<int32_t>(shape_count, static_cast<int32_t>(value)),
+          DDim(out_shape),
+          out_scales);
       break;
     case static_cast<int32_t>(lite::core::FluidType::INT64):
       zero_value_operand =
           converter->AddConstantOperand(static_cast<int64_t>(zero_value));
+      dummy_input_operand = converter->AddConstantOperand(
+          std::vector<int64_t>(shape_count, static_cast<int64_t>(value)),
+          DDim(out_shape),
+          out_scales);
       break;
     case static_cast<int32_t>(lite::core::FluidType::BOOL):
       zero_value_operand =
           converter->AddConstantOperand(static_cast<bool>(zero_value));
+      dummy_input_operand = converter->AddConstantOperand(
+          reinterpret_cast<bool*>(
+              std::vector<int8_t>(shape_count, static_cast<int8_t>(value))
+                  .data()),
+          DDim(out_shape),
+          true,
+          out_scales);
       break;
     default:
       LOG(FATAL) << "Not supported dtype: " << dtype;
@@ -144,18 +174,8 @@ int ConvertFillConstantBatchSizeLike(Converter* converter,
   converter->AddOperation(NNADAPTER_RESHAPE,
                           {slice_out_operand, input_shape_operand},
                           {reshape_output_operand});
-  // Elementwise add operation
-  std::vector<int64_t> out_shape;
-  int32_t shape_count = 1;
-  shape[output_dim_idx] = 1;
-  for (size_t i = 0; i < shape_size; i++) {
-    out_shape.push_back(shape[i]);
-    shape_count *= shape[i];
-  }
   auto fuse_code_operand =
       converter->AddConstantOperand(static_cast<int32_t>(NNADAPTER_FUSED_NONE));
-  auto dummy_input_operand = converter->AddConstantOperand(
-      std::vector<float>(shape_count, value), DDim(out_shape), out_scales);
   auto dummy_output_operand = converter->AddOutputOperand(out_name, out_scales);
   converter->AddOperation(
       NNADAPTER_ADD,

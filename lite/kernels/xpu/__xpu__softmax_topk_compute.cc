@@ -23,14 +23,14 @@ namespace kernels {
 namespace xpu {
 
 void SoftmaxTopkCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   indices_xpu_guard_ =
       TargetWrapperXPU::MallocScratchPad(param.indices->numel() * sizeof(int));
 }
 
 void SoftmaxTopkCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int K = param.K;
   std::vector<int> xdims;

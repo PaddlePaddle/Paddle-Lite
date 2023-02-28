@@ -25,10 +25,14 @@ class Execution {
   explicit Execution(Compilation* compilation) : compilation_(compilation) {}
   int SetInput(int32_t index,
                void* memory,
-               void* (*access)(void* memory, NNAdapterOperandType* type));
+               void* (*access)(void* memory,
+                               NNAdapterOperandType* type,
+                               void* device_buffer));
   int SetOutput(int32_t index,
                 void* memory,
-                void* (*access)(void* memory, NNAdapterOperandType* type));
+                void* (*access)(void* memory,
+                                NNAdapterOperandType* type,
+                                void* device_buffer));
   int Compute();
 
  private:

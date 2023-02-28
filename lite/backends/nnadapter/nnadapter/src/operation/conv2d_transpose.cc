@@ -47,6 +47,38 @@ CalcConv2DTransposeOutputSize(int32_t input_size,
          pad_bottom_or_right + dkernel;
 }
 
+NNADAPTER_EXPORT void GetConv2DTransposeFilterDims(
+    const core::Operand* filter_operand,
+    int32_t* c_out,
+    int32_t* c_in,
+    int32_t* h,
+    int32_t* w) {
+  auto filter_layout = filter_operand->type.layout;
+  switch (filter_layout) {
+    case NNADAPTER_NCHW:
+      *c_out = filter_operand->type.dimensions.data[1];
+      *c_in = filter_operand->type.dimensions.data[0];
+      *h = filter_operand->type.dimensions.data[2];
+      *w = filter_operand->type.dimensions.data[3];
+      break;
+    case NNADAPTER_NHWC:
+      *c_out = filter_operand->type.dimensions.data[0];
+      *c_in = filter_operand->type.dimensions.data[3];
+      *h = filter_operand->type.dimensions.data[1];
+      *w = filter_operand->type.dimensions.data[2];
+      break;
+    case NNADAPTER_HWNC:
+      *c_out = filter_operand->type.dimensions.data[3];
+      *c_in = filter_operand->type.dimensions.data[2];
+      *h = filter_operand->type.dimensions.data[0];
+      *w = filter_operand->type.dimensions.data[1];
+      break;
+    default:
+      NNADAPTER_LOG(FATAL) << "Not support datalayout: "
+                           << static_cast<int>(filter_layout);
+  }
+}
+
 NNADAPTER_EXPORT bool ValidateConv2DTranspose(
     const core::Operation* operation) {
   return false;
@@ -60,7 +92,7 @@ NNADAPTER_EXPORT int PrepareConv2DTranspose(core::Operation* operation) {
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions) {
     output_dimensions[0] = input_dimensions[0];
-    output_dimensions[1] = output_channel_size;
+    output_dimensions[1] = group * output_channel_size;
     if (output_shape_height != -1) {
       output_dimensions[2] = output_shape_height;
     } else {

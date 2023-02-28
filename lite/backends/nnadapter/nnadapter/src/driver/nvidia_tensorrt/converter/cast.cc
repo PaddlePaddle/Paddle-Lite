@@ -31,22 +31,10 @@ int ConvertCast(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto input_precision = input_operand->type.precision;
-  std::vector<nvinfer1::ITensor*> tensors{input_tensor};
-  nvinfer1::IPluginV2Layer* cast_layer = nullptr;
-  if (IsOperandWithDynamicShape(input_operand)) {
-    CastPluginDynamic cast_plugin_dynamic(ConvertToNVDataType(input_precision),
-                                          ConvertToNVDataType(dtype));
-    cast_layer = converter->network()->addPluginV2(
-        tensors.data(), 1, cast_plugin_dynamic);
-  } else {
-    CastPlugin cast_plugin(ConvertToNVDataType(input_precision),
-                           ConvertToNVDataType(dtype));
-    cast_layer =
-        converter->network()->addPluginV2(tensors.data(), 1, cast_plugin);
-  }
+  auto cast_layer = converter->network()->addIdentity(*input_tensor);
   NNADAPTER_CHECK(cast_layer);
   auto output_tensor = cast_layer->getOutput(0);
+  output_tensor->setType(ConvertToNVDataType(output_operand->type.precision));
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }

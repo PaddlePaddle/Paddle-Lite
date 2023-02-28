@@ -29,7 +29,7 @@ FillPluginDynamic::FillPluginDynamic(const void* serial_data,
   Deserialize(&serial_data, &serial_length, &shape_);
 }
 
-nvinfer1::IPluginV2DynamicExt* FillPluginDynamic::clone() const noexcept {
+nvinfer1::IPluginV2DynamicExt* FillPluginDynamic::clone() const TRT_NOEXCEPT {
   return new FillPluginDynamic(value_, is_value_tensor_, shape_);
 }
 
@@ -37,7 +37,7 @@ nvinfer1::DimsExprs FillPluginDynamic::getOutputDimensions(
     int32_t output_index,
     const nvinfer1::DimsExprs* inputs,
     int32_t nb_inputs,
-    nvinfer1::IExprBuilder& expr_builder) noexcept {
+    nvinfer1::IExprBuilder& expr_builder) TRT_NOEXCEPT {
   NNADAPTER_CHECK_EQ(output_index, 0);
   NNADAPTER_CHECK(inputs);
   NNADAPTER_CHECK_GE(nb_inputs, 1);
@@ -68,10 +68,10 @@ __global__ void fill_kernel_value_tensor(int n, T* output, const T* value) {
 int32_t FillPluginDynamic::enqueue(
     const nvinfer1::PluginTensorDesc* input_desc,
     const nvinfer1::PluginTensorDesc* output_desc,
-    const void* const* inputs,
+    void const* const* inputs,
     void* const* outputs,
     void* workspace,
-    cudaStream_t stream) noexcept {
+    cudaStream_t stream) TRT_NOEXCEPT {
   auto output_dims = output_desc[0].dims;
   int num = 1;
   for (int i = 0; i < output_dims.nbDims; i++) {
@@ -92,12 +92,12 @@ int32_t FillPluginDynamic::enqueue(
   return 0;
 }
 
-size_t FillPluginDynamic::getSerializationSize() const noexcept {
+size_t FillPluginDynamic::getSerializationSize() const TRT_NOEXCEPT {
   return SerializedSize(value_) + SerializedSize(is_value_tensor_) +
          SerializedSize(shape_);
 }
 
-void FillPluginDynamic::serialize(void* buffer) const noexcept {
+void FillPluginDynamic::serialize(void* buffer) const TRT_NOEXCEPT {
   Serialize(&buffer, value_);
   Serialize(&buffer, is_value_tensor_);
   Serialize(&buffer, shape_);
@@ -107,7 +107,7 @@ bool FillPluginDynamic::supportsFormatCombination(
     int32_t pos,
     const nvinfer1::PluginTensorDesc* in_out,
     int32_t nb_inputs,
-    int32_t nb_outputs) noexcept {
+    int32_t nb_outputs) TRT_NOEXCEPT {
   NNADAPTER_CHECK_LT(pos, nb_inputs + nb_outputs);
   NNADAPTER_CHECK(in_out);
   return true;

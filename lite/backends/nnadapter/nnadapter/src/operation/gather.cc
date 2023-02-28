@@ -14,7 +14,9 @@
 
 #include "operation/gather.h"
 #include "core/types.h"
+#include "operation/math/gather.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
@@ -24,7 +26,7 @@ namespace nnadapter {
 namespace operation {
 
 NNADAPTER_EXPORT bool ValidateGather(const core::Operation* operation) {
-  return false;
+  return true;
 }
 
 NNADAPTER_EXPORT int PrepareGather(core::Operation* operation) {
@@ -56,12 +58,86 @@ NNADAPTER_EXPORT int PrepareGather(core::Operation* operation) {
                        ids_dims.dynamic_data[i],
                        out_dims.dynamic_data[i]);
   }
+
+  if (IsTemporaryShapeOperand(input_operand) &&
+      IsConstantOperand(indices_operand)) {
+    auto indices = reinterpret_cast<int32_t*>(indices_operand->buffer);
+    auto indices_count =
+        indices_operand->length / static_cast<uint32_t>(sizeof(int32_t));
+    output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
+    auto& temporary_shape = *(GetTemporaryShape(input_operand));
+    NNADAPTER_CHECK(temporary_shape.data);
+    NNADAPTER_CHECK(temporary_shape.data[0]);
+    NNAdapterOperandDimensionType dimension_type;
+    dimension_type.count = output_operand->type.dimensions.data[0];
+    dimension_type.dynamic_count = input_operand->type.dimensions.dynamic_count;
+    math::gather<int32_t>(
+        temporary_shape.data,
+        std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
+        indices,
+        std::vector<int32_t>({static_cast<int32_t>(indices_count)}),
+        axis,
+        dimension_type.data);
+    for (uint32_t i = 0; i < dimension_type.dynamic_count; i++) {
+      math::gather<int32_t>(
+          temporary_shape.dynamic_data[i],
+          std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
+          indices,
+          std::vector<int32_t>({static_cast<int32_t>(indices_count)}),
+          axis,
+          dimension_type.dynamic_data[i]);
+    }
+    SetTemporaryShape(output_operand, dimension_type);
+  }
+
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
 
 NNADAPTER_EXPORT int ExecuteGather(core::Operation* operation) {
-  return NNADAPTER_FEATURE_NOT_SUPPORTED;
+  GATHER_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Allocate and calculate the output operands
+  int status = -1;
+  auto output_buffer = AllocateOperand(output_operand);
+  auto in_dims_data = input_operand->type.dimensions.data;
+  auto in_dims_count = input_operand->type.dimensions.count;
+  std::vector<int32_t> in_dims(in_dims_data, in_dims_data + in_dims_count);
+  auto idx_dims_data = indices_operand->type.dimensions.data;
+  auto idx_dims_count = indices_operand->type.dimensions.count;
+  std::vector<int32_t> idx_dims(idx_dims_data, idx_dims_data + idx_dims_count);
+  auto input_precision = input_operand->type.precision;
+  auto precision_size = GetOperandPrecisionDataLength(input_precision);
+  switch (precision_size) {
+    case 4:
+      if (indices_operand->type.precision == NNADAPTER_INT32) {
+        status =
+            math::gather(reinterpret_cast<float*>(input_operand->buffer),
+                         in_dims,
+                         reinterpret_cast<int32_t*>(indices_operand->buffer),
+                         idx_dims,
+                         axis,
+                         reinterpret_cast<float*>(output_buffer));
+      } else {
+        status =
+            math::gather(reinterpret_cast<float*>(input_operand->buffer),
+                         in_dims,
+                         reinterpret_cast<int64_t*>(indices_operand->buffer),
+                         idx_dims,
+                         axis,
+                         reinterpret_cast<float*>(output_buffer));
+      }
+      break;
+    default:
+      NNADAPTER_LOG(FATAL) << "Unsupported input precision code("
+                           << OperandPrecisionCodeToString(input_precision)
+                           << ") for " << OperationTypeToString(operation->type)
+                           << " is found!";
+      break;
+  }
+
+  NNADAPTER_CHECK_EQ(status, 0);
+  return NNADAPTER_NO_ERROR;
 }
 
 }  // namespace operation

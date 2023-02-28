@@ -29,7 +29,7 @@ const std::vector<std::string> PostQuantDynamicPass::quant_axis1_ops = {
     "fc", "mul", "matmul", "matmul_v2", "lookup_table"};
 
 std::vector<std::string> PostQuantDynamicPass::quant_ops = {
-    "conv2d", "mul", "lookup_table"};
+    "fc", "conv2d", "mul", "matmul", "matmul_v2", "lookup_table"};
 
 static bool abs_compare(float a, float b) {
   return std::fabs(a) < std::fabs(b);
@@ -202,6 +202,9 @@ void PostQuantDynamicPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         auto iter =
             std::find(quant_axis1_ops.begin(), quant_axis1_ops.end(), op_type);
         int quant_axis = iter != quant_axis1_ops.end() ? 1 : 0;
+        if (weight->dims().size() == 1) {
+          quant_axis = 0;
+        }
         PostQuantDynamicPerChannel(
             op_info, weight, weight_name, quant_axis, quant_bits);
       }

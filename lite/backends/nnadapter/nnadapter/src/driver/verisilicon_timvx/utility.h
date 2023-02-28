@@ -26,6 +26,9 @@
 namespace nnadapter {
 namespace verisilicon_timvx {
 
+#define VERISILICON_TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION \
+  "VERISILICON_TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION"
+
 // Convert NNAdapter types to tim-vx types
 tim::vx::DataType ConvertToTimVXDataType(
     NNAdapterOperandPrecisionCode input_precision);

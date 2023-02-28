@@ -20,13 +20,17 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool XPUMultiEncoderOp::CheckShape() const {
-  CHECK_EQ(param_.input->dims().size(), 3UL);
-  return true;
-}
+bool XPUMultiEncoderOp::CheckShape() const { return true; }
 
 bool XPUMultiEncoderOp::InferShapeImpl() const {
   auto input_shape = param_.input->dims();
+  if (input_shape.size() == 2) {
+    // need to insert an sequence_unpad op to enable some vsl pass
+    // the output shape of sequence_unpad is 2dims
+    param_.input->Resize({1ULL, input_shape[0], input_shape[1]});
+  }
+  input_shape = param_.input->dims();
+  CHECK_EQ(input_shape.size(), 3);
   auto batch_size = input_shape[0];
   auto seq_len = input_shape[1];
   auto head_num = input_shape[2];
@@ -58,7 +62,11 @@ bool XPUMultiEncoderOp::InferShapeImpl() const {
       new_dims.ConstructFrom(new_out_shape);
       out_dims = new_dims;
     }
-    param_.output->Resize(out_dims);
+    if (param_.norm_before) {
+      param_.output->Resize({batch_size, 1, head_num});
+    } else {
+      param_.output->Resize(out_dims);
+    }
   } else {
     param_.output->Resize({batch_size, seq_len, head_num});
   }
@@ -67,37 +75,39 @@ bool XPUMultiEncoderOp::InferShapeImpl() const {
 
 bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
                                    lite::Scope* scope) {
-  param_.input = const_cast<lite::Tensor*>(
-      &scope->FindVar(op_desc.Input("Input").front())->Get<lite::Tensor>());
-  param_.fc_weight_max = const_cast<lite::Tensor*>(
-      &scope->FindVar(op_desc.Input("FCWeightMax").front())
-           ->Get<lite::Tensor>());
-  param_.output = scope->FindVar(op_desc.Output("Output").front())
-                      ->GetMutable<lite::Tensor>();
+  param_.input =
+      scope->FindVar(op_desc.Input("Input").front())->GetMutable<Tensor>();
+  param_.output =
+      scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
+  param_.relative_type = op_desc.GetAttr<int>("relative_type");
 
   param_.fc_weight.clear();
   for (auto& name : op_desc.Input("FCWeight")) {
-    auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+    auto t = scope->FindVar(name)->GetMutable<Tensor>();
     param_.fc_weight.push_back(t);
   }
   param_.fc_bias.clear();
   for (auto& name : op_desc.Input("FCBias")) {
-    auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+    auto t = scope->FindVar(name)->GetMutable<Tensor>();
     param_.fc_bias.push_back(t);
   }
   param_.ln_scale.clear();
   for (auto& name : op_desc.Input("LNScale")) {
-    auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+    auto t = scope->FindVar(name)->GetMutable<Tensor>();
     param_.ln_scale.push_back(t);
   }
   param_.ln_bias.clear();
   for (auto& name : op_desc.Input("LNBias")) {
-    auto t =
-        const_cast<lite::Tensor*>(&scope->FindVar(name)->Get<lite::Tensor>());
+    auto t = scope->FindVar(name)->GetMutable<Tensor>();
     param_.ln_bias.push_back(t);
+  }
+  param_.roformer_embedding.clear();
+  if (param_.relative_type == 1) {
+    param_.max_pos_len = op_desc.GetAttr<int>("max_pos_len");
+    for (auto& name : op_desc.Input("RoformerEmbedding")) {
+      auto t = scope->FindMutableTensor(name);
+      param_.roformer_embedding.push_back(t);
+    }
   }
 
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
@@ -107,7 +117,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
     if (arguments.size() > 0) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
-        param_.SeqLod = &(arg_var->Get<lite::Tensor>());
+        param_.SeqLod = &(arg_var->Get<Tensor>());
       }
     }
   }
@@ -117,7 +127,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
     if (arguments.size() > 0) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
-        param_.PadSeqLen = &(arg_var->Get<lite::Tensor>());
+        param_.PadSeqLen = &(arg_var->Get<Tensor>());
       }
     }
   }
@@ -127,7 +137,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
     if (arguments.size() > 0) {
       auto arg_var = scope->FindVar(arguments.front());
       if (arg_var != nullptr) {
-        param_.mask = &(arg_var->Get<lite::Tensor>());
+        param_.mask = &(arg_var->Get<Tensor>());
       }
     }
   }
@@ -135,16 +145,30 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.n_layers = op_desc.GetAttr<int>("n_layers");
   param_.hidden_dim = op_desc.GetAttr<int>("hidden_dim");
   param_.head_num = op_desc.GetAttr<int>("head_num");
+  param_.ffn_hidden_dim_scale = op_desc.GetAttr<int>("ffn_hidden_dim_scale");
   param_.size_per_head = op_desc.GetAttr<int>("size_per_head");
   param_.act_type = op_desc.GetAttr<std::string>("act_type");
   param_.precision = op_desc.GetAttr<std::string>("precision");
   param_.enable_qkv_fusion = op_desc.GetAttr<bool>("enable_qkv_fusion");
   param_.norm_before = op_desc.GetAttr<bool>("norm_before");
   param_.adaptive_seqlen = op_desc.GetAttr<bool>("adaptive_seqlen");
-  if (op_desc.HasAttr("enable_int8") && op_desc.GetAttr<bool>("enable_int8")) {
+  param_.per_channel = op_desc.GetAttr<bool>("per_channel");
+  param_.already_qkv_fusion = op_desc.GetAttr<bool>("already_qkv_fusion");
+  if ((op_desc.HasAttr("enable_int8") &&
+       op_desc.GetAttr<bool>("enable_int8")) ||
+      (op_desc.HasAttr("enable_int16") &&
+       op_desc.GetAttr<bool>("enable_int16"))) {
     param_.input_max = op_desc.GetAttr<std::vector<float>>("FCInputMax");
-    param_.weight_max = op_desc.GetAttr<std::vector<float>>("FCWeightMax");
   }
+  param_.weight_max.clear();
+  for (const auto& weight_max_tensor :
+       op_desc.GetAttr<std::vector<std::string>>("FCWeightMax")) {
+    auto tensor = scope->FindMutableTensor(weight_max_tensor);
+    CHECK(tensor != nullptr);
+    param_.weight_max.push_back(tensor);
+  }
+  param_.quant_types =
+      op_desc.GetAttr<std::vector<std::string>>("FCQuantTypes");
 
   if (op_desc.HasAttr("slice_axes")) {
     param_.slice_axes = op_desc.GetAttr<std::vector<int>>("slice_axes");

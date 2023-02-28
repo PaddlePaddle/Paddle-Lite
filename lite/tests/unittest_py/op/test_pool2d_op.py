@@ -70,9 +70,8 @@ class TestPool2dOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=[
-            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
-        ])
+        self.enable_devices_on_nnadapter(
+            device_names=["cambricon_mlu", "nvidia_tensorrt"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -106,7 +105,6 @@ class TestPool2dOp(AutoScanTest):
         exclusive = draw(st.booleans())
         ceil_mode = draw(st.booleans())
         adaptive = draw(st.booleans())
-        use_cudnn = False
         use_mkldnn = False
         use_quantizer = False
         is_test = True
@@ -134,7 +132,6 @@ class TestPool2dOp(AutoScanTest):
                 "paddings": paddings,
                 "exclusive": exclusive,
                 "adaptive": adaptive,
-                "use_cudnn": use_cudnn,
                 "ceil_mode": ceil_mode,
                 "use_mkldnn": use_mkldnn,
                 "use_quantizer": use_quantizer,
@@ -199,6 +196,17 @@ class TestPool2dOp(AutoScanTest):
         self.add_ignore_check_case(
             teller3, IgnoreReasons.PADDLE_NOT_SUPPORT,
             "Paddle does not support this op in a specific case. We have fedback to the Paddle developer."
+        )
+
+        def teller4(program_config, predictor_config):
+            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
+                if program_config.ops[0].attrs["adaptive"] == True \
+                    or program_config.ops[0].attrs["ceil_mode"] == True:
+                    return True
+
+        self.add_ignore_check_case(
+            teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'adaptive == True' or 'ceil_mode == True' on nvidia_tensorrt."
         )
 
     def test(self, *args, **kwargs):

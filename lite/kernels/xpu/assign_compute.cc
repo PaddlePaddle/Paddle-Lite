@@ -20,9 +20,9 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <class T>
-void AssignCompute<T>::Run() {
-  auto& param = Param<param_t>();
+template <class T, PrecisionType PType>
+void AssignCompute<T, PType>::Run() {
+  auto& param = this->template Param<param_t>();
   CHECK(param.X) << "only support input is tensor";
   if (param.X == param.Out || param.X->numel() == 0) {
     param.Out->set_target(TARGET(kXPU));
@@ -42,12 +42,9 @@ void AssignCompute<T>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(assign,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::AssignCompute<float>,
-                     def)
+using assign_float =
+    paddle::lite::kernels::xpu::AssignCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(assign, kXPU, kFloat, kNCHW, assign_float, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kFloat),
@@ -58,12 +55,22 @@ REGISTER_LITE_KERNEL(assign,
                                        DATALAYOUT(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(assign,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::AssignCompute<int>,
-                     int32)
+using assign_fp16 =
+    paddle::lite::kernels::xpu::AssignCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(assign, kXPU, kFP16, kNCHW, assign_fp16, fp16)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+using assign_int =
+    paddle::lite::kernels::xpu::AssignCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(assign, kXPU, kFloat, kNCHW, assign_int, int32)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kInt32),
@@ -74,12 +81,9 @@ REGISTER_LITE_KERNEL(assign,
                                        DATALAYOUT(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(assign,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::AssignCompute<int64_t>,
-                     int64)
+using assign_int64 =
+    paddle::lite::kernels::xpu::AssignCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(assign, kXPU, kFloat, kNCHW, assign_int64, int64)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kInt64),
@@ -90,12 +94,9 @@ REGISTER_LITE_KERNEL(assign,
                                        DATALAYOUT(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(assign,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::AssignCompute<int8_t>,
-                     bool)
+using assign_int8 =
+    paddle::lite::kernels::xpu::AssignCompute<int8_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(assign, kXPU, kFloat, kNCHW, assign_int8, bool)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kBool),

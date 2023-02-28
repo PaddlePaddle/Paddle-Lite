@@ -19,7 +19,11 @@
 #include "driver/amlogic_npu/converter/converter.h"
 #include "driver/amlogic_npu/optimizer/unpack_op_fusion.h"
 #include "optimizer/convert_quantization_symm_to_asymm.h"
+#include "optimizer/fuse_conv2d_activation_into_conv2d.h"
+#include "optimizer/fuse_conv2d_add_into_conv2d.h"
+#include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
+#include "optimizer/fuse_reshape_transpose_reshape_into_channel_shuffle.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -57,7 +61,11 @@ int Program::Build(core::Model* model, core::Cache* cache) {
 int Program::BuildFromModel(core::Model* model) {
   // Convert the quantization parameters of the operands in the NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
+  FuseConv2DBatchNormIntoConv2D(model);
+  FuseConv2DAddIntoConv2D(model);
+  FuseConv2DActivationIntoConv2D(model);
   FuseMatMulAddIntoFullyConnected(model);
+  FuseReshapeTransposeReshapeIntoChannelShuffle(model);
   UnpackOpFusion(model);
   ConvertQuantizationSymmToAsymm(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
@@ -173,7 +181,7 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
     // Get actual type
     auto& arg = input_arguments[i];
     NNAdapterOperandType type;
-    arg.access(arg.memory, &type);
+    arg.access(arg.memory, &type, nullptr);
     // Check dimensions count
     uint32_t count = type.dimensions.count;
     int32_t* data = type.dimensions.data;
@@ -210,7 +218,7 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
     auto type = input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, &type);
+    auto buffer = arg.access(arg.memory, &type, nullptr);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(type);
     if (IsUInt8AsymmPerLayerQuantType(type.precision)) {
@@ -243,7 +251,7 @@ int Program::Execute(uint32_t input_count,
     // TODO(hong19860320) Get the dimensions of the outputs from amlnpu_ddk
     // according to the dynamic dimensions of the inputs, fill them to 'type'
     // and call the 'access' function to re-allocate the host output memory
-    auto buffer = arg.access(arg.memory, type);
+    auto buffer = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(*type);
     // Initialize the output info for the execution

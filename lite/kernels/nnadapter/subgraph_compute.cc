@@ -57,11 +57,11 @@ REGISTER_LITE_KERNEL(subgraph,
                      paddle::lite::kernels::nnadapter::SubgraphCompute,
                      def)
     .BindInput("Inputs",
-               {LiteType::GetTensorTy(TARGET(kHost),
+               {LiteType::GetTensorTy(TARGET(kAny),
                                       PRECISION(kAny),
                                       DATALAYOUT(kNCHW))})
     .BindOutput("Outputs",
-                {LiteType::GetTensorTy(TARGET(kHost),
+                {LiteType::GetTensorTy(TARGET(kAny),
                                        PRECISION(kAny),
                                        DATALAYOUT(kNCHW))})
     .Finalize();

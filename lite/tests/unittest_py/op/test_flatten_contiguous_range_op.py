@@ -37,7 +37,7 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
             thread=[1, 4])
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(device_names=[
-            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
         ])
 
     def is_program_valid(self,
@@ -77,9 +77,9 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
             if "nvidia_tensorrt" in self.get_nnadapter_device_name():
                 assume(input_type != "int64")
 
-        if self.get_target().upper() == "NNADAPTER":
-            if "nvidia_tensorrt" in self.get_nnadapter_device_name():
-                outputs_ = ["output_data"]
+        if self.get_nnadapter_device_name(
+        ) in ["nvidia_tensorrt", "intel_openvino"]:
+            outputs_ = ["output_data"]
 
         flatten_contiguous_range_op = OpConfig(
             type="flatten_contiguous_range",

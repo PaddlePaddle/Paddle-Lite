@@ -382,9 +382,9 @@ class CxxConfig:
     def set_nnadapter_device_names(self, nnadapter_device_names):
         self.config['nnadapter_device_names'] = nnadapter_device_names
 
-    def set_nnadapter_context_properties(self, nadapter_context_properties):
+    def set_nnadapter_context_properties(self, nnadapter_context_properties):
         self.config[
-            'nadapter_context_properties'] = nadapter_context_properties
+            'nnadapter_context_properties'] = nnadapter_context_properties
 
     def set_nnadapter_model_cache_dir(self, nnadapter_model_cache_dir):
         self.config['nnadapter_model_cache_dir'] = nnadapter_model_cache_dir

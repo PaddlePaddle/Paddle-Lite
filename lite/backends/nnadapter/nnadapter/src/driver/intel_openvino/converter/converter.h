@@ -26,10 +26,11 @@ namespace intel_openvino {
 class Converter {
  public:
   explicit Converter(
-      std::vector<std::shared_ptr<default_opset::Parameter>>* paramter_nodes,
+      std::map<core::Operand*, std::shared_ptr<default_opset::Parameter>>*
+          paramter_node_map,
       std::map<core::Operand*, std::vector<std::shared_ptr<Tensor>>>*
           tensor_map)
-      : parameter_nodes_(paramter_nodes), tensor_map_(tensor_map) {}
+      : parameter_node_map_(paramter_node_map), tensor_map_(tensor_map) {}
 
   ~Converter() {}
 
@@ -45,25 +46,40 @@ class Converter {
 
   std::shared_ptr<Tensor> GetMappedTensor(core::Operand* operand);
 
+  // Convert NNAdapter filter's shape layout to openvino's
+  // layout for conv-like operater.
+  std::shared_ptr<Operator> GetGroupConvFilterShape(
+      std::shared_ptr<Tensor> filter, const int groups);
+
   template <typename T>
   std::shared_ptr<Operator> AddUnsqueezeOperator(
       std::shared_ptr<Tensor> input_tensor, std::vector<T> axes) {
-    auto axes_tensor =
-        AddConstantTensor(std::vector<size_t>({axes.size()}), axes);
+    auto axes_tensor = AddConstantTensor<T>(axes);
     return std::make_shared<default_opset::Unsqueeze>(*input_tensor,
                                                       *axes_tensor);
   }
 
   template <typename T>
-  std::shared_ptr<Tensor> AddConstantTensor(std::vector<size_t> dimensions,
-                                            std::vector<T> values) {
+  std::shared_ptr<Tensor> AddConstantTensor(
+      std::vector<T> values, std::vector<size_t> dimensions = {}) {
+    if (dimensions.empty()) {
+      dimensions = std::vector<size_t>(1, values.size());
+    }
     auto constant_op = std::make_shared<default_opset::Constant>(
         GetElementType<T>(), Shape(dimensions), values);
     return std::make_shared<Tensor>(constant_op->output(0));
   }
 
+  template <typename T>
+  std::shared_ptr<Tensor> AddConstantTensor(T value) {
+    auto constant_op = std::make_shared<default_opset::Constant>(
+        GetElementType<T>(), Shape({}), value);
+    return std::make_shared<Tensor>(constant_op->output(0));
+  }
+
  private:
-  std::vector<std::shared_ptr<default_opset::Parameter>>* parameter_nodes_;
+  std::map<core::Operand*, std::shared_ptr<default_opset::Parameter>>*
+      parameter_node_map_;
   std::map<core::Operand*, std::vector<std::shared_ptr<Tensor>>>* tensor_map_;
 };
 

@@ -59,6 +59,8 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     param_.hard_sigmoid_offset = opdesc.GetAttr<float>("offset");
   } else if (opdesc.Type() == "sigmoid") {
     param_.active_type = lite_api::ActivationType::kSigmoid;
+  } else if (opdesc.Type() == "silu") {
+    param_.active_type = lite_api::ActivationType::kSilu;
   } else if (opdesc.Type() == "tanh") {
     param_.active_type = lite_api::ActivationType::kTanh;
   } else if (opdesc.Type() == "exp") {
@@ -140,3 +142,4 @@ REGISTER_LITE_OP(thresholded_relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(elu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(erf, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(softplus, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(silu, paddle::lite::operators::ActivationOp);

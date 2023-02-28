@@ -25,16 +25,39 @@ namespace fusion {
 
 class XPUFcFuser : public FuseBase {
  public:
-  explicit XPUFcFuser(bool with_bias, const std::string& act_type) {
+  explicit XPUFcFuser(bool with_bias,
+                      const std::string& act_type,
+                      const std::string& mul_type) {
     with_bias_ = with_bias;
     act_type_ = act_type;
+    mul_type_ = mul_type;
   }
 
   void BuildPattern() override {
-    auto* x = VarNode("x")->assert_is_op_input("mul", "X")->AsInput();
-    auto* W = VarNode("W")->assert_is_op_input("mul", "Y")->AsInput();
-    auto* mul = OpNode("mul", "mul")->AsIntermediate();
-    auto* mul_out = VarNode("mul_out")->assert_is_op_output("mul", "Out");
+    auto* x = VarNode("x")->assert_is_op_input(mul_type_, "X")->AsInput();
+    auto* W = VarNode("W")->assert_is_op_input(mul_type_, "Y")->AsInput();
+    // check w.dims() == 2 and x.trans == false.
+    auto mul_input_check = [this](const Node* node) -> bool {
+      auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+      auto mul_input_y_name = op_desc.Input("Y").front();
+      auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
+      auto mul_y_shape = scope->FindMutableTensor(mul_input_y_name)->dims();
+      if (this->mul_type_ == "mul") {
+        return mul_y_shape.size() == 2;
+      }
+      if (this->mul_type_ == "matmul") {
+        return (mul_y_shape.size() == 2 &&
+                !op_desc.GetAttr<bool>("transpose_X"));
+      }
+      if (this->mul_type_ == "matmul_v2") {
+        return (mul_y_shape.size() == 2 && !op_desc.GetAttr<bool>("trans_x"));
+      }
+      return false;
+    };
+    auto* mul = OpNode("mul", mul_type_)
+                    ->AsIntermediate()
+                    ->assert_node_satisfied(mul_input_check);
+    auto* mul_out = VarNode("mul_out")->assert_is_op_output(mul_type_, "Out");
     PMNode* bias = nullptr;
     PMNode* add = nullptr;
     PMNode* add_out = nullptr;
@@ -81,28 +104,6 @@ class XPUFcFuser : public FuseBase {
     op_desc.SetType("__xpu__fc");
     op_desc.SetInput("Input", {matched.at("x")->arg()->name});
     op_desc.SetInput("Filter", {matched.at("W")->arg()->name});
-
-    std::string precision = "int16";
-#ifdef LITE_WITH_XPU
-    if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
-        lite::TargetWrapperXPU::multi_encoder_precision == "int31") {
-      precision = "int31";
-      VLOG(3) << "Use int31 in XPUFcOp";
-    } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
-               lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
-      precision = "int8";
-      if (op_desc.HasAttr("enable_int8") &&
-          op_desc.GetAttr<bool>("enable_int8")) {
-        CHECK(op_desc.HasAttr("X0_scale")) << " quant model fc no X0_scale";
-        CHECK(op_desc.HasAttr("Y0_scale")) << " quant model fc no Y0_scale";
-        VLOG(3) << "Use int8 quant model in XPUFcOp, InputMax:"
-                << 127 * op_desc.GetAttr<std::vector<float>>("X0_scale")[0]
-                << ", WeightMax: "
-                << 127 * op_desc.GetAttr<std::vector<float>>("Y0_scale")[0];
-      }
-      VLOG(3) << "Use int8 in XPUFcOp";
-    }
-#endif
     if (with_bias_) {
       op_desc.SetInput("Bias", {matched.at("bias")->arg()->name});
     }
@@ -118,16 +119,88 @@ class XPUFcFuser : public FuseBase {
       output_name = matched.at("mul_out")->arg()->name;
       output_node_name = "mul_out";
     }
+    bool per_channel = false;
+    int weight_scale_size = 1;
+    auto* op_info = matched.at("mul")->stmt()->op_info();
+    auto mul_input_y_name = op_info->Input("Y").front();
+    auto mul_y_shape = scope->FindMutableTensor(mul_input_y_name)->dims();
+    CHECK_EQ(mul_y_shape.size(), 2) << "mul_y_shape.size: "
+                                    << mul_y_shape.size();
+    const bool quant = op_info->HasAttr("enable_int8") &&
+                       op_info->GetAttr<bool>("enable_int8");
+    op_desc.SetAttr<bool>("enable_int8", quant);
+    // int 8
+    // X0_scale is already in op_desc when copy from mul
+    if (quant) {
+      CHECK(op_info->HasAttr("Y0_scale")) << "quant model no Y0_scale";
+      weight_scale_size =
+          op_info->GetAttr<std::vector<float>>("Y0_scale").size();
+      CHECK_EQ(weight_scale_size, mul_y_shape[1])
+          << "weight_scale_size: " << weight_scale_size
+          << ", mul_y_shape:" << mul_y_shape;
+      CHECK_GE(weight_scale_size, 1) << weight_scale_size;
+      std::vector<float> weight_max;
+      if (is_per_tensor(op_info->GetAttr<std::vector<float>>("Y0_scale"))) {
+        per_channel = false;
+        VLOG(3) << "xpu fc per tensor";
+        weight_max.push_back(
+            op_info->GetAttr<std::vector<float>>("Y0_scale")[0] * 127);
+      } else {
+        per_channel = true;
+        VLOG(3) << "xpu fc per channel, first channel max:"
+                << op_info->GetAttr<std::vector<float>>("Y0_scale")[0] * 127
+                << ", last channel max: "
+                << op_info->GetAttr<std::vector<float>>(
+                       "Y0_scale")[weight_scale_size - 1] *
+                       127;
+        for (auto wm : op_info->GetAttr<std::vector<float>>("Y0_scale")) {
+          weight_max.push_back(wm * 127);
+        }
+      }
+      VLOG(3) << "weight_max size:" << weight_max.size();
+      op_desc.SetAttr<std::vector<float>>("Filter0_scale", weight_max);
+      op_desc.SetAttr<bool>("per_channel", per_channel);
+
+      op_desc.SetAttr<std::vector<float>>(
+          "Input0_scale",
+          {127 *
+           matched.at("mul")->stmt()->op_info()->GetInputScale(
+               matched.at("x")->arg()->name)[0]});
+      // don't need * 127
+      op_desc.SetAttr<std::vector<float>>(
+          "Output0_scale",
+          {matched.at("mul")->stmt()->op_info()->GetAttr<float>(
+              "out_threshold")});
+    }
+
+    // conv2d int16
+    if (matched.at("mul")->stmt()->op_info()->HasAttr("enable_int16") &&
+        matched.at("mul")->stmt()->op_info()->GetAttr<bool>("enable_int16")) {
+      op_desc.SetAttr<bool>("enable_int16", true);
+      op_desc.SetAttr<std::vector<float>>(
+          "Input0_scale",
+          {((2 << 15) - 1) *
+           matched.at("mul")->stmt()->op_info()->GetInputScale(
+               matched.at("x")->arg()->name)[0]});
+
+      op_desc.SetAttr<std::vector<float>>(
+          "Filter0_scale",
+          {((2 << 15) - 1) *
+           matched.at("mul")->stmt()->op_info()->GetInputScale(
+               matched.at("W")->arg()->name)[0]});
+    }
+
     op_desc.SetOutput("Output", {output_name});
-    op_desc.SetAttr<std::string>("precision", precision);
     std::map<std::string, int> act_map{{"linear", 0},
                                        {"relu", 1},
                                        {"sigmoid", 2},
                                        {"tanh", 3},
+                                       {"gelu", 4},
                                        {"leaky_relu", 5},
                                        {"hard_swish", 14},
                                        {"hard_sigmoid", 15},
-                                       {"relu6", 17}};
+                                       {"relu6", 17},
+                                       {"__xpu__quick_gelu", 19}};
 
     float act_param_ = 0.0f;
     if (act_type_ == "leaky_relu") {
@@ -139,9 +212,24 @@ class XPUFcFuser : public FuseBase {
     }
     op_desc.SetAttr<int>("act_type", act_map[act_type_]);
     op_desc.SetAttr<float>("act_param", act_param_);
-    op_desc.SetAttr(
-        "in_num_col_dims",
-        matched.at("mul")->stmt()->op_info()->GetAttr<int>("x_num_col_dims"));
+
+    op_desc.SetAttr<int>("in_num_col_dims", -1);
+    if (mul_type_ == "mul") {
+      op_desc.SetAttr("in_num_col_dims",
+                      op_info->GetAttr<int>("x_num_col_dims"));
+      // trans_x and trans_y is not existed in mul op. set false
+      op_desc.SetAttr("transpose_x", false);
+      op_desc.SetAttr("transpose_w", false);
+    } else if (mul_type_ == "matmul") {
+      op_desc.SetAttr("transpose_x", op_info->GetAttr<bool>("transpose_X"));
+      op_desc.SetAttr("transpose_w", op_info->GetAttr<bool>("transpose_Y"));
+    } else {
+      op_desc.SetAttr("transpose_x", op_info->GetAttr<bool>("trans_x"));
+      op_desc.SetAttr("transpose_w", op_info->GetAttr<bool>("trans_y"));
+    }
+    if (op_info->HasAttr("alpha")) {
+      op_desc.SetAttr("alpha", op_info->GetAttr<float>("alpha"));
+    }
 
     std::string max_output_name = output_name + "_xpu_max";
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
@@ -169,6 +257,19 @@ class XPUFcFuser : public FuseBase {
  private:
   bool with_bias_;
   std::string act_type_;
+  std::string mul_type_;
+  bool is_per_tensor(const std::vector<float>& weight_max) {
+    bool per_tensor = true;
+    CHECK_GT(weight_max.size(), 0) << "fc channel size: " << weight_max.size();
+    auto first = weight_max[0];
+    for (size_t i = 1; i < weight_max.size(); ++i) {
+      if (std::abs(first - weight_max[i]) > 1e-6) {
+        per_tensor = false;
+        break;
+      }
+    }
+    return per_tensor;
+  }
 };
 
 }  // namespace fusion
@@ -178,8 +279,10 @@ class XPUFcFusePass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     // TODO(weihaoji) support with_no_bias and more activation types
-    for (auto with_bias : {true, /*false*/}) {
+    for (auto with_bias : {true, false}) {
       for (auto act_type : {"relu",
+                            "gelu",
+                            "__xpu__quick_gelu",
                             /*"sigmoid",
                             "tanh",
                             "leaky_relu",
@@ -187,8 +290,10 @@ class XPUFcFusePass : public ProgramPass {
                             "hard_sigmoid",
                             "relu6",*/
                             "linear"}) {
-        fusion::XPUFcFuser fuser(with_bias, act_type);
-        fuser(graph.get());
+        for (auto mul_type : {"mul", "matmul", "matmul_v2"}) {
+          fusion::XPUFcFuser fuser(with_bias, act_type, mul_type);
+          fuser(graph.get());
+        }
       }
     }
   }

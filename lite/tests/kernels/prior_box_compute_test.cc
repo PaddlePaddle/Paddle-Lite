@@ -442,7 +442,7 @@ class DensityPriorBoxComputeTester : public arena::TestCase {
                           order_);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("density_prior_box");
     op_desc->SetInput("Input", {ins0});
     op_desc->SetInput("Image", {ins1});
@@ -575,7 +575,7 @@ class PriorBoxComputeTester : public arena::TestCase {
                           order_);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("prior_box");
     op_desc->SetInput("Input", {ins0});
     op_desc->SetInput("Image", {ins1});
@@ -729,6 +729,13 @@ void test_prior_box(Place place) {
 
 TEST(PriorBox, precision) {
   Place place(TARGET(kHost));
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_INTEL_OPENVINO)
+#else
+  return;
+#endif
+#endif
   test_prior_box(place);
 }
 

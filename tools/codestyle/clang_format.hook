@@ -13,3 +13,5 @@ if ! [[ $version == *"$VERSION"* ]]; then
 fi
 
 clang-format $@
+
+echo "$(git diff)"

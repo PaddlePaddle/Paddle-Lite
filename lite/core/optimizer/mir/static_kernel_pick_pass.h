@@ -140,11 +140,14 @@ class StaticKernelPickPass : public mir::StmtPass {
           for (size_t i = 0; i < in_names.size(); ++i) {
             std::string tmp;
             CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
-            if (in_types.count(in_names[i]) &&
-                !PrecTypeCompatible(
-                    in_types.at(in_names[i]),
-                    kernel.GetInputDeclType(tmp)->precision())) {
-              type_match = false;
+            if (in_types.count(in_names[i])) {
+              if (!PrecTypeCompatible(
+                      in_types.at(in_names[i]),
+                      kernel.GetInputDeclType(tmp)->precision())) {
+                type_match = false;
+              } else {
+                score += 1;
+              }
             }
           }
         }
@@ -229,49 +232,6 @@ class StaticKernelPickPass : public mir::StmtPass {
       }
     }
 
-    if (kernel.target() == TARGET(kFPGA)) {
-      VLOG(4) << "alias:" << kernel.alias();
-      /**
-       * we want to use fpga kernel as much as possible, so we give it a very
-       *high score,
-       * so this kernel can be picked, it may be not the best option, and we
-       *shall correct
-       * it in kernel_place_correct_pass
-       *
-       * 4000 is a arbitrary high score that can purpress all the other kernels.
-       **/
-      final_score = 4000;
-      for (size_t i = 0; i < in_names.size(); ++i) {
-        std::string tmp;
-        CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
-        if (in_types.count(in_names[i]) &&
-            in_types.at(in_names[i]) ==
-                kernel.GetInputDeclType(tmp)->precision()) {
-          final_score += 100;  // multiple inputs pick the most matched one;
-        }
-      }
-
-      for (size_t i = 0; i < out_names.size(); ++i) {
-        std::string tmp;
-        CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
-
-        VLOG(4) << tmp << " == "
-                << PrecisionToStr(kernel.GetOutputDeclType(tmp)->precision());
-        if (out_types.count(out_names[i]) > 0) {
-          VLOG(4) << "decType: "
-                  << PrecisionToStr(kernel.GetOutputDeclType(tmp)->precision());
-          VLOG(4) << "cout:" << out_types.count(out_names[i]) << " type_name: "
-                  << PrecisionToStr(out_types.at(out_names[i]));
-        }
-
-        if (out_types.count(out_names[i]) &&
-            out_types.at(out_names[i]) ==
-                kernel.GetOutputDeclType(tmp)->precision()) {
-          final_score += 100;  // multiple outputs pick the most matched one;
-        }
-      }
-    }
-
     VLOG(2) << "-------- score summary for candidate kernel : "
             << kernel.summary() << " --------";
     VLOG(2) << " ===> winner_place():" << PrecisionToStr(winner_place.precision)
@@ -281,11 +241,11 @@ class StaticKernelPickPass : public mir::StmtPass {
             << PrecisionToStr(kernel.place().precision) << " "
             << DataLayoutToStr(kernel.place().layout) << " "
             << TargetToStr(kernel.place().target);
-    VLOG(4) << "kernel.op_type():" << kernel.op_type();
-    VLOG(4) << "kernel picker factors:" << kernel_pick_factors_;
-    VLOG(4) << "winner_picker place:" << winner_place.DebugString();
-    VLOG(4) << "[score(final)]:" << final_score;
-    VLOG(4) << "------------------------------";
+    VLOG(2) << "kernel.op_type():" << kernel.op_type();
+    VLOG(2) << "kernel picker factors:" << kernel_pick_factors_;
+    VLOG(2) << "winner_picker place:" << winner_place.DebugString();
+    VLOG(2) << "[score(final)]:" << final_score;
+    VLOG(2) << "------------------------------";
 
     // The data layout is not considered, for the input and output arguments
     // might have different data layout.

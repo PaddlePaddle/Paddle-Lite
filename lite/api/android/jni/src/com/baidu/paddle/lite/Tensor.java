@@ -122,6 +122,19 @@ public class Tensor {
     }
 
     /**
+     * Set the tensor int data.
+     *
+     * @param buf the int array buffer which will be copied into tensor.
+     * @return true if set data successfully.
+     */
+    public boolean setData(long[] buf) {
+        if (readOnly) {
+            return false;
+        }
+        return nativeSetData(buf);
+    }
+
+    /**
      * @return shape of the tensor as long array.
      */
     public native long[] shape();

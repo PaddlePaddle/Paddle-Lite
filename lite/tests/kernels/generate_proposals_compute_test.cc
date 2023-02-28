@@ -606,7 +606,7 @@ class GenerateProposalsComputeTester : public arena::TestCase {
 
   void RunBaseline(Scope* scope) override { Compute<float>(scope); }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("generate_proposals");
 
     op_desc->SetInput("Scores", {Scores_});

@@ -95,7 +95,7 @@ class UnsqueezeComputeTester : public arena::TestCase {
     memcpy(out_data, input_data, sizeof(float) * dims_.production());
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("unsqueeze");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
@@ -209,7 +209,7 @@ class Unsqueeze2ComputeTester : public arena::TestCase {
     memcpy(out_data, input_data, sizeof(float) * dims_.production());
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("unsqueeze2");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
@@ -228,13 +228,12 @@ class Unsqueeze2ComputeTester : public arena::TestCase {
 };
 
 void test_unsqueeze(Place place, float abs_error = 2e-5) {
-  for (std::vector<int> axes : {std::vector<int>({1}),
-                                std::vector<int>({0, 2}),
-                                std::vector<int>({0, -2})}) {
+  for (std::vector<int> axes :
+       {std::vector<int>{1}, std::vector<int>{0, 2}, std::vector<int>{0, -2}}) {
     for (auto dims : std::vector<std::vector<int64_t>>{{3}, {3, 5}, {3, 5, 7}})
       for (int input_axes_flag : {1, 2, 3}) {
         for (bool inplace : {true, false}) {
-#ifdef LITE_WITH_NPU
+#if defined(NNADAPTER_WITH_QUALCOMM_QNN)
           if (input_axes_flag != 1) continue;
           if (dims.size() + axes.size() > 4) continue;
 #endif
@@ -257,9 +256,6 @@ void test_unsqueeze2(Place place, float abs_error = 2e-5) {
     for (auto dims :
          std::vector<std::vector<int64_t>>{{3}, {3, 5}, {3, 5, 7}}) {
       for (bool inplace : {true, false}) {
-#ifdef LITE_WITH_NPU
-        if (dims.size() + axes.size() > 4) continue;
-#endif
         std::unique_ptr<arena::TestCase> tester(new Unsqueeze2ComputeTester(
             place, "def", axes, DDim(dims), inplace));
         arena::Arena arena(std::move(tester), place, abs_error);
@@ -276,16 +272,19 @@ TEST(unsqueeze, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-2;
   // TODO(shentanyue): support later
   return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = TARGET(kOpenCL);
 #elif defined(LITE_WITH_XPU)
@@ -305,16 +304,20 @@ TEST(unsqueeze2, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-2;
   // TODO(shentanyue): support later
   return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = TARGET(kOpenCL);
 #elif defined(LITE_WITH_XPU)

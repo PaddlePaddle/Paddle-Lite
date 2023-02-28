@@ -81,6 +81,9 @@ class TestSoftmaxOp(AutoScanTest):
             if "nvidia_tensorrt" in self.get_nnadapter_device_name():
                 if len(x_shape) < 2:
                     return False
+            if "kunlunxin_xtcl" in self.get_nnadapter_device_name():
+                if axis == 0:
+                    return False
         return True
 
     def sample_program_configs(self, draw):

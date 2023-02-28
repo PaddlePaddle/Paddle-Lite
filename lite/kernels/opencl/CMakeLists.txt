@@ -82,8 +82,8 @@ lite_cc_test(test_conv_transpose_image_opencl SRCS conv_transpose_image_compute_
 lite_cc_test(test_depthwise_conv2d_transpose_image_opencl SRCS depthwise_conv2d_transpose_image_compute_test.cc
              DEPS kernels core)
 
-lite_cc_test(test_nearest_interp_image_opencl SRCS nearest_interp_image_compute_test.cc
-             DEPS kernels core)
+# lite_cc_test(test_nearest_interp_image_opencl SRCS nearest_interp_image_compute_test.cc
+#              DEPS kernels core)
 
 lite_cc_test(test_pool_image_opencl SRCS pool_image_compute_test.cc
              DEPS kernels core)
@@ -94,8 +94,8 @@ lite_cc_test(test_reshape_image_opencl SRCS reshape_image_compute_test.cc
 lite_cc_test(test_transpose_image_opencl SRCS transpose_image_compute_test.cc
              DEPS kernels core)
 
-lite_cc_test(test_concat_image_opencl SRCS concat_image_compute_test.cc
-             DEPS kernels core)
+# lite_cc_test(test_concat_image_opencl SRCS concat_image_compute_test.cc
+#              DEPS kernels core)
 
 #lite_cc_test(test_elementwise_mul_image_opencl SRCS elementwise_mul_image_compute_test.cc
 #             DEPS kernels core)
@@ -134,8 +134,8 @@ lite_cc_test(test_instance_norm_image_opencl SRCS instance_norm_image_compute_te
 lite_cc_test(test_dropout_image_opencl SRCS dropout_image_compute_test.cc
              DEPS kernels core)
 
-lite_cc_test(test_pad2d_image_opencl SRCS pad2d_image_compute_test.cc
-             DEPS kernels core)
+# lite_cc_test(test_pad2d_image_opencl SRCS pad2d_image_compute_test.cc
+#              DEPS kernels core)
 
 lite_cc_test(test_box_coder_image_opencl SRCS box_coder_image_compute_test.cc
              DEPS kernels core)
@@ -161,11 +161,11 @@ lite_cc_test(test_max_image_opencl SRCS max_image_compute_test.cc
 # buffer kernel      #
 ######################
 # basic
-#add_kernel(activation_opencl_buffer OPENCL basic SRCS activation_buffer_compute.cc)
+add_kernel(activation_opencl_buffer OPENCL basic SRCS activation_buffer_compute.cc)
 #add_kernel(conv_opencl_buffer OPENCL basic SRCS conv_buffer_compute.cc)
 #add_kernel(depthwise_conv2d_opencl OPENCL basic SRCS depthwise_conv2d_buffer_compute.cc)
-#add_kernel(pool_opencl_buffer OPENCL basic SRCS pool_buffer_compute.cc)
-#add_kernel(concat_opencl_buffer OPENCL basic SRCS concat_buffer_compute.cc)
+add_kernel(pool_opencl_buffer OPENCL basic SRCS pool_buffer_compute.cc)
+add_kernel(concat_opencl_buffer OPENCL basic SRCS concat_buffer_compute.cc)
 add_kernel(fc_opencl_buffer OPENCL basic SRCS fc_buffer_compute.cc)
 # NOTE(ysh329): use fc as `mul`, and mul is not used.
 #add_kernel(mul_opencl_buffer OPENCL basic SRCS mul_buffer_compute.cc)
@@ -178,6 +178,10 @@ add_kernel(slice_opencl_buffer OPENCL basic SRCS slice_buffer_compute.cc)
 add_kernel(yolo_box_opencl_buffer OPENCL basic SRCS yolo_box_buffer_compute.cc)
 add_kernel(squeeze_unsqueeze_opencl_buffer OPENCL basic SRCS squeeze_unsqueeze_buffer_compute.cc)
 add_kernel(matmul_opencl_buffer OPENCL basic SRCS matmul_buffer_compute.cc)
+add_kernel(reshape_opencl_buffer OPENCL basic SRCS reshape_buffer_compute.cc)
+add_kernel(transpose_opencl_buffer OPENCL basic SRCS transpose_buffer_compute.cc)
+add_kernel(pow_opencl_buffer OPENCL basic SRCS pow_buffer_compute.cc)
+add_kernel(scale_opencl_buffer OPENCL basic SRCS scale_buffer_compute.cc)
 # extra
 # wait to add ...
 

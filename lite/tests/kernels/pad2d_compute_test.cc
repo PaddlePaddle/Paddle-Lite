@@ -126,7 +126,7 @@ class Pad2dComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("pad2d");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
@@ -154,7 +154,7 @@ void TestPad2d(const Place& place,
                std::string data_format,
                float abs_error = 2e-5) {
   std::unique_ptr<arena::TestCase> tester(new Pad2dComputeTester<T>(
-      place, "def", pad_mode, paddings, pad_value, data_format));
+      place, alias, pad_mode, paddings, pad_value, data_format));
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
 }
@@ -168,11 +168,16 @@ TEST(Pad2d, precision) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
   pad_mode_list = {"constant"};
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-2;
   // TODO(shentanyue): support later
   return;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  pad_mode_list = {"constant", "reflect"};
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 1e-2;
   pad_mode_list = {"constant", "reflect"};
 #else
@@ -182,9 +187,9 @@ TEST(Pad2d, precision) {
   place = TARGET(kXPU);
   pad_mode_list = {"constant",
                    "reflect"};  // XPU support constant and reflect now
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  abs_error = 1e-2;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
@@ -206,10 +211,22 @@ TEST(Pad2d, precision) {
                   ((pad_top == 1 || pad_bottom == 1) && pad_left == 0 &&
                    pad_right == 0))
                 continue;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+              if (pad_mode == "reflect" && pad_left == 0 && pad_right == 0)
+                continue;
 #endif
               VLOG(5) << "pad param: " << pad_mode << " " << pad_value << " "
                       << paddings[0] << " " << paddings[1] << " " << paddings[2]
                       << " " << paddings[3];
+#if defined(LITE_WITH_OPENCL)
+              TestPad2d(place,
+                        "ImageDefault",
+                        pad_mode,
+                        paddings,
+                        pad_value,
+                        data_format,
+                        abs_error);
+#else
               TestPad2d(place,
                         "def",
                         pad_mode,
@@ -217,6 +234,7 @@ TEST(Pad2d, precision) {
                         pad_value,
                         data_format,
                         abs_error);
+#endif
             }
           }
         }

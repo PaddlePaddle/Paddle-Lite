@@ -20,6 +20,7 @@
 #define PADDLE_LITE_OPT_H_
 #include <algorithm>
 #include <iomanip>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -42,7 +43,7 @@ namespace lite_api {
 /// predictors.
 class LITE_API OptBase {
  public:
-  OptBase() { InitSupportedOpInfo(); };
+  OptBase() { InitSupportedOpInfo(); }
   void SetModelSetDir(const std::string &model_set_path);
   void SetModelDir(const std::string &model_dir_path);
   void SetModelFile(const std::string &model_path);
@@ -55,6 +56,8 @@ class LITE_API OptBase {
   void SetQuantType(const std::string &quant_type);
   void SetSparseModel(bool sparse_model);
   void SetSparseThreshold(const float sparse_threshold = 0.6f);
+  void SetNNAdapterMixedPrecisionQuantizationConfigPath(
+      const std::string &nnadapter_mixed_precision_quantization_config_path);
   // set optimized_model type
   void SetModelType(std::string model_type = "naive_buffer");
   // internal inference for developer, not recommanded.
@@ -84,15 +87,16 @@ class LITE_API OptBase {
                          "kXPU",
                          "kHost",
                          "kX86",
-                         "kBM",
-                         "kIntelFPGA",
-                         "kMLU",
+                         "cambricon_mlu",
                          "huawei_ascend_npu",
                          "mediatek_apu",
-                         "rockchip_npu",
                          "huawei_kirin_npu",
                          "imagination_nna",
-                         "amlogic_npu",
+                         "verisilicon_timvx",
+                         "eeasytech_npu",
+                         "android_nnapi",
+                         "qualcomm_qnn",
+                         "kunlunxin_xtcl",
                          "kUnK"});  // print supported ops on target_types
   void PrintAllOps();               // print all ops
   void PrintSupportedOps();         // print ops supported on valid_places_

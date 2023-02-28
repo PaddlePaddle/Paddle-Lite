@@ -23,8 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void LogitCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::logit<float>(ctx.GetRawContext(),
                              param.input->data<float>(),

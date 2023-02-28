@@ -29,13 +29,13 @@ WITH_LOG=ON
 WITH_EXCEPTION=OFF
 # controls whether to include FP16 kernels, default is OFF
 BUILD_ARM82_FP16=OFF
+# controls whether to support SVE2 instructions, default is OFF
+WITH_ARM8_SVE2=OFF
+WITH_ARM_DOTPROD=ON
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
 WITH_THREAD_POOL=OFF
-# options of compiling NPU lib.
-WITH_HUAWEI_KIRIN_NPU=OFF
-HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
 # options of compiling APU lib.
 WITH_MEDIATEK_APU=OFF
 MEDIATEK_APU_SDK_ROOT="$(pwd)/apu_ddk" # Download APU SDK from https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz
@@ -56,6 +56,9 @@ NNADAPTER_WITH_FAKE_DEVICE=OFF
 NNADAPTER_FAKE_DEVICE_SDK_ROOT=""
 NNADAPTER_WITH_GOOGLE_XNNPACK=OFF
 NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG="master"
+NNADAPTER_WITH_QUALCOMM_QNN=OFF
+NNADAPTER_QUALCOMM_QNN_SDK_ROOT="/usr/local/qnn"
+NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT=""
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
 # options of adding training ops
@@ -66,6 +69,8 @@ WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 # option of benchmark, default is OFF
 WITH_BENCHMARK=OFF
+# option of convert_to_ssa_graph
+WITH_CONVERT_TO_SSA=ON
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -78,13 +83,11 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
+readonly THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for android compiling.
-readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
-                               -DLITE_WITH_ARM=ON \
-                               -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+readonly CMAKE_COMMON_OPTIONS="-DLITE_WITH_ARM=ON \
                                -DLITE_WITH_X86=OFF \
                                -DWITH_TESTING=OFF \
                                -DARM_TARGET_OS=android"
@@ -100,7 +103,6 @@ function set_benchmark_options {
   WITH_EXCEPTION=ON
   BUILD_JAVA=OFF
   WITH_OPENCL=ON
-  WITH_NNADAPTER=ON
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
     WITH_LOG=ON
   else
@@ -200,9 +202,6 @@ function make_tiny_publish_so {
 
   # Step1. Create directory for compiling.
   build_dir=$workspace/build.lite.android.$ARCH.$TOOLCHAIN
-  if [ "${WITH_npu}" == "ON" ]; then
-      build_dir=${build_dir}.npu
-  fi
   if [ -d $build_dir ]; then
       rm -rf $build_dir
   fi
@@ -242,8 +241,6 @@ function make_tiny_publish_so {
       -DLITE_WITH_JAVA=$WITH_JAVA \
       -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
       -DLITE_WITH_CV=$WITH_CV \
-      -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
-      -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
       -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
       -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
@@ -262,12 +259,18 @@ function make_tiny_publish_so {
       -DNNADAPTER_FAKE_DEVICE_SDK_ROOT=$NNADAPTER_FAKE_DEVICE_SDK_ROOT \
       -DNNADAPTER_WITH_GOOGLE_XNNPACK=$NNADAPTER_WITH_GOOGLE_XNNPACK \
       -DNNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG=$NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG \
+      -DNNADAPTER_WITH_QUALCOMM_QNN=$NNADAPTER_WITH_QUALCOMM_QNN \
+      -DNNADAPTER_QUALCOMM_QNN_SDK_ROOT=$NNADAPTER_QUALCOMM_QNN_SDK_ROOT \
+      -DNNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT=$NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
+      -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
       -DANDROID_STL_TYPE=$ANDROID_STL \
-      -DLITE_THREAD_POOL=$WITH_THREAD_POOL"
+      -DLITE_THREAD_POOL=$WITH_THREAD_POOL \
+      -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA"
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
@@ -332,8 +335,6 @@ function make_full_publish_so {
       -DLITE_WITH_JAVA=$WITH_JAVA \
       -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
       -DLITE_WITH_CV=$WITH_CV \
-      -DLITE_WITH_NPU=$WITH_HUAWEI_KIRIN_NPU \
-      -DNPU_DDK_ROOT=$HUAWEI_KIRIN_NPU_SDK_ROOT \
       -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
       -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
@@ -352,14 +353,20 @@ function make_full_publish_so {
       -DNNADAPTER_FAKE_DEVICE_SDK_ROOT=$NNADAPTER_FAKE_DEVICE_SDK_ROOT \
       -DNNADAPTER_WITH_GOOGLE_XNNPACK=$NNADAPTER_WITH_GOOGLE_XNNPACK \
       -DNNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG=$NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG \
+      -DNNADAPTER_WITH_QUALCOMM_QNN=$NNADAPTER_WITH_QUALCOMM_QNN \
+      -DNNADAPTER_QUALCOMM_QNN_SDK_ROOT=$NNADAPTER_QUALCOMM_QNN_SDK_ROOT \
+      -DNNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT=$NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
       -DLITE_WITH_TRAIN=$WITH_TRAIN \
       -DLITE_WITH_PROFILE=$WITH_PROFILE \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
+      -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
       -DLITE_WITH_PRECISION_PROFILE=$WITH_PRECISION_PROFILE \
-      -DANDROID_STL_TYPE=$ANDROID_STL"
+      -DANDROID_STL_TYPE=$ANDROID_STL \
+      -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA"
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
@@ -393,12 +400,15 @@ function print_usage {
     echo -e "|     --with_static_lib: (OFF|ON); controls whether to publish c++ api static lib, default is OFF                                      |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
+    echo -e "|     --with_convert_to_ssa: (OFF|ON); controls whether to modify input model graph which is not DAG to SSA graph, default is OFF      |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
     echo -e "|     --with_profile: (OFF|ON); controls whether to support time profile, default is OFF                                               |"
     echo -e "|     --with_precision_profile: (OFF|ON); controls whether to support precision profile, default is OFF                                |"
     echo -e "|     --with_arm82_fp16: (OFF|ON); controls whether to include FP16 kernels, default is OFF                                            |"
     echo -e "|                                  warning: when --with_arm82_fp16=ON, toolchain will be set as clang, arch will be set as armv8.      |"
+    echo -e "|     --with_arm8_sve2: (OFF|ON); controls whether to include SVE2 kernels, default is OFF                                             |"
+    echo -e "|                                  warning: when --with_arm8_sve2=ON, NDK version need >= r23, arch will be set as armv8.              |"
     echo -e "|     --android_api_level: (16~27); control android api level, default is 16 on armv7 and 21 on armv8. You could set a specific        |"
     echo -e "|             android_api_level as you need.                                                                                           |"
     echo -e "|                       | Paddle-Lite Requird / ARM ABI      | armv7 | armv8 |                                                         |"
@@ -415,13 +425,6 @@ function print_usage {
     echo -e "|     --with_strip: (OFF|ON); controls whether to strip lib accrding to input model, default is OFF                                    |"
     echo -e "|     --opt_model_dir: (absolute path to optimized model dir) required when compiling striped library                                  |"
     echo -e "|  detailed information about striping lib:  https://paddle-lite.readthedocs.io/zh/latest/user_guides/library_tailoring.html           |"
-    echo -e "|                                                                                                                                      |"
-    echo -e "|  arguments of npu library compiling:(armv8, gcc, c++_static)                                                                         |"
-    echo -e "|     ./lite/tools/build_android.sh --with_huawei_kirin_npu=ON --huawei_kirin_npu_sdk_root=YourNpuSdkPath                              |"
-    echo -e "|     --with_huawei_kirin_npu: (OFF|ON); controls whether to compile lib for huawei_kirin_npu, default is OFF                          |"
-    echo -e "|     --huawei_kirin_npu_sdk_root: (path to huawei HiAi DDK file) required when compiling npu library                                  |"
-    echo -e "|             you can download huawei HiAi DDK from:  https://developer.huawei.com/consumer/cn/hiai/                                   |"
-    echo -e "|  detailed information about Paddle-Lite NPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/npu.html                      |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of apu library compiling:(armv8, gcc, c++_static)                                                                         |"
     echo -e "|     ./lite/tools/build_android.sh --with_mediatek_apu=ON --mediatek_apu_sdk_root=YourApuSdkPath                                      |"
@@ -524,15 +527,6 @@ function main {
                 WITH_OPENCL="${i#*=}"
                 shift
                 ;;
-            # compiling lib which can operate on huawei npu.
-            --with_huawei_kirin_npu=*)
-                WITH_HUAWEI_KIRIN_NPU="${i#*=}"
-                shift
-                ;;
-            --huawei_kirin_npu_sdk_root=*)
-                HUAWEI_KIRIN_NPU_SDK_ROOT="${i#*=}"
-                shift
-                ;;
             # compiling lib which can operate on mediatek apu.
             --with_mediatek_apu=*)
                 WITH_MEDIATEK_APU="${i#*=}"
@@ -607,6 +601,18 @@ function main {
                 NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG="${i#*=}"
                 shift
                 ;;
+            --nnadapter_with_qualcomm_qnn=*)
+                NNADAPTER_WITH_QUALCOMM_QNN="${i#*=}"
+                shift
+                ;;
+            --nnadapter_qualcomm_qnn_sdk_root=*)
+                NNADAPTER_QUALCOMM_QNN_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_qualcomm_hexagon_sdk_root=*)
+                NNADAPTER_QUALCOMM_HEXAGON_SDK_ROOT="${i#*=}"
+                shift
+                ;;
             # compiling result contains both light_api and cxx_api lib.
             full_publish)
                 make_full_publish_so
@@ -640,6 +646,18 @@ function main {
             # controls whether to compile cplus static library, default is OFF
             --with_static_lib=*)
                 WITH_STATIC_LIB="${i#*=}"
+                shift
+                ;;
+            --with_convert_to_ssa=*)
+                WITH_CONVERT_TO_SSA="${i#*=}"
+                shift
+                ;;
+            --with_arm8_sve2=*)
+                WITH_ARM8_SVE2="${i#*=}"
+                shift
+                ;;
+            --with_arm_dotprod=*)
+                WITH_ARM_DOTPROD="${i#*=}"
                 shift
                 ;;
             help)

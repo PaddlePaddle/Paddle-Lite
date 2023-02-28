@@ -19,13 +19,16 @@
 namespace nnadapter {
 namespace runtime {
 
-Context::Context(std::vector<Device*> devices, const std::string& properties)
+Context::Context(std::vector<Device*> devices,
+                 const std::string& properties,
+                 int (*callback)(int event_id, void* user_data))
     : properties_(properties) {
   for (size_t i = 0; i < devices.size(); i++) {
     auto device = devices[i];
     void* context = nullptr;
-    NNADAPTER_CHECK_EQ(device->CreateContext(properties_.c_str(), &context),
-                       NNADAPTER_NO_ERROR);
+    NNADAPTER_CHECK_EQ(
+        device->CreateContext(properties_.c_str(), callback, &context),
+        NNADAPTER_NO_ERROR);
     device_contexts_.push_back({context, device});
   }
 }

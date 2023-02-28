@@ -47,45 +47,8 @@ inline void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
 }
 
 void PriorBoxCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
-  std::vector<float> min_size = param.min_sizes;
-  std::vector<float> max_size = param.max_sizes;
-  std::vector<float> aspect_ratio = param.aspect_ratios;
+  auto& param = this->template Param<param_t>();
   std::vector<float> variance = param.variances_;
-  std::vector<float> aspect_ratios_vec;
-  bool is_flip = param.flip;
-
-  ExpandAspectRatios(aspect_ratio, is_flip, &aspect_ratios_vec);
-  prior_num = aspect_ratios_vec.size() * min_size.size();
-  prior_num += max_size.size();
-
-  CHECK_LE(aspect_ratios_vec.size(), 16);
-  xpu_aspect_ratios_guard_ =
-      TargetWrapperXPU::MallocScratchPad(16 * sizeof(float));
-  XPU_CALL(xpu_memcpy(xpu_aspect_ratios_guard_->addr_,
-                      aspect_ratios_vec.data(),
-                      aspect_ratios_vec.size() * sizeof(float),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-  ar_num = aspect_ratios_vec.size();
-
-  CHECK_LE(min_size.size(), 8);
-  xpu_min_sizes_guard_ = TargetWrapperXPU::MallocScratchPad(8 * sizeof(float));
-  XPU_CALL(xpu_memcpy(xpu_min_sizes_guard_->addr_,
-                      min_size.data(),
-                      min_size.size() * sizeof(float),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-  min_size_num = min_size.size();
-
-  max_size_num = max_size.size();
-  if (max_size_num > 0) {
-    CHECK_LE(max_size.size(), 8);
-    xpu_max_sizes_guard_ =
-        TargetWrapperXPU::MallocScratchPad(8 * sizeof(float));
-    XPU_CALL(xpu_memcpy(xpu_max_sizes_guard_->addr_,
-                        max_size.data(),
-                        max_size.size() * sizeof(float),
-                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-  }
 
   CHECK_EQ(variance.size(), 4);
   variance_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
@@ -96,8 +59,23 @@ void PriorBoxCompute::PrepareForRun() {
 }
 
 void PriorBoxCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+
+  std::vector<float> aspect_ratio = param.aspect_ratios;
+  std::vector<float> aspect_ratios_vec;
+  bool is_flip = param.flip;
+  ExpandAspectRatios(aspect_ratio, is_flip, &aspect_ratios_vec);
+  CHECK_LE(aspect_ratios_vec.size(), 16);
+  prior_num = aspect_ratios_vec.size() * param.min_sizes.size();
+  prior_num += param.max_sizes.size();
+  ar_num = aspect_ratios_vec.size();
+  min_size_num = param.min_sizes.size();
+  max_size_num = param.max_sizes.size();
+  CHECK_LE(min_size_num, 8);
+  if (max_size_num > 0) {
+    CHECK_LE(max_size_num, 8);
+  }
 
   bool is_clip = param.clip;
   auto image_dims = param.image->dims();
@@ -125,31 +103,21 @@ void PriorBoxCompute::Run() {
   param.variances->Resize({height, width, prior_num, 4});
 
   bool min_max_aspect_ratios_order = param.min_max_aspect_ratios_order;
-  float* xpu_aspect_ratios =
-      reinterpret_cast<float*>(xpu_aspect_ratios_guard_->addr_);
-  float* xpu_min_sizes = reinterpret_cast<float*>(xpu_min_sizes_guard_->addr_);
-  float* xpu_max_sizes =
-      (max_size_num > 0)
-          ? (reinterpret_cast<float*>(xpu_max_sizes_guard_->addr_))
-          : nullptr;
-
-  int r = xdnn::prior_box_gen(ctx.GetRawContext(),
-                              param.boxes->mutable_data<float>(TARGET(kXPU)),
-                              xpu_aspect_ratios,
-                              height,
-                              width,
-                              im_height,
-                              im_width,
-                              ar_num,
-                              offset,
-                              step_width,
-                              step_height,
-                              xpu_min_sizes,
-                              xpu_max_sizes,
-                              min_size_num,
-                              max_size_num,
-                              is_clip,
-                              min_max_aspect_ratios_order);
+  int r = xdnn::gen_prior_box<float>(
+      ctx.GetRawContext(),
+      param.boxes->mutable_data<float>(TARGET(kXPU)),
+      {aspect_ratios_vec.data(), ar_num, nullptr},
+      {param.min_sizes.data(), min_size_num, nullptr},
+      {param.max_sizes.data(), max_size_num, nullptr},
+      height,
+      width,
+      im_height,
+      im_width,
+      offset,
+      step_width,
+      step_height,
+      is_clip,
+      min_max_aspect_ratios_order);
   CHECK_EQ(r, 0);
 
   float* xpu_variances_in =

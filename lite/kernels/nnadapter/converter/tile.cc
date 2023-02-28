@@ -29,6 +29,15 @@ int ConvertTile(Converter* converter, OpInfo* op, Scope* scope) {
   }
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
 
+  // Output operand
+  auto out_name = op->Output("Out").front();
+  auto output_scale_name = "Out0_scale";
+  std::vector<float> output_scales;
+  if (op->HasOutputScale(output_scale_name, true)) {
+    output_scales = op->GetOutputScale(output_scale_name, true);
+  }
+  auto output_operand = converter->AddOutputOperand(out_name, output_scales);
+
   // Repeats operand
   NNAdapterOperand* repeats_operand = nullptr;
   if (HasInput(op, scope, "RepeatTimes") && !op->Input("RepeatTimes").empty()) {
@@ -36,15 +45,21 @@ int ConvertTile(Converter* converter, OpInfo* op, Scope* scope) {
     repeats_operand = converter->AddInputOperand(scope, repeats_name);
   } else if (HasInput(op, scope, "repeat_times_tensor") &&
              !op->Input("repeat_times_tensor").empty()) {
-    LOG(FATAL) << "Not support repeat_times_tensor for tile now.";
+    std::vector<NNAdapterOperand*> repeat_operands;
+    for (auto repeat_tensor_name : op->Input("repeat_times_tensor")) {
+      auto repeat_operand =
+          converter->AddInputOperand(scope, repeat_tensor_name);
+      repeat_operands.push_back(repeat_operand);
+    }
+    auto axis_operand = converter->AddConstantOperand(0);
+    repeat_operands.push_back(axis_operand);
+    repeats_operand = converter->AddOutputOperand(out_name + "/concat");
+    converter->AddOperation(
+        NNADAPTER_CONCAT, repeat_operands, {repeats_operand});
   } else {
     auto repeats = op->GetAttr<std::vector<int>>("repeat_times");
     repeats_operand = converter->AddConstantOperand(repeats);
   }
-
-  // Output operand
-  auto out_name = op->Output("Out").front();
-  auto output_operand = converter->AddOutputOperand(out_name);
 
   // Tile operation
   converter->AddOperation(

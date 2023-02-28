@@ -32,6 +32,7 @@
 #else
 #define NOMINMAX  // msvc max/min macro conflict with std::min/max
 #include <windows.h>
+#include <winsock.h>
 #undef min
 #undef max
 extern struct timeval;
@@ -228,8 +229,8 @@ class VLogMessage {
     if (GLOG_v_int < level_int) {
       return;
     }
-    const char* level = paddle::lite::to_string(level_int).c_str();
-    paddle::lite::gen_log(log_stream_, file, func, lineno, level);
+    const std::string level = paddle::lite::to_string(level_int);
+    paddle::lite::gen_log(log_stream_, file, func, lineno, level.c_str());
   }
 
   ~VLogMessage() {

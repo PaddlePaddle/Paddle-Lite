@@ -19,7 +19,11 @@
 #include "converter/converter.h"
 #include "converter/validator.h"
 #include "optimizer/convert_quantization_symm_to_asymm.h"
+#include "optimizer/fuse_conv2d_activation_into_conv2d.h"
+#include "optimizer/fuse_conv2d_add_into_conv2d.h"
+#include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
+#include "optimizer/fuse_reshape_transpose_reshape_into_channel_shuffle.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -57,7 +61,11 @@ int Program::Build(core::Model* model, core::Cache* cache) {
 int Program::BuildFromModel(core::Model* model, core::Cache* cache) {
   // Convert the quantization parameters of the operands in the NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
+  FuseConv2DBatchNormIntoConv2D(model);
+  FuseConv2DAddIntoConv2D(model);
+  FuseConv2DActivationIntoConv2D(model);
   FuseMatMulAddIntoFullyConnected(model);
+  FuseReshapeTransposeReshapeIntoChannelShuffle(model);
   ConvertQuantizationSymmToAsymm(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert a NNAdapter model to a fake device graph
@@ -148,7 +156,7 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
     // Get the new dimensions
     auto& arg = input_arguments[i];
     NNAdapterOperandType new_type;
-    arg.access(arg.memory, &new_type);
+    arg.access(arg.memory, &new_type, nullptr);
     // Check whether the count and data of dimensions have been changed
     const NNAdapterOperandType& old_type = input_types_[arg.index];
     bool matched = MatchDimensions(new_type.dimensions.data,
@@ -180,7 +188,7 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
     auto type = input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, &type);
+    auto buffer = arg.access(arg.memory, &type, nullptr);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(type);
     if (IsUInt8AsymmPerLayerQuantType(type.precision)) {
@@ -231,7 +239,7 @@ int Program::Execute(uint32_t input_count,
     memcpy(type.dimensions.data,
            tensor.shape.data(),
            sizeof(int32_t) * tensor.shape.size());
-    auto buffer = arg->access(arg->memory, &type);
+    auto buffer = arg->access(arg->memory, &type, nullptr);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(type);
     if (IsUInt8AsymmPerLayerQuantType(type.precision)) {

@@ -29,7 +29,11 @@ class SplitTester : public arena::TestCase {
   std::string axis_tensor_;
   std::vector<std::string> sections_tensor_list_;
   DDim x_dims_;
+#if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  int axis_ = 1;
+#else
   int axis_ = 0;
+#endif
   int num_ = 1;
   std::vector<int> sections_;
 
@@ -124,7 +128,7 @@ class SplitTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("split");
     op_desc->SetInput("X", {x_});
     if (!axis_tensor_.empty()) {
@@ -206,6 +210,11 @@ void TestSplitAxis(Place place,
           axis < -static_cast<int>(x_shape.size())) {
         continue;
       }
+#if defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+      if (x_shape.size() == 1 || axis == 0 || axis + x_shape.size() == 0) {
+        continue;
+      }
+#endif
       TestSplit<T>(place, abs_error, alias, DDim(x_shape), axis);
     }
   }
@@ -269,8 +278,32 @@ TEST(Split_test, precision) {
   TestSplitBase<float>(place, abs_error);
   TestSplitAxis(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 1e-2;
+  TestSplitBase<float>(place, abs_error);
+  TestSplitAxis(place, abs_error);
+  TestSplitNum(place, abs_error);
+  TestSplitSections(place, abs_error);
+  TestSplitAxisTensor(place, abs_error);
+  TestSplitSectionsTensorList(place, abs_error);
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+  TestSplitBase<float>(place, abs_error);
+  TestSplitAxis(place, abs_error);
+  TestSplitNum(place, abs_error);
+  TestSplitSections(place, abs_error);
+  TestSplitAxisTensor(place, abs_error);
+  TestSplitSectionsTensorList(place, abs_error);
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-5;
+  TestSplitBase<float>(place, abs_error);
+  TestSplitAxis(place, abs_error);
+  TestSplitNum(place, abs_error);
+  TestSplitSections(place, abs_error);
+  TestSplitAxisTensor(place, abs_error);
+  TestSplitSectionsTensorList(place, abs_error);
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
   TestSplitBase<float>(place, abs_error);
   TestSplitAxis(place, abs_error);
   TestSplitNum(place, abs_error);

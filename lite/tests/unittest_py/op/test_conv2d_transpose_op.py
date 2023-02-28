@@ -88,7 +88,9 @@ class TestConv2dTransposeOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_valid_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -264,9 +266,15 @@ class TestConv2dTransposeOp(AutoScanTest):
     def sample_predictor_configs(self):
         atol, rtol = 1e-5, 1e-5
         target_str = self.get_target()
+        configs = self.get_predictor_configs()
         if target_str == "OpenCL":
             atol, rtol = 1e-4, 1e-4
-        return self.get_predictor_configs(), ["conv2d_transpose"], (atol, rtol)
+        if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+            for config in configs:
+                if config.target() == TargetType.NNAdapter:
+                    config.set_nnadapter_context_properties(
+                        "NVIDIA_TENSORRT_MAX_WORKSPACE_SIZE=1073741824")
+        return configs, ["conv2d_transpose"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
@@ -277,10 +285,38 @@ class TestConv2dTransposeOp(AutoScanTest):
             ) == PrecisionType.INT8 and groups > 1:
                 return True
 
+        def _teller2(program_config, predictor_config):
+            groups = program_config.ops[0].attrs["groups"]
+            output_size = program_config.ops[0].attrs["output_size"]
+            output_padding = program_config.ops[0].attrs["output_padding"]
+            filter_shape = list(program_config.weights["filter_data"].shape)
+            if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+                if (filter_shape[1] % groups != 0
+                    ) or len(output_size) != 0 or len(
+                        output_padding) != 0 or filter_shape[
+                            2] != filter_shape[3]:
+                    return True
+
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.ACCURACY_ERROR,
             "Lite has diff in a specific case on arm-int8. We need to fix it as soon as possible."
         )
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support output_size or output_padding or filter_shape[2] != filter_shape[3] on nvidia_tensorrt, and group count must divide output channel count."
+        )
+
+        def _teller3(program_config, predictor_config):
+            groups = program_config.ops[0].attrs["groups"]
+            filter_shape = list(program_config.weights["filter_data"].shape)
+            if "intel_openvino" in self.get_nnadapter_device_name():
+                if (filter_shape[1] % groups) != 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Group count must divide output channel count in intel OpenVINO.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=150)

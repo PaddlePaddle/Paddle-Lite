@@ -28,14 +28,17 @@ class Converter {
  public:
   explicit Converter(
       std::map<core::Operand*, std::vector<magicmind::ITensor*>>* tensors,
-      magicmind::INetwork* network)
-      : tensors_(tensors), network_(network) {}
+      magicmind::INetwork* network,
+      const std::string& op_params)
+      : tensors_(tensors), network_(network), op_params_(op_params) {}
   ~Converter() {}
 
   // Convert a NNAdapter model to MagicMind network.
   int Apply(core::Model* model);
 
   magicmind::INetwork* network();
+
+  const std::string& op_params();
 
   magicmind::ITensor* GetMappedTensor(core::Operand* operand);
 
@@ -61,6 +64,7 @@ class Converter {
   // Map NNAdapter operand to magicmind itensor
   std::map<core::Operand*, std::vector<magicmind::ITensor*>>* tensors_;
   magicmind::INetwork* network_;
+  std::string op_params_;
 };
 
 }  // namespace cambricon_mlu

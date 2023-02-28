@@ -36,8 +36,10 @@ class TestFillConstantOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 2, 4])
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["cambricon_mlu", "nvidia_tensorrt"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino",
+            "kunlunxin_xtcl"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -57,7 +59,8 @@ class TestFillConstantOp(AutoScanTest):
 
         with_value_tensor = draw(st.sampled_from([True, False]))
         with_shape_tensor = draw(st.sampled_from([True, False]))
-        if self.get_nnadapter_device_name() == "nvidia_tensorrt":
+        if "nvidia_tensorrt" in self.get_nnadapter_device_name(
+        ) or "intel_openvino" in self.get_nnadapter_device_name():
             with_shape_tensor = False
         # nvidia_tensorrt now just supports shape is from attr
 
@@ -140,7 +143,7 @@ class TestFillConstantOp(AutoScanTest):
         return self.get_predictor_configs(), ["fill_constant"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
+        def teller1(program_config, predictor_config):
             if self.get_nnadapter_device_name() == "nvidia_tensorrt":
                 dtype = program_config.ops[0].attrs["dtype"]
                 in_num = len(program_config.inputs)
@@ -148,9 +151,20 @@ class TestFillConstantOp(AutoScanTest):
                     return True
 
         self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'shape is form tensor' or 'value is from tensor' "
             "or 'dtype is not float32' on nvidia_tensorrt.")
+
+        def teller2(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+                in_num = len(program_config.inputs)
+                if in_num != 0:
+                    return True
+
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'shape is form tensor' or 'value is from tensor' on kunlunxin_xtcl."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

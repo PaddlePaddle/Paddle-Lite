@@ -19,29 +19,57 @@ namespace lite {
 namespace kernels {
 namespace host {
 
+#define INDEX_COMPUTE                      \
+  for (int i = 0; i < index_size; ++i) {   \
+    auto index_ = p_index[i];              \
+    memcpy(p_output + i * slice_size,      \
+           p_src + index_ * slice_size,    \
+           slice_size * sizeof(DataType)); \
+  }
+
+#define INDEX_V2_COMPUTE                                        \
+  for (int i = 0; i < index_size; i++) {                        \
+    CHECK_LT(index_data[i], input_index_dim_size)               \
+        << "The element of Index must be less than the size of" \
+        << "dim size of axis dim";                              \
+  }                                                             \
+  for (int i = 0; i < inner_dim_size; i++) {                    \
+    for (int j = 0; j < index_size; j++) {                      \
+      for (int k = 0; k < outer_dim_size; k++) {                \
+        int index = k + index_data[j] * outer_dim_size +        \
+                    (i * input_size / inner_dim_size);          \
+        out_data[out_index] = input_data[index];                \
+        out_index++;                                            \
+      }                                                         \
+    }                                                           \
+  }
+
 template <typename IndexType, typename DataType>
 void GatherFunc(const operators::GatherParam& param) {
   auto src_dims = param.X->dims();
   auto index_size = param.Index->dims()[0];
   auto* p_src = param.X->data<DataType>();
-  const IndexType* p_index = param.Index->data<IndexType>();
   auto* p_output = param.Out->mutable_data<DataType>();
 
   int slice_size = 1;
   for (size_t i = 1; i < src_dims.size(); ++i) {
     slice_size *= src_dims[i];
   }
-  for (int i = 0; i < index_size; ++i) {
-    IndexType index_ = p_index[i];
-    memcpy(p_output + i * slice_size,
-           p_src + index_ * slice_size,
-           slice_size * sizeof(DataType));
+
+  if (param.Index->precision() == PrecisionType::kInt64) {
+    const int64_t* p_index = param.Index->data<int64_t>();
+    INDEX_COMPUTE
+  } else if (param.Index->precision() == PrecisionType::kInt32) {
+    const int32_t* p_index = param.Index->data<int32_t>();
+    INDEX_COMPUTE
+  } else {
+    LOG(FATAL) << "Unsupported this index precision: "
+               << PrecisionToStr(param.Index->precision());
   }
 }
 
 template <typename IndexType, typename AxisType, typename DataType>
 void GatherV2Func(const operators::GatherParam& param) {
-  auto* index_data = param.Index->data<IndexType>();
   auto* input_data = param.X->data<DataType>();
   auto* out_data = param.Out->mutable_data<DataType>();
 
@@ -52,11 +80,7 @@ void GatherV2Func(const operators::GatherParam& param) {
   int inner_dim_size = 1;
   int outer_dim_size = 1;
   int input_index_dim_size = input_dim[axis_index];
-  for (int i = 0; i < index_size; i++) {
-    CHECK_LT(index_data[i], input_index_dim_size)
-        << "The element of Index must be less than the size of"
-        << "dim size of axis dim";
-  }
+
   for (int i = 0; i < axis_index; i++) {
     inner_dim_size *= input_dim[i];
   }
@@ -65,15 +89,15 @@ void GatherV2Func(const operators::GatherParam& param) {
   }
 
   int out_index = 0;
-  for (int i = 0; i < inner_dim_size; i++) {
-    for (int j = 0; j < index_size; j++) {
-      for (int k = 0; k < outer_dim_size; k++) {
-        int index = k + index_data[j] * outer_dim_size +
-                    (i * input_size / inner_dim_size);
-        out_data[out_index] = input_data[index];
-        out_index++;
-      }
-    }
+  if (param.Index->precision() == PrecisionType::kInt64) {
+    auto* index_data = param.Index->data<int64_t>();
+    INDEX_V2_COMPUTE
+  } else if (param.Index->precision() == PrecisionType::kInt32) {
+    auto* index_data = param.Index->data<int32_t>();
+    INDEX_V2_COMPUTE
+  } else {
+    LOG(FATAL) << "Unsupported this index precision: "
+               << PrecisionToStr(param.Index->precision());
   }
 }
 
@@ -136,6 +160,8 @@ void GatherCompute<IndexType, AxisType>::Run() {
     return;
   }
 }
+#undef INDEX_COMPUTE
+#undef INDEX_V2_COMPUTE
 
 }  // namespace host
 }  // namespace kernels

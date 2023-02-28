@@ -18,15 +18,15 @@
 #include <map>
 #include <set>
 
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#endif
 #include "lite/model_parser/cpp_desc.h"
 #include "lite/operators/conditional_block_op.h"
 #include "lite/operators/subgraph_op.h"
 #include "lite/operators/while_op.h"
 #ifdef LITE_WITH_PRECISION_PROFILE
 #include "lite/core/profile/precision_profiler.h"
-#endif
-#ifdef LITE_WITH_FPGA
-#include "lite/backends/fpga/monitor.hpp"
 #endif
 
 namespace paddle {
@@ -87,6 +87,18 @@ void UpdateVarDescFromTensorInfo(cpp::VarDesc* var,
   var->SetType(cpp::VarDesc::Type::LOD_TENSOR);
   auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
   var->SetPersistable(tensor->persistable());
+  // Move the persistable var from exec scope to the root scope
+  auto root_scope = scope->MutableParent();
+  if (tensor->persistable() && root_scope != scope &&
+      !root_scope->FindLocalVar(var_name)) {
+    // Find or create new var in root scope
+    auto root_tensor = root_scope->LocalVar(var_name)->GetMutable<Tensor>();
+    if (root_tensor != tensor) {
+      root_tensor->CopyDataFrom(*tensor);
+      scope->DeleteLocalVar(var_name);
+    }
+  }
+
   if (var_name != "feed" && var_name != "fetch") {
     var->SetShape(tensor->dims().data());
     auto precision = tensor->precision();
@@ -258,7 +270,8 @@ void RuntimeProgram::SaveRuntimProgramIntoProgramDesc(
 RuntimeProgram::RuntimeProgram(
     const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
     Scope* exec_scope,
-    int block_idx)
+    int block_idx,
+    bool use_precision_low)
     : exec_scope_(exec_scope) {
   CHECK(program_desc);
   auto block_size = program_desc->BlocksSize();
@@ -269,6 +282,12 @@ RuntimeProgram::RuntimeProgram(
   auto block_desc = program_desc->GetBlock<cpp::BlockDesc>(block_idx);
   instructions_.resize(kRootBlockIdx + 1);
   auto op_size = block_desc->OpsSize();
+
+  int low_precision = 1;
+  std::string old_op;
+  use_precision_low_ = use_precision_low;
+  low_precision = use_precision_low_ ? 1 : 0;
+
   for (size_t op_idx = 0; op_idx < op_size; op_idx++) {
     auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
     CHECK(op_desc);
@@ -338,18 +357,190 @@ RuntimeProgram::RuntimeProgram(
           op_type + "' is not supported by Paddle-Lite.";
 #endif
 
-      auto kernels = op->CreateKernels({place});
-      if (kernels.size() == 0 && place.target == TargetType::kARM) {
-        place.target = TargetType::kHost;
-        kernels = op->CreateKernels({place});
+#ifdef ENABLE_ARM_FP16
+      if (lite::DeviceInfo::Global().has_fp16() && low_precision == 1) {
+        if (op_type != "feed" && op_type != "fetch") {
+          if (place.precision == PRECISION(kFloat)) {
+            place.precision = PRECISION(kFP16);
+          } else if (place.precision == PRECISION(kAny)) {
+            place.precision = PRECISION(kFP16);
+          }
+        }
+        // transfer weight to fp16
+        std::vector<std::string> fp16_ops{"conv2d",
+                                          "depthwise_conv2d",
+                                          "conv2d_transpose",
+                                          "fc",
+                                          "mul",
+                                          "matmul",
+                                          "matmul_v2",
+                                          "gru",
+                                          "sequence_conv",
+                                          "elementwise_add",
+                                          "elementwise_sub",
+                                          "elementwise_div",
+                                          "elementwise_mul",
+                                          "prelu"};
+        typedef __fp16 float16_t;
+        auto iter = std::find(fp16_ops.begin(), fp16_ops.end(), op_type);
+        if (iter != fp16_ops.end()) {
+          auto input_names = op_desc->input_vars();
+
+          for (auto& input_name : input_names) {
+            if (input_name == "") continue;
+            if (input_name == "feed" || input_name == "fetch") continue;
+            if (exec_scope_->FindVar(input_name)) {
+              if (!exec_scope_->FindVar(input_name)->IsType<lite::Tensor>())
+                continue;
+
+              auto input_tensor =
+                  exec_scope_->Var(input_name)->GetMutable<lite::Tensor>();
+
+              if (input_tensor->persistable()) {
+                if (input_tensor->precision() != PRECISION(kFloat)) continue;
+
+                input_tensor->set_precision(PRECISION(kFP16));
+                Tensor tmp_tensor;
+                tmp_tensor.CopyDataFrom(*input_tensor);
+                input_tensor->clear();
+                input_tensor->set_precision(PRECISION(kFP16));
+
+                float16_t* fp_data = input_tensor->mutable_data<float16_t>();
+                const float* in_data = tmp_tensor.data<float>();
+                lite::arm::math::fp16::fp32_to_fp16(
+                    in_data, fp_data, input_tensor->numel());
+              }
+            }
+          }
+        }
+        auto kernels = op->CreateKernels({place});
+        if (kernels.size() == 0 && place.target == TargetType::kARM) {
+          place.target = TargetType::kHost;
+          kernels = op->CreateKernels({place});
+        }
+
+        CHECK_GT(kernels.size(), 0) << kernels_error_message;
+        auto it = std::find_if(kernels.begin(),
+                               kernels.end(),
+                               [&](std::unique_ptr<KernelBase>& it) {
+                                 return it->alias() == alias;
+                               });
+
+        CHECK(it != kernels.end());
+        kernel = std::move(*it);
+
+        // insert calib op
+        if (old_op == "feed" || op_type == "fetch") {
+          auto input_names = op_desc->input_vars();
+          std::vector<std::string> input_names_new;
+          for (int i = 0; i < input_names.size(); i++) {
+            std::string input_name = input_names[i];
+
+            if (exec_scope_->Var(input_name)) {
+              if (!exec_scope_->FindVar(input_name)->IsType<lite::Tensor>())
+                continue;
+              auto input_tensor =
+                  exec_scope_->Var(input_name)->GetMutable<lite::Tensor>();
+
+              if ((!input_tensor->persistable())) {
+                cpp::OpDescWrite calib_desc;
+                if (op_type == "fetch") {
+                  calib_desc.SetType("calib_inplace");
+                } else {
+                  calib_desc.SetType("calib");
+                }
+                calib_desc.SetInput("Input", {input_name});
+                auto output_name = input_name + "_calib";
+                calib_desc.SetOutput("Out", {output_name});
+
+                auto op_calib = LiteOpRegistry::Global().Create("calib");
+                if (op_type == "fetch") {
+                  op_calib = LiteOpRegistry::Global().Create("calib_inplace");
+                }
+                auto x_var = exec_scope_->FindVar(input_name);
+                auto output_var = exec_scope_->Var(output_name);
+                auto output_tensor =
+                    exec_scope_->Var(output_name)->GetMutable<lite::Tensor>();
+
+                op_calib->Attach(calib_desc, exec_scope_);
+                Place fetch_calib_place;
+                fetch_calib_place.target = TARGET(kARM);
+                fetch_calib_place.layout = DATALAYOUT(kNCHW);
+                fetch_calib_place.precision = PRECISION(kFP16);
+                auto calib_kernels = op_calib->CreateKernels({place});
+                if (op_type == "fetch") {
+                  calib_kernels = op_calib->CreateKernels({fetch_calib_place});
+                }
+                std::string alias_calib;
+                if (op_type != "fetch")
+                  alias_calib = "fp32_to_fp16";
+                else
+                  alias_calib = "fp16_to_fp32";
+                auto it = std::find_if(calib_kernels.begin(),
+                                       calib_kernels.end(),
+                                       [&](std::unique_ptr<KernelBase>& it) {
+                                         return it->alias() == alias_calib;
+                                       });
+                std::unique_ptr<KernelBase> calib_kernel;
+                if (it != calib_kernels.end()) {
+                  calib_kernel = std::move(*it);
+
+                  instructions_[kRootBlockIdx].emplace_back(
+                      std::move(op_calib), std::move(calib_kernel));
+                } else {
+                }
+
+                input_names_new.push_back(output_name);
+              }
+            }
+          }
+          if (op_type != "fetch") {
+            cpp::OpDescWrite op_desc_write;
+            op_desc_write.SetInput("Input", input_names_new);
+            op->AttachInput(op_desc_write, exec_scope_);
+            kernels = op->CreateKernels({place});
+            if (kernels.size() == 0) {
+              place.precision = PRECISION(kFloat);
+              kernels = op->CreateKernels({place});
+            }
+
+            if (kernels.size() == 0 && place.target == TargetType::kARM) {
+              place.target = TargetType::kHost;
+              kernels = op->CreateKernels({place});
+            }
+
+            CHECK_GT(kernels.size(), 0) << kernels_error_message;
+            auto it = std::find_if(kernels.begin(),
+                                   kernels.end(),
+                                   [&](std::unique_ptr<KernelBase>& it) {
+                                     return it->alias() == alias;
+                                   });
+
+            CHECK(it != kernels.end());
+            kernel = std::move(*it);
+          }
+        }
+
+        old_op = op_type;
+      } else {
+#endif
+        auto kernels = op->CreateKernels({place});
+        if (kernels.size() == 0 && place.target == TargetType::kARM) {
+          place.target = TargetType::kHost;
+          kernels = op->CreateKernels({place});
+        }
+        CHECK_GT(kernels.size(), 0) << kernels_error_message;
+        auto it = std::find_if(kernels.begin(),
+                               kernels.end(),
+                               [&](std::unique_ptr<KernelBase>& it) {
+                                 return it->alias() == alias;
+                               });
+        CHECK(it != kernels.end());
+        kernel = std::move(*it);
+#ifdef ENABLE_ARM_FP16
       }
-      CHECK_GT(kernels.size(), 0) << kernels_error_message;
-      auto it = std::find_if(
-          kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& it) {
-            return it->alias() == alias;
-          });
-      CHECK(it != kernels.end());
-      kernel = std::move(*it);
+#endif
+
     } else {
       // TODO(hong19860320) add kernel picking according to the type of input
       // and output tensors
@@ -402,43 +593,13 @@ void RuntimeProgram::Run() {
       inst_precision_profiler.GetSummaryHeader();
 #endif
 
-#ifdef LITE_WITH_NVTX
-  const NVTXAnnotator& annotator = NVTXAnnotator::Global();
-  NVTXRangeAnnotation annotation_one_loop = annotator.AnnotateBlock();
-  if (annotator.IsEnabled()) {
-    annotation_one_loop.generate(register_layer_names_.back(),
-                                 lite::Color::Engine);
-  }
-#endif
-
-#ifdef LITE_WITH_FPGA
-  Monitor& monitor = Monitor::get_instance();
-  monitor.inferStart();
-#endif
-
   int idx = -1;
 
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_METAL)
     if (inst.is_feed_fetch_op()) continue;
-#endif
-#ifdef LITE_WITH_NVTX
-    NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
-    nvtxStringHandle_t registered_name = register_layer_names_[idx];
-    if (annotator.IsEnabled()) {
-      annotation.generate(registered_name, lite::Color::Runner);
-    }
-#endif
-#ifdef LITE_WITH_CUDA
-    if (inst.need_sync()) {
-      inst.Sync();
-    }
-#endif
-
-#ifdef LITE_WITH_FPGA
-    monitor.preRun(inst);
 #endif
 
 #ifdef LITE_WITH_OPENCL
@@ -447,18 +608,11 @@ void RuntimeProgram::Run() {
 #endif
 
     inst.Run();
-
-#ifdef LITE_WITH_FPGA
-    monitor.postRun(inst);
-#endif
-
 #ifdef LITE_WITH_PRECISION_PROFILE
-#ifndef LITE_WITH_FPGA
     if (inst.op()->Type() != "while") {
       precision_profiler_summary +=
           inst_precision_profiler.GetInstPrecision(&inst);
     }
-#endif
 #endif  // LITE_WITH_PRECISION_PROFILE
   }
 
@@ -559,28 +713,7 @@ void Program::PrepareWorkspace(
       const auto& var_type = var_desc->GetType();
       VLOG(4) << "Var " << var_name << " in block " << block_idx;
       VLOG(4) << " - type " << static_cast<int>(var_type);
-
-#if defined(LITE_WITH_XPU) || defined(LITE_WITH_CUDA)
-      if (!var_desc->Persistable()) {
-#endif
-        // Collect precision info into var_type_map_
-        if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
-          const auto& var_data_type =
-              VarDescType2PrecisionType(var_desc->GetDataType());
-          if (var_data_type != PRECISION(kUnk)) {
-            var_type_map_[var_name] = LiteType::GetTensorTy(
-                TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
-          }
-          VLOG(4) << " - data type " << static_cast<int>(var_data_type);
-        } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
-          var_type_map_[var_name] = LiteType::GetTensorListTy(
-              TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
-        }
-#if defined(LITE_WITH_XPU) || defined(LITE_WITH_CUDA)
-      }
-#endif
-
-      // Create tensors or wights from variable description.
+      // Create tensors or weights from variable description.
       if (!var_desc->Persistable()) {
         vars_.push_back(var_name);
         auto* var = exec_scope_->Var(var_name);
@@ -603,6 +736,7 @@ void Program::PrepareWorkspace(
             VLOG(4) << " - dims " << tensor->dims().repr();
           }
           tensor->set_precision(var_data_type);
+          tensor->set_persistable(var_desc->Persistable());
         } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
           var_type_map_[var_name] = LiteType::GetTensorListTy(
               TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
@@ -612,6 +746,18 @@ void Program::PrepareWorkspace(
           var->GetMutable<std::vector<lite::Scope*>>();
         }
       } else {
+        if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
+          const auto& var_data_type =
+              VarDescType2PrecisionType(var_desc->GetDataType());
+          if (var_data_type != PRECISION(kUnk)) {
+            var_type_map_[var_name] = LiteType::GetTensorTy(
+                TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
+          }
+          VLOG(4) << " - data type " << static_cast<int>(var_data_type);
+        } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
+          var_type_map_[var_name] = LiteType::GetTensorListTy(
+              TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
+        }
         if (var_name == "feed" || var_name == "fetch") continue;
         weights_.push_back(var_name);
         scope_->Var(var_name);

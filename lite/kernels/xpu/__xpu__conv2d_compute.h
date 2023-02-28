@@ -21,8 +21,11 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
-
-template <typename T, PrecisionType PType>
+template <typename TGEMM,
+          typename TW,
+          typename DX,
+          typename DY,
+          PrecisionType PType>
 class XPUConv2dCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::XPUBlockFuseParam;
@@ -34,6 +37,9 @@ class XPUConv2dCompute : public KernelLite<TARGET(kXPU), PType> {
  private:
   XPUScratchPadGuard branch_broadcast_guard_;
   XPUQuantData xpu_quant_filter_;
+  XPUScratchPadGuard input_max_guard_;
+  XPUScratchPadGuard output_max_guard_;
+  XPUScratchPadGuard branch_max_guard_;
 };
 
 }  // namespace xpu

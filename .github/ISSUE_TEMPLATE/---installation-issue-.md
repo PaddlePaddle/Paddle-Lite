@@ -5,7 +5,7 @@ about: 您可以提问安装、编译出现报错等问题。 You could use this
 
 ---
 
-为使您的问题得到快速解决，在建立 Issue 前，请您先通过如下方式搜索是否有相似问题:[历史 issue](https://github.com/PaddlePaddle/Paddle-Lite/issues), [FAQ 文档](https://paddle-lite.readthedocs.io/zh/develop/quick_start/faq.html), [官方文档](https://paddle-lite.readthedocs.io/zh/develop/guide/introduction.html)
+为使您的问题得到快速解决，在建立 Issue 前，请您先通过如下方式搜索是否有相似问题:[历史 issue](https://github.com/PaddlePaddle/Paddle-Lite/issues), [FAQ 文档](https://www.paddlepaddle.org.cn/lite/develop/quick_start/faq.html), [官方文档](https://www.paddlepaddle.org.cn/lite/develop/guide/introduction.html)
 
 建立 issue 时，为快速解决问题，请您根据使用情况给出如下信息：
 - 标题：请包含关键词“安装错误”/“编译错误”，例如“Mac 编译错误”

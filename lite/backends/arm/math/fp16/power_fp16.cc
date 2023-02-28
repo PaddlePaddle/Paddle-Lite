@@ -46,6 +46,9 @@ void power_fp16(const float16_t* din,
   }
   float16_t* ptr_out = dout;
   const float16_t* ptr_in = din;
+  // TODO: ndk22 bug,
+  // when use vget_low_f16 will occur compilation bug in this code,
+  // need study better way to fix this question
   float16_t scale_tmp[8];
   float16_t shift_tmp[8];
   for (int i = 0; i < 8; i++) {
@@ -119,7 +122,8 @@ void power_fp16(const float16_t* din,
     ptr_out += 4;
   }
   for (int j = 0; j < rem_rem; ++j) {
-    ptr_out[0] = std::pow((ptr_in[0] * scale_ + shift_), factor_);
+    ptr_out[0] = std::pow((ptr_in[0] * (float16_t)scale_ + (float16_t)shift_),
+                          (float16_t)factor_);
     ptr_in++;
     ptr_out++;
   }

@@ -88,6 +88,8 @@ typedef enum {
 typedef enum {
   NNADAPTER_NCHW = 0,
   NNADAPTER_NHWC = 1,
+  NNADAPTER_HWCN = 2,
+  NNADAPTER_HWNC = 3,
 } NNAdapterOperandLayoutCode;
 
 /**
@@ -119,60 +121,56 @@ typedef enum {
  */
 typedef enum {
   /**
-   * Applies the abs activation to the input tensor element-wise.
+   * Performs element-wise abs activation.
    * The output is calculated using this formula:
-   * output = abs(input)
+   *     `output` = abs(`input`)
    *
    * Inputs:
-   * * 0: input0, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 0: input, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER operand.
    *
    * Outputs:
-   * * 0: output, the result with the same type as two inputs.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_ABS = 0,
 
   /**
-   * Applies adaptive 2-D average pooling across the input according to input
-   * and
-   * output size.
+   * Performs adaptive 2-D average pooling.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
-   * H_in, W_in].
-   * * 1: output_shape, a NNADAPTER_INT32 or
-   * NNADAPTER_INT64 tensor, with shape [2], with value [H_out, H_out].
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 4-D
+   * tensor of shape [N, C_in, H_in, W_in].
+   * * 1: output_shape, a NNADAPTER_INT32 or NNADAPTER_INT64 tensor of shape
+   * [2], its value should be [H_out, W_out].
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of shape [N, C_in, H_out, W_out] and has same type as
+   * `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D,
 
   /**
-   * Applies adaptive 2-D max pooling across the input according to input and
-   * output size.
+   * Performs adaptive 2-D max pooling.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
-   * H_in, W_in].
-   * * 1: output_shape, a NNADAPTER_INT32 or
-   * NNADAPTER_INT64 tensor, with shape [2], with value [H_out, H_out].
-   * * 2: return_indices, a NNADAPTER_BOOL8 scalar, whether to return index of
-   * output. Defaults to false
-   * * 3: return_indices_dtype, a NNADAPTER_INT32 scalar, must be one of
-   * NNADAPTER_INT32 or NNADAPTER_INT64, specifies the dtype of
-   * the indices.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 4-D
+   * tensor of shape [N, C_in, H_in, W_in].
+   * * 1: output_shape, a NNADAPTER_INT32 or NNADAPTER_INT64 tensor of shape
+   * [2], its value should be [H_out, W_out].
+   * * 2: return_indices, a NNADAPTER_BOOL8 tensor of shape [1], whether to
+   * return `indices` along with the outputs, defaults to false.
+   * * 3: return_indices_dtype, a NNADAPTER_INT32 tensor of shape [1], specifies
+   * the data type of `indices`, its value must be one of NNADAPTER_INT32,
+   * NNADAPTER_INT64.
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
-   * * 1: indices, a NNADAPTER_INT32 or NNADAPTER_INT64 tensor,
-   * with the same shape as output, indicates the indices of the current feature
-   * map.
+   * * 0: output, a tensor of shape [N, C_in, H_out, W_out] and has same type as
+   * `input`.
+   * * 1: indices, a NNADAPTER_INT32 or NNADAPTER_INT64 tensor and has the same
+   * shape as `output`.
    *
    * Available since version 1.
    */
@@ -181,52 +179,60 @@ typedef enum {
   /**
    * Performs element-wise binary addition(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula:
+   *      `output` = `input0` + `input1`
    *
    * Inputs:
-   * * 0: input0, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: input1, a tensor with the same type as input0.
-   * * 2: fuse_code, a NNADAPTER_INT32 scalar, Specifies the activation to the
+   * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
+   * * 2: fuse_code, a NNADAPTER_INT32 tensor of shape [1], specifies the
+   * activation to the
    * result, must be one of NNAdapterFuseCode values.
    *
    * Outputs:
-   * * 0: output, the result with the same type as two inputs.
+   * * 0: output, a tensor of the compatible shape and type as `input0` and
+   * `input1`.
    *
    * Available since version 1.
    */
   NNADAPTER_ADD,
 
   /**
-   * Performs element-wise binary and logical operation(with Numpy-style
+   * Performs element-wise binary logical AND operation(with Numpy-style
    * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
-   * The output is calculated using this formula: output = input0 && input1
+   * The output is calculated using this formula:
+   *     `output` = `input0` && `input1`
    *
    * Inputs:
    * * 0: input0, a NNADAPTER_BOOL8 tensor.
-   * * 1: input1, a NNADAPTER_BOOL8 tensor.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
    *
    * Outputs:
-   * * 0: output, a NNADAPTER_BOOL8 tensor.
+   * * 0: output, a tensor of the compatible shape and type as `input0`.
    *
    * Available since version 1.
    */
   NNADAPTER_AND,
 
   /**
-   * Computes the indices of the max elements of the input tensor’s element
-   * along the provided axis.
+   * Computes the indices of the max elements of the input tensor's element
+   * along the provided `axis`.
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axis, a NNADAPTER_INT32 scalar, the axis in which to compute
+   * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], the axis in which to
+   * compute
    * the arg indices, it should be in range [-R, R), where R is the rank of
-   * input, negative value works the same way as axis+R.
-   * * 2: keepdim, a NNADAPTER_BOOL8 scalar, keep the reduced dimension or not,
-   * If TRUE, keep the reduced dimension.
-   * * 3: dtype, a NNADAPTER_INT32 scalar, the value of NNADAPTER_INT32,
-   * NNADAPTER_INT64, specifies the dtype of the result. Default
-   * NNADAPTER_INT64.
+   * input, negative value works the same way as `axis`+R.
+   * * 2: keepdim, a NNADAPTER_BOOL8 tensor of shape [1], whether to keep the
+   * reduced dimension.
+   * * 3: dtype, a NNADAPTER_INT32 tensor of shape [1], specifies the dtype of
+   * the `output`, its value should be NNADAPTER_INT32, NNADAPTER_INT64,
+   * defaults to NNADAPTER_INT64.
    *
    * Outputs:
    * * 0: output, a NNADAPTER_INT32 or NNADAPTER_INT64 tensor.
@@ -236,20 +242,21 @@ typedef enum {
   NNADAPTER_ARG_MAX,
 
   /**
-   * Computes the indices of the min elements of the input tensor’s element
-   * along the provided axis.
+   * Computes the indices of the min elements of the input tensor's element
+   * along the provided `axis`.
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axis, a NNADAPTER_INT32 scalar. the axis in which to compute
+   * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], the axis in which to
+   * compute
    * the arg indices, it should be in range [-R, R), where R is the rank of
-   * input, negative value works the same way as axis+R.
-   * * 2: keepdim, a NNADAPTER_BOOL8 scalar, keep the reduced dimension or not,
-   * If TRUE, keep the reduced dimension.
-   * * 3: dtype, a NNADAPTER_INT32 scalar, the value of NNADAPTER_INT32,
-   * NNADAPTER_INT64, specifies the dtype of the result. Default
-   * NNADAPTER_INT64.
+   * input, negative value works the same way as `axis` +R.
+   * * 2: keepdim, a NNADAPTER_BOOL8 tensor of shape [1], whether to keep the
+   * reduced dimension.
+   * * 3: dtype, a NNADAPTER_INT32 tensor of shape [1], specifies the dtype of
+   * the `output`, its value should be NNADAPTER_INT32, NNADAPTER_INT64,
+   * defaults to NNADAPTER_INT64.
    *
    * Outputs:
    * * 0: output, a NNADAPTER_INT32 or NNADAPTER_INT64 tensor.
@@ -266,59 +273,39 @@ typedef enum {
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_ASSIGN,
 
   /**
-   * Performs element-wise binary equal relational operation(with Numpy-style
-   * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
-   * The output is calculated using this formula:
-   *     output = input0 == input1
+   * Performs 2-D average pooling.
    *
    * Inputs:
-   * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_BOOL8,
-   * NNADAPTER_INT32, NNADAPTER_INT64,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: input1, a tensor with the same type as input0.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
+   * of shape [N, C_in, H_in, W_in].
+   * * 1: auto_pad, a NNADAPTER_INT32 tensor of shape [1], must be one of
+   * NNAdapterAutoPadCode values, NNADAPTER_AUTO_PAD_NONE means specifying the
+   * explicit padding by `pads`, otherwise specifying the implicit padding
+   * algorithm, including NNADAPTER_AUTO_PAD_SAME and NNADAPTER_AUTO_PAD_VALID.
+   * * 2: pads, an optional NNADAPTER_INT32 tensor of shape [4], specifying
+   * height_top, height_bottom, width_left and width_right.
+   * * 3: kernel_shape, a NNADAPTER_INT32 tensor of shape [2], specifying
+   * kernel_height and kernel_width.
+   * * 4: strides, a NNADAPTER_INT32 tensor of shape [2], specifying
+   * stride_height and stride_width.
+   * * 5: ceil_mode, a NNADAPTER_BOOL8 tensor of shape [1], whether to use ceil
+   * or floor to compute the output shape, defaults to false to use floor.
+   * * 6: count_include_pad, a NNADAPTER_BOOL8 tensor of shape [1], whether
+   * include pad pixels when calculating values for the edges, defaults to
+   * false.
+   * * 7: fuse_code, a NNADAPTER_INT32 tensor of shape [1], must be one of
+   * NNAdapterFuseCode values.
    *
    * Outputs:
-   * * 0: output, a NNADAPTER_BOOL8 tensor.
-   *
-   * Available since version 1.
-   */
-  NNADAPTER_EQUAL,
-
-  /**
-   * Applies a 2-D average pooling across the input according to kernel sizes,
-   * stride sizes, and pad lengths.
-   *
-   * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
-   * H_in, W_in].
-   * * 1: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
-   * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
-   * NNAdapterAutoPadCode values.
-   * * 2: pads, a NNADAPTER_INT32 tensor, with shape [4] and data
-   * {height_top,
-   * height_bottom, width_left, width_right}, or with shape[0] and no data.
-   * * 3: kernel_shape, a NNADAPTER_INT32 tensor, with shape [2] and data
-   * {kernel_height, kernel_width}.
-   * * 4: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
-   * {height_stride, width_stride}.
-   * * 5: ceil_mode, a NNADAPTER_BOOL8 scalar, whether to use ceil or floor
-   * (default) to compute the output shape. Defaults to false
-   * * 6: count_include_pad, a NNADAPTER_BOOL8 scalar, whether include pad
-   * pixels when calculating values for the edges. Defaults to false
-   * * 7: fuse_code, a NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
-   * values.
-   *
-   * Outputs:
-   * * 0: output, the output 4-D tensor with shape [N, C_out, H_out, W_out], its
-   * type is the same as input.
+   * * 0: output, a tensor of shape [N, C_out, H_out, W_out], has the same type
+   * as `input`.
    *      1) If ceil_mode=false,
    *         H_out = floor((H_in + padding_height_top + padding_height_bottom -
    * filter_height) / stride_height + 1)
@@ -338,28 +325,20 @@ typedef enum {
    * Applies Batch Normalization over a 4D input (a mini-batch of 2D inputs with
    * additional channel dimension) as described in the paper Batch
    * Normalization: Accelerating Deep Network Training by Reducing Internal
-   * Covariate Shift .
+   * Covariate Shift https://arxiv.org/pdf/1502.03167.pdf .
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N,C,...]
-   * * 1: scale, a 1-D tensor with shape [C]. 1) If input's type is
-   * NNADAPTER_FLOAT32, its type must be the
-   * same type.
-   * * 2: bias, a 1-D tensor with shape [C]. 1) If input's type is
-   * NNADAPTER_FLOAT32, its type must be the
-   * same type.
-   * * 3: mean, a 1-D tensor with shape [C]. 1) If input's type is
-   * NNADAPTER_FLOAT32, its type must be the
-   * same type.
-   * * 4: var, a 1-D tensor with shape [C]. 1) If input's type is
-   * NNADAPTER_FLOAT32, its type must be the
-   * same type.
-   * * 5: epsilon, a NNADAPTER_FLOAT32 scalar. Defaults to 1e-5. The small value
-   * added to the variance to prevent division by zero.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
+   * of shape [N, C, ...].
+   * * 1: scale, a NNADAPTER_FLOAT32 tensor of shape [C].
+   * * 2: bias, a NNADAPTER_FLOAT32 tensor of shape [C].
+   * * 3: mean, a NNADAPTER_FLOAT32 tensor of shape [C].
+   * * 4: variance, a NNADAPTER_FLOAT32 tensor of shape [C].
+   * * 5: epsilon, a NNADAPTER_FLOAT32 tensor of shape [1], a small value added
+   * to the variance to prevent division by zero, defaults to 1e-5.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
@@ -370,16 +349,17 @@ typedef enum {
    * by the `dtype` argument.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_BOOL8, NNADAPTER_INT8,
-   * NNADAPTER_UINT8, NNADAPTER_INT16, NNADAPTER_INT32,
-   * NNADAPTER_INT64, NNADAPTER_FLOAT16, NNADAPTER_FLOAT32,
-   * NNADAPTER_FLOAT64 tensor.
-   * * 1: dtype, a NNADAPTER_INT32 scalar, the value of NNADAPTER_INT32,
-   * NNADAPTER_INT64, NNADAPTER_FLOAT32, NNADAPTER_FLOAT64 etc.
-   * Specifies the dtype of the result.
+   * * 0: input, a NNADAPTER_BOOL8, NNADAPTER_INT8, NNADAPTER_UINT8,
+   * NNADAPTER_INT16, NNADAPTER_INT32, NNADAPTER_INT64, NNADAPTER_FLOAT16,
+   * NNADAPTER_FLOAT32, NNADAPTER_FLOAT64 tensor.
+   * * 1: dtype, a NNADAPTER_INT32 of shape [1], specifies the dtype of the
+   * 'output', must be one of NNAdapterOperandPrecisionCode values, should be
+   * NNADAPTER_BOOL8, NNADAPTER_INT8, NNADAPTER_UINT8, NNADAPTER_INT16,
+   * NNADAPTER_INT32, NNADAPTER_INT64, NNADAPTER_FLOAT16, NNADAPTER_FLOAT32,
+   * NNADAPTER_FLOAT64 .
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape as input.
+   * * 0: output, a `dtype` tensor of the same shape as `input`.
    *
    * Available since version 1.
    */
@@ -387,34 +367,37 @@ typedef enum {
 
   /**
    * It divides the input channels in each group into several subgroups, and
-   * obtain a new order by selecting element from every subgroup one by one.
+   * obtain a new order by selecting element from every subgroup one by one as
+   * described in the paper https://arxiv.org/pdf/1707.01083.pdf .
+   * The output is calculated using this formula:
+   *     C_out[k * group + g] = C_in[g * size + k], where size = C_in / group.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
+   * of shape [N, C_in, H_in, W_in].
    * tensor.
-   * * 1: group, a NNADAPTER_INT32 tensor with shape [1].
+   * * 1: group, a NNADAPTER_INT32 tensor of shape [1].
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_CHANNEL_SHUFFLE,
 
   /**
-   * Clip all elements in input into the range [ min, max ].
+   * Clip all elements in input into the range [`min`, `max`].
    * The output is calculated using this formula:
-   *     output = MIN(MAX(input, min), max)
+   *     `output` = min(max(`input`, `min`), `max`)
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: min, a 1-D tensor with the same type as input with shape[1].
-   * * 2: max, a 1-D tensor with the same type as input with shape[1].
+   * * 1: min, a tensor of shape [1] and has the same type as `input`.
+   * * 2: max, a tensor of shape [1] and has the same type as `input`.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
@@ -428,12 +411,13 @@ typedef enum {
    * Inputs:
    * * 0 ~ n-1: input0 ~ inputn-1, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axis, a NNADAPTER_INT32 scalar. It represents the dimension along
-   * which axis to concat on. It should be in range [-R, R), where R is the rank
-   * of input, negative value works the same way as axis+R.
+   * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], represents the
+   * dimension along which concat will be performed, should be in range [-R,
+   * R), where R is the rank of `input`, negative value works the same way as
+   * `axis`+R, defaults to -1.
    *
    * Outputs:
-   * * 0: output, the result with the same type as the inputs.
+   * * 0: output, a tensor of the same type as the `input0` ~ `inputn-1`.
    *
    * Available since version 1.
    */
@@ -445,9 +429,8 @@ typedef enum {
    * strides, paddings, dilations, groups and etc.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
-   * H_in, W_in].
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
+   * of shape [N, C_in, H_in, W_in].
    * * 1: filter, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL 4-D tensor.
@@ -459,36 +442,35 @@ typedef enum {
    * filter_height, filter_width], where C_out is the number of the channels of
    * output, filter_height and filter_width is the filter's kernel size in the
    * 'H' and 'W' dimension.
-   * * 2: bias, a 1-D tensor with shape [C_out].
-   *      1) If input's type is NNADAPTER_FLOAT32, its type must be the
-   * same type.
+   * * 2: bias, a tensor of shape [C_out].
+   *      1) If input's type is NNADAPTER_FLOAT32, its type must be the same
+   * type.
    *      2) If filter's type is NNADAPTER_QUANT_INT8_SYMM_PER_LAYER, its
    * type should be NNADAPTER_QUANT_INT32_SYMM_PER_LAYER, and bias_scale
    * == input_scale * filter_scale.
    *      3) If filter's type is NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL,
    * its type should be NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL, and
    * bias_scale[i] = input_scale * filter_scale[i] for each output channel.
-   * * 3: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
-   * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
-   * NNAdapterAutoPadCode.
-   * * 4: pads, a NNADAPTER_INT32 tensor, with shape [4] and data
-   * {height_top,
-   * height_bottom, width_left, width_right}, or with shape[0] and no data.
-   * * 5: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
-   * {height_stride, width_stride}.
-   * * 6: group, a NNADAPTER_INT32 scalar.
-   *      1) For a normal convolution, group must be 1.
+   * * 3: auto_pad, a NNADAPTER_INT32 tensor of shape [1], must be one of
+   * NNAdapterAutoPadCode values, NNADAPTER_AUTO_PAD_NONE means specifying the
+   * explicit padding by `pads`, otherwise specifying the implicit padding
+   * algorithm, including NNADAPTER_AUTO_PAD_SAME and NNADAPTER_AUTO_PAD_VALID.
+   * * 4: pads, an optional NNADAPTER_INT32 tensor of shape [4], specifying
+   * height_top, height_bottom, width_left and width_right.
+   * * 5: strides, a NNADAPTER_INT32 tensor of shape [2], specifying
+   * stride_height and stride_width.
+   * * 6: group, a NNADAPTER_INT32 tensor of shape [1].
+   *      1) For a normal convolution, `group` must be 1.
    *      2) For a depthwise convolution, the formula should be satisfied:
-   * group=C_out=C_in.
-   * * 7: dilations, a NNADAPTER_INT32 tensor, with shape [2] and data
-   * {dilations_height, dilations_width}.
-   * * 8: fuse_code, a NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
-   * values.
-   *
+   * `group` = C_out = C_in.
+   * * 7: dilations, a NNADAPTER_INT32 tensor of shape [2], specifying
+   * dilations_height and dilations_width.
+   * * 8: fuse_code, a NNADAPTER_INT32 tensor of shape [1], must be one of
+   * NNAdapterFuseCode values.
    *
    * Outputs:
-   * * 0: output, the output 4-D tensor with shape [N, C_out, H_out, W_out], its
-   * type is the same as input.
+   * * 0: output, a tensor of shape [N, C_out, H_out, W_out], has the same type
+   * as `input`.
    *      H_out = (H_in + padding_height_top + padding_height_bottom -
    * (dilation_height * (filter_height
    *              - 1) + 1)) / stride_height + 1
@@ -506,16 +488,15 @@ typedef enum {
    * groups and etc.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
-   * H_in, W_in].
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
+   * of shape [N, C_in, H_in, W_in].
    * * 1: filter, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL 4-D tensor. The filter's shape
    * is [C_in, C_out, filter_height, filter_width], where C_out and C_in is the
    * number of the channels of output and input, filter_height and filter_width
    * is the filter's kernel size in the 'H' and 'W' dimension.
-   * * 2: bias, a 1-D tensor with shape [C_out].
+   * * 2: bias, a tensor of shape [C_out].
    *      1) If input's type is NNADAPTER_FLOAT32, its type must be the
    * same type.
    *      2) If filter's type is NNADAPTER_QUANT_INT8_SYMM_PER_LAYER, its
@@ -524,32 +505,30 @@ typedef enum {
    *      3) If filter's type is NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL,
    * its type should be NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL, and
    * bias_scale[i] = input_scale * filter_scale[i] for each output channel.
-   * * 3: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
-   * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
-   * NNAdapterAutoPadCode.
-   * * 4: pads, a NNADAPTER_INT32 tensor, with shape [4] and data
-   * {height_top,
-   * height_bottom, width_left, width_right}, or shape[0] and no data.
-   * * 5: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
-   * {height_stride, width_stride}.
-   * * 6: group, a NNADAPTER_INT32 scalar.
+   * * 3: auto_pad, a NNADAPTER_INT32 tensor of shape [1], must be one of
+   * NNAdapterAutoPadCode values, NNADAPTER_AUTO_PAD_NONE means specifying the
+   * explicit padding by `pads`, otherwise specifying the implicit padding
+   * algorithm, including NNADAPTER_AUTO_PAD_SAME and NNADAPTER_AUTO_PAD_VALID.
+   * * 4: pads, an optional NNADAPTER_INT32 tensor of shape [4], specifying
+   * height_top, height_bottom, width_left and width_right.
+   * * 5: strides, a NNADAPTER_INT32 tensor of shape [2], specifying
+   * stride_height and stride_width.
+   * * 6: group, a NNADAPTER_INT32 tensor of shape [1].
    *      1) For a normal convolution, group must be 1.
    *      2) For a depthwise convolution, the formula should be satisfied:
-   * group=C_out=C_in.
-   * * 7: dilations, a NNADAPTER_INT32 tensor, with shape [2] and data
-   * {dilations_height, dilations_width}.
-   * * 8: output_padding, a NNADAPTER_INT32 tensor, with shape [2] and
-   * data
-   * {output_pad_height, output_pad_width}, or shape[0] and no data.
-   * * 9: output_shape, a NNADAPTER_INT32 or NNADAPTER_INT64
-   * tensor, with shape [2] and data {output_height, output_width}, or shape[0]
-   * and no data.
-   * * 10: fuse_code, a NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
-   * values.
+   * `group` = C_out = C_in.
+   * * 7: dilations, a NNADAPTER_INT32 tensor of shape [2], specifying
+   * dilations_height and dilations_width.
+   * * 8: output_padding, an optional NNADAPTER_INT32 tensor of shape [2],
+   * specifying output_pad_height and output_pad_width.
+   * * 9: output_shape, an optional NNADAPTER_INT32 or NNADAPTER_INT64 tensor of
+   * shape [2], specifying output_height and output_width.
+   * * 10: fuse_code, a NNADAPTER_INT32 tensor of shape [1], must be one of
+   * NNAdapterFuseCode values.
    *
    * Outputs:
-   * * 0: output, the output 4-D tensor with shape [N, C_out, H_out, W_out], its
-   * type is the same as input.
+   * * 0: output, a tensor of shape [N, C_out, H_out, W_out], has the same type
+   * as `input`.
    *      H_out = (H_in - 1) * stride_height - padding_height_top -
    * padding_height_bottom + (dilation_height * (filter_height - 1)) + 1 +
    * output_padding_height
@@ -562,22 +541,37 @@ typedef enum {
   NNADAPTER_CONV_2D_TRANSPOSE,
 
   /**
-   * Performs cumulative sum of the input elements along the given axis.
+   * Performs element-wise cosine calculation.
+   * The output is calculated using this formula: `output` = cos(`input`)
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axis, a NNADAPTER_INT32 scalar. Defaults to -1. It represents the
-   * dimension along which softmax will be performed. It should be in range [-R,
-   * R), where R is the rank of input, negative value works the same way as
-   * axis+R.
-   * * 2: exclusive, a NNADAPTER_BOOL8 scalar. If set to true, the top element
-   * will not be include. Default false.
-   * * 3: reverse, a NNADAPTER_BOOL8 scalar, whether to perform the cumsum in
-   * the reversed direction. Default false.
    *
    * Outputs:
-   * * 0: output, a tensor with the same type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_COS,
+
+  /**
+   * Performs cumulative sum of the input elements along the given `axis`.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], represents the
+   * dimension along which cum_sum will be performed, should be in range [-R,
+   * R), where R is the rank of input, negative value works the same way as
+   * `axis`+R, defaults to -1.
+   * * 2: exclusive, a NNADAPTER_BOOL8 tensor of shape [1], whether to exclude
+   * the top element, defaults to false.
+   * * 3: reverse, a NNADAPTER_BOOL8 tensor of shape [1], whether to perform the
+   * cumsum in the reversed direction, defaults to false.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
@@ -587,13 +581,12 @@ typedef enum {
    * Compute 2-D deformable convolution on 4-D input.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
-   * H_in, W_in].
-   * * 1: offset, a tensor with the same type as input.
-   * It's shape is [N, 2 * deformable_groups * H_f * W_f, H_in, W_in]
-   * * 2: mask, a tensor with the same type as input.
-   * It's shape is [N, deformable_groups * H_f * W_f, H_in, W_in]
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
+   * of shape [N, C_in, H_in, W_in].
+   * * 1: offset, a tensor of shape [N, 2 * deformable_groups * H_f * W_f, H_in,
+   * W_in] and has the same type as `input`.
+   * * 2: mask, a tensor of shape [N, deformable_groups * H_f * W_f, H_in, W_in]
+   * and has the same type as `input`.
    * * 3: filter, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL 4-D tensor.
@@ -605,7 +598,7 @@ typedef enum {
    * filter_height, filter_width], where C_out is the number of the channels of
    * output, filter_height and filter_width is the filter's kernel size in the
    * 'H' and 'W' dimension.
-   * * 4: bias, a 1-D tensor with shape [C_out].
+   * * 4: bias, a tensor of shape [C_out].
    *      1) If input's type is NNADAPTER_FLOAT32, its type must be the
    * same type.
    *      2) If filter's type is NNADAPTER_QUANT_INT8_SYMM_PER_LAYER, its
@@ -614,25 +607,24 @@ typedef enum {
    *      3) If filter's type is NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL,
    * its type should be NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL, and
    * bias_scale[i] = input_scale * filter_scale[i] for each output channel.
-   * * 5: pads, a NNADAPTER_INT32 tensor, with shape [4] and data
-   * {height_top, height_bottom, width_left, width_right}, or with shape[0] and
-   * no data.
-   * * 6: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
-   * {height_stride, width_stride}.
-   * * 7: group, a NNADAPTER_INT32 scalar.
+   * * 5: pads, an optional NNADAPTER_INT32 tensor of shape [4], specifying
+   * height_top, height_bottom, width_left, width_right.
+   * * 6: strides, a NNADAPTER_INT32 tensor of shape [2], specifying
+   * stride_height, stride_width.
+   * * 7: group, a NNADAPTER_INT32 tensor of shape [1].
    *      1) For a normal convolution, group must be 1.
    *      2) For a depthwise convolution, the formula should be satisfied:
-   * group=C_out=C_in.
-   * * 8: deformable_group, a NNADAPTER_INT32 scalar. Specify the c-axis
-   * grouping number of input x.
-   * * 9: dilations, a NNADAPTER_INT32 tensor, with shape [2] and data
-   * {dilations_height, dilations_width}.
-   * * 10: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
-   * values.
+   * `group` = C_out = C_in.
+   * * 8: deformable_group, a NNADAPTER_INT32 tensor of shape [1], specifying
+   * the c-axis grouping number of `input`.
+   * * 9: dilations, a NNADAPTER_INT32 tensor of shape [2], specifying
+   * dilations_height, dilations_width.
+   * * 10: fuse_code, a NNADAPTER_INT32 tensor of shape [1], must be one of
+   * NNAdapterFuseCode values.
    *
    * Outputs:
-   * * 0: output, the output 4-D tensor with shape [N, C_out, H_out, W_out], its
-   * type is the same as input.
+   * * 0: output, a tensor of shape [N, C_out, H_out, W_out], has the same type
+   * as `input`.
    *      H_out = (H_in + padding_height_top + padding_height_bottom -
    * (dilation_height * (filter_height
    *              - 1) + 1)) / stride_height + 1
@@ -645,10 +637,10 @@ typedef enum {
   NNADAPTER_DEFORMABLE_CONV_2D,
 
   /**
-   * Applies the quantization to the input tensor. The output is calculated
-   * using this formula:
-   * output = (input - zero_point) * scale,
-   * `zero_point` and `scale` is obtained from `input` .
+   * Dequantizes a quantized tensor to a full precision one.
+   * The output is calculated using this formula:
+   *     `output` = (`input` - zero_point) * scale, where zero_point and scale
+   * is obtained from `input`.
    *
    * Inputs:
    * * 0: input, a NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
@@ -657,7 +649,7 @@ typedef enum {
    * NNADAPTER_QUANT_UINT8_ASYMM_PER_CHANNEL tensor.
    *
    * Outputs:
-   * * 0: output, a NNADAPTER_FLOAT32 tensor with the same shape as `input`.
+   * * 0: output, a NNADAPTER_FLOAT32 tensor of the same shape as `input`.
    *
    * Available since version 1.
    */
@@ -666,32 +658,58 @@ typedef enum {
   /**
    * Performs element-wise binary division(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula:
+   *      `output` = `input0` / `input1`
    *
    * Inputs:
-   * * 0: input0, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: input1, a tensor with the same type as input0.
-   * * 2: fuse_code, a NNADAPTER_INT32 scalar, Specifies the activation to the
+   * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
+   * * 2: fuse_code, a NNADAPTER_INT32 tensor of shape [1], specifies the
+   * activation to the
    * result, must be one of NNAdapterFuseCode values.
    *
    * Outputs:
-   * * 0: output, the result with the same type as two inputs.
+   * * 0: output, a tensor of the compatible shape and type as `input0` and
+   * `input1`.
    *
    * Available since version 1.
    */
   NNADAPTER_DIV,
 
   /**
-   * Applies the exp activation to the input tensor element-wise.
+   * Performs element-wise binary equal relational operation(with Numpy-style
+   * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
    * The output is calculated using this formula:
-   * output = e^input
+   *     `output` = `input0` == `input1`
+   *
+   * Inputs:
+   * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_BOOL8,
+   * NNADAPTER_INT32, NNADAPTER_INT64,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
+   *
+   * Outputs:
+   * * 0: output, a NNADAPTER_BOOL8 tensor, has the compatible shape as
+   * 'input0'.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_EQUAL,
+
+  /**
+   * Performs element-wise exp activation.
+   * The output is calculated using this formula:
+   * `output` = e^`input`
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
    *
    * Outputs:
-   * * 0: output, the result with the same type as two inputs.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
@@ -704,42 +722,43 @@ typedef enum {
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: shape, a NNADAPTER_INT32 or NNADAPTER_INT64 tensor. It
-   * indicates the shape you want to expand to, following the broadcast rule.
+   * * 1: shape, a 1-D NNADAPTER_INT32 or NNADAPTER_INT64 tensor indicates the
+   * shape you want to expand to, following the broadcasting rule.
    *
    * Outputs:
-   * * 0: output, a tensor with the same type as input.
+   * * 0: output, a tensor of shape `shape` and has the same type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_EXPAND,
 
   /**
-   * Return a Tensor with the 'shape' and 'value'.
+   * Create a tensor of the 'shape' and filled with 'value'.
    *
    * Inputs:
-   * * 0: shape, a NNADAPTER_INT32 or NNADAPTER_INT64 tensor.
+   * * 0: shape, a NNADAPTER_INT32, NNADAPTER_INT64 tensor.
    * * 1: value, a NNADAPTER_FLOAT32, NNADAPTER_INT32, NNADAPTER_INT64 or
-   * NNADAPTER_BOOL scalar.
+   * NNADAPTER_BOOL tensor of shape [1].
    *
    * Outputs:
-   * * 0: output, a tensor with the 'shape' and 'value'.
+   * * 0: output, a tensor of shape 'shape' and filled with 'value'.
    *
    * Available since version 1.
    */
   NNADAPTER_FILL,
 
   /**
-   * Generate a tensor with the same shape as input and with 'value'.
+   * Create a tensor of the same shape as `input` and filled with 'value'.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER or
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: value, a NNADAPTER_FLOAT32,  NNADAPTER_INT32, NNADAPTER_INT64 or
-   * NNADAPTER_BOOL scalar.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: value, a NNADAPTER_FLOAT32,  NNADAPTER_INT32, NNADAPTER_INT64,
+   * NNADAPTER_BOOL tensor of shape [1].
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape as input and with 'value'.
+   * * 0: output, a tensor of the same shape as 'input' and filled with
+   * 'value'.
    *
    * Available since version 1.
    */
@@ -750,52 +769,75 @@ typedef enum {
    * dimensions.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER or
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: start_axis, a NNADAPTER_INT32 scalar, first dim to flatten.
-   * * 2: end_axis, a NNADAPTER_INT32 scalar, last dim to flatten.
+   * * 1: start_axis, a NNADAPTER_INT32 tensor of shape [1], specifying the
+   * start axis to flatten.
+   * * 2: end_axis, a NNADAPTER_INT32 tensor of shape [1], specifying the end
+   * axis to flatten.
    *
    * Outputs:
-   * * 0: output, a tensor with the same type as input.
+   * * 0: output, a tensor of the same type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_FLATTEN,
 
   /*
-   * Applies floor to the input tensor element-wise. The output is calculated
-   * using this formula: output = floor(input)
+   * Performs element-wise floor activation.
+   * The output is calculated using this formula:
+   *     `output` = floor(`input`)
    *
    * Inputs:
    * * 0: input, A NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
    * tensor.
    *
    * Outputs:
-   * * 0: output, A tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_FLOOR,
 
   /**
+   * Performs element-wise binary floor divide(with Numpy-style broadcasting
+   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula:
+   *      `output` = floor (`input0` / `input1`)
+   * Inputs:
+   * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
+   * * 2: fuse_code, a NNADAPTER_INT32 tensor of shape [1], specifies the
+   * activation to the
+   * result, must be one of NNAdapterFuseCode values.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the compatible shape and type as `input0` and
+   * `input1`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_FLOOR_DIV,
+
+  /**
    * Add a fully connected layer.
    * The output is calculated using this formula:
-   *     output = activation(input * weight' + bias)
+   *     `output` = activation(`input` * `weight`' + `bias`)
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor of at least rank 2, If
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor of at least rank 2, if
    * its rank is greater than 2, it will be flattened to a 2-D Tensor with the
    * shape [batch_size, input_size], where input_size represents the number of
    * inputs, matching the second dimension of weight, and batch_size is
-   * calculated by dividing the number of elements by input_size
-   * * 1: weight, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER or
-   * NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL 2-D tensor with shape
-   * [num_units, input_size], where the num_units represents the number of
+   * calculated by dividing the number of elements by input_size.
+   * * 1: weight, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL tensor of shape [num_units,
+   * input_size], where the num_units represents the number of
    * output units, which also means the feature size of output.
-   * * 2: bias, a 1-D tensor with shape [num_units].
+   * * 2: bias, a tensor of shape [num_units].
    *      1) If input's type is NNADAPTER_FLOAT32, its type must be the
    * same type.
    *      2) If weight's type is NNADAPTER_QUANT_INT8_SYMM_PER_LAYER, its
@@ -804,12 +846,12 @@ typedef enum {
    *      3) If weight's type is NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL,
    * its type should be NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL, and
    * bias_scale[i] = input_scale * weight_scale[i] for each output channel.
-   * * 3: fuse_code, a NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
-   * values.
+   * * 3: fuse_code, a NNADAPTER_INT32 tensor of shape [1], must be one of
+   * NNAdapterFuseCode values.
    *
    * Outputs:
-   * * 0: output, a 2-D tensor with shape [batch_size, num_units], and its type
-   * is the same as input.
+   * * 0: output, a tensor of shape [batch_size, num_units], and has the same
+   * type as `input`.
    *
    * Available since version 1.
    */
@@ -820,35 +862,37 @@ typedef enum {
    * concatenate them together.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_INT32,
-   * NNADAPTER_INT64, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER or
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: indices, a NNADAPTER_INT32 or NNADAPTER_INT64 tensor,
-   * with rank R1, with values between [-k, k-1] along axis of size k.
-   * * 2: axis, A NNADAPTER_INT32 scalar. It represents the dimension along
-   * which gather will be performed. It should be in range [-R, R), where R is
-   * the rank of input, negative value works the same way as axis+R.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_INT32, NNADAPTER_INT64,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: indices, a NNADAPTER_INT32, NNADAPTER_INT64 tensor, with the rank Q,
+   * the values must be in the bounds of the corresponding dimensions of
+   * `input`.
+   * * 2: axis, a NNADAPTER_INT32 tensor of shape [1], represents the
+   * dimension along which gather will be performed, should be in range [-R,
+   * R), where R is the rank of input, negative value works the same way as
+   * `axis`+R, defaults to -1.
    *
    * Outputs
-   * * 0: output, a tensor with the same type as input, of rank with rank "R1 +
-   * (R - 1)".
+   * * 0: output, a tensor of the same type as `input`, with the rank Q + (R -
+   * 1).
    *
    * Available since version 1.
    */
   NNADAPTER_GATHER,
 
   /**
-   * Applies the Gaussian Error Linear Units activation to the input tensor
-   * element-wise. Refer to https://arxiv.org/abs/1606.08415 for more details.
+   * Performs element-wise Gaussian Error Linear Units activation, refer to
+   * https://arxiv.org/abs/1606.08415 for more details.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: approximate, a NNADAPTER_BOOL8 scalar, whether to enable
-   * approximation.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: approximate, a NNADAPTER_BOOL8 tensor of shape [1], whether to enable
+   * pproximation.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
@@ -857,16 +901,19 @@ typedef enum {
   /**
    * Performs element-wise binary greater relational operation(with Numpy-style
    * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
-   * output = input0 > input1
+   * The output is calculated using this formula:
+   *     `output` = `input0` == `input1`
    *
    * Inputs:
    * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_BOOL8,
    * NNADAPTER_INT32, NNADAPTER_INT64,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: input1, a tensor with the same type as input0.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
    *
    * Outputs:
-   * * 0: output, a NNADAPTER_BOOL8 tensor.
+   * * 0: output, a NNADAPTER_BOOL8 tensor, has the compatible shape as
+   * 'input0'.
    *
    * Available since version 1.
    */
@@ -874,18 +921,21 @@ typedef enum {
 
   /**
    * Performs element-wise binary greater_equal relational operation(with
-   * Numpy-style broadcasting
-   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
-   * output = input0 >= input1
+   * Numpy-style
+   * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula:
+   *     `output` = `input0` == `input1`
    *
    * Inputs:
    * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_BOOL8,
    * NNADAPTER_INT32, NNADAPTER_INT64,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: input1, a tensor with the same type as input0.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
    *
    * Outputs:
-   * * 0: output, a NNADAPTER_BOOL8 tensor.
+   * * 0: output, a NNADAPTER_BOOL8 tensor, has the compatible shape as
+   * 'input0'.
    *
    * Available since version 1.
    */
@@ -902,19 +952,22 @@ typedef enum {
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
-   * with shape [N, C, H, W].
-   * * 1: grid, a tensor with the same type as input, with shape [N, H, W, 2].
-   * * 2: align_corners, a NNADAPTER_BOOL8 tensor with shape [1]. If
-   * align_corners is true, it will project -1 and 1 to the centers of the
-   * corner pixels. Otherwise, it will project -1 and 1 to the image edges.
-   * * 3: mode, a NNADAPTER_INT32 tensor with shape [1]. It must be one of
-   * NNAdapterInterpolateMode.
-   * * 4: pad_mode, a NNADAPTER_INT32 tensor with shape [1]. Supported modes:
-   * `constant`(default), `reflect`, `edge`. It should be a value of
-   * NNAdapterPadMode.
+   * of shape [N, C, H, W].
+   * * 1: grid, a NNADAPTER_FLOAT32 tensor of shape [N, H, W, 2].
+   * * 2: align_corners, a NNADAPTER_BOOL8 tensor of shape [1]. If
+   * `align_corners` = true, it will project -1 and 1 to the centers of the
+   * corner pixels, otherwise, it will project -1 and 1 to the image edges.
+   * * 3: mode, a NNADAPTER_INT32 tensor of shape [1], supported interpolation
+   * modes: NNADAPTER_INTERPOLATE_MODE_NONE,
+   * NNADAPTER_INTERPOLATE_MODE_BILINEAR, NNADAPTER_INTERPOLATE_MODE_NEAREST,
+   * must be one of NNAdapterInterpolateMode.
+   * * 4: pad_mode, a NNADAPTER_INT32 tensor of shape [1], supported padding
+   * modes: NNADAPTER_PAD_MODE_NONE, NNADAPTER_PAD_MODE_CONSTANT,
+   * NNADAPTER_PAD_MODE_REFLECT, NNADAPTER_PAD_MODE_REPLICATE,
+   * NNADAPTER_PAD_MODE_EDGE, must be one of NNAdapterPadMode.
    *
    * Outputs:
-   * * 0: output, a NNADAPTER_BOOL8 tensor.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
@@ -926,58 +979,53 @@ typedef enum {
    * as described in the paper Group Normalization.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER or
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N,C,...]
-   * * 1: scale, a 1-D tensor, with shape [C].
-   *      1) If input's type is NNADAPTER_FLOAT32, its type must be the
-   * same type.
-   * * 2: bias, a tensor with the same shape as scale.
-   *      1) If input's type is NNADAPTER_FLOAT32, its type must be the
-   * same type.
-   * * 3: epsilon, a NNADAPTER_FLOAT32 scalar. Defaults to 1e-5.
-   * The small value added to the variance to prevent division by zero.
-   * * 4: groups, a NNADAPTER_FLOAT32 tensor with shape [1],
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
+   * of shape [N, C, ...].
+   * * 1: scale, a NNADAPTER_FLOAT32 tensor of shape [C].
+   * * 2: bias, a NNADAPTER_FLOAT32 tensor of shape [C].
+   * * 3: epsilon, a NNADAPTER_FLOAT32 tensor of shape [1], a small value added
+   * to the variance to prevent division by zero, defaults to 1e-5.
+   * * 4: groups, a NNADAPTER_INT32 tensor of shape [1], the number of groups
    * that divided from channels.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_GROUP_NORMALIZATION,
 
   /**
-   * Applies the hard-sigmoid activation to the input tensor element-wise.
+   * Performs element-wise hard-sigmoid activation.
    * The output is calculated using this formula:
-   *     output = max(0, min(1, alpha * input + beta))
+   *     `output` = max(0, min(1, `alpha` * `input` + `beta`))
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: alpha, a NNADAPTER_FLOAT32 scalar.
-   * * 2: beta, a NNADAPTER_FLOAT32 scalar.
+   * * 1: alpha, a NNADAPTER_FLOAT32 tensor of shape [1].
+   * * 2: beta, a NNADAPTER_FLOAT32 tensor of shape [1].
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_HARD_SIGMOID,
 
   /**
-   * Applies the hard-swish activation to the input tensor element-wise.
+   * Performs element-wise hard-swish activation.
    * The output is calculated using this formula:
-   *     output = input * max(0, min(1, alpha * input + beta))
+   *     `output` = `input` * max(0, min(1, `alpha` * `input` + `beta`))
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: alpha, a NNADAPTER_FLOAT32 scalar.
-   * * 2: beta, a NNADAPTER_FLOAT32 scalar.
+   * * 1: alpha, a NNADAPTER_FLOAT32 tensor of shape [1].
+   * * 2: beta, a NNADAPTER_FLOAT32 tensor of shape [1].
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
@@ -990,20 +1038,15 @@ typedef enum {
    * where mean and variance are computed per instance per channel.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER or
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N,C,...]
-   * * 1: scale, a tensor, with shape [C].
-   *      1) If input's type is NNADAPTER_FLOAT32, its type must be the
-   * same type.
-   * * 2: bias, a tensor with the same shape as scale.
-   *      1) If input's type is NNADAPTER_FLOAT32, its type must be the
-   * same type.
-   * * 3: epsilon, a NNADAPTER_FLOAT32 scalar. Defaults to 1e-5.
-   * The small value added to the variance to prevent division by zero.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: scale, a NNADAPTER_FLOAT32 tensor of shape [C].
+   * * 2: bias, a NNADAPTER_FLOAT32 tensor of shape [C].
+   * * 3: epsilon, a NNADAPTER_FLOAT32 tensor of shape [1], a small value added
+   * to the variance to prevent division by zero, defaults to 1e-5.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
@@ -1014,41 +1057,39 @@ typedef enum {
    * in the paper Layer Normalization: <https://arxiv.org/pdf/1607.06450v1.pdf>.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER or
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N,C,...]
-   * * 1: scale, a tensor, shape is performed along the input dimension
-   * from begin_norm_axis to input rank.
-   *      1) If input's type is NNADAPTER_FLOAT32, its type must be the
-   * same type.
-   * * 2: bias, a tensor with the same shape as scale.
-   *      1) If input's type is NNADAPTER_FLOAT32, its type must be the
-   * same type.
-   * * 3: begin_norm_axis, a NNADAPTER_INT32 scalar.
-   * Indicates that the normalization will be performed along the dimension
-   * from begin_norm_axis to rank (input). Default value: 1.
-   * * 4: epsilon, a NNADAPTER_FLOAT32 scalar. Defaults to 1e-5.
-   * The small value added to the variance to prevent division by zero.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: scale, a NNADAPTER_FLOAT32 tensor, shape is performed along the input
+   * dimension from `begin_norm_axis` to rank(`input`).
+   * * 2: bias, a NNADAPTER_FLOAT32 tensor, shape is performed along the input
+   * dimension from `begin_norm_axis` to rank(`input`).
+   * * 3: begin_norm_axis, a NNADAPTER_INT32 tensor of shape [1], indicates that
+   * the normalization will be performed along the dimension from
+   * `begin_norm_axis` to rank(`input`), defaults to 1.
+   * * 4: epsilon, a NNADAPTER_FLOAT32 tensor of shape [1], a small value added
+   * to the variance to prevent division by zero, defaults to 1e-5.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_LAYER_NORMALIZATION,
 
   /**
-   * Applies the Leaky ReLU activation to the input tensor element-wise. The
-   * output is calculated using this formula: output = input, if input >=0
-   * output = alpha * input, if input < 0
+   * Performs element-wise Leaky ReLU activation.
+   * The output is calculated using this formula:
+   *     `output` = `input`, if `input` >= 0
+   *     `output` = `alpha` * `input`, if `input` < 0
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: alpha, a NNADAPTER_FLOAT32 scalar.
+   * * 1: alpha, a NNADAPTER_FLOAT32 tensor of shape [1], slope of the formula
+   * at `input` < 0.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
@@ -1057,16 +1098,19 @@ typedef enum {
   /**
    * Performs element-wise binary less relational operation(with Numpy-style
    * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
-   * output = input0 < input1
+   * The output is calculated using this formula:
+   *     `output` = `input0` < `input1`
    *
    * Inputs:
    * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_BOOL8,
    * NNADAPTER_INT32, NNADAPTER_INT64,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: input1, a tensor with the same type as input0.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
    *
    * Outputs:
-   * * 0: output, a NNADAPTER_BOOL8 tensor.
+   * * 0: output, a NNADAPTER_BOOL8 tensor, has the compatible shape as
+   * 'input0'.
    *
    * Available since version 1.
    */
@@ -1074,79 +1118,105 @@ typedef enum {
 
   /**
    * Performs element-wise binary less_equal relational operation(with
-   * Numpy-style broadcasting
-   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
-   * output = input0 <= input1
+   * Numpy-style
+   * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula:
+   *     `output` = `input0` <= `input1`
    *
    * Inputs:
    * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_BOOL8,
    * NNADAPTER_INT32, NNADAPTER_INT64,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: input1, a tensor with the same type as input0.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
    *
    * Outputs:
-   * * 0: output, a NNADAPTER_BOOL8 tensor.
+   * * 0: output, a NNADAPTER_BOOL8 tensor, has the compatible shape as
+   * 'input0'.
    *
    * Available since version 1.
    */
   NNADAPTER_LESS_EQUAL,
 
   /**
-   * Applies the log activation to the input tensor element-wise. The output is
-   * calculated using this formula: output = log(input)
+   * Performs element-wise natural log activation.
+   * The output is calculated using this formula:
+   *     `output` = ln(`input`)
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_LOG,
 
   /**
-   * Applies the Lp Normalization to the input tensor element-wise.
+   * Performs element-wise log of softmax activation.
    * The output is calculated using this formula:
-   * output = input / (sum(abs(input)) + epsilon), if p = 1
-   * output = input / (sqrt(sum(input^2)) + epsilon), if p = 2
+   *     `output` = log(exp(`input`) / reduce_sum(exp(`input`), axis=`axis`,
+   * keepdims=true))
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], represents the
+   * dimension along which log_softmax will be performed, should be in range
+   * [-R,
+   * R), where R is the rank of `input`, negative value works the same way as
+   * `axis`+R.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the same shape and type as `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_LOG_SOFTMAX,
+
+  /**
+   * Applies Lp Normalization along the provided `axis`.
+   * The output is calculated using this formula:
+   *     `output` = `input` / (sum(abs(`input`)) + `epsilon`), if `p` = 1
+   *     `output` = `input` / (sqrt(sum(`input`^2)) + `epsilon`), if `p` = 2
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axis, an 1-D NNADAPTER_INT32. Defaults to [1].
-   * It represents the dimension along which norm will be performed.
-   * It should be in range [-R, R), where R is the rank of input,
-   * negative value works the same way as axis+R.
-   * * 2: p, a NNADAPTER_INT32 scalar. The exponent value in the norm
-   * formulation,
-   * only 1 or 2 are supported. Defaults to 2.
-   * * 3: epsilon, a NNADAPTER_FLOAT32 scalar,
-   * specifying the lower limit of normalization
+   * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], represents the
+   * dimension along which lp_normalization will be performed, should be in
+   * range [-R, R), where R is the rank of input, negative value works the same
+   * way as `axis`+R, defaults to 1.
+   * * 2: p, a NNADAPTER_INT32 tensor of shape [1], represents the exponent
+   * value in the formula, only 1 or 2 is supported, defaults to 2.
+   * * 3: epsilon, a NNADAPTER_FLOAT32 tensor of shape [1], a small value added
+   * to the variance to prevent division by zero, defaults to 1e-5.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_LP_NORMALIZATION,
 
   /**
-   * Matrix product that behaves like numpy.matmul.
+   * Matrix product that behaves like numpy.matmul:
+   * https://docs.scipy.org/doc/numpy-1.13.0/reference/generated/numpy.matmul.html.
    *
    * Inputs:
-   * * 0: x, A NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER or
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: y, a tensor with the same type as input.
-   * * 2: transpose_x, a NNADAPTER_BOOL8 scalar, whether to transpose the last
+   * * 0: x, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: y, a tensor of the compatible shape and the same type as `x`.
+   * * 2: transpose_x, a NNADAPTER_BOOL8 tensor of shape [1], whether to
+   * transpose the last
    * two dimensions of x before multiplication.
-   * * 3: transpose_y, a NNADAPTER_BOOL8 scalar, whether to transpose the last
+   * * 3: transpose_y, a NNADAPTER_BOOL8 tensor of shape [1], whether to
+   * transpose the last
    * two dimensions of y before multiplication.
    *
    * Outputs:
-   * * 0: output, a tensor with the same type as x.
+   * * 0: output, a tensor of the compatible shape and type as `x`.
    *
    * Available since version 1.
    */
@@ -1155,16 +1225,20 @@ typedef enum {
   /**
    * Performs element-wise binary maximum(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula:
+   *      `output` = max(`input0`, `input1`)
    *
    * Inputs:
-   * * 0: input0, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: input1, a tensor with the same type as input0.
-   * * 2: fuse_code, a NNADAPTER_INT32 scalar, Specifies the activation to the
+   * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
+   * * 2: fuse_code, a NNADAPTER_INT32 tensor of shape [1], specifies the
+   * activation to the
    * result, must be one of NNAdapterFuseCode values.
    *
    * Outputs:
-   * * 0: output, the result with the same type as two inputs.
+   * * 0: output, a tensor of the compatible shape and type as `input0`.
    *
    * Available since version 1.
    */
@@ -1175,32 +1249,31 @@ typedef enum {
    * stride sizes, and pad lengths.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
-   * H_in, W_in].
-   * * 1: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
-   * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
-   * NNAdapterAutoPadCode values.
-   * * 2: pads, a NNADAPTER_INT32 tensor, with shape [4] and data
-   * {height_top,
-   * height_bottom, width_left, width_right}, or with shape[0] and no data.
-   * * 3: kernel_shape, a NNADAPTER_INT32 tensor, with shape [2] and data
-   * {kernel_height, kernel_width}.
-   * * 4: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
-   * {height_stride, width_stride}.
-   * * 5: ceil_mode, a NNADAPTER_BOOL8 scalar, whether to use ceil or floor
-   * (default) to compute the output shape. Defaults to false.
-   * * 6: return_indices, A NNADAPTER_BOOL8 scalar, whether to return index of
-   * output. Defaults to false.
-   * * 7: return_indices_dtype, a NNADAPTER_INT32 scalar, must be one of
-   * NNADAPTER_INT32 or NNADAPTER_INT64, specifies the dtype of
-   * the indices.
-   * * 8: fuse_code, a NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
-   * values.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
+   * of shape [N, C_in, H_in, W_in].
+   * * 1: auto_pad, a NNADAPTER_INT32 tensor of shape [1], must be one of
+   * NNAdapterAutoPadCode values, NNADAPTER_AUTO_PAD_NONE means specifying the
+   * explicit padding by `pads`, otherwise specifying the implicit padding
+   * algorithm, including NNADAPTER_AUTO_PAD_SAME and NNADAPTER_AUTO_PAD_VALID.
+   * * 2: pads, an optional NNADAPTER_INT32 tensor of shape [4], specifying
+   * height_top, height_bottom, width_left and width_right.
+   * * 3: kernel_shape, a NNADAPTER_INT32 tensor of shape [2], specifying
+   * kernel_height and kernel_width.
+   * * 4: strides, a NNADAPTER_INT32 tensor of shape [2], specifying
+   * stride_height and stride_width.
+   * * 5: ceil_mode, a NNADAPTER_BOOL8 tensor of shape [1], whether to use ceil
+   * or floor to compute the output shape, defaults to false to use floor.
+   * * 6: return_indices, a NNADAPTER_BOOL8 tensor of shape [1], whether to
+   * return `indices` along with the outputs, defaults to false.
+   * * 7: return_indices_dtype, a NNADAPTER_INT32 tensor of shape [1], specifies
+   * the data type of `indices`, its value must be one of NNADAPTER_INT32,
+   * NNADAPTER_INT64.
+   * * 8: fuse_code, a NNADAPTER_INT32 tensor of shape [1], must be one of
+   * NNAdapterFuseCode values.
    *
    * Outputs:
-   * * 0: output, the output 4-D tensor with shape [N, C_out, H_out, W_out], its
-   * type is the same as input.
+   * * 0: output, a tensor of shape [N, C_out, H_out, W_out], has the same type
+   * as `input`.
    *      1) If ceil_mode=false,
    *         H_out = floor((H_in + padding_height_top + padding_height_bottom -
    * filter_height) / stride_height + 1)
@@ -1211,9 +1284,8 @@ typedef enum {
    * filter_height) / stride_height + 1)
    *         W_out = ceil((W_in + padding_width_left + padding_width_right -
    * filter_width) / stride_width + 1)
-   * * 1: indices, a NNADAPTER_INT32 or NNADAPTER_INT64 tensor,
-   * with the same shape as output, indicates the indices of the current feature
-   * map.
+   * * 1: indices, a NNADAPTER_INT32, NNADAPTER_INT64 tensor and has the same
+   * shape as `output`.
    *
    * Available since version 1.
    */
@@ -1225,12 +1297,11 @@ typedef enum {
    *
    * Inputs:
    * * input0 ~ inputn-1, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER  tensor with shape [d0], [d1], ...
-   * [dn-1].
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor of shape [d0], [d1], ... [dn-1].
    *
    * Outputs:
-   * * output0 ~ outputn-1, a  tensor with the same type as input, with shape
-   * [d0, d1, ... dn-1].
+   * * output0 ~ outputn-1, a tensor of shape [d0, d1, ... dn-1] and has the
+   * same type as `input0` ~ `inputn-1`.
    *
    * Available since version 1.
    */
@@ -1239,16 +1310,20 @@ typedef enum {
   /**
    * Performs element-wise binary minimum(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula:
+   *      `output` = min(`input0`, `input1`)
    *
    * Inputs:
-   * * 0: input0, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: input1, a tensor with the same type as input0.
-   * * 2: fuse_code, a NNADAPTER_INT32 scalar, Specifies the activation to the
+   * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
+   * * 2: fuse_code, a NNADAPTER_INT32 tensor of shape [1], specifies the
+   * activation to the
    * result, must be one of NNAdapterFuseCode values.
    *
    * Outputs:
-   * * 0: output, the result with the same type as two inputs.
+   * * 0: output, a tensor of the compatible shape and type as `input0`.
    *
    * Available since version 1.
    */
@@ -1257,30 +1332,36 @@ typedef enum {
   /**
    * Performs element-wise binary multiplication(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula:
+   *      `output` = `input0` * `input1`
    *
    * Inputs:
-   * * 0: input0, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: input1, a tensor with the same type as input0.
-   * * 2: fuse_code, a NNADAPTER_INT32 scalar, Specifies the activation to the
+   * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
+   * * 2: fuse_code, a NNADAPTER_INT32 tensor of shape [1], specifies the
+   * activation to the
    * result, must be one of NNAdapterFuseCode values.
    *
    * Outputs:
-   * * 0: output, the result with the same type as two inputs.
+   * * 0: output, a tensor of the compatible shape and type as `input0` and
+   * `input1`.
    *
    * Available since version 1.
    */
   NNADAPTER_MUL,
 
   /**
-   * Applies logical not to the input tensor element-wise. The output is
-   * calculated using this formula: output = !input
+   * Performs element-wise logical NOT operation.
+   * The output is calculated using this formula:
+   *     `output` = !`input`
    *
    * Inputs:
    * * 0: input, a NNADAPTER_BOOL8 tensor.
    *
    * Outputs:
-   * * 0: output, a NNADAPTER_BOOL8 tensor with the same shape as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
@@ -1288,57 +1369,61 @@ typedef enum {
 
   /**
    * Performs element-wise binary not_equal relational operation(with
-   * Numpy-style broadcasting
-   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * Numpy-style
+   * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
    * The output is calculated using this formula:
-   *     output = input0 != input1
+   *     `output` = `input0` != `input1`
    *
    * Inputs:
    * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_BOOL8,
    * NNADAPTER_INT32, NNADAPTER_INT64,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: input1, a tensor with the same type as input0.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
    *
    * Outputs:
-   * * 0: output, a NNADAPTER_BOOL8 tensor.
+   * * 0: output, a NNADAPTER_BOOL8 tensor, has the compatible shape as
+   * 'input0'.
    *
    * Available since version 1.
    */
   NNADAPTER_NOT_EQUAL,
 
   /**
-   * Performs element-wise binary and logical operation(with Numpy-style
+   * Performs element-wise binary logical OR operation(with Numpy-style
    * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
-   * The output is calculated using this formula: output = input0 || input1
+   * The output is calculated using this formula:
+   *     `output` = `input0` || `input1`
    *
    * Inputs:
    * * 0: input0, a NNADAPTER_BOOL8 tensor.
-   * * 1: input1, a NNADAPTER_BOOL8 tensor.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
    *
    * Outputs:
-   * * 0: output, a NNADAPTER_BOOL8 tensor.
+   * * 0: output, a tensor of the compatible shape and type as `input0`.
    *
    * Available since version 1.
    */
   NNADAPTER_OR,
 
   /**
-   * Pad input by "pads", "mode", "constant_value"
+   * Pads `input` according to the specified `pads`, `mode` and `value`.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_INT32,
-   * NNADAPTER_INT64, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: pads, a NNADAPTER_INT32 1-D tensor,
-   * with shape [2 * input_rank],
-   * with value [x0_begin, x0_end, x1_begin, x1_end,...].
-   * * 2: mode, a NNADAPTER_INT32 scalar.
-   * Supported modes: `constant`(default), `reflect`, `edge`.
-   * It should be a value of NNAdapterPadModeCode.
-   * * 3: value, a scalar with the same type as input,
-   * only be used if the mode is "constant".
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_INT32, NNADAPTER_INT64,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: pads, a NNADAPTER_INT32 tensor of shape [2 * rank(`input`)] and its
+   * value should be [x0_begin, x0_end, x1_begin, x1_end,...].
+   * * 2: mode, a NNADAPTER_INT32 tensor of shape [1], supported modes:
+   * NNADAPTER_PAD_MODE_NONE, NNADAPTER_PAD_MODE_CONSTANT,
+   * NNADAPTER_PAD_MODE_REFLECT, NNADAPTER_PAD_MODE_REPLICATE,
+   * NNADAPTER_PAD_MODE_EDGE, must be one of NNAdapterPadModeCode values.
+   * * 3: value, a tensor of shape [1] and has the same type as 'input', value
+   * to fill the padded areas only when mode = NNADAPTER_PAD_MODE_CONSTANT.
    *
    * Outputs:
-   * * 0: output, the result with the same type as input.
+   * * 0: output, a tensor of padded shape and has the same type as `input`.
    *
    * Available since version 1.
    */
@@ -1346,19 +1431,22 @@ typedef enum {
 
   /**
    * Performs element-wise binary pow(with Numpy-style broadcasting
-   * https://numpy.org/doc/stable/user/basics.broadcasting.html). The output is
-   * calculated using this formula: output = input0^input1
+   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula:
+   *      `output` = `input0` ^ `input1`
    *
    * Inputs:
-   * * 0: input0, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: input1, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 2: fuse_code, a NNADAPTER_INT32 scalar, Specifies the activation to the
+   * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
+   * * 2: fuse_code, a NNADAPTER_INT32 tensor of shape [1], specifies the
+   * activation to the
    * result, must be one of NNAdapterFuseCode values.
    *
    * Outputs:
-   * * 0: output, the result with the same type as input.
+   * * 0: output, a tensor of the compatible shape and type as `input0` and
+   * `input1`.
    *
    * Available since version 1.
    */
@@ -1374,92 +1462,81 @@ typedef enum {
    * generated in sequence according to the aspect_ratios.
    *
    * Inputs:
-   * * 0: Input, a NNADAPTER_FLOAT32 tensor,
-   * the input feature data of PriorBoxOp, The layout is NCHW.
-   * * 1: Image, a NNADAPTER_FLOAT32 tensor,
-   * the input image data of PriorBoxOp, The layout is NCHW.
-   * * 2: min_sizes, a NNADAPTER_FLOAT32 tensor, List of min sizes of generated
+   * * 0: input, a NNADAPTER_FLOAT32 tensor of shape [N, C, H, W], feature.
+   * * 1: image, a NNADAPTER_FLOAT32 tensor of shape [N, C, H, W], image.
+   * * 2: min_sizes, a NNADAPTER_FLOAT32 1-D tensor, min sizes of generated
    * prior boxes.
-   * * 3: max_sizes, a NNADAPTER_FLOAT32 tensor, List of max sizes of generated
+   * * 3: max_sizes, a NNADAPTER_FLOAT32 1-D tensor, max sizes of generated
    * prior boxes.
-   * * 4: aspect_ratios, a NNADAPTER_FLOAT32 tensor, List of aspect ratios of
-   * generated
+   * * 4: aspect_ratios, a NNADAPTER_FLOAT32 1-D tensor, aspect ratios of
+   * generated prior boxes.
+   * * 5: variances, a NNADAPTER_FLOAT32 1-D tensor, variances to be encoded in
    * prior boxes.
-   * * 5: variances, a NNADAPTER_FLOAT32 tensor, List of variances to be encoded
-   * in prior
-   * boxes.
-   * * 6: flip, a NNADAPTER_BOOL scalar, Whether to flip aspect ratios, Default
-   * is True.
-   * * 7: clip, a NNADAPTER_BOOL scalar, Whether to clip out-of-boundary boxes,
-   * Default is True.
-   * * 8: step_w, a NNADAPTER_FLOAT32 scalar, Prior boxes step across width, 0.0
-   * for auto
-   * calculation, Default is 0.0.
-   * * 9: step_h, a NNADAPTER_FLOAT32 scalar, Prior boxes step across height,
-   * 0.0 for auto
-   * calculation, Default is 0.0.
-   * * 10: offset, a NNADAPTER_FLOAT32 scalar, Prior boxes center offset,
-   * Default is 0.5.
-   * * 11: min_max_aspect_ratios_order, a NNADAPTER_BOOL scalar, If set True,
-   * the output prior box
-   * is in order of [min, max, aspect_ratios], which is consistent with
-   * Caffe.Please note,
+   * * 6: flip, a NNADAPTER_BOOL tensor of shape [1], whether to flip aspect
+   * ratios, defaults to false.
+   * * 7: clip, a NNADAPTER_BOOL tensor of shape [1], whether to clip
+   * out-of-boundary boxes, defaults to false.
+   * * 8: step_w, a NNADAPTER_FLOAT32 tensor of shape [1], prior boxes step
+   * across width, 0.0 for auto calculation, defaults to 0.0.
+   * * 9: step_h, a NNADAPTER_FLOAT32 tensor of shape [1], prior boxes step
+   * across height, 0.0 for auto calculation, defaults to 0.0.
+   * * 10: offset, a NNADAPTER_FLOAT32 tensor of shape [1], prior boxes center
+   * offset, defaults to 0.5.
+   * * 11: min_max_aspect_ratios_order, a NNADAPTER_BOOL tensor of shape [1], if
+   * set to true, the output prior box is in order of [min, max, aspect_ratios],
+   * which is consistent with Caffe. Please note,
    * this order affects the weights order of convolution layer followed by and
-   * does not affect the final detection results, Default is False.
+   * does not affect the final detection results, defaults to false.
    *
    * Outputs:
-   * * 0: Boxes, a Boxes NNADAPTER_FLOAT32 tensor .
-   * the output prior boxes of PriorBoxOp. The layout is [H, W, num_priors, 4].
-   * H is the height of input, W is the width of input, num_priors
-   * is the box count of each position.
-   * * 1: Variances, a Variances NNADAPTER_FLOAT32 tensor .
-   * the expanded variances of PriorBoxOp. The layout is [H, W, num_priors, 4].
-   * H is the height of input, W is the width of input, num_priors
-   * is the box count of each position."
+   * * 0: boxes, a NNADAPTER_FLOAT32 tensor of shape [H, W, num_priors, 4],
+   * prior boxes, where num_priors is the box count of each position.
+   * * 1: variances, a NNADAPTER_FLOAT32 tensor of shape [H, W, num_priors, 4],
+   * expanded variances, where num_priors is the box count of each position.
    *
    * Available since version 1.
    */
   NNADAPTER_PRIOR_BOX,
 
   /**
-   * Applies the prelu activation to the input tensor. The output is calculated
-   * using this formula:
-   * output = input, if input >=0;
-   * output = slope * input, if input < 0;
+   * Performs element-wise PReLU activation.
+   * The output is calculated using this formula:
+   *     `output` = `input`, if `input` >= 0
+   *     `output` = `slope` * `input`, if `input` < 0
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32 or
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
-   * * 1: slope, a tensor, with shape [1] or [C].
-   * 1) If input's type is NNADAPTER_FLOAT32, its type must be the same
-   * type.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
+   * of shape [N, C, ...].
+   * * 1: slope, a NNADAPTER_FLOAT32 tensor of shape [1] or [C].
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_PRELU,
 
   /**
-   * Applies the quantization to the input tensor. The output is calculated
-   * using this formula:
-   * output = input / scale + zero_point
+   * Quantizes a full precision tensor to a quantized one.
+   * The output is calculated using this formula:
+   *     `output` = `input` / `scale` + `zero_point`
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32 or NNADAPTER_INT32 tensor.
-   * * 1: axis, a NNADAPTER_INT32 scalar, the axis of the quantization dimension
-   * of the input tensor. Ignored for per-tensor quantization. It should be in
-   * range [-R, R), where R is the rank of input, negative value works the same
-   * way as axis+R, default to 1.
-   * * 2: scale, a NNADAPTER_FLOAT32 tensor, Scale for input. It can be a
-   * scalar, which means a per-tensor/layer dequantization, or a 1-D tensor for
-   * per-axis dequantization.
-   * * 3: zero_point, a NNADAPTER_INT32  tensor, Zero point for `input`. Shape
-   * must match `scale`, default to 0.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_INT32 tensor of shape [N, C,
+   * ...] .
+   * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], represents the axis of
+   * the quantization dimension of the input tensor, which is only for
+   * per-channel/per-axis quantization, should be in range [-R, R), where R is
+   * the rank of input, negative value works the same way as axis+R, defaults to
+   * 1.
+   * * 2: scale, a NNADAPTER_FLOAT32 tensor of shape [1] or [C], scale for
+   * quantization, can be a scalar, which means a per-tensor/per-layer
+   * quantization, or a 1-D tensor for per-channel/per-axis quantization.
+   * * 3: zero_point, a NNADAPTER_INT32 tensor of shape [1] or [C], zero point
+   * for quantization, shape must match `scale`, default to 0.
    *
    * Outputs:
-   * * 0: output, a quantized tensor with the same shape as `input` , its type
+   * * 0: output, a quantized tensor of the same shape as `input` , its type
    * can be NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
    * NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL,
    * NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER and
@@ -1471,363 +1548,436 @@ typedef enum {
   NNADAPTER_QUANTIZE,
 
   /**
-   * Outputs a 1-D Tensor with spaced values within a given interval.
+   * Generate a tensor containing a sequence of numbers that begin at `start`
+   * and extends by increments of `step` up to `end` (exclusive).
    *
    * Inputs:
-   * * 0: start, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor with shape[1].
-   * * 1: end, a tensor with the same shape and type as start.
-   * * 2: step, a tensor with the same shape and type as start.
+   * * 0: start, a NNADAPTER_FLOAT32, NNADAPTER_INT32 tensor of shape [1], first
+   * entry.
+   * * 1: end, a tensor of the same shape and type as `start`, exclusive upper
+   * limmit.
+   * * 2: step, a tensor of the same shape and type as `start`, value to step
+   * by.
    *
    * Outputs:
-   * * 0: output, a 1-D tensor with the same type as start.
+   * * 0: output, a 1-D tensor of the same type as `start`.
    *
    * Available since version 1.
    */
   NNADAPTER_RANGE,
 
   /**
-   * Computes the mean of the input’s elements along axis. If axis has no
-   * data, mean is calculated over all elements of input.
-   * If keepdims equal 0, then the resulted tensor have the reduced dimension
-   * pruned.
+   * Computes the mean of the input tensor’s element along the provided `axes`.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axes, a NNADAPTER_INT32 tensor. It indicating the dimensions to
-   * perform mean calculations. It should be in range [-R, R), where R is the
-   * rank of input, negative value works the same way as axis+ndim(input). If
-   * axis has no data, mean is calculated over all elements of input.
-   * * 2: keepdim, a NNADAPTER_BOOL8 scalar. Keep the reduced dimension or not,
-   * default 1 mean keep reduced dimension.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: axes, a 1-D NNADAPTER_INT32 tensor, represents the dimension
+   * along which reduce operation will be performed, if `axes` is empty,
+   * `output` is calculated over all elements of `input`, should be in range
+   * [-R, R), where R is the rank of input, negative value works the same way as
+   * axis+R.
+   * * 2: keepdim, a NNADAPTER_BOOL8 tensor of shape [1], whether to keep the
+   * reduced dimension, defaults to true.
    *
    * Outputs:
-   * * 0: output, a tensor with the same type as input.
+   * * 0: output, a tensor of the same type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_REDUCE_MEAN,
 
   /**
-   * Computes the sum of the input’s elements along axis. If axis has no
-   * data, sum is calculated over all elements of input.
-   * If keepdims equal 0, then the resulted tensor have the reduced dimension
-   * pruned.
+   * Computes the max of the input tensor’s element along the provided `axes`.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axes, a NNADAPTER_INT32 tensor. It indicating the dimensions to
-   * perform mean calculations. It should be in range [-R, R), where R is the
-   * rank of input, negative value works the same way as axis+ndim(input). If
-   * axis has no data, mean is calculated over all elements of input.
-   * * 2: keepdim, a NNADAPTER_BOOL8 scalar. Keep the reduced dimension or not,
-   * default 1 mean keep reduced dimension.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: axes, a 1-D NNADAPTER_INT32 tensor, represents the dimension
+   * along which reduce operation will be performed, if `axes` is empty,
+   * `output` is calculated over all elements of `input`, should be in range
+   * [-R, R), where R is the rank of input, negative value works the same way as
+   * axis+R.
+   * * 2: keepdim, a NNADAPTER_BOOL8 tensor of shape [1], whether to keep the
+   * reduced dimension, defaults to true.
    *
    * Outputs:
-   * * 0: output, a tensor with the same type as input.
+   * * 0: output, a tensor of the same type as `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_REDUCE_MAX,
+
+  /**
+   * Computes the sum of the input tensor’s element along the provided `axes`.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: axes, a 1-D NNADAPTER_INT32 tensor, represents the dimension
+   * along which reduce operation will be performed, if `axes` is empty,
+   * `output` is calculated over all elements of `input`, should be in range
+   * [-R, R), where R is the rank of input, negative value works the same way as
+   * axis+R.
+   * * 2: keepdim, a NNADAPTER_BOOL8 tensor of shape [1], whether to keep the
+   * reduced dimension, defaults to true.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the same type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_REDUCE_SUM,
 
   /**
-   * Applies rectified linear activation to the input tensor element-wise.
+   * Performs element-wise rectified linear activation.
    * The output is calculated using this formula:
-   *     output = max(0, input)
+   *     `output` = max(0, `input`)
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_RELU,
 
   /**
-   * Applies rectified linear 6 activation to the input tensor element-wise.
+   * Performs element-wise rectified linear 6 activation.
    * The output is calculated using this formula:
-   *     output = min(6, max(0, input))
+   *     `output` = min(6, max(0, `input`))
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_RELU6,
 
   /**
-   * Reshapes a tensor similar to numpy.reshape.
-   * The output tensor has the same data as the input tensor but with a new
-   * shape.
+   * Returns a tensor with the same data and number of elements as `input`, but
+   * with a newly specified shape, similar to numpy.reshape.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: shape, an 1-D NNADAPTER_INT32 or NNADAPTER_INT64 shape
-   * tensor which specifies the new shape, At most one dimension of the new
-   * shape can be -1. In this case, the value is inferred from the size of the
-   * tensor and the remaining dimensions. a dimension could also be 0, in which
-   * case the actual dimension value is unchanged.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: shape, a 1-D NNADAPTER_INT32 or NNADAPTER_INT64 tensor, specifies the
+   * new shape. At most one dimension of the new shape can be -1. In this case,
+   * the value is inferred from the size of the tensor and the remaining
+   * dimensions. A dimension could also be 0, in which case the actual dimension
+   * value is unchanged.
    *
    * Outputs:
-   * * 0: output, a tensor with a new shape, and its type and data is same as
-   * input.
+   * * 0: output, a tensor of shape specified by the `shape`, and has the same
+   * type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_RESHAPE,
 
   /**
-   * Resizes the input tensor using the nearest interpolation.
+   * Resizes a tensor to given size using the nearest interpretation, output
+   * height and width is determined by `shape` , `scales` in priority order.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
-   * * 1: shape, a NNADAPTER_INT32 or NNADAPTER_INT64 tensor. It
-   * indicates the target shape of output exclude dim_N and dim_C.
-   * * 2: scales, a NNADAPTER_FLOAT32 tensor. It indicates the scale of
-   * the output's shape exclude dim_N and dim_C.
-   * * 3: align_corners. a NNADAPTER_BOOL scalar.  If True, the centers of the 4
-   * corner pixels of the input and output tensors are aligned, preserving the
-   * values at the corner pixels.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
+   * of shape [N, C, H, W].
+   * * 1: shape, a NNADAPTER_INT32, NNADAPTER_INT64 tensor of shape [2],
+   * indicates the output height and width.
+   * * 2: scales, a NNADAPTER_FLOAT32 tensor of shape [2], indicates the scale
+   * factor of the input height and width to calculate the output height and
+   * width.
+   * * 3: align_corners, a NNADAPTER_BOOL tensor of shape [1], if set to true,
+   * the centers of the 4 corner pixels of the input and output tensors are
+   * aligned, and preserving the values at the corner pixels.
    *
    * Outputs:
-   * * 0: output, a tensor with the same type as input.
+   * * 0: output, a tensor of shape specified by the `shape` or `scales`, and
+   * has the same type as `input`.
    */
   NNADAPTER_RESIZE_NEAREST,
 
   /**
-   * Resizes the input tensor using the linear interpolation.
+   * Resizes a tensor using the linear interpolation, output height and width is
+   * determined by `shape` , `scales` in priority order.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
-   * * 1: shape, a NNADAPTER_INT32 or NNADAPTER_INT64 tensor. It
-   * indicates the target shape of output exclude dim_N and dim_C.
-   * * 2: scales, a NNADAPTER_FLOAT32 tensor. It indicates the scale of
-   * the output's shape exclude dim_N and dim_C.
-   * * 3: align_corners, NNADAPTER_BOOL scalar. If True, the centers of the 4
-   * corner pixels of the input and output tensors are aligned, preserving the
-   * values at the corner pixels.
-   * * 4: align_mode, a NNADAPTER_INT32 scalar, optional for linear
-   * interpolation. It can be ‘0’ for src_idx = scale_factor*(dst_indx+0.5)-0.5
-   * , can be ‘1’ for src_idx = scale_factor*dst_index.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
+   * of shape [N, C, H, W].
+   * * 1: shape, a NNADAPTER_INT32, NNADAPTER_INT64 tensor of shape [2],
+   * indicates the output height and width.
+   * * 2: scales, a NNADAPTER_FLOAT32 tensor of shape [2], indicates the scale
+   * factor of the input height and width to calculate the output height and
+   * width.
+   * * 3: align_corners, a NNADAPTER_BOOL tensor of shape [1], if set to true,
+   * the centers of the 4 corner pixels of the input and output tensors are
+   * aligned, and preserving the values at the corner pixels.
+   * * 4: align_mode, an optional NNADAPTER_INT32 tensor of shape [1], can be
+   * ‘0’ for src_idx = `scale` * (dst_indx + 0.5) - 0.5 , can be ‘1’ for src_idx
+   * = `scale` * dst_index.
    *
    * Outputs:
-   * * 0: output, a tensor with the same type as input.
+   * * 0: output, a tensor of shape specified by the `shape` or `scales`, and
+   * has the same type as `input`.
    */
   NNADAPTER_RESIZE_LINEAR,
 
   /**
    * Perform bilinear interpolation on inputs of nonuniform sizes to obtain
-   * fixed-size feature maps (e.g. 7*7), as described in Mask R-CNN.
+   * fixed-size feature maps (e.g. 7*7) described in the paper Mask R-CNN
+   * https://arxiv.org/abs/1703.06870.
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor
-   * with shape [N, C, H, W].
-   * * 1: rois, a tensor with the same type as input, with shape [rois_num, 4]
-   * given as [[x1, y1, x2, y2], ...].
-   * * 2: batch_indices, a tensor with shape [rois_num], denoting the index of
-   * the corresponding image in the batch.
-   * * 3: output_height, a NNADAPTER_INT32 tensor with shape [1], the pooled
-   * output height.
-   * * 4: output_width, a NNADAPTER_INT32 tensor with shape [1], the pooled
-   * output width.
-   * * 5: sampling_ratio, , a NNADAPTER_INT32 tensor with shape [1], number of
-   * sampling points in the interpolation grid. If sampling_ratio <= 0, then
-   * grid points are adaptive to roi_width and output_width, likewise for
+   * of shape [N, C, H, W].
+   * * 1: rois, a NNADAPTER_FLOAT32 tensor of shape [rois_num, 4] and has the
+   * same type as `input`, where rois_num is the number of the ROI boxes, its
+   * value is [[x1, y1, x2, y2], ...].
+   * * 2: batch_indices, a NNADAPTER_INT32 tensor of shape [rois_num], denoting
+   * the index of the corresponding image in the batch.
+   * * 3: output_height, a NNADAPTER_INT32 tensor of shape [1], pooled output
    * height.
-   * * 6: spatial_scale, a NNADAPTER_FLOAT32 tensor with shape [1],
-   * multiplicative spatial scale factor to translate ROI coords from their
-   * input scale to the scale used when pooling.
-   * * 7: aligned, a NNADAPTER_BOOL8 tensor. If true, pixel shift it by -0.5 for
-   * align more perfectly.
+   * * 4: output_width, a NNADAPTER_INT32 tensor of shape [1], pooled output
+   * width.
+   * * 5: sampling_ratio, a NNADAPTER_INT32 tensor of shape [1], number of
+   * sampling points in the interpolation grid used to compute the output value
+   * of each pooled output bin. If > 0, then exactly sampling_ratio x
+   * sampling_ratio sampling points per bin are used. If <= 0, then an adaptive
+   * number of grid points are used (computed as ceil(roi_width / output_width),
+   * and likewise for height).
+   * * 6: spatial_scale, a NNADAPTER_FLOAT32 tensor of shape [1], multiplicative
+   * spatial scale factor to translate ROI coords from their input scale to the
+   * scale used when pooling.
+   * * 7: aligned, a NNADAPTER_BOOL8 tensor of shape [1], if set to true, pixel
+   * shift it by -0.5 for align more perfectly.
    *
    * Outputs:
-   * * 0: output, a tensor with the same type as input.
+   * * 0: output, a tensor of shape [N, C, output_height, output_width] and has
+   * the same type as `input`.
    */
   NNADAPTER_ROI_ALIGN,
 
   /**
-   * Outputs an 1D tensor containing the shape of the input tensor.
+   * Roll the tensor input along the given dimension(s). Elements that are
+   * shifted beyond the last position are re-introduced at the first position.
+   * If axes is None, the tensor will be flattened before rolling and then
+   * restored to the original shape.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_INT32 tensor.
-   * * 1: dtype, a NNADAPTER_INT32 scalar, the value of NNADAPTER_INT32
-   * or NNADAPTER_INT64. Specifies the dtype of the result.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: shifts, a NNADAPTER_TENSOR_INT32 tensor, It
+   * represents the number of places by which the elements of the tensor are
+   * shifted.
+   * * 2: axes, a NNADAPTER_TENSOR_INT32 tensor, It
+   * represents axis along which to roll.
    *
    * Outputs:
-   * * 0: output, a NNADAPTER_INT32 tensor.
+   * * 0: output, a tensor of the same shape and type as `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_ROLL,
+
+  /**
+   * Outputs an 1-D tensor containing the shape of the input tensor.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: dtype, a NNADAPTER_INT32 tensor of shape [1], specifies the data type
+   * of `output`, its value must be one of NNADAPTER_INT32, NNADAPTER_INT64.
+   *
+   * Outputs:
+   * * 0: output, a 1-D NNADAPTER_INT32, NNADAPTER_INT64 tensor.
    *
    * Available since version 1.
    */
   NNADAPTER_SHAPE,
 
   /**
-   * Applies sigmoid activation to the input tensor element-wise.
+   * Performs element-wise sigmoid activation.
    * The output is calculated using this formula:
-   *     output = 1 / (1 + exp(-input))
+   *     `output` = 1 / (1 + exp(-`input`))
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_SIGMOID,
 
   /**
-   * This operator produces a slice of input along multiple axes. Slice uses
-   * axes, starts and ends attributes to specify the start and end dimension for
-   * each axis in the list of axes and Slice uses this information to slice the
-   * input data tensor. If a negative value is passed to starts or ends such as
-   * −i, it represents the reverse position of the axis i−1 (here 0 is the
-   * initial position). If the value passed to starts or ends is greater than n
-   * (the number of elements in this dimension), it represents n. For slicing to
-   * the end of a dimension with unknown size, it is recommended to pass in
-   * INT_MAX. The size of axes must be equal to starts and ends.
+   * Performs element-wise sine calculation.
+   * The output is calculated using this formula: `output` = sin(`input`)
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axis, a NNADAPTER_INT32 tensor that `starts` and `ends` apply
-   * to. It's optional. If not present, will be treated as [0, 1, ...,
-   * len(`starts`) - 1].
-   * * 2: starts, starts indices of corresponding axis in `axes`, a
-   * NNADAPTER_INT32 tensor.
-   * * 3: ends, ends indices of corresponding axis in `axes`, a
-   * NNADAPTER_INT32 tensor.
-   * * 4: steps, a NNADAPTER_INT32  1-D tensor, 1-D tensor of slice step
-   * of corresponding axis in `axes`. Negative value means slicing backward.
-   * 'steps' cannot be 0. Defaults to 1.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_SIN,
+
+  /**
+   * Produces a slice of `input` along multiple axes. Similar to numpy:
+   * https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html.
+   * Slice uses the `axes`, `starts`, `ends` and `steps` inputs to select a
+   * sub-tensor from `input` tensor. All negative values in `starts[i]` and
+   * `ends[i]` have `dims[axes[i]]` added to them, where `dims` are the
+   * dimensions of `input`. Then `start[axes[i]]` is the adjusted `starts[i]` is
+   * clamped into the range `[0, dims[axes[i]]]` for positive stepping and `[0,
+   * dims[axes[i]]-1]` for negative stepping. For slicing to the end of a
+   * dimension with unknown size, it is recommended to pass in INT_MAX when
+   * slicing forward and 'INT_MIN' when slicing backward.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: axes, a 1-D optional NNADAPTER_INT32 tensor that `starts` and `ends`
+   * apply to, will be treated as [0, 1, ..., len(`starts`) - 1] if not
+   * provided.
+   * * 2: starts, a 1-D NNADAPTER_INT32 tensor of the same shape as `axes`,
+   * starting indices of corresponding axis in `axes`.
+   * * 3: ends, a 1-D NNADAPTER_INT32 tensor of the same shape as `axes`, ending
+   * indices of corresponding axis in `axes`.
+   * * 4: steps, a 1-D NNADAPTER_INT32 tensor of the same shape as `axes`, slice
+   * step of corresponding axis in `axes`. Negative value means slicing
+   * backward. 'steps' cannot be 0. Defaults to 1.
+   *
+   * Outputs:
+   * * 0: output, a tensor of shape specified by the `axes`, `starts` , `ends`,
+   * `steps` and the shape of `input`, and has the same type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_SLICE,
 
   /**
-   * Computes the normalized exponential values for the input tensor
-   * element-wise.
+   * Performs element-wise softmax activation.
    * The output is calculated using this formula:
-   *     output = exp(input) / reduce_sum(exp(input), axis=axis, keepdims=true)
+   *     `output` = exp(`input`) / reduce_sum(exp(`input`), axis=`axis`,
+   * keepdims=true)
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axis, a NNADAPTER_INT32 scalar. Defaults to 1. It represents the
-   * dimension along which softmax will be performed. It should be in range [-R,
-   * R), where R is the rank of input, negative value works the same way as
-   * axis+R.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], represents the
+   * dimension along which softmax will be performed, should be in range [-R,
+   * R), where R is the rank of `input`, negative value works the same way as
+   * `axis`+R.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_SOFTMAX,
 
   /**
-   * Applies softplus to the input tensor element-wise. The output is calculated
-   * using this formula: output = log(1 + exp^(beta * input)) / beta For
-   * numerical stability, the implementation reverts to the linear function
-   * when: beta * x > threshold.
+   * Performs element-wise Softplus activation.
+   * The output is calculated using this formula:
+   *     `output` = log(1 + exp^(`beta` * `input`)) / `beta`
+   * Fornumerical stability, the implementation reverts to the linear function
+   * when: `beta` * `input` > threshold:
+   *     `output` = `input`
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: beta, a NNADAPTER_FLOAT32 tensor with shape [1].
-   * * 2: threshold, a NNADAPTER_FLOAT32 tensor with shape [1].
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: beta, a NNADAPTER_FLOAT32 tensor of shape [1].
+   * * 2: threshold, a NNADAPTER_FLOAT32 tensor of shape [1].
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_SOFTPLUS,
 
   /**
-   * Split a tensor into a list of tensors along the given dimension.
+   * Split a tensor into a list of tensors along the specified `axis`.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axis, a NNADAPTER_INT32 scalar. It represents the dimension along
-   * which axis to split. It should be in range [-R, R), where R is the rank of
-   * input, negative value works the same way as axis+R.
-   * * 2: split, An 1-D NNADAPTER_INT32, each of values indicates the
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], represents which axis to
+   * split on, should be in range [-R, R), where R is the rank of `input`,
+   * negative value works the same way as `axis`+R.
+   * * 2: split, a 1-D NNADAPTER_INT32 tensor, each of values indicates the
    * length of each output. Sum of the values must be equal to the dimension at
-   * 'axis' specified.
+   * `axis` specified.
    *
    * Outputs:
-   * * 0 ~ n-1: output0 ~ outputn-1, the results with the same type as the
-   * input.
+   * * 0 ~ n-1: output0 ~ outputn-1, one or more outputs forming list of tensors
+   * after splitting, has the same type as the `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_SPLIT,
 
   /**
-   * Applies square to the input tensor element-wise.
+   * Performs element-wise square operation.
    * The output is calculated using this formula:
-   * output = input^2
+   *     `output` = `input`^2
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_SQUARE,
 
   /**
-   * Squeeze the dimension(s) of size 1 of input's shape.
+   * Remove single-dimensional entries from the shape of tensor along the
+   * specified `axes`.
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axes, a NNADAPTER_INT32 tensor. It indicating the dimensions to
-   * be squeezed. Default is None. The range of axis is [−ndim(x),ndim(x)). It
-   * should be in range [-R, R), where R is the rank of input, negative value
-   * works the same way as axis+ndim(input).
+   * * 1: axes, a 1-D NNADAPTER_INT32 tensor, indicates the dimensions to
+   * squeeze, all the single dimensions will be removed if `axes` is not
+   * provided, should be in range [-R, R), where R is the rank of `input`,
+   * negative value works the same way as `axis`+R.
    *
    * Outputs:
-   * * 0: output, a tensor with the same type as input.
+   * * 0: output, a tensor of the same type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_SQUEEZE,
 
   /**
-   * Join a sequence of tensors along a new axis.
-   * All input tensors must have the same shape.
+   * Concatenates a sequence of tensors along a new `axis`, all tensors need to
+   * be the same shape.
    *
    * Inputs:
    * * 0 ~ n-1: input0 ~ inputn-1, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axis, a NNADAPTER_INT32 scalar. It represents the dimension along
-   * which axis to stack. It should be in range [-R-1, R+1), where R is the rank
-   * of input, negative value works the same way as axis+R+1.
+   * * n: axis, a NNADAPTER_INT32 tensor of shape [1], represents the dimension
+   * along which axis to concatenate, should be in range [-R, R), where R is the
+   * rank of `input`, negative value works the same way as `axis`+R.
    *
    * Outputs:
-   * * 0: output, the result with the same type as the inputs.
+   * * 0: output, a tensor of the same type as the `input0` ~ `inputn-1`.
    *
    * Available since version 1.
    */
@@ -1836,218 +1986,328 @@ typedef enum {
   /**
    * Performs element-wise binary subtraction(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula:
+   *      `output` = `input0` - `input1`
    *
    * Inputs:
-   * * 0: input0, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: input1, a tensor with the same type as input0.
-   * * 2: fuse_code, a NNADAPTER_INT32 scalar, Specifies the activation to the
+   * * 0: input0, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
+   * * 2: fuse_code, a NNADAPTER_INT32 tensor of shape [1], specifies the
+   * activation to the
    * result, must be one of NNAdapterFuseCode values.
    *
    * Outputs:
-   * * 0: output, the result with the same type as two inputs.
+   * * 0: output, a tensor of the compatible shape and type as `input0` and
+   * `input1`.
    *
    * Available since version 1.
    */
   NNADAPTER_SUB,
 
   /**
-   * Performs element-wise binary addition(with Numpy-style broadcasting
-   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * Performs element-wise sum of each of the input tensors (with Numpy-style
+   * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula:
+   *      `output` = `input0` + `input1` + ... + `inputn-1`
    *
    * Inputs:
    * * 0 ~ n-1: input0 ~ inputn-1, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
    *
    * Outputs:
-   * * 0: output, the result with the same type as two inputs.
+   * * 0: output, a tensor of the compatible shape and type as `input0`.
    *
    * Available since version 1.
    */
   NNADAPTER_SUM,
 
   /**
-   * Applies the Swish activation to the input tensor element-wise.
+   * Performs element-wise swish activation.
    * The output is calculated using this formula:
-   *     output = input / (1 + e ^ (-input))
+   *     `output` = `input` / (1 + e ^ (-`input`))
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_SWISH,
 
   /**
-   * Applies the hyperbolic tangent activation to the input tensor element-wise.
+   * Performs element-wise hyperbolic tangent activation.
    * The output is calculated using this formula:
-   *     output = tanh(input)
+   *     `output` = tanh(`input`)
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same shape and type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_TANH,
 
   /**
-   * Repeats the input by given times number
+   * Constructs a tensor by tiling a given tensor.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: repeats, a NNADAPTER_INT32 tensor with shape [rank(input)].
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: repeats, a NNADAPTER_INT32 tensor of shape [rank(`input`)].
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same dimensions and type as `input`, and
+   * output_dims[i] = input_dims[i] * repeats[i], and has the same type as
+   * `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_TILE,
 
   /**
-   * Retrieve the top-K largest elements along a specified axis.
+   * Retrieve the top-K largest or smallest elements along a specified axis.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_INT32,
-   * NNADAPTER_INT64, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: k, a NNADAPTER_INT32 or NNADAPTER_INT64 tensor, the number of top
-   * elements to look for along the axis.
-   * * 2: axis, a NNADAPTER_INT32 scalar, represents the dimension along which
-   * top_k will be performed. It should be in range [-R, R), where R is the rank
-   * of input, negative value works the same way as axis+R.
-   * * 3: largest, a NNADAPTER_BOOL8 scalar, whether to return the top-K largest
-   * or smallest elements.
-   * * 4: sorted, a NNADAPTER_BOOL8 scalar, whether to return the elements in
-   * sorted order.
-   * * 5: return_indices_dtype, a NNADAPTER_INT32 scalar, the value of
-   * NNADAPTER_INT32 or NNADAPTER_INT64, specifies the dtype of
-   * the indices.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_INT32, NNADAPTER_INT64,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: k, a 1-D NNADAPTER_INT32, NNADAPTER_INT64 tensor, containing a single
+   * positive value corresponding to the number of top elements to retrieve.
+   * * 2: axis, a NNADAPTER_INT32 tensor of shape [1], represents the dimension
+   * on which to do the sort, should be in range [-R, R), where R is the rank of
+   * `input`, negative value works the same way as `axis`+R.
+   * * 3: largest, a NNADAPTER_BOOL8 tensor of shape [1], whether to return the
+   * top-K largest or smallest elements.
+   * * 4: sorted, a NNADAPTER_BOOL8 tensor of shape [1], whether to return the
+   * elements in sorted order.
+   * * 5: return_indices_dtype, a NNADAPTER_INT32 tensor of shape [1], its value
+   * shoud be NNADAPTER_INT32 or NNADAPTER_INT64, specifies the data type of the
+   * `indices`.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input, top K values
+   * * 0: output, a tensor of the same type as input, containing top K values
    * from the input tensor.
-   * * 1: indices, a NNADAPTER_INT32 or NNADAPTER_INT64 tensor,
-   * the corresponding input tensor indices for the top K values.
+   * * 1: indices, a NNADAPTER_INT32, NNADAPTER_INT64 tensor, containing the
+   * corresponding input tensor indices for the top K values.
    *
    * Available since version 1.
    */
   NNADAPTER_TOP_K,
 
   /**
-   * Transposes the input according to the perm, similar to numpy.transpose
+   * Transposes the input tensor, permuting the dimensions according to the perm
+   * tensor, similar to numpy.transpose
    * https://numpy.org/doc/stable/reference/generated/numpy.transpose.html.
    * For example, the input with shape (1, 2, 3) and perm=(1, 0, 2), the shape
    * of output will be (2, 1, 3).
    *
    * Inputs:
-   * * 0: input0, a NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: perm, An optional 1-D NNADAPTER_INT32 tensor, reverse the
-   * dimensions of input if perm is not given, otherwise permute the axes
-   * according to the values given.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: perm, an optional 1-D NNADAPTER_INT32 tensor, reverse the dimensions
+   * if it is empty, otherwise permute the axes according to the values given.
    *
    * Outputs:
-   * * 0: output, a tensor with the same type as input.
+   * * 0: output, a tensor of the same type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_TRANSPOSE,
 
   /**
-   * Remove dimensions of input which size is 1
+   * Insert single-dimensional entries to the shape of tensor along the
+   * specified `axes`.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT16, NNADAPTER_FLOAT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axes, A NNADAPTER_INT32 tensor. It indicating the dimensions
-   * to be inserted. It should be in range [-R, R), where R is the rank of
-   * input, negative value works the same way as axis+R+1.
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: axes, a 1-D NNADAPTER_INT32 tensor, indicates the dimensions to be
+   * inserted, should be in range [-R, R), where R is the rank of `input`,
+   * negative value works the same way as `axis`+R.
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape and type as input.
+   * * 0: output, a tensor of the same type as `input`.
    *
    * Available since version 1.
    */
   NNADAPTER_UNSQUEEZE,
 
   /**
-   * Return a tensor of elements selected from either input0 or input1,
-   * depending on condition (with Numpy-style broadcasting*
-   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * Unpacks the given axis of a rank-R tensor into rank-(R-1) tensors.
    *
    * Inputs:
-   * * 0: condition, a NNADAPTER_BOOL8 tensor.
-   * * 1: input0, a NNADAPTER_FLOAT32, NNADAPTER_INT32,
-   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 2: input1, a tensor with the same type as input0.
+   * * 0, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: axis, a NNADAPTER_INT32 tensor of shape [1], represents the dimension
+   * along which axis to unpack, should be in range [-R, R), where R is the
+   * rank of `input`, negative value works the same way as `axis`+R.
+   * * 2: num, a NNADAPTER_INT32 tensor of shape [1], represents the length of
+   * axis.
    *
    * Outputs:
-   * * 0: output, a tensor with the same type as input0.
+   * * 0 ~ n-1: output0 ~ outputn-1, one or more outputs forming list of tensors
+   * after unpack, has the same type as the `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_UNSTACK,
+
+  /**
+   * Return elements, either from `input0` or `input1`, depending on `condition`
+   * (with Numpy-style broadcasting
+   * https://numpy.org/doc/stable/user/basics.broadcasting.html), similar to
+   * numpy.where
+   * https://numpy.org/doc/stable/reference/generated/numpy.where.html.
+   *
+   * Inputs:
+   * * 0: condition, a NNADAPTER_BOOL8 tensor, when true, yield `input0`,
+   * otherwise yield `input1`.
+   * * 1: input0, a NNADAPTER_FLOAT32, NNADAPTER_INT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 2: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the compatible shape and type as `input0` and
+   * `input1`.
    *
    * Available since version 1.
    */
   NNADAPTER_WHERE,
 
   /**
-   * Performs element-wise binary and logical operation(with Numpy-style
+   * Performs element-wise binary logical XOR operation(with Numpy-style
    * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
-   * The output is calculated using this formula: output = input0 ^ input1
+   * The output is calculated using this formula:
+   *     `output` = `input0` ^ `input1`
    *
    * Inputs:
    * * 0: input0, a NNADAPTER_BOOL8 tensor.
-   * * 1: input1, a NNADAPTER_BOOL8 tensor.
+   * * 1: input1, a tensor of the compatible shape and the same type as
+   * `input0`.
    *
    * Outputs:
-   * * 0: output, a NNADAPTER_BOOL8 tensor.
+   * * 0: output, a tensor of the compatible shape and type as `input0`.
    *
    * Available since version 1.
    */
   NNADAPTER_XOR,
 
   /**
-   * Generate YOLO detection boxes from output of YOLOv3 network.
-   * https://www.paddlepaddle.org.cn/documentation/docs/zh/2.1/api/paddle/vision/ops/yolo_box_cn.html#yolo-box
+   * Multi-class non maximum suppression (NMS) on a batched of boxes and scores.
+   * In the NMS step, this operator greedily selects a subset of detection
+   * bounding boxes that have high scores larger than score_threshold,
+   * if providing this threshold, then selects the largest nms_top_k confidences
+   * scores if nms_top_k is larger than -1.
+   * Then this operator pruns away boxes that have high IOU (intersection over
+   * union) overlap with already selected boxes by adaptive threshold NMS based
+   * on parameters of nms_threshold and nms_eta.
+   * Aftern NMS step, at most keep_top_k number of total bboxes are to be kept
+   * per image if keep_top_k is larger than -1.
+   * https://www.paddlepaddle.org.cn/documentation/docs/zh/api/paddle/fluid/layers/multiclass_nms_cn.html
    *
    * Inputs:
-   * * 0: input0, a NNADAPTER_FLOAT32 tensor. a 4-D tensor with shape of [N, C,
-   * H, W]. The dimension(C) stores "box locations, confidence score and
-   * classification one-hot keys of each anchor box. Generally, X should be the
-   * output of YOLOv3 network.
-   * * 1: input1, imgsize, a NNADAPTER_INT32 tensor. a 2-D tensor with shape of
-   * [N, 2]. This tensor holds height and width of each input image used for
-   * resizing output box in input image scale.
-   * * 2: anchors, vector of NNADAPTER_INT32 scalar, the anchor width and
-   * height, it will be parsed pair by pair.
-   * * 3: class_num, a NNADAPTER_INT32 scalar, number of classes to predict.
-   * * 4: conf_thresh, a NNADAPTER_FLOAT32 scalar, the confidence scores
-   * threshold of detection boxes, boxes with confidence scores under threshold
-   * should be ignored.
-   * * 5: downsample_ratio, a NNADAPTER_INT32 scalar, down-sampling rate from
-   * network input to this operation input.
-   * * 6: clip_bbox, a NNADAPTER_BOOL8 scalar, whether clip output bonding box
-   * in input(imgsize), default true.
-   * * 7: scale_x_y, a NNADAPTER_FLOAT32 scalar, scale the center point of
-   * decoded bounding box, default 1.0.
-   * * 8: iou_aware, a NNADAPTER_BOOL8 scalar, whether use iou aware, default
-   * false.
-   * * 9: iou_aware_factor, a NNADAPTER_FLOAT32 scalar, iou aware factor,
-   * default 0.5.
+   * * 0: bboxes, a NNADAPTER_FLOAT32 tensor.
+   * * Two types of bboxes are supported:
+   *     1. A 3-D Tensor with shape [N, M, 4/8/16/24/32] represents
+   * the predicted locations of M bounding bboxes, N is the batch size. 
+   *        Each bounding box has four coordinate values and the layout
+   * is [xmin, ymin, xmax, ymax], when box size equals to 4.
+   *     2. A 3-D Tensor with shape [M, C, 4]. M is the number of bounding
+   * boxes, C is the class number.
+   * * 1: scores,scores, a NNADAPTER_FLOAT32 tensor.
+   * * Two types of scores are supported:
+   *     1. A 3-D Tensor with shape [N, C, M] represents the predicted
+   * confidence predictions.
+   *        N is the batch size, C is the class number, M is number of bounding
+   * boxes.
+   *        For each category there are total M scores which corresponding M
+   * bounding boxes.
+   *        In this case, input bboxes should be the first case with shape [N,
+   * M, 4/8/16/24/32].
+   *     2. A 2-D LoDTensor with shape [M, C]. M is the number of bbox, C is the
+   * class number.
+   *        In this case, input bboxes should be the second case with shape [M,
+   * C, 4].
+   * * 2: rois_num(optional), a NNADAPTER_INT32 tensor with shape [B], B is the
+   * number of images.
+   * rois_nums exist only if bboxes and scores is in the second case.
+   * * 3: background_label, a NNADAPTER_INT32 tensor with shape [1], the index
+   * of background label.
+   * If set to 0, the background label will be ignored.
+   * If set to -1, then all categories will be considered.
+   * * 4: score_threshold, a NNADAPTER_FLOAT32 tensor with shape [1], threshold
+   * to filter out bounding boxes with low confidence score.
+   * * 5: nms_top_k, a NNADAPTER_INT32 tensor with shape [1], maximum number of
+   * detections to be kept according to the confidences after the filtering
+   * detections based on score_threshold.
+   * * 6: nms_threshold, a NNADAPTER_FLOAT32 tensor with shape [1], the
+   * parameter for NMS.
+   * * 7: nms_eta, a NNADAPTER_FLOAT32 tensor with shape [1], the parameter for
+   * adaptive NMS.
+   * * 8: keep_top_k, a NNADAPTER_INT32 tensor with shape [1], number of total
+   * bboxes to be kept per image after NMS step.
+   * "-1" means keeping all bboxes after NMS step.
+   * * 9: normalized, a NNADAPTER_BOOL8 tensor with shape [1], whether
+   * detections are normalized.
+   * * 10: return_index,  a NNADAPTER_BOOL8 tensor with shape [1], whether to
+   * return index of RoIs.
    *
    * Outputs:
-   * * 0: boxes, a NNADAPTER_FLOAT32 tensor. a 3-D tensor with shape of [N, M,
-   * 4], N is the batch num, M is output box number, and the 3rd stores [xmin,
-   * ymin, xmax, ymax] coordinates of boxes.
-   * * 1: scores, a NNADAPTER_FLOAT32 tensor. a 3-D tensor with shape of [N, M,
-   * class_num], N is the batch num, M is output box number.
+   * * 0: output, a tensor with the same type as bboxes, with shape [No, 6].
+   * "No" is the number of all RoIs. Each row has 6 values: [label, confidence,
+   * xmin, ymin, xmax, ymax]
+   * * 1: out_rois_num, a NNADAPTER_INT32 tensor of shape [B], B is the number
+   * of images.
+   * The number of NMS RoIs in each image.
+   * * 2: index, a NNADAPTER_INT32 tensor with shape [No] represents the index
+   * of selected bbox.
+   * The index is the absolute index cross batches.
+   * It is valid only if "return_index" is true.
+   */
+  NNADAPTER_NON_MAX_SUPPRESSION,
+
+  /**
+   * Generate YOLO detection boxes from output of YOLOv3 network, refer to
+   * https://www.paddlepaddle.org.cn/documentation/docs/zh/2.1/api/paddle/vision/ops/yolo_box_cn.html#yolo-box
+   * for more details.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32 tensor of shape [N, C, H, W], its
+   * dimension(C) stores box locations, confidence score and classification
+   * one-hot keys of each anchor box.
+   * * 1: imgsize, a NNADAPTER_INT32 tensor of shape [N, 2], holds height and
+   * width of each input image used for resizing output box in input image
+   * scale.
+   * * 2: anchors, a NNADAPTER_INT32 tensor of shape [2], represents the anchor
+   * width and height, it will be parsed pair by pair.
+   * * 3: class_num, a NNADAPTER_INT32 tensor of shape [1], represents number of
+   * classes.
+   * * 4: conf_thresh, a NNADAPTER_FLOAT32 tensor of shape [1], the confidence
+   * scores threshold of detection boxes, boxes with confidence scores under
+   * threshold should be ignored.
+   * * 5: downsample_ratio, a NNADAPTER_INT32 tensor of shape [1], down-sampling
+   * rate from network input to this operation input.
+   * * 6: clip_bbox, a NNADAPTER_BOOL8 tensor of shape [1], whether clip output
+   * bonding box in `imgsize` boundary, defaults to true.
+   * * 7: scale_x_y, a NNADAPTER_FLOAT32 tensor of shape [1], scale the center
+   * point of decoded bounding box, defaults to 1.0.
+   * * 8: iou_aware, a NNADAPTER_BOOL8 tensor of shape [1], whether to use iou
+   * aware, defaults to false.
+   * * 9: iou_aware_factor, a NNADAPTER_FLOAT32 tensor of shape [1], iou aware
+   * factor, defaults to 0.5.
+   *
+   * Outputs:
+   * * 0: boxes, a 3-D NNADAPTER_FLOAT32 tensor of shape [N, M, 4], N is the
+   * batch size, M is the number of output boxes, and the coordinates of boxes
+   * [xmin, ymin, xmax, ymax].
+   * * 1: scores, a 3-D NNADAPTER_FLOAT32 tensor of shape [N, M, `class_num`].
    *
    * Available since version 1.
    */
@@ -2316,6 +2576,7 @@ int NNAdapterDevice_getVersion(const NNAdapterDevice* device, int32_t* version);
 int NNAdapterContext_create(NNAdapterDevice** devices,
                             uint32_t num_devices,
                             const char* properties,
+                            int (*callback)(int event_id, void* user_data),
                             NNAdapterContext** context);
 /**
  * Release the context.
@@ -2489,7 +2750,8 @@ int NNAdapterExecution_setInput(NNAdapterExecution* execution,
                                 int32_t index,
                                 void* memory,
                                 void* (*access)(void* memory,
-                                                NNAdapterOperandType* type));
+                                                NNAdapterOperandType* type,
+                                                void* device_buffer));
 /**
  * Set the output memory and the function used to access it.
  *
@@ -2518,7 +2780,8 @@ int NNAdapterExecution_setOutput(NNAdapterExecution* execution,
                                  int32_t index,
                                  void* memory,
                                  void* (*access)(void* memory,
-                                                 NNAdapterOperandType* type));
+                                                 NNAdapterOperandType* type,
+                                                 void* device_buffer));
 /**
  * Start to run the execution synchronously.
  *

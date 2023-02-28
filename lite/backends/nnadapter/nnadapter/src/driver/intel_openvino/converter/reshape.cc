@@ -30,27 +30,13 @@ int ConvertReshape(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  if (IsConstantOperand(shape_operand)) {
-    auto shape_count = shape_operand->length / sizeof(int32_t);
-    auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
-    for (uint32_t i = 0; i < shape_count; i++) {
-      if (shape_data[i] == 0 &&
-          input_operand->type.dimensions.data[i] != NNADAPTER_UNKNOWN) {
-        shape_data[i] = input_operand->type.dimensions.data[i];
-      }
-    }
-    auto shape_tensor = converter->AddConstantTensor(
-        {shape_count},
-        std::vector<int32_t>(shape_data, shape_data + shape_count));
-    auto reshape_op = std::make_shared<default_opset::Reshape>(
-        *input_tensor, *shape_tensor, true);
-    MAP_OUTPUT(output_operand, reshape_op, 0);
-  } else {
-    NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
-                         << OperandLifetimeCodeToString(
-                                shape_operand->type.lifetime);
-    return NNADAPTER_INVALID_PARAMETER;
+  auto shape_tensor = converter->GetMappedTensor(shape_operand);
+  if (!shape_tensor) {
+    shape_tensor = converter->ConvertOperand(shape_operand);
   }
+  auto reshape_op = std::make_shared<default_opset::Reshape>(
+      *input_tensor, *shape_tensor, true);
+  MAP_OUTPUT(output_operand, reshape_op, 0);
   return NNADAPTER_NO_ERROR;
 }
 

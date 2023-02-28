@@ -47,7 +47,8 @@ static void FixRELUDepthwiseConv2D(core::Model* model,
     bool is_depthwise_mode = group != 1 && input_channel_size == group &&
                              output_channel_size % input_channel_size == 0;
     if (is_depthwise_mode) {
-      auto dummy_output_operand = InsertDummyOperation(model, output_operand);
+      auto dummy_output_operand =
+          InsertDummyAddOperation(model, output_operand);
       UpdateOperationOutputOperands(
           operation, output_operand, dummy_output_operand);
       break;

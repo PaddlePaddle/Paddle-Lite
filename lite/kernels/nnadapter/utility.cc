@@ -40,14 +40,14 @@ bool IsValidSymmQuantParams(const std::vector<float>& quant_scales,
   if (quant_scale_count == 0) return false;
   CHECK(quant_channel_dim < NNADAPTER_MAX_SIZE_OF_DIMENSIONS);
   for (size_t i = 0; i < quant_scale_count; i++) {
-    if (quant_scales[i] <= 0.f) return false;
+    if (quant_scales[i] < 0.f) return false;
   }
   return true;
 }
 
 bool IsValidSymmPerLayerQuantParams(const std::vector<float>& quant_scales) {
   if (quant_scales.size() != 1) return false;
-  return quant_scales[0] > 0.f;
+  return quant_scales[0] >= 0.f;
 }
 
 bool IsValidSymmPerChannelQuantParams(const std::vector<float>& quant_scales,
@@ -57,10 +57,10 @@ bool IsValidSymmPerChannelQuantParams(const std::vector<float>& quant_scales,
   if (quant_scale_count <= 1) return false;
   CHECK(quant_channel_dim < NNADAPTER_MAX_SIZE_OF_DIMENSIONS);
   auto ref_quant_scale = quant_scales[0];
-  if (ref_quant_scale <= 0.f) return false;
+  if (ref_quant_scale < 0.f) return false;
   for (size_t i = 1; i < quant_scale_count; i++) {
     auto cur_quant_scale = quant_scales[i];
-    if (cur_quant_scale <= 0.f) return false;
+    if (cur_quant_scale < 0.f) return false;
     if (fabs(cur_quant_scale - ref_quant_scale) > threshold) {
       return true;
     }
@@ -544,6 +544,12 @@ NNAdapterOperationType ConvertUnaryActTypeToNNOperationType(
     unary_act_op_code = NNADAPTER_FLOOR;
   } else if (unary_act_op_type == "square") {
     unary_act_op_code = NNADAPTER_SQUARE;
+  } else if (unary_act_op_type == "sin") {
+    unary_act_op_code = NNADAPTER_SIN;
+  } else if (unary_act_op_type == "cos") {
+    unary_act_op_code = NNADAPTER_COS;
+  } else if (unary_act_op_type == "silu") {
+    unary_act_op_code = NNADAPTER_SWISH;
   } else {
     LOG(WARNING) << "Unable to convert a unary activation type("
                  << unary_act_op_type << ") to a NNAdapter operation type!";
@@ -687,7 +693,6 @@ void ConvertDDimToNNDimensions(const DDim& input_dimensions,
   if (output_dimension_count) {
     *output_dimension_count = input_dimensions.size();
   }
-  *output_dimension_count = input_dimensions.size();
   for (size_t i = 0; i < input_dimensions.size(); i++) {
     output_dimensions[i] = static_cast<int32_t>(input_dimensions[i]);
   }

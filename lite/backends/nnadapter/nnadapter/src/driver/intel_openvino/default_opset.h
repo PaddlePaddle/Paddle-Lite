@@ -16,6 +16,16 @@
 
 #include "openvino/opsets/opset8.hpp"
 
+#define NNADAPTER_INTEL_OPENVINO_VERSION_GREATER_EQUAL(major, minor, patch) \
+  NNADAPTER_INTEL_OPENVINO_MAJOR_VERSION * 100 +                            \
+          NNADAPTER_INTEL_OPENVINO_MINOR_VERSION * 10 +                     \
+          NNADAPTER_INTEL_OPENVINO_PATCH_VERSION >=                         \
+      major * 100 + minor * 10 + patch
+
+#if NNADAPTER_INTEL_OPENVINO_VERSION_GREATER_EQUAL(2022, 2, 0)
+#include "openvino/opsets/opset9.hpp"
+#endif
+
 namespace nnadapter {
 namespace intel_openvino {
 
@@ -23,10 +33,12 @@ namespace default_opset = ov::opset8;
 using Node = ov::Node;
 using OutputNode = ov::Output<ov::Node>;
 using PadType = ov::op::PadType;
+using PadMode = ov::op::PadMode;
 using ElementType = ov::element::Type;
 using Shape = ov::Shape;
 
 using Tensor = OutputNode;
+using TensorVector = ov::OutputVector;
 using Operator = Node;
 }  // namespace intel_openvino
 }  // namespace nnadapter

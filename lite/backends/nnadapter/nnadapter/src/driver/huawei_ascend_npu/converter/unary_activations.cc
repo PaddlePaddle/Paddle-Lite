@@ -44,6 +44,8 @@ int ConvertUnaryActivations(Converter* converter, core::Operation* operation) {
     CONVERT_UNARY_ACTIVATION(EXP, Exp);
     CONVERT_UNARY_ACTIVATION(FLOOR, Floor);
     CONVERT_UNARY_ACTIVATION(SQUARE, Square);
+    CONVERT_UNARY_ACTIVATION(SIN, Sin);
+    CONVERT_UNARY_ACTIVATION(COS, Cos);
 #undef CONVERT_UNARY_ACTIVATION
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "

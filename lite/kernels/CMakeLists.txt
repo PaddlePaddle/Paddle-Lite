@@ -11,8 +11,8 @@ if (LITE_BUILD_TAILOR)
     #     one-to-one correspondence!
     # (2) the result of the kernel tailored is stored into build dir and add_kernel() will get
     #     the modified kernel source file in build dir when compiling.
-    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/kernel_tailor_src_dir)
-    set(kernel_tailor_src_dir "${CMAKE_BINARY_DIR}/kernel_tailor_src_dir")
+    file(MAKE_DIRECTORY ${PADDLE_BINARY_DIR}/kernel_tailor_src_dir)
+    set(kernel_tailor_src_dir "${PADDLE_BINARY_DIR}/kernel_tailor_src_dir")
     set(tailored_kernels_src_list_path "${LITE_OPTMODEL_DIR}/.tailored_kernels_source_list")
     set(tailored_kernels_attr_list_path "${LITE_OPTMODEL_DIR}/.tailored_kernels_list")
     file(STRINGS ${tailored_kernels_src_list_path} tailored_kernels_src_list)
@@ -45,16 +45,16 @@ if (LITE_BUILD_TAILOR)
             # conv_direct.cc and conv_gemmlike.cc into build dir, and rename it by adding a suffix.
             if (${filename} STREQUAL "conv_compute")
                 execute_process(
-                    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/kernels/${target}/conv_depthwise.cc" "${kernel_tailor_src_dir}/conv_depthwise_${target}_${suffix}.cc"
-                    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/kernels/${target}/conv_winograd.cc" "${kernel_tailor_src_dir}/conv_winograd_${target}_${suffix}.cc"
-                    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/kernels/${target}/conv_direct.cc" "${kernel_tailor_src_dir}/conv_direct_${target}_${suffix}.cc"
-                    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/lite/kernels/${target}/conv_gemmlike.cc" "${kernel_tailor_src_dir}/conv_gemmlike_${target}_${suffix}.cc"
+                    COMMAND ${CMAKE_COMMAND} -E copy "${PADDLE_SOURCE_DIR}/lite/kernels/${target}/conv_depthwise.cc" "${kernel_tailor_src_dir}/conv_depthwise_${target}_${suffix}.cc"
+                    COMMAND ${CMAKE_COMMAND} -E copy "${PADDLE_SOURCE_DIR}/lite/kernels/${target}/conv_winograd.cc" "${kernel_tailor_src_dir}/conv_winograd_${target}_${suffix}.cc"
+                    COMMAND ${CMAKE_COMMAND} -E copy "${PADDLE_SOURCE_DIR}/lite/kernels/${target}/conv_direct.cc" "${kernel_tailor_src_dir}/conv_direct_${target}_${suffix}.cc"
+                    COMMAND ${CMAKE_COMMAND} -E copy "${PADDLE_SOURCE_DIR}/lite/kernels/${target}/conv_gemmlike.cc" "${kernel_tailor_src_dir}/conv_gemmlike_${target}_${suffix}.cc"
                 )
             endif()
             # parse_tailored_kernel.py is the actual py script to deal with tailor kernel.
             # Note we must distinguish the first time and not.
             execute_process(
-                COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_tailored_kernel.py
+                COMMAND ${PYTHON_EXECUTABLE} ${PADDLE_SOURCE_DIR}/lite/tools/cmake_tools/parse_tailored_kernel.py
                 ${src}
                 ${kernel_src_file}
                 ${op_name}
@@ -70,7 +70,7 @@ if (LITE_BUILD_TAILOR)
             list(FIND tailored_kernel_attrs ${tailored_kernels_attr} _index_2)
             if (${_index_2} EQUAL -1)
                 execute_process(
-                    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_tailored_kernel.py
+                    COMMAND ${PYTHON_EXECUTABLE} ${PADDLE_SOURCE_DIR}/lite/tools/cmake_tools/parse_tailored_kernel.py
                     ${src}
                     ${kernel_src_file}
                     ${op_name}
@@ -89,49 +89,41 @@ endif()
 
 add_subdirectory(host)
 add_subdirectory(arm)
-add_subdirectory(cuda)
 add_subdirectory(x86)
 add_subdirectory(opencl)
-add_subdirectory(fpga)
-add_subdirectory(npu)
 add_subdirectory(xpu)
-add_subdirectory(mlu)
-add_subdirectory(bm)
 add_subdirectory(metal)
-add_subdirectory(intel_fpga)
 add_subdirectory(nnadapter)
 
 #-------------------------------post_process----------------------------------------------------------------
 # tricks to create headfiles for opt
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/all_kernel_faked_dir)
+file(MAKE_DIRECTORY ${PADDLE_BINARY_DIR}/all_kernel_faked_dir)
+find_package(PythonInterp REQUIRED)
 execute_process(
-    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
+    COMMAND ${PYTHON_EXECUTABLE} ${PADDLE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
     ${kernels_src_list}
     ${fake_kernels_src_list}
-    ${CMAKE_BINARY_DIR}/all_kernel_faked_dir
-    ${CMAKE_BINARY_DIR}/all_kernel_faked.h
-    ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
-    ${CMAKE_BINARY_DIR}/kernel_src_map.h
+    ${PADDLE_BINARY_DIR}/all_kernel_faked_dir
+    ${PADDLE_BINARY_DIR}/all_kernel_faked.h
+    ${PADDLE_BINARY_DIR}/all_kernel_faked.cc
+    ${PADDLE_BINARY_DIR}/kernel_src_map.h
     RESULT_VARIABLE result
     ERROR_VARIABLE error)
 if(NOT "${error}" STREQUAL "")
   message(FATAL_ERROR ${error})
 endif()
 
-file(GLOB all_kernel_faked_src ${CMAKE_BINARY_DIR}/all_kernel_faked_dir/*.cc)
+file(GLOB all_kernel_faked_src ${PADDLE_BINARY_DIR}/all_kernel_faked_dir/*.cc)
 lite_cc_library(kernels SRCS ${KERNELS_SRC} ${all_kernel_faked_src} DEPS ${lite_kernel_deps})
 add_dependencies(kernels utils)
-if(LITE_WITH_CUDA)
-    target_link_libraries(kernels ${cuda_kernels})
-endif()
 
 # create headfile to restore ops info sorted by suppported platforms
 execute_process(
-    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/record_supported_kernel_op.py
+    COMMAND ${PYTHON_EXECUTABLE} ${PADDLE_SOURCE_DIR}/lite/tools/cmake_tools/record_supported_kernel_op.py
     ${kernels_src_list}
     ${fake_kernels_src_list}
     ${ops_src_list}
-    ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
+    ${PADDLE_BINARY_DIR}/supported_kernel_op_info.h
     ${LITE_BUILD_EXTRA}
     RESULT_VARIABLE result
     ERROR_VARIABLE error)

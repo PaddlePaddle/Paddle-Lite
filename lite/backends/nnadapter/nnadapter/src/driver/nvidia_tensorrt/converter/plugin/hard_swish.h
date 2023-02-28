@@ -23,16 +23,21 @@ class HardSwishPlugin : public Plugin {
   HardSwishPlugin();
   HardSwishPlugin(float alpha, float beta);
   HardSwishPlugin(const void* serial_data, size_t serial_length);
-  ~HardSwishPlugin();
-  const char* getPluginType() const noexcept;
+  ~HardSwishPlugin() TRT_NOEXCEPT;
+  const char* getPluginType() const TRT_NOEXCEPT;
   int enqueue(int batch_size,
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
+              void const* const* inputs,
+              void* const* outputs,
+#else
               const void* const* inputs,
               void** outputs,
+#endif
               void* workspace,
-              cudaStream_t stream) noexcept;
-  size_t getSerializationSize() const noexcept;
-  void serialize(void* buffer) const noexcept;
-  nvinfer1::IPluginV2* clone() const noexcept;
+              cudaStream_t stream) TRT_NOEXCEPT;
+  size_t getSerializationSize() const TRT_NOEXCEPT;
+  void serialize(void* buffer) const TRT_NOEXCEPT;
+  nvinfer1::IPluginV2* clone() const TRT_NOEXCEPT;
 
  private:
   float alpha_;
@@ -44,17 +49,17 @@ class HardSwishPluginDynamic : public PluginDynamic {
   HardSwishPluginDynamic();
   HardSwishPluginDynamic(float alpha, float beta);
   HardSwishPluginDynamic(const void* serial_data, size_t serial_length);
-  ~HardSwishPluginDynamic();
-  nvinfer1::IPluginV2DynamicExt* clone() const noexcept;
+  ~HardSwishPluginDynamic() TRT_NOEXCEPT;
+  nvinfer1::IPluginV2DynamicExt* clone() const TRT_NOEXCEPT;
   int32_t enqueue(const nvinfer1::PluginTensorDesc* input_desc,
                   const nvinfer1::PluginTensorDesc* output_desc,
-                  const void* const* inputs,
+                  void const* const* inputs,
                   void* const* outputs,
                   void* workspace,
-                  cudaStream_t stream) noexcept;
-  const char* getPluginType() const noexcept;
-  size_t getSerializationSize() const noexcept;
-  void serialize(void* buffer) const noexcept;
+                  cudaStream_t stream) TRT_NOEXCEPT;
+  const char* getPluginType() const TRT_NOEXCEPT;
+  size_t getSerializationSize() const TRT_NOEXCEPT;
+  void serialize(void* buffer) const TRT_NOEXCEPT;
 
  private:
   float alpha_;
@@ -63,18 +68,18 @@ class HardSwishPluginDynamic : public PluginDynamic {
 
 class HardSwishPluginCreator : public PluginCreator {
  public:
-  const char* getPluginName() const noexcept;
+  const char* getPluginName() const TRT_NOEXCEPT;
   nvinfer1::IPluginV2* deserializePlugin(const char* name,
                                          void const* serial_data,
-                                         size_t serial_length) noexcept;
+                                         size_t serial_length) TRT_NOEXCEPT;
 };
 
 class HardSwishPluginDynamicCreator : public PluginCreator {
  public:
-  const char* getPluginName() const noexcept;
+  const char* getPluginName() const TRT_NOEXCEPT;
   nvinfer1::IPluginV2* deserializePlugin(const char* name,
                                          void const* serial_data,
-                                         size_t serial_length) noexcept;
+                                         size_t serial_length) TRT_NOEXCEPT;
 };
 
 template <typename T>

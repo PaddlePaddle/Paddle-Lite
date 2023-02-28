@@ -21,6 +21,7 @@
 #include <math.h>
 #include <list>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -675,6 +676,8 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
                                                   &flag_semi,
                                                   ch_out,
                                                   ch_in);
+      } else {
+        LOG(FATAL) << "use_fp32 and use_int8 must not both be false";
       }
       int nonzero_num = weight_num - zero_num;
       VLOG(4) << "zero_num: " << zero_num << "weight_num: " << weight_num;
@@ -772,6 +775,8 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
                                                  oc_nonzeros_t,
                                                  ic_diffs_t);
         }
+      } else {
+        LOG(FATAL) << "use_fp32 and use_int8 must not both be false";
       }
       VLOG(4) << "zero_num: " << zero_num << " weight_num: " << weight_num
               << " first_ic: " << first_ic;
@@ -862,7 +867,5 @@ REGISTER_MIR_PASS(sparse_conv_detect_pass,
                   paddle::lite::mir::SparseConvDetectPass)
     .BindTargets({TARGET(kARM)})
     .ExcludeTargets({TARGET(kXPU)})
-    .ExcludeTargets({TARGET(kBM)})
     .ExcludeTargets({TARGET(kOpenCL)})
-    .ExcludeTargets({TARGET(kNPU)})
     .ExcludeTargets({TARGET(kX86)});

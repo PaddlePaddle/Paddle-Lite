@@ -40,7 +40,8 @@ class TestDeformableConvOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
+        self.enable_devices_on_nnadapter(
+            device_names=["cambricon_mlu", "intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -148,7 +149,17 @@ class TestDeformableConvOp(AutoScanTest):
                                                                        1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            im2col_step = program_config.ops[0].attrs["im2col_step"]
+            dilations = program_config.ops[0].attrs["dilations"]
+            if "intel_openvino" in self.get_nnadapter_device_name():
+                if dilations[0] != dilations[1] or im2col_step != 1:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'dilations[0] != dilatiosn[1] or im2col_step != 1' on intel OpenVINO."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

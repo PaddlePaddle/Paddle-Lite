@@ -43,6 +43,10 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
   auto has_x86_opencl = [&]() -> bool {
     bool has_x86{false};
     bool has_opencl{false};
+    auto path = GetStringFromEnv(OPENCL_MEMORY_CONFIG_FILE);
+    if (!path.empty()) {
+      return true;
+    }
     for (auto& op_node : graph->StmtTopologicalOrder()) {
       if (!op_node->IsStmt()) continue;
       TargetType op_target_type = op_node->AsStmt().place().target;
@@ -74,6 +78,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
       "fetch",
       "cast",
       "expand",
+      "share_data",
   };
 
   auto insert_invalid_op_nodes_for_specific_target = [&](
@@ -143,12 +148,17 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
       }
       if (inplace) {
         for (auto& in_param_name : inplace_op_node->second.first) {
-          const auto& in_arg_names = op_info->Input(in_param_name);
-          invalid_var_names.insert(in_arg_names.begin(), in_arg_names.end());
+          if (op_info->HasInput(in_param_name)) {
+            const auto& in_arg_names = op_info->Input(in_param_name);
+            invalid_var_names.insert(in_arg_names.begin(), in_arg_names.end());
+          }
         }
         for (auto& out_param_name : inplace_op_node->second.second) {
-          const auto& out_arg_names = op_info->Output(out_param_name);
-          invalid_var_names.insert(out_arg_names.begin(), out_arg_names.end());
+          if (op_info->HasOutput(out_param_name)) {
+            const auto& out_arg_names = op_info->Output(out_param_name);
+            invalid_var_names.insert(out_arg_names.begin(),
+                                     out_arg_names.end());
+          }
         }
       }
     }
@@ -345,9 +355,4 @@ void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(memory_optimize_pass, paddle::lite::mir::MemoryOptimizePass)
     .BindTargets({TARGET(kARM), TARGET(kOpenCL)})
-    .ExcludeTargets({TARGET(kNPU),
-                     TARGET(kBM),
-                     TARGET(kXPU),
-                     TARGET(kMLU),
-                     TARGET(kMetal),
-                     TARGET(kNNAdapter)});
+    .ExcludeTargets({TARGET(kXPU), TARGET(kMetal), TARGET(kNNAdapter)});

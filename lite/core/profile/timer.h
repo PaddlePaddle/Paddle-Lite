@@ -17,9 +17,6 @@
 #include <chrono>  // NOLINT
 #include <string>
 #include <vector>
-#ifdef LITE_WITH_CUDA
-#include "lite/backends/cuda/cuda_utils.h"
-#endif
 #include "lite/core/context.h"
 
 namespace paddle {
@@ -121,39 +118,6 @@ class Timer {
 
 template <TargetType Target>
 class DeviceTimer final : public Timer {};
-
-#ifdef LITE_WITH_CUDA
-template <>
-class DeviceTimer<TargetType::kCUDA> final : public Timer {
- public:
-  DeviceTimer() {
-    CUDA_CALL(cudaEventCreate(&e_start_));
-    CUDA_CALL(cudaEventCreate(&e_stop_));
-  }
-  ~DeviceTimer() {
-    CUDA_CALL(cudaEventDestroy(e_start_));
-    CUDA_CALL(cudaEventDestroy(e_stop_));
-  }
-  void Start(KernelContext* ctx) {
-    cudaStream_t stream;
-    stream = ctx->As<CUDAContext>().exec_stream();
-    CUDA_CALL(cudaEventRecord(e_start_, stream));
-  }
-  float Stop(KernelContext* ctx) {
-    cudaStream_t stream;
-    stream = ctx->As<CUDAContext>().exec_stream();
-    CUDA_CALL(cudaEventRecord(e_stop_, stream));
-    CUDA_CALL(cudaEventSynchronize(e_stop_));
-    float elapse_ms = 1.f;
-    CUDA_CALL(cudaEventElapsedTime(&elapse_ms, e_start_, e_stop_));
-    this->laps_t_.Add(elapse_ms);
-    return elapse_ms;
-  }
-
- private:
-  cudaEvent_t e_start_, e_stop_;
-};
-#endif
 
 }  // namespace profile
 }  // namespace lite

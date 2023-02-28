@@ -49,7 +49,8 @@ class TestSqueezeOp(AutoScanTest):
         self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(device_names=[
-            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
+            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt",
+            "intel_openvino"
         ])
 
     def is_program_valid(self,
@@ -116,7 +117,8 @@ class TestSqueezeOp(AutoScanTest):
                 axes = program_config.ops[0].attrs["axes"]
                 if len(in_shape) == 1 \
                     or 0 in axes \
-                    or -len(in_shape) in axes:
+                    or -len(in_shape) in axes \
+                    or (in_shape[0] == 1 and len(axes)==0):
                     return True
 
         self.add_ignore_check_case(
@@ -124,8 +126,42 @@ class TestSqueezeOp(AutoScanTest):
             "Lite does not support 'in_shape_size == 1' or 'axes has 0' on nvidia_tensorrt."
         )
 
+        def teller2(program_config, predictor_config):
+            if self.get_nnadapter_device_name() is not None:
+                in_shape = program_config.inputs["input_data"].shape
+                axes = program_config.ops[0].attrs["axes"]
+                for i in axes:
+                    if in_shape[i] != 1:
+                        return True
+
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'the axis that will be squeezed is not one' on nnadapter."
+        )
+
+        def teller3(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
+                in_shape = program_config.inputs["input_data"].shape
+                axes = program_config.ops[0].attrs["axes"]
+                if len(axes) == len(in_shape):
+                    is_all_one = True
+                    for i in axes:
+                        if in_shape[i] != 1:
+                            is_all_one = False
+                    if is_all_one:
+                        return True
+
+        self.add_ignore_check_case(
+            teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support 'all axis of inputs are squeezed' on kunlunxin_xtcl, because output shape is wrong"
+        )
+
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=100)
+        target_str = self.get_target()
+        max_examples = 100
+        if target_str == "NNAdapter":
+            max_examples = 2000
+        self.run_and_statis(quant=False, max_examples=max_examples)
 
 
 if __name__ == "__main__":

@@ -59,7 +59,7 @@ class RangeComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("range");
     op_desc->SetInput("Start", {start});
     op_desc->SetInput("End", {end});
@@ -77,9 +77,9 @@ class RangeComputeTester : public arena::TestCase {
     sp[0] = sp_;
     DDim dim(std::vector<int64_t>({1}));
 
-    SetCommonTensor(start, dim, st.data());
-    SetCommonTensor(end, dim, ed.data());
-    SetCommonTensor(step, dim, sp.data());
+    SetCommonTensor(start, dim, st.data(), {}, true);
+    SetCommonTensor(end, dim, ed.data(), {}, true);
+    SetCommonTensor(step, dim, sp.data(), {}, true);
   }
 };
 
@@ -101,7 +101,17 @@ void test_range(Place place, float abs_error) {
 TEST(Range, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+  test_range<int64_t>(place, abs_error);
+  return;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
   return;

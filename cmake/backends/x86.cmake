@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if(NOT LITE_WITH_ARM)
+if(LITE_WITH_X86)
   include(external/xbyak)     # download xbyak package
   include(external/xxhash)    # download install xxhash
   include(external/libxsmm)   # download, build, install libxsmm

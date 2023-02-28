@@ -15,7 +15,6 @@
 #pragma once
 
 #include <memory>
-#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -32,9 +31,9 @@ class XPUSequencePoolCompute
 
   void Run() override;
 
- private:
-  XPUScratchPadGuard lod_xpu_guard_;
+  virtual ~XPUSequencePoolCompute() = default;
 
+ private:
   std::unique_ptr<int[]> lod_cpu;
 };
 

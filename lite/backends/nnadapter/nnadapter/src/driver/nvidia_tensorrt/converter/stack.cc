@@ -28,7 +28,8 @@ int ConvertStack(Converter* converter, core::Operation* operation) {
 
   // Convert to trt tensors and node
   std::vector<nvinfer1::ITensor*> input_tensors;
-  if (axis < input_dimensions_count) {
+  int input_rank = input_operands[0]->type.dimensions.count;
+  if (axis < input_rank) {
     for (int i = 0; i < input_count - 1; i++) {
       auto input_operand = input_operands[i];
       auto input_tensor = converter->GetMappedTensor(input_operand);
@@ -45,8 +46,8 @@ int ConvertStack(Converter* converter, core::Operation* operation) {
       if (!input_tensor) {
         input_tensor = converter->ConvertOperand(input_operand);
       }
-      reshape_dim.nbDims = input_dimensions_count;
-      reshape_dim.d[input_dimensions_count - 1] = 1;
+      reshape_dim.nbDims = input_rank;
+      reshape_dim.d[input_rank - 1] = 1;
       NNADAPTER_CHECK(!IsOperandWithDynamicShape(input_operand));
       for (int i = 0; i < reshape_dim.nbDims - 1; i++) {
         reshape_dim.d[i] = input_operand->type.dimensions.data[i + 1];

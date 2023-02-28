@@ -24,7 +24,6 @@ namespace opencl {
 void ConvTransposeImageCompute::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
-  const bool is_mali = context.cl_context()->IsArmMali();
 
   conv_param_ = param_.get_mutable<param_t>();
   auto x_dims = conv_param_->x->dims();
@@ -69,31 +68,42 @@ void ConvTransposeImageCompute::PrepareForRun() {
   filter_tensor_w_ = dilation_w_ * (filter_tensor_w_ - 1) + 1;
   auto* filter_cpu = conv_param_->filter->mutable_data<float>();
 
+  std::vector<float> filter_cpu_trans(conv_param_->filter->numel());
+  DDimLite filter_trans_dims{
+      {filter_dims[1], filter_dims[0], filter_dims[2], filter_dims[3]}};
+  // Convert filter layout from IOHW to OIHW
+  IOHW2OIHW<float, int64_t>(filter_cpu,
+                            filter_cpu_trans.data(),
+                            filter_trans_dims[0],
+                            filter_trans_dims[1],
+                            filter_trans_dims[2],
+                            filter_trans_dims[3]);
+
   filter_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_filter_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_bias_image_ = std::unique_ptr<Tensor>(new Tensor);
   // build options
   std::string build_options_single{""};
-  if (groups_ == 1) {
-    std::string kernel_name = "conv2d_transpose";
-    kernel_func_names_.push_back(kernel_name);
+  if (groups_ == 1 && dilation_h_ == 1 && dilation_w_ == 1) {
+    kernel_name_ = "conv2d_transpose";
+    kernel_func_names_.push_back(kernel_name_);
 
     CLImageConverterNBlock converter;
-    const DDim& filter_image_dims = converter.InitImageDimInfoWith(filter_dims);
+    const DDim& filter_image_dims =
+        converter.InitImageDimInfoWith(filter_trans_dims);
     filter_image_w_ = filter_image_dims[0];  // ((C + 3) / 4) * 4;
     filter_image_h_ = filter_image_dims[1];  // ((N + 3) / 4) * H * W;
     tensor_hold_filter_image_->Resize({1, filter_image_w_, filter_image_h_, 4});
     auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
 
     converter.NCHWToImage(
-        reinterpret_cast<float*>(filter_cpu), filter_image_data, filter_dims);
+        filter_cpu_trans.data(), filter_image_data, filter_trans_dims);
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
   } else if ((groups_ == input_tensor_c_) && (groups_ == output_tensor_c_)) {
     // for depthwise conv transpose
-    std::string kernel_name = "conv2d_transpose";
-    build_options_single += " -DIS_DEPTHWISE ";
-    kernel_func_names_.push_back(kernel_name);
+    kernel_name_ = "conv2d_depthwise_transpose";
+    kernel_func_names_.push_back(kernel_name_);
 
     DDimLite filter_trans_dims{
         {filter_dims[1], filter_dims[0], filter_dims[2], filter_dims[3]}};
@@ -110,11 +120,11 @@ void ConvTransposeImageCompute::PrepareForRun() {
                           filter_trans_dims);
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
-  } else if (groups_ > 1) {
+  } else if (groups_ > 1 || (dilation_h_ > 1 && dilation_w_ > 1)) {
     CHECK_EQ(filter_tensor_n_ % groups_, 0);
-    std::string kernel_name = "group_conv2d_transpose";
+    kernel_name_ = "group_conv2d_transpose";
     is_group_conv_ = true;
-    kernel_func_names_.push_back(kernel_name);
+    kernel_func_names_.push_back(kernel_name_);
 
     DDimLite filter_trans_dims{
         {filter_dims[0], filter_dims[1], filter_dims[2], filter_dims[3]}};
@@ -355,11 +365,14 @@ void ConvTransposeImageCompute::SetArgs() {
   CL_CHECK_FATAL(status);
   kernel->setArg(idx++, filter_prev_wh);
   CL_CHECK_FATAL(status);
-  kernel->setArg(idx++,
-                 static_cast<int32_t>(filter_tensor_w_ * filter_tensor_h_));
-  CL_CHECK_FATAL(status);
-  kernel->setArg(idx++, static_cast<int32_t>(maptofactor(input_tensor_c_, 4)));
-  CL_CHECK_FATAL(status);
+  if (kernel_name_ == "conv2d_transpose") {
+    kernel->setArg(idx++,
+                   static_cast<int32_t>(filter_tensor_w_ * filter_tensor_h_));
+    CL_CHECK_FATAL(status);
+    kernel->setArg(idx++,
+                   static_cast<int32_t>(maptofactor(input_tensor_c_, 4)));
+    CL_CHECK_FATAL(status);
+  }
   if (is_group_conv_) {
     int in_channels_per_group = input_tensor_c_ / groups_;
     kernel->setArg(idx++, in_channels_per_group);

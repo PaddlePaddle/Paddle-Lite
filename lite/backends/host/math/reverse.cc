@@ -64,6 +64,10 @@ void reverse_func(const lite::Tensor *input,
 template void reverse_func<float>(const lite::Tensor *input,
                                   std::vector<int> axis,
                                   lite::Tensor *output);
+
+template void reverse_func<int>(const lite::Tensor *input,
+                                std::vector<int> axis,
+                                lite::Tensor *output);
 }  // namespace math
 }  // namespace host
 }  // namespace lite

@@ -23,7 +23,7 @@ namespace arena {
 
 std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
   static const std::set<TargetType> subgraph_op_supported_targets(
-      {TARGET(kNPU), TARGET(kXPU), TARGET(kNNAdapter)});
+      {TARGET(kXPU), TARGET(kNNAdapter)});
   bool create_subgraph_op = subgraph_op_supported_targets.find(place_.target) !=
                             subgraph_op_supported_targets.end();
 #if defined(LITE_WITH_XPU)
@@ -56,6 +56,8 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"nvidia_tensorrt"});
+#elif defined(DNNADAPTER_WITH_QUALCOMM_QNN)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"qualcomm_qnn"});
 #elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"kunlunxin_xtcl"});
@@ -65,6 +67,11 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
 #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"google_xnnpack"});
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
+                                                       {"intel_openvino"});
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"qualcomm_qnn"});
 #else
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"builtin_device"});
@@ -159,12 +166,30 @@ void TestCase::PrepareInputTargetCopy(const Type* type,
         }
         case DATALAYOUT(kNCHW): {
           // buffer
-          TargetWrapperCL::MemcpySync(
-              inst_tensor->mutable_data(type->target(),
-                                        base_tensor->memory_size()),
-              base_tensor->raw_data(),
-              base_tensor->memory_size(),
-              IoDirection::HtoD);
+          if (CLRuntime::Global()->get_precision() ==
+              lite_api::CL_PRECISION_FP16) {
+            lite::Tensor input_buffer_cpu_tensor;
+            input_buffer_cpu_tensor.Resize(base_tensor->dims());
+            auto* input_buffer_data =
+                MUTABLE_DATA_CPU(&input_buffer_cpu_tensor);
+            FloatArray2HalfArray(
+                static_cast<float*>(const_cast<void*>(base_tensor->raw_data())),
+                static_cast<half_t*>(input_buffer_data),
+                base_tensor->dims().production());
+            TargetWrapperCL::MemcpySync(
+                inst_tensor->mutable_data(
+                    type->target(), input_buffer_cpu_tensor.memory_size()),
+                input_buffer_cpu_tensor.raw_data(),
+                input_buffer_cpu_tensor.memory_size(),
+                IoDirection::HtoD);
+          } else {
+            TargetWrapperCL::MemcpySync(
+                inst_tensor->mutable_data(type->target(),
+                                          base_tensor->memory_size()),
+                base_tensor->raw_data(),
+                base_tensor->memory_size(),
+                IoDirection::HtoD);
+          }
           break;
         }
         case DATALAYOUT(kAny): {
@@ -269,8 +294,8 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
             CL_IMAGE_WIDTH, &out_image_shape[0]);
         static_cast<const cl::Image2D*>(out_image)->getImageInfo(
             CL_IMAGE_HEIGHT, &out_image_shape[1]);
-        std::unique_ptr<half_t> out_image_data(
-            new half_t(out_image_shape.production() * 4));
+        std::unique_ptr<half_t[]> out_image_data(
+            new half_t[out_image_shape.production() * 4]);
         TargetWrapperCL::ImgcpySync(out_image_data.get(),
                                     out_image,
                                     out_image_shape[0],
@@ -285,11 +310,26 @@ bool TestCase::CheckTensorPrecision(const Tensor* inst_tensor,
                                inst_tensor->dims());
       } else {
         // kNCHW or kAny
-        TargetWrapperCL::MemcpySync(
-            inst_host_tensor.mutable_data<T>(),
-            inst_tensor->raw_data(),
-            sizeof(T) * inst_tensor->dims().production(),
-            IoDirection::DtoH);
+        if (CLRuntime::Global()->get_precision() ==
+            lite_api::CL_PRECISION_FP16) {
+          std::vector<half_t> inst_host_tensor_half(
+              inst_tensor->dims().production());
+          TargetWrapperCL::MemcpySync(
+              inst_host_tensor_half.data(),
+              inst_tensor->raw_data(),
+              sizeof(half_t) * inst_tensor->dims().production(),
+              IoDirection::DtoH);
+          HalfArray2FloatArray(
+              static_cast<half_t*>(inst_host_tensor_half.data()),
+              static_cast<float*>(inst_host_tensor.mutable_data<float>()),
+              inst_tensor->dims().production());
+        } else {
+          TargetWrapperCL::MemcpySync(
+              inst_host_tensor.mutable_data<T>(),
+              inst_tensor->raw_data(),
+              sizeof(T) * inst_tensor->dims().production(),
+              IoDirection::DtoH);
+        }
       }
       inst_data = inst_host_tensor.data<T>();
       break;

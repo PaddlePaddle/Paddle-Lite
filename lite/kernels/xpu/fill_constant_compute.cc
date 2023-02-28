@@ -26,20 +26,20 @@ namespace xpu {
 
 template <typename T>
 int FillConstantCompute::FillConstData() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   int write_size = param.out->numel();
 
   T value = static_cast<T>(param.value);
   if (param.value_tensor) {
     value = param.value_tensor->template mutable_data<T>()[0];
   }
-  auto data = param.out->mutable_data<T>(TARGET(kXPU));
+  auto data = param.out->template mutable_data<T>(TARGET(kXPU));
   return xdnn::constant<T>(ctx.GetRawContext(), data, write_size, value);
 }
 
 void FillConstantCompute::Run() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   int r = 0;
   switch (param.dtype) {
     case 0: {

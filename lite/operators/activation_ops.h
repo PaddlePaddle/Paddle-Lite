@@ -31,7 +31,7 @@ class ActivationOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool InferType() const { return true; }
+  bool InferType() override { return true; }
 
   bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override;
 
@@ -107,6 +107,9 @@ class ActivationOp : public OpLite {
         ch->macs = param_.X->numel();
         break;
       case lite_api::ActivationType::kSoftPlus:
+        ch->macs = param_.X->numel();
+        break;
+      case lite_api::ActivationType::kSilu:
         ch->macs = param_.X->numel();
         break;
       default:

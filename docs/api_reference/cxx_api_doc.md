@@ -260,12 +260,14 @@ class MobileConfig;
 
 `MobileConfig` 用来配置构建轻量级 PaddlePredictor 的配置信息，如 NaiveBuffer 格式的模型地址、模型的内存地址（从内存加载模型时使用）、能耗模式、工作线程数等等。
 
-*注意：输入的模型需要使用 [Model Optimize Tool](https://paddle-lite.readthedocs.io/zh/develop/user_guides/model_optimize_tool.html) 转化为 NaiveBuffer 格式的优化模型。*
+*注意：输入的模型需要使用 [Model Optimize Tool](../user_guides/model_optimize_tool) 转化为 NaiveBuffer 格式的优化模型。*
 
 示例：
 
 ```c++
 MobileConfig config;
+// 判断设备是否支持 FP16 指令集(或者是否是 armv8.2 架构的 arm 设备)
+bool suppor_fp16 = config.check_fp16_valid();
 // 设置 NaiveBuffer 格式模型目录，从文件加载模型时使用
 config.set_model_from_file(<your_model_path>);
 // 设置工作线程数
@@ -276,6 +278,14 @@ config.set_power_mode(LITE_POWER_HIGH);
 // 根据 MobileConfig 创建 PaddlePredictor
 std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
 ```
+
+### `check_fp16_valid`
+
+```c++
+bool check_fp16_valid();
+```
+
+判断当前设备是否支持FP16 指令集(或者是否是 armv8.2 架构的 arm 设备)，且该方法仅对 **arm CPU** 有效
 
 ### `set_model_from_file`
 
@@ -636,7 +646,7 @@ virtual std::unique_ptr<const Tensor> GetTensor(const std::string& name) const =
 
 根据名称获取输出Tensor的指针。
 
-**注意**：`GetTensor` 接口是为开发者设计的调试接口，可以输出[转化](https://paddle-lite.readthedocs.io/zh/develop/user_guides/model_optimize_tool.html)后模型中的任一节点。如果出现 `GetTensor(InputName)` 返回值为空 `Tensor`，可能原因是以该 `InputName` 命名的 Tensor 在模型转化的**子图融合**过程被融合替换了。
+**注意**：`GetTensor` 接口是为开发者设计的调试接口，可以输出[转化](../user_guides/model_optimize_tool)后模型中的任一节点。如果出现 `GetTensor(InputName)` 返回值为空 `Tensor`，可能原因是以该 `InputName` 命名的 Tensor 在模型转化的**子图融合**过程被融合替换了。
 
 
 - 参数

@@ -118,80 +118,22 @@ inline std::vector<T> get_new_data_from_tensor(const Tensor* new_data_tensor) {
   vst1q_f16(dp + 24, vsum3);                   \
   dp += 32;
 
-void bilinear_interp(const float16_t* src,
-                     int w_in,
-                     int h_in,
-                     float16_t* dst,
-                     int w_out,
-                     int h_out,
-                     float scale_x,
-                     float scale_y,
-                     bool with_align,
-                     int align_mode) {
-  int* buf = new int[w_out + h_out + w_out * 2 + h_out * 2];
-
-  int* xofs = buf;
-  int* yofs = buf + w_out * 2;
-
-  float16_t* alpha = reinterpret_cast<float16_t*>(buf + 2 * w_out + 2 * h_out);
-  float16_t* beta =
-      reinterpret_cast<float16_t*>(buf + w_out + 2 * h_out + w_out * 2);
-
-  float fx = 0.0f;
-  float fy = 0.0f;
-  int sx = 0;
-  int sy = 0;
-  if (with_align) {
-    scale_x = static_cast<float>(w_in - 1) / (w_out - 1);
-    scale_y = static_cast<float>(h_in - 1) / (h_out - 1);
-    // calculate x axis coordinate
-    for (int dx = 0; dx < w_out; dx++) {
-      fx = dx * scale_x;
-      sx = static_cast<int>(fx);
-      fx -= sx;
-      xofs[dx * 2] = sx;
-      xofs[dx * 2 + 1] = (sx + 1) < w_in - 1 ? (sx + 1) : (w_in - 1);
-      alpha[dx * 2] = 1.f - static_cast<float16_t>(fx);
-      alpha[dx * 2 + 1] = static_cast<float16_t>(fx);
-    }
-    // calculate y axis coordinate
-    for (int dy = 0; dy < h_out; dy++) {
-      fy = dy * scale_y;
-      sy = static_cast<int>(fy);
-      fy -= sy;
-      yofs[dy * 2] = sy;
-      yofs[dy * 2 + 1] = (sy + 1) < h_in - 1 ? (sy + 1) : (h_in - 1);
-      beta[dy * 2] = 1.f - static_cast<float16_t>(fy);
-      beta[dy * 2 + 1] = static_cast<float16_t>(fy);
-    }
-  } else {
-    scale_x = static_cast<float>(w_in) / w_out;
-    scale_y = static_cast<float>(h_in) / h_out;
-    // calculate x axis coordinate
-    for (int dx = 0; dx < w_out; dx++) {
-      fx = align_mode ? scale_x * dx : scale_x * (dx + 0.5f) - 0.5f;
-      fx = fx < 0 ? 0.f : fx;
-      sx = static_cast<int>(fx);
-      fx -= sx;
-      xofs[dx * 2] = sx;
-      xofs[dx * 2 + 1] = (sx + 1) < w_in - 1 ? (sx + 1) : (w_in - 1);
-      alpha[dx * 2] = 1.f - static_cast<float16_t>(fx);
-      alpha[dx * 2 + 1] = static_cast<float16_t>(fx);
-    }
-    // calculate y axis coordinate
-    for (int dy = 0; dy < h_out; dy++) {
-      fy = align_mode ? scale_y * dy : scale_y * (dy + 0.5f) - 0.5f;
-      fy = fy < 0 ? 0.f : fy;
-      sy = static_cast<int>(fy);
-      fy -= sy;
-      yofs[dy * 2] = sy;
-      yofs[dy * 2 + 1] = (sy + 1) < h_in - 1 ? (sy + 1) : (h_in - 1);
-      beta[dy * 2] = 1.f - static_cast<float16_t>(fy);
-      beta[dy * 2 + 1] = static_cast<float16_t>(fy);
-    }
-  }
-  float16_t* rowsbuf0 = new float16_t[w_out];
-  float16_t* rowsbuf1 = new float16_t[w_out];
+void bilinear_interp_memo(const float16_t* src,
+                          int w_in,
+                          int h_in,
+                          float16_t* dst,
+                          int w_out,
+                          int h_out,
+                          float scale_x,
+                          float scale_y,
+                          bool with_align,
+                          int align_mode,
+                          int* xofs,
+                          int* yofs,
+                          float16_t* alpha,
+                          float16_t* beta,
+                          float16_t* rowsbuf0,
+                          float16_t* rowsbuf1) {
   float16_t* rows0 = rowsbuf0;
   float16_t* rows1 = rowsbuf1;
   // output w , h boundary
@@ -210,6 +152,7 @@ void bilinear_interp(const float16_t* src,
     h_bound = ceil((h_in - 0.5f) / scale_y - 0.5f);
   }
   // h_bound loop
+  int sy0_m = -1, sy1_m = -1;
   for (int dy = 0; dy < h_bound; dy++) {
     int sy0 = yofs[dy * 2];
     int sy1 = yofs[dy * 2 + 1];
@@ -221,49 +164,84 @@ void bilinear_interp(const float16_t* src,
     float16_t* rows0p = rows0;
     float16_t* rows1p = rows1;
 
-    int dx = 0;
-    // w_bound loop
-    for (; dx + 1 < w_bound; dx += 2) {
-      ALPHA_COMPUTE_BOUND
-    }
-    // w_bound remain loop
-    for (; dx < w_bound; dx++) {
-      auto idx = dx * 2;
-      int sx = xofs[idx];
-      int sx1 = xofs[idx + 1];
+    if (sy0_m != sy0 || sy1_m != sy1) {
+      int dx = 0;
+      // w_bound loop
+      int sx_m = -1, sx1_m = -1, sxn_m = -1, sxn1_m = -1;
+      for (; dx + 1 < w_bound; dx += 2) {
+        int idx = dx * 2;
+        int sx = xofs[idx];
+        int sx1 = xofs[idx + 1];
+        int sxn = xofs[idx + 2];
+        int sxn1 = xofs[idx + 3];
+        float16x4_t _s0s0n;
+        float16x4_t _s1s1n;
+        if (sx_m != sx || sx1_m != sx1 || sxn_m != sxn || sxn1_m != sxn1) {
+          _s0s0n[0] = *(s0 + sx);
+          _s0s0n[1] = *(s0 + sx1);
+          _s0s0n[2] = *(s0 + sxn);
+          _s0s0n[3] = *(s0 + sxn1);
+          _s1s1n[0] = *(s1 + sx);
+          _s1s1n[1] = *(s1 + sx1);
+          _s1s1n[2] = *(s1 + sxn);
+          _s1s1n[3] = *(s1 + sxn1);
+          sx_m = sx;
+          sx1_m = sx1;
+          sxn_m = sxn;
+          sxn1_m = sxn1;
+        }
 
-      rows0p[dx] = s0[sx] * alphap[0] + s0[sx1] * alphap[1];
-      rows1p[dx] = s1[sx] * alphap[0] + s1[sx1] * alphap[1];
+        float16x4_t _a = vld1_f16(alphap);
+        float16x4_t _ms0 = vmul_f16(_s0s0n, _a);
+        float16x4_t _ms1 = vmul_f16(_s1s1n, _a);
+        float16x4_t _mss = vpadd_f16(_ms0, _ms1);
+        rows0p[dx] = _mss[0];
+        rows0p[dx + 1] = _mss[1];
+        rows1p[dx] = _mss[2];
+        rows1p[dx + 1] = _mss[3];
+        alphap += 4;
+      }
+      // w_bound remain loop
+      for (; dx < w_bound; dx++) {
+        auto idx = dx * 2;
+        int sx = xofs[idx];
+        int sx1 = xofs[idx + 1];
 
-      alphap += 2;
-    }
+        rows0p[dx] = s0[sx] * alphap[0] + s0[sx1] * alphap[1];
+        rows1p[dx] = s1[sx] * alphap[0] + s1[sx1] * alphap[1];
 
-    const float16_t buffer1[2] = {*(src + sy0 * w_in + w_in - 1),
-                                  *(src + sy0 * w_in + w_in - 1)};
-    const float16_t buffer2[2] = {*(src + sy1 * w_in + w_in - 1),
-                                  *(src + sy1 * w_in + w_in - 1)};
-    // w_bound - w_out loop
-    for (; dx + 1 < w_out; dx += 2) {
-      const float16_t* s0p = buffer1;
-      const float16_t* s1p = buffer2;
-      const float16_t* s0np = buffer1;
-      const float16_t* s1np = buffer2;
+        alphap += 2;
+      }
 
-      ALPHA_COMPUTE
+      const float16_t buffer1[2] = {*(src + sy0 * w_in + w_in - 1),
+                                    *(src + sy0 * w_in + w_in - 1)};
+      const float16_t buffer2[2] = {*(src + sy1 * w_in + w_in - 1),
+                                    *(src + sy1 * w_in + w_in - 1)};
+      // w_bound - w_out loop
+      for (; dx + 1 < w_out; dx += 2) {
+        const float16_t* s0p = buffer1;
+        const float16_t* s1p = buffer2;
+        const float16_t* s0np = buffer1;
+        const float16_t* s1np = buffer2;
 
-      alphap += 4;
-    }
-    // w_bound - w_out remain loop
-    for (; dx < w_out; dx++) {
-      const float16_t* s0p = buffer1;
-      const float16_t* s1p = buffer2;
+        ALPHA_COMPUTE
 
-      float16_t a0 = alphap[0];
-      float16_t a1 = alphap[1];
-      rows0p[dx] = s0p[0] * a0 + s0p[1] * a1;
-      rows1p[dx] = s1p[0] * a0 + s1p[1] * a1;
+        alphap += 4;
+      }
+      // w_bound - w_out remain loop
+      for (; dx < w_out; dx++) {
+        const float16_t* s0p = buffer1;
+        const float16_t* s1p = buffer2;
 
-      alphap += 2;
+        float16_t a0 = alphap[0];
+        float16_t a1 = alphap[1];
+        rows0p[dx] = s0p[0] * a0 + s0p[1] * a1;
+        rows1p[dx] = s1p[0] * a0 + s1p[1] * a1;
+
+        alphap += 2;
+      }
+      sy0_m = sy0;
+      sy1_m = sy1;
     }
 
     float16_t b0 = beta[0];
@@ -376,6 +354,294 @@ void bilinear_interp(const float16_t* src,
     }
 
     beta += 2;
+  }
+}
+
+void bilinear_interp(const float16_t* src,
+                     int w_in,
+                     int h_in,
+                     float16_t* dst,
+                     int w_out,
+                     int h_out,
+                     float scale_x,
+                     float scale_y,
+                     bool with_align,
+                     int align_mode) {
+  int* buf = new int[w_out + h_out + w_out * 2 + h_out * 2];
+
+  int* xofs = buf;
+  int* yofs = buf + w_out * 2;
+
+  float16_t* alpha = reinterpret_cast<float16_t*>(buf + 2 * w_out + 2 * h_out);
+  float16_t* beta =
+      reinterpret_cast<float16_t*>(buf + w_out + 2 * h_out + w_out * 2);
+
+  float fx = 0.0f;
+  float fy = 0.0f;
+  int sx = 0;
+  int sy = 0;
+  if (with_align) {
+    if (w_out - 1 > 0 && w_in - 1 > 0)
+      scale_x = static_cast<float>(w_in - 1) / (w_out - 1);
+    else
+      scale_x = 1.f;
+    if (h_out - 1 > 0 && h_in - 1 > 0)
+      scale_y = static_cast<float>(h_in - 1) / (h_out - 1);
+    else
+      scale_y = 1.f;
+
+    // calculate x axis coordinate
+    for (int dx = 0; dx < w_out; dx++) {
+      fx = dx * scale_x;
+      sx = static_cast<int>(fx);
+      fx -= sx;
+      xofs[dx * 2] = sx;
+      xofs[dx * 2 + 1] = (sx + 1) < w_in - 1 ? (sx + 1) : (w_in - 1);
+      alpha[dx * 2] = 1.f - static_cast<float16_t>(fx);
+      alpha[dx * 2 + 1] = static_cast<float16_t>(fx);
+    }
+    // calculate y axis coordinate
+    for (int dy = 0; dy < h_out; dy++) {
+      fy = dy * scale_y;
+      sy = static_cast<int>(fy);
+      fy -= sy;
+      yofs[dy * 2] = sy;
+      yofs[dy * 2 + 1] = (sy + 1) < h_in - 1 ? (sy + 1) : (h_in - 1);
+      beta[dy * 2] = 1.f - static_cast<float16_t>(fy);
+      beta[dy * 2 + 1] = static_cast<float16_t>(fy);
+    }
+  } else {
+    scale_x = static_cast<float>(w_in) / w_out;
+    scale_y = static_cast<float>(h_in) / h_out;
+    // calculate x axis coordinate
+    for (int dx = 0; dx < w_out; dx++) {
+      fx = align_mode ? scale_x * dx : scale_x * (dx + 0.5f) - 0.5f;
+      fx = fx < 0 ? 0.f : fx;
+      sx = static_cast<int>(fx);
+      fx -= sx;
+      xofs[dx * 2] = sx;
+      xofs[dx * 2 + 1] = (sx + 1) < w_in - 1 ? (sx + 1) : (w_in - 1);
+      alpha[dx * 2] = 1.f - static_cast<float16_t>(fx);
+      alpha[dx * 2 + 1] = static_cast<float16_t>(fx);
+    }
+    // calculate y axis coordinate
+    for (int dy = 0; dy < h_out; dy++) {
+      fy = align_mode ? scale_y * dy : scale_y * (dy + 0.5f) - 0.5f;
+      fy = fy < 0 ? 0.f : fy;
+      sy = static_cast<int>(fy);
+      fy -= sy;
+      yofs[dy * 2] = sy;
+      yofs[dy * 2 + 1] = (sy + 1) < h_in - 1 ? (sy + 1) : (h_in - 1);
+      beta[dy * 2] = 1.f - static_cast<float16_t>(fy);
+      beta[dy * 2 + 1] = static_cast<float16_t>(fy);
+    }
+  }
+  float16_t* rowsbuf0 = new float16_t[static_cast<size_t>(w_out)];
+  float16_t* rowsbuf1 = new float16_t[static_cast<size_t>(w_out)];
+  float16_t* rows0 = rowsbuf0;
+  float16_t* rows1 = rowsbuf1;
+  // output w , h boundary
+  int w_bound = w_out;
+  int h_bound = h_out;
+
+  int cnt = w_out >> 5;
+  int remain = (w_out & 31);
+  int remain_cnt = remain >> 3;
+  int remain_rem = remain & 7;
+  if (with_align) {
+    w_bound = ceil((w_in - 1) / scale_x);
+    h_bound = ceil((h_in - 1) / scale_y);
+  } else {
+    w_bound = ceil((w_in - 0.5f) / scale_x - 0.5f);
+    h_bound = ceil((h_in - 0.5f) / scale_y - 0.5f);
+  }
+
+  if (scale_x <= 0.5f && scale_y <= 0.5f) {
+    bilinear_interp_memo(src,
+                         w_in,
+                         h_in,
+                         dst,
+                         w_out,
+                         h_out,
+                         scale_x,
+                         scale_y,
+                         with_align,
+                         align_mode,
+                         xofs,
+                         yofs,
+                         alpha,
+                         beta,
+                         rowsbuf0,
+                         rowsbuf1);
+  } else {
+    // h_bound loop
+    for (int dy = 0; dy < h_bound; dy++) {
+      int sy0 = yofs[dy * 2];
+      int sy1 = yofs[dy * 2 + 1];
+
+      const float16_t* s0 = src + sy0 * w_in;
+      const float16_t* s1 = src + sy1 * w_in;
+
+      const float16_t* alphap = alpha;
+      float16_t* rows0p = rows0;
+      float16_t* rows1p = rows1;
+
+      int dx = 0;
+      // w_bound loop
+      for (; dx + 1 < w_bound; dx += 2) {
+        ALPHA_COMPUTE_BOUND
+      }
+      // w_bound remain loop
+      for (; dx < w_bound; dx++) {
+        auto idx = dx * 2;
+        int sx = xofs[idx];
+        int sx1 = xofs[idx + 1];
+
+        rows0p[dx] = s0[sx] * alphap[0] + s0[sx1] * alphap[1];
+        rows1p[dx] = s1[sx] * alphap[0] + s1[sx1] * alphap[1];
+
+        alphap += 2;
+      }
+
+      const float16_t buffer1[2] = {*(src + sy0 * w_in + w_in - 1),
+                                    *(src + sy0 * w_in + w_in - 1)};
+      const float16_t buffer2[2] = {*(src + sy1 * w_in + w_in - 1),
+                                    *(src + sy1 * w_in + w_in - 1)};
+      // w_bound - w_out loop
+      for (; dx + 1 < w_out; dx += 2) {
+        const float16_t* s0p = buffer1;
+        const float16_t* s1p = buffer2;
+        const float16_t* s0np = buffer1;
+        const float16_t* s1np = buffer2;
+
+        ALPHA_COMPUTE
+
+        alphap += 4;
+      }
+      // w_bound - w_out remain loop
+      for (; dx < w_out; dx++) {
+        const float16_t* s0p = buffer1;
+        const float16_t* s1p = buffer2;
+
+        float16_t a0 = alphap[0];
+        float16_t a1 = alphap[1];
+        rows0p[dx] = s0p[0] * a0 + s0p[1] * a1;
+        rows1p[dx] = s1p[0] * a0 + s1p[1] * a1;
+
+        alphap += 2;
+      }
+
+      float16_t b0 = beta[0];
+      float16_t b1 = beta[1];
+
+      float16_t* dp = dst + dy * w_out;
+
+      float16x8_t vb0 = vdupq_n_f16(b0);
+      float16x8_t vb1 = vdupq_n_f16(b1);
+      // calculate and store results
+      for (int i = 0; i < cnt; i++) {
+        BRTA_COMPUTE
+      }
+      for (int i = 0; i < remain_cnt; i++) {
+        float16x8_t vrows0 = vld1q_f16(rows0p);
+        float16x8_t vrows1 = vld1q_f16(rows1p);
+        float16x8_t vsum0 = vmulq_f16(vrows0, vb0);
+        vsum0 = vfmaq_f16(vsum0, vrows1, vb1);
+
+        rows0p += 8;
+        vst1q_f16(dp, vsum0);
+        rows1p += 8;
+        dp += 8;
+      }
+      // calculate and store remain resluts
+      for (int i = 0; i < remain_rem; i++) {
+        *dp++ = *rows0p++ * b0 + *rows1p++ * b1;
+      }
+      beta += 2;
+    }
+
+    // h_bound - h_out loop
+    for (int dy = h_bound; dy < h_out; dy++) {
+      int sy = h_in - 1;
+      const float16_t* s0 = src + sy * w_in;
+      const float16_t* s1 = s0;
+      const float16_t* alphap = alpha;
+      float16_t* rows0p = rows0;
+      float16_t* rows1p = rows1;
+
+      int dx = 0;
+      // w_bound loop
+      for (; dx + 1 < w_bound; dx += 2) {
+        ALPHA_COMPUTE_BOUND
+      }
+      // w_bound remain loop
+      for (; dx < w_bound; dx++) {
+        int sx = xofs[dx * 2];
+        int sx1 = xofs[dx * 2 + 1];
+
+        const float16_t* s0p = s0 + sx;
+        const float16_t* s1p = s0 + sx1;
+        float16_t a0 = alphap[0];
+        float16_t a1 = alphap[1];
+        rows0p[dx] = s0p[0] * a0 + s1p[0] * a1;
+        rows1p[dx] = rows0p[dx];
+
+        alphap += 2;
+      }
+
+      const float16_t buffer1[2] = {*(src + sy * w_in + w_in - 1),
+                                    *(src + sy * w_in + w_in - 1)};
+      // w_bound - w_out loop
+      for (; dx + 1 < w_out; dx += 2) {
+        const float16_t* s0p = buffer1;
+        const float16_t* s1p = buffer1;
+        const float16_t* s0np = buffer1;
+        const float16_t* s1np = buffer1;
+
+        ALPHA_COMPUTE
+
+        alphap += 4;
+      }
+      // w_bound - wout remain loop
+      for (; dx < w_out; dx++) {
+        const float16_t* s0p = buffer1;
+        float16_t a0 = alphap[0];
+        float16_t a1 = alphap[1];
+        rows0p[dx] = s0p[0] * a0 + s0p[1] * a1;
+        rows1p[dx] = rows0p[dx];
+        alphap += 2;
+      }
+
+      float16_t b0 = beta[0];
+      float16_t b1 = beta[1];
+
+      float16_t* dp = dst + dy * w_out;
+
+      float16x8_t vb0 = vdupq_n_f16(b0);
+      float16x8_t vb1 = vdupq_n_f16(b1);
+      // calculate and store results
+      for (int i = 0; i < cnt; i++) {
+        BRTA_COMPUTE
+      }
+      for (int i = 0; i < remain_cnt; i++) {
+        float16x8_t vrows0 = vld1q_f16(rows0p);
+        float16x8_t vrows1 = vld1q_f16(rows1p);
+        float16x8_t vsum0 = vmulq_f16(vrows0, vb0);
+        vsum0 = vfmaq_f16(vsum0, vrows1, vb1);
+
+        rows0p += 8;
+        vst1q_f16(dp, vsum0);
+        rows1p += 8;
+        dp += 8;
+      }
+
+      // calculate and store remain results
+      for (int i = 0; i < remain_rem; i++) {
+        *dp++ = *rows0p++ * b0 + *rows1p++ * b1;
+      }
+
+      beta += 2;
+    }
   }
   delete[] buf;
   delete[] rowsbuf0;

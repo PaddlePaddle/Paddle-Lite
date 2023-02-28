@@ -50,6 +50,11 @@ TEST(ppyolo_r50vd_dcn, test_ppyolo_r50vd_dcn_1x_coco_fp32_v2_2_nnadapter) {
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   nnadapter_device_names.emplace_back("cambricon_mlu");
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  nnadapter_device_names.emplace_back("intel_openvino");
+// TODO(hong19860320) Fix timeout
+// #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+//   nnadapter_device_names.emplace_back("qualcomm_qnn");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -61,6 +66,9 @@ TEST(ppyolo_r50vd_dcn, test_ppyolo_r50vd_dcn_1x_coco_fp32_v2_2_nnadapter) {
   cxx_config.set_valid_places(valid_places);
   cxx_config.set_nnadapter_device_names(nnadapter_device_names);
   cxx_config.set_nnadapter_context_properties(nnadapter_context_properties);
+#if defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  cxx_config.set_nnadapter_subgraph_partition_config_buffer("yolo_box");
+#endif
   predictor = lite_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
                                 paddle::lite_api::LiteModelType::kNaiveBuffer);

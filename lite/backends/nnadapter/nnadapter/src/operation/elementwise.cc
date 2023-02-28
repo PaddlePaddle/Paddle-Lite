@@ -14,8 +14,11 @@
 
 #include "operation/elementwise.h"
 #include <algorithm>
+#include <unordered_map>
 #include "core/types.h"
+#include "operation/math/elementwise.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
@@ -74,8 +77,159 @@ NNADAPTER_EXPORT void CalcEltwiseBinaryOperationsOutputSize(
   }
 }
 
+static std::unordered_map<NNAdapterOperationType, math::ElementwiseTypeCode>
+    kSupportedElementwise = {{NNADAPTER_ADD, math::ADD},
+                             {NNADAPTER_SUB, math::SUB},
+                             {NNADAPTER_MUL, math::MUL},
+                             {NNADAPTER_DIV, math::DIV},
+                             {NNADAPTER_MAX, math::MAX},
+                             {NNADAPTER_MIN, math::MIN},
+                             {NNADAPTER_POW, math::POW},
+                             {NNADAPTER_FLOOR_DIV, math::FLOOR_DIV}};
+
 NNADAPTER_EXPORT bool ValidateElementwise(const core::Operation* operation) {
-  return true;
+  return kSupportedElementwise.count(operation->type) > 0;
+}
+
+NNADAPTER_EXPORT int ExecuteElementwise(core::Operation* operation) {
+  if (!kSupportedElementwise.count(operation->type))
+    return NNADAPTER_FEATURE_NOT_SUPPORTED;
+  auto eltwise_type = kSupportedElementwise[operation->type];
+
+  ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Allocate and calculate the output operands
+  int status = -1;
+  auto& input0_type = input0_operand->type;
+  auto input0_shape = std::vector<int32_t>(
+      input0_type.dimensions.data,
+      input0_type.dimensions.data + input0_type.dimensions.count);
+  const auto input0_buffer = input0_operand->buffer;
+  NNADAPTER_CHECK(input0_buffer);
+  auto& input1_type = input1_operand->type;
+  auto input1_shape = std::vector<int32_t>(
+      input1_type.dimensions.data,
+      input1_type.dimensions.data + input1_type.dimensions.count);
+  const auto input1_buffer = input1_operand->buffer;
+  NNADAPTER_CHECK(input1_buffer);
+  auto& output_type = output_operand->type;
+  auto output_shape = std::vector<int32_t>(
+      output_type.dimensions.data,
+      output_type.dimensions.data + output_type.dimensions.count);
+  auto output_buffer = AllocateOperand(output_operand);
+  if (input0_type.precision == NNADAPTER_FLOAT32 &&
+      input1_type.precision == NNADAPTER_FLOAT32) {
+    const auto input0_data = reinterpret_cast<const float*>(input0_buffer);
+    const auto input1_data = reinterpret_cast<const float*>(input1_buffer);
+    auto output_data = reinterpret_cast<float*>(output_buffer);
+    status = math::elementwise<float>(eltwise_type,
+                                      input0_data,
+                                      input0_shape,
+                                      input1_data,
+                                      input1_shape,
+                                      static_cast<math::FuseCode>(fuse_code),
+                                      output_data);
+  } else if (input0_type.precision == NNADAPTER_INT32 &&
+             input1_type.precision == NNADAPTER_INT32) {
+    const auto input0_data = reinterpret_cast<const int32_t*>(input0_buffer);
+    const auto input1_data = reinterpret_cast<const int32_t*>(input1_buffer);
+    auto output_data = reinterpret_cast<int32_t*>(output_buffer);
+    status = math::elementwise<int32_t>(eltwise_type,
+                                        input0_data,
+                                        input0_shape,
+                                        input1_data,
+                                        input1_shape,
+                                        static_cast<math::FuseCode>(fuse_code),
+                                        output_data);
+  } else if (input0_type.precision == NNADAPTER_INT64 &&
+             input1_type.precision == NNADAPTER_INT64) {
+    const auto input0_data = reinterpret_cast<const int64_t*>(input0_buffer);
+    const auto input1_data = reinterpret_cast<const int64_t*>(input1_buffer);
+    auto output_data = reinterpret_cast<int64_t*>(output_buffer);
+    status = math::elementwise<int64_t>(eltwise_type,
+                                        input0_data,
+                                        input0_shape,
+                                        input1_data,
+                                        input1_shape,
+                                        static_cast<math::FuseCode>(fuse_code),
+                                        output_data);
+  } else if (input0_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER &&
+             input1_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
+    const auto input0_data = reinterpret_cast<const int8_t*>(input0_buffer);
+    const auto input1_data = reinterpret_cast<const int8_t*>(input1_buffer);
+    auto output_data = reinterpret_cast<int8_t*>(output_buffer);
+    status = math::elementwise(eltwise_type,
+                               input0_data,
+                               input0_shape,
+                               input0_type.symm_per_layer_params.scale,
+                               input1_data,
+                               input1_shape,
+                               input1_type.symm_per_layer_params.scale,
+                               static_cast<math::FuseCode>(fuse_code),
+                               output_data,
+                               output_type.symm_per_layer_params.scale);
+  } else if (input0_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER &&
+             input1_type.precision == NNADAPTER_FLOAT32) {
+    const auto input0_data = reinterpret_cast<const int8_t*>(input0_buffer);
+    auto input0_count = math::shape_production(input0_shape);
+    std::vector<float> dequantized_input0_data(input0_count);
+    status = math::dequantize(input0_data,
+                              input0_shape,
+                              input0_type.symm_per_layer_params.scale,
+                              dequantized_input0_data.data());
+    NNADAPTER_CHECK_EQ(status, 0);
+    const auto input1_data = reinterpret_cast<const float*>(input1_buffer);
+    auto output_count = math::shape_production(output_shape);
+    std::vector<float> dequantized_output_data(output_count);
+    status = math::elementwise<float>(eltwise_type,
+                                      dequantized_input0_data.data(),
+                                      input0_shape,
+                                      input1_data,
+                                      input1_shape,
+                                      static_cast<math::FuseCode>(fuse_code),
+                                      dequantized_output_data.data());
+    NNADAPTER_CHECK_EQ(status, 0);
+    auto output_data = reinterpret_cast<int8_t*>(output_buffer);
+    status = math::quantize(dequantized_output_data.data(),
+                            output_shape,
+                            output_type.symm_per_layer_params.scale,
+                            output_data);
+  } else if (input0_type.precision == NNADAPTER_FLOAT32 &&
+             input1_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
+    const auto input1_data = reinterpret_cast<const int8_t*>(input1_buffer);
+    auto input1_count = math::shape_production(input1_shape);
+    std::vector<float> dequantized_input1_data(input1_count);
+    status = math::dequantize(input1_data,
+                              input1_shape,
+                              input1_type.symm_per_layer_params.scale,
+                              dequantized_input1_data.data());
+    NNADAPTER_CHECK_EQ(status, 0);
+    const auto input0_data = reinterpret_cast<const float*>(input0_buffer);
+    auto output_count = math::shape_production(output_shape);
+    std::vector<float> dequantized_output_data(output_count);
+    status = math::elementwise<float>(eltwise_type,
+                                      input0_data,
+                                      input0_shape,
+                                      dequantized_input1_data.data(),
+                                      input1_shape,
+                                      static_cast<math::FuseCode>(fuse_code),
+                                      dequantized_output_data.data());
+    NNADAPTER_CHECK_EQ(status, 0);
+    auto output_data = reinterpret_cast<int8_t*>(output_buffer);
+    status = math::quantize(dequantized_output_data.data(),
+                            output_shape,
+                            output_type.symm_per_layer_params.scale,
+                            output_data);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported input0 precision code("
+                         << OperandPrecisionCodeToString(input0_type.precision)
+                         << ") and input1 precision code("
+                         << OperandPrecisionCodeToString(input1_type.precision)
+                         << ") for " << OperationTypeToString(operation->type)
+                         << " is found!";
+  }
+  NNADAPTER_CHECK_EQ(status, 0);
+  return NNADAPTER_NO_ERROR;
 }
 
 NNADAPTER_EXPORT int PrepareElementwise(core::Operation* operation) {
@@ -104,14 +258,127 @@ NNADAPTER_EXPORT int PrepareElementwise(core::Operation* operation) {
   CalcEltwiseBinaryOperationsOutputSize(
       input0_operand->type, input1_operand->type, &output_operand->type);
   output_operand->type.precision = input0_operand->type.precision;
+  auto eltwise_type = kSupportedElementwise[operation->type];
+  if (IsConstantOperand(input0_operand) && IsConstantOperand(input1_operand)) {
+    ExecuteElementwise(operation);
+    output_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+  } else if (IsTemporaryShapeOperand(input0_operand) &&
+             IsTemporaryShapeOperand(input1_operand)) {
+    auto& temporary_shape0 = *(GetTemporaryShape(input0_operand));
+    auto& temporary_shape1 = *(GetTemporaryShape(input1_operand));
+    NNADAPTER_CHECK(temporary_shape0.data);
+    NNADAPTER_CHECK(temporary_shape0.data[0]);
+    NNADAPTER_CHECK(temporary_shape1.data);
+    NNADAPTER_CHECK(temporary_shape1.data[0]);
+    NNAdapterOperandDimensionType dimension_type;
+    dimension_type.count = output_operand->type.dimensions.data[0];
+    dimension_type.dynamic_count =
+        input0_operand->type.dimensions.dynamic_count;
+    int status = -1;
+    status = math::elementwise<int32_t>(
+        eltwise_type,
+        temporary_shape0.data,
+        std::vector<int32_t>({static_cast<int32_t>(temporary_shape0.count)}),
+        temporary_shape1.data,
+        std::vector<int32_t>({static_cast<int32_t>(temporary_shape1.count)}),
+        static_cast<math::FuseCode>(fuse_code),
+        dimension_type.data);
+    NNADAPTER_CHECK_EQ(status, 0);
+    for (uint32_t i = 0; i < dimension_type.dynamic_count; i++) {
+      status = math::elementwise<int32_t>(
+          eltwise_type,
+          temporary_shape0.dynamic_data[i],
+          std::vector<int32_t>({static_cast<int32_t>(temporary_shape0.count)}),
+          temporary_shape1.dynamic_data[i],
+          std::vector<int32_t>({static_cast<int32_t>(temporary_shape1.count)}),
+          static_cast<math::FuseCode>(fuse_code),
+          dimension_type.dynamic_data[i]);
+      NNADAPTER_CHECK_EQ(status, 0);
+    }
+    output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
+    SetTemporaryShape(output_operand, dimension_type);
+  } else if (IsTemporaryShapeOperand(input0_operand) &&
+             IsConstantOperand(input1_operand)) {
+    auto& temporary_shape = *(GetTemporaryShape(input0_operand));
+    NNADAPTER_CHECK(temporary_shape.data);
+    NNADAPTER_CHECK(temporary_shape.data[0]);
+    auto& input1_type = input1_operand->type;
+    auto input1_shape = std::vector<int32_t>(
+        input1_type.dimensions.data,
+        input1_type.dimensions.data + input1_type.dimensions.count);
+    const auto input1_buffer = input1_operand->buffer;
+    NNADAPTER_CHECK(input1_buffer);
+    const auto input1_data = reinterpret_cast<const int32_t*>(input1_buffer);
+    NNAdapterOperandDimensionType dimension_type;
+    dimension_type.count = output_operand->type.dimensions.data[0];
+    dimension_type.dynamic_count =
+        input0_operand->type.dimensions.dynamic_count;
+    int status = -1;
+    status = math::elementwise<int32_t>(
+        eltwise_type,
+        temporary_shape.data,
+        std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
+        input1_data,
+        input1_shape,
+        static_cast<math::FuseCode>(fuse_code),
+        dimension_type.data);
+    NNADAPTER_CHECK_EQ(status, 0);
+    for (uint32_t i = 0; i < dimension_type.dynamic_count; i++) {
+      status = math::elementwise<int32_t>(
+          eltwise_type,
+          temporary_shape.dynamic_data[i],
+          std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
+          input1_data,
+          input1_shape,
+          static_cast<math::FuseCode>(fuse_code),
+          dimension_type.dynamic_data[i]);
+      NNADAPTER_CHECK_EQ(status, 0);
+    }
+    output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
+    SetTemporaryShape(output_operand, dimension_type);
+  } else if (IsTemporaryShapeOperand(input1_operand) &&
+             IsConstantOperand(input0_operand)) {
+    auto& temporary_shape = *(GetTemporaryShape(input0_operand));
+    NNADAPTER_CHECK(temporary_shape.data);
+    NNADAPTER_CHECK(temporary_shape.data[0]);
+    auto& input0_type = input0_operand->type;
+    auto input0_shape = std::vector<int32_t>(
+        input0_type.dimensions.data,
+        input0_type.dimensions.data + input0_type.dimensions.count);
+    const auto input0_buffer = input0_operand->buffer;
+    NNADAPTER_CHECK(input0_buffer);
+    const auto input0_data = reinterpret_cast<const int32_t*>(input0_buffer);
+    NNAdapterOperandDimensionType dimension_type;
+    dimension_type.count = output_operand->type.dimensions.data[0];
+    dimension_type.dynamic_count =
+        input0_operand->type.dimensions.dynamic_count;
+    int status = -1;
+    status = math::elementwise<int32_t>(
+        eltwise_type,
+        input0_data,
+        input0_shape,
+        temporary_shape.data,
+        std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
+        static_cast<math::FuseCode>(fuse_code),
+        dimension_type.data);
+    NNADAPTER_CHECK_EQ(status, 0);
+    for (uint32_t i = 0; i < dimension_type.dynamic_count; i++) {
+      status = math::elementwise<int32_t>(
+          eltwise_type,
+          input0_data,
+          input0_shape,
+          temporary_shape.dynamic_data[i],
+          std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
+          static_cast<math::FuseCode>(fuse_code),
+          dimension_type.dynamic_data[i]);
+      NNADAPTER_CHECK_EQ(status, 0);
+    }
+    output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
+    SetTemporaryShape(output_operand, dimension_type);
+  }
+
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
-}
-
-NNADAPTER_EXPORT int ExecuteElementwise(core::Operation* operation) {
-  NNADAPTER_LOG(FATAL) << OperationTypeToString(operation->type)
-                       << " is not implemented!";
-  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

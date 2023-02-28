@@ -28,7 +28,9 @@ class Context {
     void* context;
     Device* device;
   } DeviceContext;
-  explicit Context(std::vector<Device*> devices, const std::string& properties);
+  explicit Context(std::vector<Device*> devices,
+                   const std::string& properties,
+                   int (*callback)(int event_id, void* user_data));
   ~Context();
   DeviceContext* GetDeviceContext(const char* name);
   DeviceContext* GetDeviceContext(int index);

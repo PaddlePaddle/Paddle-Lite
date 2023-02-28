@@ -27,6 +27,7 @@ workspace=$PWD/$(dirname $0)/../../
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
 IOS_DEPLOYMENT_TARGET=9.0
+BUILD_ARM82_FP16=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -85,7 +86,6 @@ function make_ios {
     mkdir -p ./${GEN_CODE_PATH_PREFIX}
     touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
     cmake $workspace $cmake_common_options \
-            -DWITH_LITE=ON \
             -DLITE_WITH_METAL=$WITH_METAL \
             -DLITE_WITH_ARM=ON \
             -DLITE_WITH_XCODE=$WITH_XCODE \
@@ -93,7 +93,6 @@ function make_ios {
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DLITE_WITH_X86=OFF \
             -DLITE_WITH_LOG=$WITH_LOG \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
@@ -101,6 +100,7 @@ function make_ios {
             -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
             -DARM_TARGET_ARCH_ABI=$arch \
             -DLITE_BUILD_EXTRA=$WITH_EXTRA \
+            -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
             -DLITE_WITH_CV=$WITH_CV \
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
             -DARM_TARGET_OS=$os
@@ -194,6 +194,11 @@ function main {
                 ;;
             --with_xcode=*)
                 WITH_XCODE="${i#*=}"
+                shift
+                ;;
+            # controls whether to include FP16 kernels, default is OFF
+            --with_arm82_fp16=*)
+                BUILD_ARM82_FP16="${i#*=}"
                 shift
                 ;;
             help)

@@ -16,7 +16,7 @@ cmake_minimum_required(VERSION 3.10)
 
 # Arm config
 if(LITE_WITH_ARM)
-  set(ARM_TARGET_OS_LIST "android" "armlinux" "ios" "ios64" "armmacos")
+  set(ARM_TARGET_OS_LIST "android" "armlinux" "ios" "ios64" "armmacos" "qnx")
   set(ARM_TARGET_ARCH_ABI_LIST "armv8" "armv7" "armv7hf" "arm64-v8a" "armeabi-v7a")
   set(ARM_TARGET_LANG_LIST "gcc" "clang")
   set(ARM_TARGET_LIB_TYPE_LIST "static" "shared")
@@ -58,7 +58,7 @@ if(LITE_WITH_ARM)
   endif()
 
   # Toolchain config
-  if (LITE_ON_TINY_PUBLISH OR LITE_WITH_LTO)
+  if ((LITE_ON_TINY_PUBLISH OR LITE_WITH_LTO) AND NOT ARM_TARGET_OS STREQUAL "qnx")
     if(ARM_TARGET_LANG STREQUAL "gcc")
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
     else()
@@ -80,6 +80,9 @@ if(LITE_WITH_ARM)
   endif()
   if(ARM_TARGET_OS STREQUAL "armmacos")
     include(os/armmacos)
+  endif()
+  if(ARM_TARGET_OS STREQUAL "qnx")
+    include(os/qnx)
   endif()
 
   # Detect origin host toolchain
@@ -106,7 +109,7 @@ if(LITE_WITH_ARM)
     message(FATAL_ERROR "Cannot find host C compiler. export CC=/path/to/cc")
   endif()
   if(NOT HOST_CXX_COMPILER OR NOT EXISTS ${HOST_CXX_COMPILER})
-    message(FATAL_ERROR "Cannot find host C compiler. export CC=/path/to/cc")
+    message(FATAL_ERROR "Cannot find host CXX compiler. export CXX=/path/to/cxx")
   endif()
   message(STATUS "Found host C compiler: " ${HOST_C_COMPILER})
   message(STATUS "Found host CXX compiler: " ${HOST_CXX_COMPILER})
@@ -127,8 +130,6 @@ endif()
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX OR ARMMACOS)
-  set(WITH_GPU OFF CACHE STRING
-    "Disable GPU when cross-compiling for Android and iOS" FORCE)
   set(WITH_DSO OFF CACHE STRING
     "Disable DSO when cross-compiling for Android and iOS" FORCE)
   set(WITH_AVX OFF CACHE STRING

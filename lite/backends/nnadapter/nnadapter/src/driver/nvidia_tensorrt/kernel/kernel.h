@@ -29,7 +29,8 @@ class KernelBase {
 
   virtual int Run(
       core::Operation* operation,
-      std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map) = 0;
+      std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map,
+      cudaStream_t stream = nullptr) = 0;
 };
 
 }  // namespace nvidia_tensorrt

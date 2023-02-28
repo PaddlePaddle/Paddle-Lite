@@ -44,7 +44,9 @@ static const char* NNADAPTER_RUNTIME_CACHE_CACHE_OUTPUT_INDEXES_KEY =
 static const char* NNADAPTER_RUNTIME_CACHE_CACHE_MODEL_BUFFER_KEY =
     "cache_%d_model_buffer";
 
-void* AccessSubmodelInput(void* memory, NNAdapterOperandType* type) {
+void* AccessSubmodelInput(void* memory,
+                          NNAdapterOperandType* type,
+                          void* device_buffer) {
   NNADAPTER_CHECK(memory);
   NNADAPTER_CHECK(type);
   auto buffer = static_cast<Compilation::Buffer*>(memory);
@@ -62,7 +64,9 @@ void* AccessSubmodelInput(void* memory, NNAdapterOperandType* type) {
   return buffer->data;
 }
 
-void* AccessSubmodelOutput(void* memory, NNAdapterOperandType* type) {
+void* AccessSubmodelOutput(void* memory,
+                           NNAdapterOperandType* type,
+                           void* device_buffer) {
   NNADAPTER_CHECK(memory);
   NNADAPTER_CHECK(type);
   auto buffer = static_cast<Compilation::Buffer*>(memory);
@@ -142,7 +146,8 @@ int Compilation::Execute(std::vector<core::Argument>* input_arguments,
       const std::vector<int>& indexes,
       std::vector<core::Argument>* arguments,
       std::vector<std::shared_ptr<Buffer>>* buffers,
-      void* (*access)(void* memory, NNAdapterOperandType* type)) {
+      void* (*access)(
+          void* memory, NNAdapterOperandType* type, void* device_buffer)) {
     for (size_t i = 0; i < indexes.size(); i++) {
       core::Argument arg;
       arg.index = i;
@@ -199,9 +204,9 @@ int Compilation::Execute(std::vector<core::Argument>* input_arguments,
         << "th compiled program on the device '"
         << device_context->device->GetName() << "'";
   }
-  // Serialize the cache models into the file or memory at the first iteration
-  if (model_ && CheckCache()) {
-    if (!cache_token_.empty() && !cache_dir_.empty()) {
+  if (CheckCache()) {
+    // Serialize the cache models into the file or memory at the first iteration
+    if (model_ && !cache_token_.empty() && !cache_dir_.empty()) {
       bool skip = false;
       auto cache_count = programs_.size();
       for (size_t i = 0; i < cache_count; i++) {
@@ -227,7 +232,9 @@ int Compilation::Execute(std::vector<core::Argument>* input_arguments,
         }
       }
     }
-    ClearCache();  // Clear the caches to reduce memory usage
+    // Clear the cache models to reduce memory consumption when the device
+    // program is first executed.
+    ClearCache();
   }
   return NNADAPTER_NO_ERROR;
 }

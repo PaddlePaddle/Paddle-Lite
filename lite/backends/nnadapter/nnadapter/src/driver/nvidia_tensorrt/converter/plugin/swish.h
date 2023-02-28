@@ -28,19 +28,30 @@ class SwishPlugin : public Plugin {
     Deserialize(&serial_data, &serial_length, &beta_);
   }
 
-  nvinfer1::IPluginV2* clone() const noexcept { return new SwishPlugin(beta_); }
+  nvinfer1::IPluginV2* clone() const TRT_NOEXCEPT {
+    return new SwishPlugin(beta_);
+  }
 
   int enqueue(int batch_size,
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
+              void const* const* inputs,
+              void* const* outputs,
+#else
               const void* const* inputs,
               void** outputs,
+#endif
               void* workspace,
-              cudaStream_t stream) noexcept;
+              cudaStream_t stream) TRT_NOEXCEPT;
 
-  const char* getPluginType() const noexcept;
+  const char* getPluginType() const TRT_NOEXCEPT;
 
-  size_t getSerializationSize() const noexcept { return SerializedSize(beta_); }
+  size_t getSerializationSize() const TRT_NOEXCEPT {
+    return SerializedSize(beta_);
+  }
 
-  void serialize(void* buffer) const noexcept { Serialize(&buffer, beta_); };
+  void serialize(void* buffer) const TRT_NOEXCEPT {
+    Serialize(&buffer, beta_);
+  };
 
  private:
   float beta_{1.0f};
@@ -48,10 +59,10 @@ class SwishPlugin : public Plugin {
 
 class SwishPluginCreator : public PluginCreator {
  public:
-  const char* getPluginName() const noexcept;
+  const char* getPluginName() const TRT_NOEXCEPT;
   nvinfer1::IPluginV2* deserializePlugin(const char* name,
                                          void const* serial_data,
-                                         size_t serial_length) noexcept;
+                                         size_t serial_length) TRT_NOEXCEPT;
 };
 
 }  // namespace nvidia_tensorrt

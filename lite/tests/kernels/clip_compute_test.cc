@@ -67,7 +67,7 @@ class ClipComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("clip");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
@@ -122,6 +122,12 @@ TEST(Clip, precision) {
   use_minmax_tensor = std::vector<bool>{false};
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_err = 1e-5;
+  use_minmax_tensor = std::vector<bool>{false};
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_err = 1e-5;
+  use_minmax_tensor = std::vector<bool>{false};
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_err = 1e-2;
   use_minmax_tensor = std::vector<bool>{false};
 #else
   return;

@@ -31,23 +31,23 @@ macOS 环境下编译适用于 macOS 的库
 
 
    * 
-     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改Paddle Lite源代码，则可参考本文构建。
+     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <../quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改Paddle Lite源代码，则可参考本文构建。
 
    * 
-     本文介绍的编译方法适用于 Paddle Lite v2.10 及以上版本。v2.3 及之前版本请参考\ `release/v2.3源码编译方法 <https://paddle-lite.readthedocs.io/zh/release-v2.10_a/source_compile/v2.3_compile.html>`_\ 。
+     本文介绍的编译方法适用于 Paddle Lite v2.10 及以上版本。v2.3 及之前版本请参考\ `release/v2.3源码编译方法 <./v2.3_compile.html>`_\ 。
 
 
 
 准备编译环境
 ------------
 
-环境要求
+推荐环境
 ^^^^^^^^
 
 
-* gcc、g++（推荐版本为 8.2.0）
+* gcc、g++ == 8.2.0
+* CMake >=3.15
 * git、make、wget
-* CMake（请使用 3.15 或以上版本）
 
 
 环境安装命令
@@ -62,11 +62,10 @@ macOS 环境下编译适用于 macOS 的库
 
    # 2-1. 如果是 x86 macOS 则安装 CMake，以下命令以3.15版本为例，其他版本步骤类似。
    mkdir /usr/local/Cellar/cmake/ && cd /usr/local/Cellar/cmake/ \
-       cd /usr/local/Cellar/cmake/ \
-       wget https://cmake.org/files/v3.15/cmake-3.15.2-Darwin-x86_64.tar.gz \
-       tar zxf ./cmake-3.15.2-Darwin-x86_64.tar.gz \
-       mv cmake-3.15.2-Darwin-x86_64/CMake.app/Contents/ ./3.15.2 \
-       ln -s /usr/local/Cellar/cmake/3.15.2/bin/cmake /usr/local/bin/cmake
+   wget https://cmake.org/files/v3.15/cmake-3.15.2-Darwin-x86_64.tar.gz \
+   tar zxf ./cmake-3.15.2-Darwin-x86_64.tar.gz \
+   mv cmake-3.15.2-Darwin-x86_64/CMake.app/Contents/ ./3.15.2 \
+   ln -s /usr/local/Cellar/cmake/3.15.2/bin/cmake /usr/local/bin/cmake
 
    # 2-2. 如果是 ARM macOS 则 brew 安装 cmake
    brew install cmake
@@ -97,7 +96,7 @@ Paddle Lite 仓库中\ ``/lite/tools/build_macos.sh``\ 脚本文件用于构建 
      - OFF / ON
      - OFF
    * - with_extra
-     - 是否编译完整算子（见\ `支持算子 <https://paddle-lite.readthedocs.io/zh/develop/quick_start/support_operation_list.html>`_\ 一节）
+     - 是否编译完整算子（见\ `支持算子 <../quick_start/support_operation_list.html>`_\ 一节）
      - OFF / ON
      - OFF
    * - with_profile

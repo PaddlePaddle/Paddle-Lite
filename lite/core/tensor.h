@@ -14,12 +14,6 @@
 
 #pragma once
 
-#ifdef LITE_WITH_FPGA
-#include "lite/backends/fpga/lite_tensor.h"
-#endif
-
-#ifndef LITE_WITH_FPGA
-
 #ifdef LITE_WITH_METAL
 #include "lite/backends/metal/target_wrapper.h"
 #endif  // LITE_WITH_METAL
@@ -88,6 +82,9 @@ class TensorLite {
   bool persistable() const { return persistable_; }
   void set_persistable(bool persistable) { persistable_ = persistable; }
 
+#ifdef LITE_WITH_XPU
+  void set_host_pinned_memory() const { buffer_->host_pinned_register(); }
+#endif
   // T is the data type and R is the return type
   // For OpenCL, the return type can be cl::Buffer
   // and the data type can be float/int8_t.
@@ -131,7 +128,7 @@ class TensorLite {
       bool reuse = true) {
     dims_ = dim;
     target_ = TARGET(kMetal);
-    long ptr_this = reinterpret_cast<long>(this);
+    int64_t ptr_this = reinterpret_cast<int64_t>(this);
     std::string ptr;
     std::stringstream stream;
     stream << ptr_this;
@@ -328,5 +325,3 @@ metal_image *TensorLite::mutable_data<uint16_t, metal_image>();
 
 }  // namespace lite
 }  // namespace paddle
-
-#endif  // #ifndef LITE_WITH_FPGA

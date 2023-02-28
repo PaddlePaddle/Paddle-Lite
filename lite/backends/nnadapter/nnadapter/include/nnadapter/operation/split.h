@@ -42,6 +42,7 @@ namespace operation {
   } else {                                                               \
     NNADAPTER_VLOG(5) << "axis: " << OperandToString(axis_operand);      \
   }                                                                      \
+  NNADAPTER_CHECK_LT(axis, input_operand->type.dimensions.count);        \
   /* Split */                                                            \
   auto split_operand = input_operands[2];                                \
   std::vector<int> split;                                                \

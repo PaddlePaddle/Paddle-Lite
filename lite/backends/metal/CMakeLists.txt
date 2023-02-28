@@ -3,9 +3,9 @@ if (NOT LITE_WITH_METAL)
 endif ()
 
 
-FILE(GLOB LITE_METAL_KERNELS_SRC ${CMAKE_SOURCE_DIR}/lite/backends/metal/metal_kernel/*.metal
-        ${CMAKE_SOURCE_DIR}/lite/backends/metal/metal_kernel/buffer/*.metal
-        ${CMAKE_SOURCE_DIR}/lite/backends/metal/metal_kernel/texture/*.metal
+FILE(GLOB LITE_METAL_KERNELS_SRC ${PADDLE_SOURCE_DIR}/lite/backends/metal/metal_kernel/*.metal
+        ${PADDLE_SOURCE_DIR}/lite/backends/metal/metal_kernel/buffer/*.metal
+        ${PADDLE_SOURCE_DIR}/lite/backends/metal/metal_kernel/texture/*.metal
         )
 
 IF (SDK_NAME STREQUAL "iphoneos")
@@ -20,11 +20,11 @@ ELSE ()
 ENDIF ()
 
 add_custom_target(LiteMetalLIB
-        DEPENDS ${CMAKE_BINARY_DIR}/lite.metallib
+        DEPENDS ${PADDLE_BINARY_DIR}/lite.metallib
         COMMENT "Generating lite.metallib")
 
-add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/lite.metallib
-        COMMAND xcrun -sdk ${SDK_NAME} metal ${METAL_STD_OPTION} ${TARGET_OPTION} ${LITE_METAL_KERNELS_SRC} -o ${CMAKE_BINARY_DIR}/lite.metallib
+add_custom_command(OUTPUT ${PADDLE_BINARY_DIR}/lite.metallib
+        COMMAND xcrun -sdk ${SDK_NAME} metal ${METAL_STD_OPTION} ${TARGET_OPTION} ${LITE_METAL_KERNELS_SRC} -o ${PADDLE_BINARY_DIR}/lite.metallib
         DEPENDS ${LITE_METAL_KERNELS_SRC}
         COMMENT "Built target lite.metallib")
 

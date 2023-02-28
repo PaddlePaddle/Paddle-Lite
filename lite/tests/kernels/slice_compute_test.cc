@@ -171,7 +171,7 @@ class SliceComputeTester : public arena::TestCase {
     out->Resize(out_dims);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("slice");
     op_desc->SetInput("Input", {input_});
 
@@ -319,6 +319,14 @@ TEST(Slice, precision) {
   test_slice_axes(place);
   test_slice_decrease_axis(place);
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  test_slice(place);
+  test_slice_axes(place);
+  test_slice_decrease_axis(place);
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  test_slice(place);
+  test_slice_axes(place);
+  test_slice_decrease_axis(place);
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   test_slice(place);
   test_slice_axes(place);
   test_slice_decrease_axis(place);

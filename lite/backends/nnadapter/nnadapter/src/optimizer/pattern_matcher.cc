@@ -15,6 +15,7 @@
 #include "optimizer/pattern_matcher.h"
 #include <algorithm>
 #include <array>
+#include "utility/debug.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
 
@@ -178,11 +179,62 @@ PatternMatcher::Pattern::IsOperationOutputOperand(NNAdapterOperationType type,
   return this;
 }
 
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::IsModelInputOperand() {
+  IsOperand();
+  conditions.emplace_back([=](const Node *node) {
+    return nnadapter::IsModelInputOperand(node->operand);
+  });
+  return this;
+}
+
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::IsModelOutputOperand() {
+  IsOperand();
+  conditions.emplace_back([=](const Node *node) {
+    return nnadapter::IsModelOutputOperand(node->operand);
+  });
+  return this;
+}
+
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::IsNotModelInputOperand() {
+  IsOperand();
+  conditions.emplace_back([=](const Node *node) {
+    return !nnadapter::IsModelInputOperand(node->operand);
+  });
+  return this;
+}
+
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::IsNotModelOutputOperand() {
+  IsOperand();
+  conditions.emplace_back([=](const Node *node) {
+    return !nnadapter::IsModelOutputOperand(node->operand);
+  });
+  return this;
+}
+
 NNADAPTER_EXPORT PatternMatcher::Pattern *PatternMatcher::Pattern::IsOperation(
     NNAdapterOperationType type) {
   conditions.emplace_back([type](const Node *node) {
-    return node && node->IsOperation() && node->operation->type == type;
+    return node && node->IsOperation() &&
+           (node->operation->type == type || type == NNADAPTER_UNKNOWN);
   });
+  return this;
+}
+
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::CheckInputCount(int num) {
+  conditions.emplace_back(
+      [num](const Node *node) { return node->inlinks.size() == num; });
+  return this;
+}
+
+NNADAPTER_EXPORT PatternMatcher::Pattern *
+PatternMatcher::Pattern::CheckOutputCount(int num) {
+  conditions.emplace_back(
+      [num](const Node *node) { return node->outlinks.size() == num; });
   return this;
 }
 
@@ -214,45 +266,54 @@ NNADAPTER_EXPORT size_t PatternMatcher::Apply(core::Model *model) {
     return 0;
   }
   auto subgraphs = DetectPatterns();
+  NNADAPTER_VLOG(5) << subgraphs.size() << " subgraphs detected!";
   UniquePatterns(&subgraphs);
+  NNADAPTER_VLOG(5) << subgraphs.size() << " subgraphs unique!";
   ValidatePatterns(&subgraphs);
+  NNADAPTER_VLOG(5) << subgraphs.size() << " subgraphs valid!";
   RemoveOverlappedPatterns(&subgraphs);
   NNADAPTER_VLOG(5) << subgraphs.size() << " subgraphs matched!";
-  // Replace a matched subgraph with a new node, and collect the intermediate
-  // operands and operations to be removed.
-  std::vector<std::map<std::string, Node *>> matches;
+  // Notify to handle the matched subgraphs, and collect the intermediate
+  // operands and operations to be deleted.
+  size_t count = 0;
   std::set<core::Operand *> operands;
   std::set<core::Operation *> operations;
   for (auto &subgraph : subgraphs) {
-    matches.emplace_back();
+    std::map<std::string, Node *> nodes;
+    std::set<Node *> intermediates;
     for (auto &pattern : patterns_) {
       auto node = subgraph.at(pattern.second.get());
-      matches.back()[pattern.first] = node;
       if (pattern.second->intermediate) {
-        if (node->IsOperand()) {
-          operands.insert(node->operand);
-        } else if (node->IsOperation()) {
-          operations.insert(node->operation);
-        } else {
-          NNADAPTER_LOG(FATAL)
-              << "The node is neither an operator nor an operation!";
-        }
+        intermediates.insert(node);
+      }
+      nodes[pattern.first] = node;
+    }
+    // If it returns true, add the intermediate operands and operations to the
+    // list to be deleted, otherwise ignore it.
+    if (!HandleMatchedResults(model, nodes)) continue;
+    for (auto intermediate : intermediates) {
+      if (intermediate->IsOperand()) {
+        operands.insert(intermediate->operand);
+      } else if (intermediate->IsOperation()) {
+        operations.insert(intermediate->operation);
+      } else {
+        NNADAPTER_LOG(FATAL)
+            << "The intermediate node is neither an operator nor an operation!";
       }
     }
+    count++;
   }
-  for (const auto &nodes : matches) {
-    InsertNewNode(model, nodes);
-  }
-  // Remove the operands and operations that are marked as intermediate.
+  NNADAPTER_VLOG(5) << count << " subgraphs replaced!";
+  // Delete the intermediate operands and operations.
   for (auto operand : operands) {
     RemoveOperand(model, operand);
   }
-  NNADAPTER_VLOG(3) << operands.size() << " operands removed!";
+  NNADAPTER_VLOG(3) << operands.size() << " operands deleted!";
   for (auto operation : operations) {
     RemoveOperation(model, operation);
   }
-  NNADAPTER_VLOG(3) << operations.size() << " operations removed!";
-  return matches.size();
+  NNADAPTER_VLOG(3) << operations.size() << " operations deleted!";
+  return count;
 }
 
 NNADAPTER_EXPORT void PatternMatcher::BuildNodes(core::Model *model,

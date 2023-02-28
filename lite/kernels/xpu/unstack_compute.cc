@@ -23,8 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void UnstackCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto& dout = param.Out;
   auto in_dim = param.X->dims();
   int axis = param.axis;

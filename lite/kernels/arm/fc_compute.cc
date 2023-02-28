@@ -59,9 +59,10 @@ void fc_trans_weights<PRECISION(kInt8)>(const Tensor& tin, Tensor* tout) {
   CHECK_EQ(tin.dims().size(), 2) << "fc weights size must = 2";
   int m = tin.dims()[0];
   int n = tin.dims()[1];
-  tout->Resize({n, m});
+  tout->Resize({(n - 1) * m + (m + 15) / 16 * 16});
   auto* ptr_in = tin.data<int8_t>();
   auto* ptr_out = tout->mutable_data<int8_t>();
+  memset(ptr_out, 0, tout->dims().production() * sizeof(int8_t));
   naive_transpose(ptr_in, ptr_out, m, n);
 }
 
@@ -74,14 +75,14 @@ template <>
 bool check_fc_use_gemm<PRECISION(kInt8), PRECISION(kFloat)>(
     int m, const std::vector<float>& scale, bool has_bias) {
   CHECK_GT(scale.size(), 0) << "Int8 FC param must has weight_scale";
-  return m > 1 && scale.size() == 1;
+  return m > 1;
 }
 
 template <>
 bool check_fc_use_gemm<PRECISION(kInt8), PRECISION(kInt8)>(
     int m, const std::vector<float>& scale, bool has_bias) {
   CHECK_GT(scale.size(), 0) << "Int8 FC param must has weight_scale";
-  return m > 1 && scale.size() == 1 && !has_bias;
+  return m > 1;
 }
 
 template <PrecisionType PType, PrecisionType OutType>
@@ -106,12 +107,8 @@ void FcCompute<PType, OutType>::ReInitWhenNeeded() {
 
   m_ = x_dims.Slice(0, in_num_col_dims).production();
   k_ = x_dims.Slice(in_num_col_dims, x_dims.size()).production();
-  // LOG(INFO) << "in_num_col_dims: " << param.in_num_col_dims << ", x_dims: "
-  // << x_dims;
-  // LOG(INFO) << "w_dims: " << w_dims;
   CHECK_EQ(k_, w_dims[0]);
   n_ = w_dims[1];
-  CHECK_EQ(k_, static_cast<int>(w_dims[0]));
   flag_gemm_ = check_fc_use_gemm<PType, OutType>(
       m_, param.weight_scale, param.bias != nullptr);
   if (!flag_trans_weights_ && !flag_gemm_) {
@@ -133,10 +130,10 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   auto& param = this->template Param<operators::FcParam>();
   /// update scale
   float input_scale = param.input_scale;
-  int extend_size = flag_gemm_ ? m_ : n_;
+  int extend_size = (flag_gemm_ && param.weight_scale.size() == 1) ? m_ : n_;
   scale_.resize(extend_size);
   for (int i = 0; i < extend_size; ++i) {
-    if (flag_gemm_) {
+    if (flag_gemm_ && param.weight_scale.size() == 1) {
       scale_[i] = param.weight_scale[0] * input_scale;
     } else {
       scale_[i] = param.weight_scale[i] * input_scale;
@@ -153,10 +150,10 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   scale_ = param.weight_scale;
   float input_scale = param.input_scale;
   float output_scale = param.output_scale;
-  int extend_size = flag_gemm_ ? m_ : n_;
+  int extend_size = (flag_gemm_ && param.weight_scale.size() == 1) ? m_ : n_;
   scale_.resize(extend_size);
   for (int i = 0; i < extend_size; ++i) {
-    if (flag_gemm_) {
+    if (flag_gemm_ && param.weight_scale.size() == 1) {
       scale_[i] = param.weight_scale[0] * input_scale / output_scale;
     } else {
       scale_[i] = param.weight_scale[i] * input_scale / output_scale;
@@ -279,15 +276,12 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              i_data,
                              w_data,
                              o_data,
-                             nullptr,
-                             false,
+                             b_data,
+                             true,
+                             lite::arm::math::GemmNBias,
                              scale_.data(),
                              act_param,
                              &ctx);
-    if (param.bias) {
-      CHECK_EQ(param.bias->numel(), n_);
-      lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_, &act_param);
-    }
   } else {
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;
@@ -331,8 +325,6 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
     act_param.Relu_clipped_coef = param.alpha;
   }
   if (flag_gemm_) {
-    CHECK(!param.bias) << "fc int8 kernel with int8 output using gemm kernel "
-                          "must not have bias";
     lite::arm::math::gemm_s8(false,
                              false,
                              m_,
@@ -341,8 +333,9 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                              i_data,
                              w_data,
                              o_data,
-                             nullptr,
-                             false,
+                             b_data,
+                             true,
+                             lite::arm::math::GemmNBias,
                              scale_.data(),
                              act_param,
                              &ctx);
@@ -371,14 +364,40 @@ void fc_trans_weights<PRECISION(kFP16)>(const Tensor& tin, Tensor* tout) {
   CHECK_EQ(tin.dims().size(), 2) << "fc weights size must = 2";
   int m = tin.dims()[0];
   int n = tin.dims()[1];
-  tout->Resize({n, m});
+  tout->Resize({(n - 1) * m + (m + 15) / 16 * 16});
   auto* ptr_in = tin.data<float16_t>();
   auto* ptr_out = tout->mutable_data<float16_t>();
+  memset(ptr_out, 0, tout->dims().production() * sizeof(float16_t));
   naive_transpose(ptr_in, ptr_out, m, n);
 }
 
 template <>
 void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
+  auto& param1 = this->template Param<operators::FcParam>();
+  auto filter_tensor = param1.w;
+  if (filter_tensor->precision() != PRECISION(kFP16)) {
+    Tensor tmp_tensor;
+    tmp_tensor.CopyDataFrom(*filter_tensor);
+    filter_tensor->clear();
+    filter_tensor->set_precision(PRECISION(kFP16));
+    float16_t* fp_data = filter_tensor->mutable_data<float16_t>();
+    const float* in_data = tmp_tensor.data<float>();
+    lite::arm::math::fp16::fp32_to_fp16(
+        in_data, fp_data, filter_tensor->numel());
+  }
+  if (param1.bias) {
+    auto bias_tensor = param1.bias;
+    if (bias_tensor->precision() != PRECISION(kFP16)) {
+      Tensor tmp_tensor;
+      tmp_tensor.CopyDataFrom(*bias_tensor);
+      bias_tensor->clear();
+      bias_tensor->set_precision(PRECISION(kFP16));
+      float16_t* fp_data = bias_tensor->mutable_data<float16_t>();
+      const float* in_data = tmp_tensor.data<float>();
+      lite::arm::math::fp16::fp32_to_fp16(
+          in_data, fp_data, bias_tensor->numel());
+    }
+  }
   ReInitWhenNeeded();
 }
 

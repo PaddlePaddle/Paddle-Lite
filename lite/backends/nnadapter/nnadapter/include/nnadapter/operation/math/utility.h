@@ -38,6 +38,19 @@ typedef enum {
   DATA_TYPE_FLOAT64 = 11,
 } DataTypeCode;
 
+typedef enum { RELU = 1, RELU1 = 2, RELU6 = 3, SIGMOID = 4 } ActivationTypeCode;
+
+typedef enum {
+  ADD = 1,
+  SUB = 2,
+  MUL = 3,
+  DIV = 4,
+  MAX = 5,
+  MIN = 6,
+  POW = 7,
+  FLOOR_DIV = 8
+} ElementwiseTypeCode;
+
 // Fused activation function types
 typedef enum {
   FUSE_NONE = 0,
@@ -52,6 +65,13 @@ std::vector<int32_t> shape_slice(const std::vector<int32_t>& input_shape,
                                  int end);
 // Get the production of the shape
 int64_t shape_production(const std::vector<int32_t>& input_shape);
+
+// Get the broadcasted shape
+std::vector<int32_t> shape_broadcast(const std::vector<int32_t>& input0_shape,
+                                     const std::vector<int32_t>& input1_shape);
+
+// Get the strides of the shape
+std::vector<int64_t> shape_strides(const std::vector<int32_t>& input_shape);
 
 }  // namespace math
 }  // namespace operation

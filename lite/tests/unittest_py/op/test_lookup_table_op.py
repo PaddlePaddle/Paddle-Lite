@@ -41,6 +41,8 @@ class TestLookupTablebleOp(AutoScanTest):
             PrecisionType.Any,
             DataLayoutType.NCHW,
             thread=[1, 2, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -63,6 +65,8 @@ class TestLookupTablebleOp(AutoScanTest):
         pidx = draw(st.sampled_from([-1, 0, 1, 2]))
         op_type_str = draw(
             st.sampled_from(["lookup_table", "lookup_table_v2"]))
+        if "intel_openvino" in self.get_nnadapter_device_name():
+            op_type_str = "lookup_table_v2"
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
@@ -96,7 +100,17 @@ class TestLookupTablebleOp(AutoScanTest):
                                                                           1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            pidx = program_config.ops[0].attrs["padding_idx"]
+            if target_type == TargetType.NNAdapter:
+                if pidx != -1:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op when 'padding_idx != -1' on nnadapter."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=50)

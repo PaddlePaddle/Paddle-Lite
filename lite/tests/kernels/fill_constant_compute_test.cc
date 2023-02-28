@@ -79,6 +79,10 @@ class FillConstantComputeTester : public arena::TestCase {
     } else {
       out_shape = shape_;
     }
+#ifdef NNADAPTER_WITH_NVIDIA_TENSORRT
+    // Trt out should have batchsize
+    out_shape.insert(out_shape.begin(), 1);
+#endif
     out->Resize(out_shape);
 
     switch (dtype_) {
@@ -124,7 +128,7 @@ class FillConstantComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("fill_constant");
     if (!tensor_value_.empty()) {
       op_desc->SetInput("ValueTensor", {value_tensor_});
@@ -268,17 +272,25 @@ TEST(fill_constant, precision) {
   float abs_error = 1e-5;
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) || \
-    defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  TestFillConstantShape(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 1e-2;
+  TestFillConstantValue(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  TestFillConstantShape(place, abs_error);
+  TestFillConstantValue(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-2;
   TestFillConstantShape(place, abs_error);
   return;
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)

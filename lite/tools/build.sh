@@ -1,13 +1,9 @@
 #!/bin/bash
 set -e
 
-readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
-                               -DWITH_MKL=OFF \
-                               -DWITH_LITE=ON \
-                               -DLITE_WITH_CUDA=OFF \
+readonly CMAKE_COMMON_OPTIONS="-DWITH_MKL=OFF \
                                -DLITE_WITH_X86=OFF \
-                               -DLITE_WITH_ARM=ON \
-                               -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
+                               -DLITE_WITH_ARM=ON"
 
 readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
 
@@ -33,8 +29,8 @@ WITH_PRECISION_PROFILE=OFF
 WITH_LTO=OFF
 BUILD_ARM82_FP16=OFF
 BUILD_ARM82_INT8_SDOT=OFF
-BUILD_NPU=OFF
-NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
+# controls whether to support SVE2 instructions, default is OFF
+WITH_ARM8_SVE2=OFF
 BUILD_XPU=OFF
 BUILD_XTCL=OFF
 XPU_SDK_ROOT=""
@@ -47,6 +43,7 @@ RKNPU_DDK_ROOT="$(pwd)/rknpu/"
 # default installation path, ensure acllib/atc/opp directories are all in this root dir
 PYTHON_EXECUTABLE_OPTION=""
 IOS_DEPLOYMENT_TARGET=9.0
+WITH_NODE_RAW_FS=OFF
 # min android api level
 MIN_ANDROID_API_LEVEL_ARMV7=16
 MIN_ANDROID_API_LEVEL_ARMV8=21
@@ -56,7 +53,7 @@ CMAKE_API_LEVEL_OPTIONS=""
 
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
+readonly THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 readonly workspace=$PWD
 
 function readlinkf() {
@@ -132,14 +129,50 @@ function set_android_api_level {
 function build_opt {
     cd $workspace
     prepare_thirdparty
+    rm -rf build.opt
     mkdir -p build.opt
     cd build.opt
-    cmake .. -DWITH_LITE=ON \
+    opt_arch=$(echo `uname -p`)
+    with_x86=OFF
+    if [ $opt_arch == "aarch64" ]; then
+        with_x86=OFF
+    else
+       with_x86=ON
+    fi
+    cmake .. \
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
+      -DLITE_WITH_X86=${with_x86} \
       -DWITH_MKL=OFF
     make opt -j$NUM_PROC
+}
+
+function build_opt_wasm {
+    cd $workspace
+    prepare_thirdparty
+    cd third-party/protobuf-host
+    git apply $workspace/cmake/protobuf-host-patch || true
+    cd $workspace
+    mkdir -p build-protoc
+    cd build-protoc
+    cmake -Dprotobuf_BUILD_TESTS=OFF ../third-party/protobuf-host/cmake
+    make protoc -j$NUM_PROC
+    cd ..
+    mkdir -p build.opt.wasm
+    cd build.opt.wasm
+    emcmake cmake .. \
+      -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
+      -DWITH_TESTING=OFF \
+      -DLITE_BUILD_EXTRA=ON \
+      -DWITH_MKL=OFF \
+      -DLITE_WITH_X86=OFF \
+      -DLITE_WITH_OPENMP=OFF \
+      -DPROTOBUF_PROTOC_EXECUTABLE=`pwd`/../build-protoc/protoc \
+      -DWITH_NODE_RAW_FS=$1
+    emmake make opt -j$NUM_PROC
+    cd ../third-party/protobuf-host
+    git reset --hard HEAD
 }
 
 function make_tiny_publish_so {
@@ -152,6 +185,14 @@ function make_tiny_publish_so {
   build_dir=$cur_dir/build.lite.${os}.${abi}.${lang}
   if [ ! -d third-party ]; then
     git checkout third-party
+  fi
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_dir=$build_dir".armv82_fp16"
+  fi
+  if [ "${WITH_ARM8_SVE2}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_dir=$build_dir".armv8_sve2"
   fi
 
   if [ -d $build_dir ]
@@ -185,8 +226,6 @@ function make_tiny_publish_so {
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
-      -DLITE_WITH_NPU=$BUILD_NPU \
-      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
@@ -197,6 +236,7 @@ function make_tiny_publish_so {
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DLITE_THREAD_POOL=$BUILD_THREAD_POOL \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
@@ -232,15 +272,11 @@ function make_opencl {
   cmake .. \
       ${CMAKE_API_LEVEL_OPTIONS} \
       -DLITE_WITH_OPENCL=ON \
-      -DWITH_GPU=OFF \
       -DWITH_MKL=OFF \
-      -DWITH_LITE=ON \
-      -DLITE_WITH_CUDA=OFF \
       -DLITE_WITH_X86=OFF \
       -DLITE_WITH_ARM=ON \
       -DWITH_ARM_DOTPROD=ON   \
       -DLITE_ON_TINY_PUBLISH=ON \
-      -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_LOG=$WITH_LOG \
@@ -262,6 +298,14 @@ function make_full_publish_so {
 
   root_dir=$(pwd)
   build_directory=$BUILD_DIR/build.lite.${os}.${abi}.${lang}
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_directory=$build_directory".armv82_fp16"
+  fi
+  if [ "${WITH_ARM8_SVE2}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_directory=$build_directory".armv8_sve2"
+  fi
 
   if [ -d $build_directory ]
   then
@@ -297,8 +341,6 @@ function make_full_publish_so {
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
       -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
-      -DLITE_WITH_NPU=$BUILD_NPU \
-      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
@@ -310,6 +352,7 @@ function make_full_publish_so {
       -DLITE_WITH_APU=$BUILD_APU \
       -DAPU_DDK_ROOT=$APU_DDK_ROOT \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -338,9 +381,22 @@ function make_all_tests {
   prepare_thirdparty
   root_dir=$(pwd)
   build_directory=$BUILD_DIR/build.lite.${os}.${abi}.${lang}
-  if [ -d $build_dir ]
+  if [ $4 == "benchmark" ]; then
+    set_benchmark_options
+    build_directory=$build_directory".benchmark"
+  fi
+  if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_directory=$build_directory".armv82_fp16"
+  fi
+  if [ "${WITH_ARM8_SVE2}" == "ON" ]; then
+      TOOLCHAIN=clang
+      build_directory=$build_directory".armv8_sve2"
+  fi
+
+  if [ -d $build_directory ]
   then
-    rm -rf $build_dir
+    rm -rf $build_directory
   fi
   mkdir -p $build_directory
 
@@ -348,10 +404,6 @@ function make_all_tests {
   if [ ${os} == "android" ]; then
     set_android_api_level
     CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${CMAKE_API_LEVEL_OPTIONS}
-  fi
-
-  if [ $4 == "benchmark" ]; then
-    set_benchmark_options
   fi
 
   prepare_workspace $root_dir $build_directory
@@ -366,8 +418,6 @@ function make_all_tests {
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
-      -DLITE_WITH_NPU=$BUILD_NPU \
-      -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
       -DLITE_WITH_XTCL=$BUILD_XTCL \
       -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
@@ -378,6 +428,7 @@ function make_all_tests {
       -DLITE_WITH_RKNPU=$BUILD_RKNPU \
       -DRKNPU_DDK_ROOT=$RKNPU_DDK_ROOT \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
+      -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
@@ -403,10 +454,7 @@ function make_ios {
     touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
 
     cmake .. \
-            -DWITH_GPU=OFF \
             -DWITH_MKL=OFF \
-            -DWITH_LITE=ON \
-            -DLITE_WITH_CUDA=OFF \
             -DLITE_WITH_X86=OFF \
             -DLITE_WITH_ARM=ON \
             -DWITH_TESTING=OFF \
@@ -417,7 +465,6 @@ function make_ios {
             -DWITH_ARM_DOTPROD=OFF \
             -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
             -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DARM_TARGET_ARCH_ABI=$abi \
             -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
             -DLITE_WITH_CV=$BUILD_CV \
@@ -426,47 +473,6 @@ function make_ios {
 
     make publish_inference -j$NUM_PROC
     cd -
-}
-
-function make_cuda {
-  prepare_thirdparty
-
-  root_dir=$(pwd)
-  build_directory=$BUILD_DIR/build_cuda
-
-  if [ -d $build_directory ]
-  then
-    rm -rf $build_directory
-  fi
-  mkdir -p $build_directory
-  cd $build_directory
-
-  prepare_workspace $root_dir $build_directory
-
-  cmake ..  -DWITH_MKL=OFF       \
-            -DLITE_WITH_CUDA=ON  \
-            -DWITH_MKLDNN=OFF    \
-            -DLITE_WITH_X86=OFF  \
-            -DLITE_WITH_PROFILE=OFF \
-            -DLITE_WITH_LTO=${WITH_LTO} \
-            -DWITH_LITE=ON \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
-            -DWITH_TESTING=OFF \
-            -DLITE_WITH_ARM=OFF \
-            -DLITE_WITH_STATIC_CUDA=OFF \
-            -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
-            -DLITE_BUILD_EXTRA=ON \
-            -DLITE_WITH_LOG=${WITH_LOG} \
-            -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
-            -DLITE_WITH_XPU=$BUILD_XPU \
-            -DLITE_WITH_XTCL=$BUILD_XTCL \
-            -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
-            -DXPU_SDK_URL=$XPU_SDK_URL \
-            -DXPU_SDK_ENV=$XPU_SDK_ENV
-
-  make -j$NUM_PROC
-  make publish_inference -j$NUM_PROC
-  cd -
 }
 
 function make_x86 {
@@ -500,11 +506,8 @@ function make_x86 {
             -DWITH_AVX=${WITH_AVX} \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
-            -DWITH_LITE=ON \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
-            -DWITH_GPU=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
             -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \
@@ -569,11 +572,8 @@ function make_x86_tests {
             -DWITH_AVX=${WITH_AVX} \
             -DWITH_MKLDNN=OFF   \
             -DLITE_WITH_X86=ON  \
-            -DWITH_LITE=OFF \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
-            -DWITH_GPU=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
             -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \
@@ -632,6 +632,8 @@ function print_usage {
     echo -e "--build_java: (OFF|ON); controls whether to publish java api lib (Only ANDROID is supported)"
     echo -e "--build_dir: directory for building"
     echo -e "--ios_deployment_target: (default: 9.0); Set the minimum compatible system version for ios deployment."
+    echo -e "|     --with_arm8_sve2: (OFF|ON); controls whether to include SVE2 kernels, default is OFF                                             |"
+    echo -e "|                                  warning: when --with_arm8_sve2=ON, NDK version need >= r23, arch will be set as armv8.              |"
     echo
     echo -e "argument choices:"
     echo -e "--arm_os:\t android|ios|ios64"
@@ -757,20 +759,16 @@ function main {
                 BUILD_ARM82_FP16="${i#*=}"
                 shift
                 ;;
+            --build_arm8_sve2=*)
+                 WITH_ARM8_SVE2="${i#*=}"
+                 shift
+                 ;;
             --build_arm82_int8_sdot=*)
                 BUILD_ARM82_INT8_SDOT="${i#*=}"
                 shift
                 ;;
             --build_opencl=*)
                 WITH_OPENCL="${i#*=}"
-                shift
-                ;;
-            --build_npu=*)
-                BUILD_NPU="${i#*=}"
-                shift
-                ;;
-            --npu_ddk_root=*)
-                NPU_DDK_ROOT="${i#*=}"
                 shift
                 ;;
             --build_xpu=*)
@@ -824,6 +822,10 @@ function main {
                 IOS_DEPLOYMENT_TARGET="${i#*=}"
                 shift
                 ;;
+            --with_node_raw_fs=*)
+                WITH_NODE_RAW_FS="${i#*=}"
+                shift
+                ;;
             tiny_publish)
                 make_tiny_publish_so $ARM_OS $ARM_ABI $ARM_LANG $ANDROID_STL
                 shift
@@ -848,12 +850,12 @@ function main {
                 build_opt
                 shift
                 ;;
-            opencl)
-                make_opencl $ARM_OS $ARM_ABI $ARM_LANG
+            build_optimize_tool_wasm)
+                build_opt_wasm $WITH_NODE_RAW_FS
                 shift
                 ;;
-            cuda)
-                make_cuda
+            opencl)
+                make_opencl $ARM_OS $ARM_ABI $ARM_LANG
                 shift
                 ;;
             x86)

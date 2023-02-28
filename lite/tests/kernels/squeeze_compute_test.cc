@@ -87,7 +87,7 @@ class SqueezeComputeTester : public arena::TestCase {
     memcpy(out_data, input_data, sizeof(float) * dims_.production());
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("squeeze");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
@@ -178,7 +178,7 @@ class Squeeze2ComputeTester : public arena::TestCase {
     memcpy(out_data, input_data, sizeof(float) * dims_.production());
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("squeeze2");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
@@ -258,6 +258,10 @@ TEST(squeeze, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
 #else
   return;
 #endif
@@ -291,6 +295,10 @@ TEST(squeeze2, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
 #else
   return;
 #endif

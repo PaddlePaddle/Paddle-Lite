@@ -15,6 +15,7 @@ message(STATUS "compile with lite ARM kernels")
 # 1. basic kernels for basic models
 # for conv op
 add_kernel(conv_depthwise ARM basic SRCS conv_depthwise.cc)
+add_kernel(conv_depthwise_common ARM basic SRCS conv_depthwise_common.cc)
 add_kernel(conv_direct ARM basic SRCS conv_direct.cc)
 add_kernel(conv_gemmlike ARM basic SRCS conv_gemmlike.cc)
 add_kernel(conv_winograd ARM basic SRCS conv_winograd.cc)
@@ -33,6 +34,7 @@ add_kernel(pool_compute_arm ARM basic SRCS pool_compute.cc)
 add_kernel(concat_compute_arm ARM basic SRCS concat_compute.cc)
 add_kernel(pad2d_compute_arm ARM basic SRCS pad2d_compute.cc)
 add_kernel(calib_compute_arm ARM basic SRCS calib_compute.cc)
+add_kernel(calib_inplace_compute_arm ARM basic SRCS calib_inplace_compute.cc)
 add_kernel(transpose_compute_arm ARM basic SRCS transpose_compute.cc)
 add_kernel(argmax_compute_arm ARM basic SRCS argmax_compute.cc)
 add_kernel(conv_transpose_compute_arm ARM basic SRCS conv_transpose_compute.cc)
@@ -73,7 +75,8 @@ add_kernel(scatter_compute_arm ARM extra SRCS scatter_compute.cc)
 add_kernel(sequence_expand_as_compute_arm ARM extra SRCS sequence_expand_as_compute.cc)
 add_kernel(matmul_v2_compute ARM extra SRCS matmul_v2_compute.cc)
 add_kernel(sum_compute ARM extra SRCS sum_compute.cc)
-
+add_kernel(dequantize_log_compute ARM extra SRCS dequantize_log_compute.cc)
+add_kernel(fused_attention_compute_arm ARM extra SRCS fused_attention_compute.cc)
 
 # for OCR specific
 add_kernel(gru_unit_compute_arm ARM extra SRCS gru_unit_compute.cc)

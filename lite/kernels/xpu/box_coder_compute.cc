@@ -23,9 +23,24 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+void BoxCoderCompute::PrepareForRun() {
+  auto& param = this->template Param<param_t>();
+  std::vector<float> variance = param.variance;
+
+  CHECK((variance.size() == 4) || (variance.size() == 0)) << "variance_size is "
+                                                          << variance.size();
+  if (variance.size() == 4) {
+    variance_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    XPU_CALL(xpu_memcpy(variance_xpu_guard_->addr_,
+                        variance.data(),
+                        variance.size() * sizeof(float),
+                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  }
+}
+
 void BoxCoderCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto prior_box_var_size = 0;
   auto* prior_box = param.prior_box;
@@ -37,7 +52,6 @@ void BoxCoderCompute::Run() {
   }
   auto* target_box = param.target_box;
   auto* output_box = param.proposals;
-  std::vector<float> variance = param.variance;
   const int axis = param.axis;
   std::string code_type = param.code_type;
   bool normalized = param.box_normalized;
@@ -48,37 +62,35 @@ void BoxCoderCompute::Run() {
     col = target_box->dims()[1];
   }
   auto len = prior_box->dims()[1];
+  CHECK_EQ(len, 4) << "Last dimension of prior_box should be 4!";
   output_box->Resize({row, col, len});
   auto* output = output_box->mutable_data<float>(TARGET(kXPU));
+  float* variance_xpu_ptr =
+      variance_xpu_guard_ ? reinterpret_cast<float*>(variance_xpu_guard_->addr_)
+                          : nullptr;
 
   if (code_type == "encode_center_size") {
-    int r = xdnn::box_coder_encode(ctx.GetRawContext(),
-                                   prior_box->data<float>(),
-                                   prior_box_var_ptr,
-                                   target_box->data<float>(),
-                                   row,
-                                   col,
-                                   len,
-                                   normalized,
-                                   prior_box_var_size,
-                                   variance.data(),
-                                   variance.size(),
-                                   output);
+    int r = xdnn::box_coder_encoder<float>(ctx.GetRawContext(),
+                                           prior_box->data<float>(),
+                                           target_box->data<float>(),
+                                           prior_box_var_ptr,
+                                           variance_xpu_ptr,
+                                           output,
+                                           row,
+                                           col,
+                                           normalized);
     CHECK_EQ(r, 0);
   } else if (code_type == "decode_center_size") {
-    int r = xdnn::box_coder_decode(ctx.GetRawContext(),
-                                   prior_box->data<float>(),
-                                   prior_box_var_ptr,
-                                   target_box->data<float>(),
-                                   row,
-                                   col,
-                                   len,
-                                   normalized,
-                                   prior_box_var_size,
-                                   variance.data(),
-                                   variance.size(),
-                                   axis,
-                                   output);
+    int r = xdnn::box_coder_decoder<float>(ctx.GetRawContext(),
+                                           prior_box->data<float>(),
+                                           target_box->data<float>(),
+                                           prior_box_var_ptr,
+                                           variance_xpu_ptr,
+                                           output,
+                                           row,
+                                           col,
+                                           axis,
+                                           normalized);
     CHECK_EQ(r, 0);
   } else {
     LOG(FATAL) << "box_coder don't support this code_type: " << code_type;

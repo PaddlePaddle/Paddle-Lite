@@ -32,11 +32,11 @@ int ConvertDeformableConv(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Offset operand
   auto offset_name = op->Input("Offset").front();
-  auto offset_operand = converter->GetMappedOperand(offset_name);
+  auto offset_operand = converter->AddInputOperand(scope, offset_name);
 
   // Mask operand
   auto mask_name = op->Input("Mask").front();
-  auto mask_operand = converter->GetMappedOperand(mask_name);
+  auto mask_operand = converter->AddInputOperand(scope, mask_name);
 
   // Filter operand
   auto filter_name = op->Input("Filter").front();

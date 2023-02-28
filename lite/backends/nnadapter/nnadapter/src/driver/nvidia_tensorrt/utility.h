@@ -17,6 +17,7 @@
 #include <NvInfer.h>
 #include <NvInferPlugin.h>
 #include <cuda_runtime_api.h>
+#include <cudnn.h>
 #include <memory>
 #include <vector>
 #include "core/types.h"
@@ -53,6 +54,22 @@ namespace nvidia_tensorrt {
 // Max workspace size, for example: "1048576"
 #define NVIDIA_TENSORRT_MAX_WORKSPACE_SIZE "NVIDIA_TENSORRT_MAX_WORKSPACE_SIZE"
 
+#define NVIDIA_TENSORRT_GET_EXTERNAL_CUDA_STREAM 0x0100
+
+#define TENSORRT_VERSION_GE(major, minor, patch, build)          \
+  (((NV_TENSORRT_MAJOR > major) ||                               \
+    (NV_TENSORRT_MAJOR == major && NV_TENSORRT_MINOR > minor) || \
+    (NV_TENSORRT_MAJOR == major && NV_TENSORRT_MINOR == minor && \
+     NV_TENSORRT_PATCH > patch) ||                               \
+    (NV_TENSORRT_MAJOR == major && NV_TENSORRT_MINOR == minor && \
+     NV_TENSORRT_PATCH == patch && NV_TENSORRT_BUILD >= build)))
+
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
+#define TRT_NOEXCEPT noexcept
+#else
+#define TRT_NOEXCEPT
+#endif
+
 // Supported places
 typedef enum {
   kTensorrt = 0,
@@ -70,22 +87,13 @@ typedef enum {
 struct TensorrtDeleter {
   template <typename T>
   void operator()(T* obj) const {
-#if TENSORRT_MAJOR_VERSION >= 8
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
     delete obj;
 #else
     if (obj) {
       obj->destroy();
     }
 #endif
-  }
-};
-
-struct CudaMemoryDeleter {
-  template <typename T>
-  void operator()(T* ptr) const {
-    if (ptr) {
-      NNADAPTER_CHECK_EQ(cudaFree(ptr), cudaSuccess);
-    }
   }
 };
 
@@ -101,7 +109,11 @@ struct HostMemoryDeleter {
 class Tensor {
  public:
   Tensor() {}
-  ~Tensor() {}
+  ~Tensor();
+
+  void SetData(void* cuda_buffer,
+               const std::vector<int32_t>& dims,
+               nvinfer1::DataType data_type);
 
   // Only support copy from cuda to host
   void* Data(bool return_cuda_buffer = true);
@@ -110,22 +122,16 @@ class Tensor {
 
   std::vector<int32_t> Dims() { return dims_; }
 
-  uint32_t Length() {
-    if (dims_.empty()) return 0;
-    uint32_t length = 1;
-    for (auto i : dims_) {
-      length *= static_cast<uint32_t>(i);
-    }
-    return length;
-  }
+  uint32_t Length();
 
-  void SetDateType(nvinfer1::DataType data_type) { data_type_ = data_type; }
+  void SetDataType(nvinfer1::DataType data_type) { data_type_ = data_type; }
 
   nvinfer1::DataType DateType() { return data_type_; }
 
  private:
-  std::unique_ptr<void, CudaMemoryDeleter> cuda_buffer_;
+  void* cuda_buffer_{nullptr};
   uint32_t cuda_buffer_length_{0};
+  bool own_cuda_buffer_{true};
   std::unique_ptr<void, HostMemoryDeleter> host_buffer_;
   uint32_t host_buffer_length_{0};
   nvinfer1::DataType data_type_{nvinfer1::DataType::kFLOAT};
@@ -135,9 +141,9 @@ class Tensor {
 class TrtLogger : public nvinfer1::ILogger {
  public:
   void log(nvinfer1::ILogger::Severity severity,
-           const char* msg) noexcept override;
+           const char* msg) TRT_NOEXCEPT override;
 
-  static TrtLogger* Global() noexcept {
+  static TrtLogger* Global() TRT_NOEXCEPT {
     static TrtLogger* logger = new TrtLogger;
     return logger;
   }

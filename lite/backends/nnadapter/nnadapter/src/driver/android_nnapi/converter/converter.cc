@@ -86,7 +86,8 @@ uint32_t Converter::AddOperand(int32_t* dimensions_data,
                                int32_t* zero_point,
                                uint32_t quant_scale_count,
                                uint32_t quant_channel_dim,
-                               void* buffer) {
+                               void* buffer,
+                               bool copy) {
   ANeuralNetworksOperandType type;
   memset(&type, 0, sizeof(ANeuralNetworksOperandType));
   type.type = precision;
@@ -134,6 +135,18 @@ uint32_t Converter::AddOperand(int32_t* dimensions_data,
     // Constant operand
     auto length = NNOperandDataTypeLength(precision) *
                   ProductionOfDimensions(dimensions_data, dimensions_count);
+    // Only values of length smaller or equal to
+    // ANEURALNETWORKS_MAX_SIZE_OF_IMMEDIATELY_COPIED_VALUES are immediately
+    // copied into the model.
+    if (copy &&
+        length >= ANEURALNETWORKS_MAX_SIZE_OF_IMMEDIATELY_COPIED_VALUES) {
+      operand_values_.emplace_back();
+      auto operand_value = &operand_values_.back();
+      operand_value->resize(length);
+      auto data = reinterpret_cast<void*>(operand_value->data());
+      memcpy(data, buffer, length);
+      buffer = data;
+    }
     NNADAPTER_CHECK_EQ(nnapi()->ANeuralNetworksModel_setOperandValue(
                            model_, index, buffer, length),
                        ANEURALNETWORKS_NO_ERROR);
@@ -178,7 +191,8 @@ uint32_t Converter::AddFloat32ConstantOperand(float value) {
 }
 
 uint32_t Converter::AddInt32ConstantOperand(int32_t* values,
-                                            uint32_t num_values) {
+                                            uint32_t num_values,
+                                            bool copy) {
   std::vector<int32_t> dimensions({static_cast<int32_t>(num_values)});
   return AddOperand(&dimensions[0],
                     dimensions.size(),
@@ -187,11 +201,13 @@ uint32_t Converter::AddInt32ConstantOperand(int32_t* values,
                     nullptr,
                     0,
                     0,
-                    values);
+                    values,
+                    copy);
 }
 
 uint32_t Converter::AddFloat32ConstantOperand(float* values,
-                                              uint32_t num_values) {
+                                              uint32_t num_values,
+                                              bool copy) {
   std::vector<int32_t> dimensions({static_cast<int32_t>(num_values)});
   return AddOperand(&dimensions[0],
                     dimensions.size(),
@@ -200,12 +216,14 @@ uint32_t Converter::AddFloat32ConstantOperand(float* values,
                     nullptr,
                     0,
                     0,
-                    values);
+                    values,
+                    copy);
 }
 
 uint32_t Converter::AddInt32ConstantOperand(int32_t* values,
                                             int32_t* dimensions_data,
-                                            uint32_t dimensions_count) {
+                                            uint32_t dimensions_count,
+                                            bool copy) {
   return AddOperand(dimensions_data,
                     dimensions_count,
                     ANEURALNETWORKS_TENSOR_INT32,
@@ -213,12 +231,14 @@ uint32_t Converter::AddInt32ConstantOperand(int32_t* values,
                     nullptr,
                     0,
                     0,
-                    values);
+                    values,
+                    copy);
 }
 
 uint32_t Converter::AddFloat32ConstantOperand(float* values,
                                               int32_t* dimensions_data,
-                                              uint32_t dimensions_count) {
+                                              uint32_t dimensions_count,
+                                              bool copy) {
   return AddOperand(dimensions_data,
                     dimensions_count,
                     ANEURALNETWORKS_TENSOR_FLOAT32,
@@ -226,7 +246,38 @@ uint32_t Converter::AddFloat32ConstantOperand(float* values,
                     nullptr,
                     0,
                     0,
-                    values);
+                    values,
+                    copy);
+}
+
+uint32_t Converter::AddInt32ConstantOperand(
+    const std::vector<int32_t>& values) {
+  return AddInt32ConstantOperand(
+      const_cast<int32_t*>(values.data()), values.size(), true);
+}
+
+uint32_t Converter::AddFloat32ConstantOperand(
+    const std::vector<float>& values) {
+  return AddFloat32ConstantOperand(
+      const_cast<float*>(values.data()), values.size(), true);
+}
+
+uint32_t Converter::AddQuant8ConstantOperand(int8_t* values,
+                                             uint32_t num_values,
+                                             float* quant_scales,
+                                             uint32_t quant_scale_count,
+                                             uint32_t quant_channel_dim,
+                                             bool copy) {
+  std::vector<int32_t> dimensions({static_cast<int32_t>(num_values)});
+  return AddOperand(&dimensions[0],
+                    dimensions.size(),
+                    ANEURALNETWORKS_TENSOR_QUANT8_SYMM_PER_CHANNEL,
+                    quant_scales,
+                    nullptr,
+                    quant_scale_count,
+                    quant_channel_dim,
+                    values,
+                    copy);
 }
 
 uint32_t Converter::AddQuant8ConstantOperand(int8_t* values,
@@ -234,7 +285,8 @@ uint32_t Converter::AddQuant8ConstantOperand(int8_t* values,
                                              uint32_t dimensions_count,
                                              float* quant_scales,
                                              uint32_t quant_scale_count,
-                                             uint32_t quant_channel_dim) {
+                                             uint32_t quant_channel_dim,
+                                             bool copy) {
   return AddOperand(dimensions_data,
                     dimensions_count,
                     ANEURALNETWORKS_TENSOR_QUANT8_SYMM_PER_CHANNEL,
@@ -242,14 +294,45 @@ uint32_t Converter::AddQuant8ConstantOperand(int8_t* values,
                     nullptr,
                     quant_scale_count,
                     quant_channel_dim,
-                    values);
+                    values,
+                    copy);
+}
+
+uint32_t Converter::AddQuant8ConstantOperand(const std::vector<int8_t>& values,
+                                             float* quant_scales,
+                                             uint32_t quant_scale_count,
+                                             uint32_t quant_channel_dim) {
+  return AddQuant8ConstantOperand(const_cast<int8_t*>(values.data()),
+                                  values.size(),
+                                  quant_scales,
+                                  quant_scale_count,
+                                  quant_channel_dim,
+                                  true);
+}
+
+uint32_t Converter::AddQuant8ConstantOperand(uint8_t* values,
+                                             uint32_t num_values,
+                                             float quant_scale,
+                                             int32_t zero_point,
+                                             bool copy) {
+  std::vector<int32_t> dimensions({static_cast<int32_t>(num_values)});
+  return AddOperand(&dimensions[0],
+                    dimensions.size(),
+                    ANEURALNETWORKS_TENSOR_QUANT8_ASYMM,
+                    &quant_scale,
+                    &zero_point,
+                    1,
+                    0,
+                    values,
+                    copy);
 }
 
 uint32_t Converter::AddQuant8ConstantOperand(uint8_t* values,
                                              int32_t* dimensions_data,
                                              uint32_t dimensions_count,
                                              float quant_scale,
-                                             int32_t zero_point) {
+                                             int32_t zero_point,
+                                             bool copy) {
   return AddOperand(dimensions_data,
                     dimensions_count,
                     ANEURALNETWORKS_TENSOR_QUANT8_ASYMM,
@@ -257,13 +340,41 @@ uint32_t Converter::AddQuant8ConstantOperand(uint8_t* values,
                     &zero_point,
                     1,
                     0,
-                    values);
+                    values,
+                    copy);
+}
+
+uint32_t Converter::AddQuant8ConstantOperand(const std::vector<uint8_t>& values,
+                                             float quant_scale,
+                                             int32_t zero_point) {
+  return AddQuant8ConstantOperand(const_cast<uint8_t*>(values.data()),
+                                  values.size(),
+                                  quant_scale,
+                                  zero_point,
+                                  true);
+}
+
+uint32_t Converter::AddQuant32ConstantOperand(int32_t* values,
+                                              uint32_t num_values,
+                                              float quant_scale,
+                                              bool copy) {
+  std::vector<int32_t> dimensions({static_cast<int32_t>(num_values)});
+  return AddOperand(&dimensions[0],
+                    dimensions.size(),
+                    ANEURALNETWORKS_TENSOR_INT32,
+                    &quant_scale,
+                    nullptr,
+                    1,
+                    0,
+                    values,
+                    copy);
 }
 
 uint32_t Converter::AddQuant32ConstantOperand(int32_t* values,
                                               int32_t* dimensions_data,
                                               uint32_t dimensions_count,
-                                              float quant_scale) {
+                                              float quant_scale,
+                                              bool copy) {
   return AddOperand(dimensions_data,
                     dimensions_count,
                     ANEURALNETWORKS_TENSOR_INT32,
@@ -271,7 +382,14 @@ uint32_t Converter::AddQuant32ConstantOperand(int32_t* values,
                     nullptr,
                     1,
                     0,
-                    values);
+                    values,
+                    copy);
+}
+
+uint32_t Converter::AddQuant32ConstantOperand(
+    const std::vector<int32_t>& values, float quant_scale) {
+  return AddQuant32ConstantOperand(
+      const_cast<int32_t*>(values.data()), values.size(), quant_scale, true);
 }
 
 uint32_t Converter::AddFloat32VariableOperand(int32_t* dimensions_data,
@@ -311,19 +429,20 @@ uint32_t Converter::ConvertOperand(core::Operand* operand,
       if (is_constant) {
         index = AddFloat32ConstantOperand(reinterpret_cast<float*>(buffer),
                                           &dimensions[0],
-                                          dimensions.size());
+                                          dimensions.size(),
+                                          false);
       } else {
         index = AddFloat32VariableOperand(&dimensions[0], dimensions.size());
       }
     } break;
     case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER: {
       if (is_constant) {
-        index =
-            AddQuant8ConstantOperand(reinterpret_cast<uint8_t*>(buffer),
-                                     &dimensions[0],
-                                     dimensions.size(),
-                                     type.asymm_per_layer_params.scale,
-                                     type.asymm_per_layer_params.zero_point);
+        index = AddQuant8ConstantOperand(reinterpret_cast<uint8_t*>(buffer),
+                                         &dimensions[0],
+                                         dimensions.size(),
+                                         type.asymm_per_layer_params.scale,
+                                         type.asymm_per_layer_params.zero_point,
+                                         false);
       } else {
         index =
             AddQuant8VariableOperand(&dimensions[0],
@@ -334,13 +453,13 @@ uint32_t Converter::ConvertOperand(core::Operand* operand,
     } break;
     case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL: {
       NNADAPTER_CHECK(is_constant);
-      index =
-          AddQuant8ConstantOperand(reinterpret_cast<int8_t*>(buffer),
-                                   &dimensions[0],
-                                   dimensions.size(),
-                                   type.symm_per_channel_params.scales,
-                                   type.symm_per_channel_params.scale_count,
-                                   type.symm_per_channel_params.channel_dim);
+      index = AddQuant8ConstantOperand(reinterpret_cast<int8_t*>(buffer),
+                                       &dimensions[0],
+                                       dimensions.size(),
+                                       type.symm_per_channel_params.scales,
+                                       type.symm_per_channel_params.scale_count,
+                                       type.symm_per_channel_params.channel_dim,
+                                       false);
     } break;
     case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER: {
       // Only for bias
@@ -353,9 +472,10 @@ uint32_t Converter::ConvertOperand(core::Operand* operand,
     case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL: {
       // Only for bias
       NNADAPTER_CHECK(is_constant);
-      index = AddInt32ConstantOperand(reinterpret_cast<int32_t*>(buffer),
-                                      &dimensions[0],
-                                      dimensions.size());
+      index = AddQuant32ConstantOperand(reinterpret_cast<int32_t*>(buffer),
+                                        &dimensions[0],
+                                        dimensions.size(),
+                                        0.0f);
     } break;
     default:
       NNADAPTER_LOG(FATAL)

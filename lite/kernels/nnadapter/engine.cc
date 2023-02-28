@@ -15,6 +15,7 @@
 #include "lite/kernels/nnadapter/engine.h"
 #include <sys/time.h>
 #include <time.h>
+#include <functional>
 #include <utility>
 #include "lite/core/op_registry.h"
 #include "lite/kernels/nnadapter/converter/converter.h"
@@ -53,17 +54,27 @@ std::string GenerateModelCacheToken(
   return MD5(os.str());
 }
 
-void* AccessModelInput(void* memory, NNAdapterOperandType* type) {
+void* AccessModelInput(void* memory,
+                       NNAdapterOperandType* type,
+                       void* device_buffer) {
   CHECK(memory);
   CHECK(type);
   auto tensor = static_cast<Tensor*>(memory);
-  // Fill the dimensions and get the host buffer address of model inputs
+  // Fill the dimensions and get the host/device buffer address of model inputs
   ConvertDDimToNNDimensions(
       tensor->dims(), type->dimensions.data, &type->dimensions.count);
+  auto target = tensor->target();
+  if (device_buffer != nullptr) {
+    *static_cast<bool*>(device_buffer) = target != TARGET(kHost) &&
+                                         target != TARGET(kARM) &&
+                                         target != TARGET(kX86);
+  }
   return tensor->raw_data();
 }
 
-void* AccessModelOutput(void* memory, NNAdapterOperandType* type) {
+void* AccessModelOutput(void* memory,
+                        NNAdapterOperandType* type,
+                        void* device_buffer) {
   CHECK(memory);
   CHECK(type);
   auto tensor = static_cast<Tensor*>(memory);
@@ -71,23 +82,35 @@ void* AccessModelOutput(void* memory, NNAdapterOperandType* type) {
   auto dimensions =
       ConvertNNDimensionsToDDim(type->dimensions.data, type->dimensions.count);
   tensor->Resize(dimensions);
+  if (device_buffer) {
+    CHECK(device_buffer);
+    size_t size =
+        std::accumulate(type->dimensions.data,
+                        type->dimensions.data + type->dimensions.count,
+                        1,
+                        std::multiplies<int32_t>());
+    std::shared_ptr<Buffer> buffer(
+        new Buffer(device_buffer, TARGET(kNNAdapter), size));
+    tensor->ResetBuffer(buffer, size);
+  } else {
 #define TENSOR_MUTABLE_DATA(ptype, dtype) \
   case PRECISION(ptype):                  \
     tensor->mutable_data<dtype>();        \
     break;
-  switch (precision) {
-    TENSOR_MUTABLE_DATA(kInt8, int8_t)
-    TENSOR_MUTABLE_DATA(kInt32, int32_t)
-    TENSOR_MUTABLE_DATA(kInt64, int64_t)
-    TENSOR_MUTABLE_DATA(kFloat, float)
-    TENSOR_MUTABLE_DATA(kBool, bool)
-    default:
-      LOG(FATAL) << "Failed to mutable data for the precsion type("
-                 << PrecisionToStr(precision) << ") at output@0x"
-                 << string_format("%x", memory) << "!";
-      break;
-  }
+    switch (precision) {
+      TENSOR_MUTABLE_DATA(kInt8, int8_t)
+      TENSOR_MUTABLE_DATA(kInt32, int32_t)
+      TENSOR_MUTABLE_DATA(kInt64, int64_t)
+      TENSOR_MUTABLE_DATA(kFloat, float)
+      TENSOR_MUTABLE_DATA(kBool, bool)
+      default:
+        LOG(FATAL) << "Failed to mutable data for the precsion type("
+                   << PrecisionToStr(precision) << ") at output@0x"
+                   << string_format("%x", memory) << "!";
+        break;
+    }
 #undef TENSOR_MUTABLE_DATA
+  }
   return tensor->raw_data();
 }
 
@@ -294,7 +317,11 @@ Engine::Engine(KernelContext* ctx,
   VLOG(3) << "NNAdapter context_properties: " << context_properties;
   // Create a context with multiple devices
   NNAdapterContext_create_invoke(
-      devices_.data(), devices_.size(), context_properties.c_str(), &context_);
+      devices_.data(),
+      devices_.size(),
+      context_properties.c_str(),
+      ctx->As<NNAdapterContext>().NNAdapterContextCallback(exec_scope_),
+      &context_);
   // Get the model cache dir from the scope
   model_cache_dir_ =
       ctx_->As<NNAdapterContext>().NNAdapterModelCacheDir(exec_scope_);

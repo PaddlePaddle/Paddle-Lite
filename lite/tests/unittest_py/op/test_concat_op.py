@@ -72,7 +72,7 @@ class TestConcatOp(AutoScanTest):
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(device_names=[
-            "kunlunxin_xtcl", "cambricon_mlu", "nvidia_tensorrt"
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
         ])
 
     def is_program_valid(self,
@@ -194,6 +194,15 @@ class TestConcatOp(AutoScanTest):
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'AxisTensor input' or 'in_shape_size == 1' or 'axis == 0'."
         )
+
+        def _teller3(program_config, predictor_config):
+            if "intel_openvino" in self.get_nnadapter_device_name():
+                if "axis_tensor_data" in program_config.inputs.keys():
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Intel OpenVINO does not support 'AxisTensor input'.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

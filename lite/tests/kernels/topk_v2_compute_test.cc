@@ -96,7 +96,7 @@ class TopkV2ComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("top_k_v2");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
@@ -117,6 +117,8 @@ void test_topk_v2(Place place, float abs_error) {
   for (auto x_shape :
        std::vector<std::vector<int64_t>>{{2, 3, 4, 5}, {3, 4, 5}, {4, 5}}) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+    for (int axis : {-1}) {
+#elif defined(LITE_WITH_XPU)
     for (int axis : {-1}) {
 #else
     for (int axis : {-1, -2, 0}) {
@@ -153,6 +155,8 @@ TEST(Topk, precision) {
 #endif
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
 #else
   return;
 #endif

@@ -23,8 +23,8 @@ namespace kernels {
 namespace xpu {
 
 void YoloBoxCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto input_dims = param.X->dims();
   std::vector<int> anchors = param.anchors;
   CHECK_LE(anchors.size(), 6UL);
@@ -34,33 +34,27 @@ void YoloBoxCompute::Run() {
   const int box_num = param.Boxes->dims()[1];
   const int an_num = anchors.size() / 2;
   int downsample_ratio = param.downsample_ratio;
-  int input_size = downsample_ratio * h;
   int class_num = param.class_num;
   float scale_x_y = param.scale_x_y;
   float bias = -0.5 * (scale_x_y - 1.);
+  CHECK_EQ(box_num, an_num * h * w);
 
-  int r = xdnn::yolo_box(ctx.GetRawContext(),
-                         param.X->data<float>(),
-                         param.ImgSize->data<int>(),
-                         param.conf_thresh,
-                         anchors[0],
-                         anchors[1],
-                         anchors[2],
-                         anchors[3],
-                         anchors[4],
-                         anchors[5],
-                         n,
-                         h,
-                         w,
-                         an_num,
-                         class_num,
-                         box_num,
-                         input_size,
-                         param.Boxes->mutable_data<float>(TARGET(kXPU)),
-                         param.Scores->mutable_data<float>(TARGET(kXPU)),
-                         scale_x_y,
-                         bias,
-                         false);
+  int r = xdnn::yolo_box<float>(ctx.GetRawContext(),
+                                param.X->data<float>(),
+                                param.ImgSize->data<int>(),
+                                param.Boxes->mutable_data<float>(TARGET(kXPU)),
+                                param.Scores->mutable_data<float>(TARGET(kXPU)),
+                                n,
+                                h,
+                                w,
+                                anchors,
+                                an_num,
+                                class_num,
+                                param.conf_thresh,
+                                downsample_ratio,
+                                scale_x_y,
+                                bias,
+                                false);
   CHECK_EQ(r, 0);
 }
 

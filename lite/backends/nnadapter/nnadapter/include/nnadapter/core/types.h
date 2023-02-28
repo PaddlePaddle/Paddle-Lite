@@ -38,7 +38,9 @@ typedef struct Operand {
 typedef struct Argument {
   int index;
   void* memory;
-  void* (*access)(void* memory, NNAdapterOperandType* type);
+  void* (*access)(void* memory,
+                  NNAdapterOperandType* type,
+                  void* device_buffer);
 } Argument;
 
 typedef struct Operation {

@@ -26,7 +26,7 @@ namespace xpu {
 
 void XPUBiGRUCompute::PrepareBiasForRun(bool forward) {
   auto& bias_guard_ = forward ? fw_bias_guard_ : bw_bias_guard_;
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   auto* mul_bias = forward ? param.fw_mul_b : param.bw_mul_b;
   auto* gru_bias = forward ? param.fw_gru_b : param.bw_gru_b;
   if ((mul_bias == nullptr) && (gru_bias == nullptr)) {
@@ -55,18 +55,19 @@ void XPUBiGRUCompute::PrepareBiasForRun(bool forward) {
 void XPUBiGRUCompute::PrepareMulWeightForRun(bool forward) {
   auto& mul_quant_weight_ =
       forward ? fw_mul_quant_weight_ : bw_mul_quant_weight_;
-  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  auto& param = this->template Param<param_t>();
   auto* weight = forward ? param.fw_mul_w : param.bw_mul_w;
   auto weight_ptr = weight->data<float>();
   auto weight_dims = weight->dims();
   mul_quant_weight_ =
       TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int16_t>(
-          weight_ptr, weight_dims, true);
+          weight_ptr, weight_dims, true, ctx.GetRawContext()->max_ptr_size());
 }
 
 void XPUBiGRUCompute::PrepareGRUWeightForRun(bool forward) {
-  auto& ctx = this->ctx_->As<XPUContext>();
-  int max_ptr_size = xdnn::get_max_ptr_size(ctx.GetRawContext());
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
   auto& weight_s1_abs_max_ =
       forward ? fw_gru_weight_s1_abs_max_ : bw_gru_weight_s1_abs_max_;
   auto& weight_s2_abs_max_ =
@@ -76,7 +77,7 @@ void XPUBiGRUCompute::PrepareGRUWeightForRun(bool forward) {
   auto& quant_weight_guard_ =
       forward ? fw_gru_quant_weight_guard_ : bw_gru_quant_weight_guard_;
   //
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   auto* weight = forward ? param.fw_gru_w : param.bw_gru_w;
   auto weight_ptr = weight->data<float>();
   auto weight_dims = weight->dims();
@@ -125,8 +126,8 @@ void XPUBiGRUCompute::PrepareGRUWeightForRun(bool forward) {
 }
 
 void XPUBiGRUCompute::PrepareForRun() {
-  auto& ctx = this->ctx_->As<XPUContext>();
-  int max_ptr_size = xdnn::get_max_ptr_size(ctx.GetRawContext());
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
   input_max_guard_ =
       TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
   mul_output_max_guard_ =
@@ -139,8 +140,8 @@ void XPUBiGRUCompute::PrepareForRun() {
 }
 
 void XPUBiGRUCompute::MulRun(bool forward) {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   auto& origin_x = *param.input;
   auto& origin_y = forward ? *param.fw_mul_w : *param.bw_mul_w;
@@ -198,8 +199,8 @@ void XPUBiGRUCompute::MulRun(bool forward) {
 }
 
 void XPUBiGRUCompute::GRURun(bool forward) {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   bool origin_mode =
       forward ? param.fw_gru_origin_mode : param.bw_gru_origin_mode;
@@ -257,8 +258,8 @@ void XPUBiGRUCompute::GRURun(bool forward) {
 }
 
 void XPUBiGRUCompute::BiGRURun() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
 
   int fw_gru_frame_size = param.fw_output->dims()[1];
   int bw_gru_frame_size = param.bw_output->dims()[1];
@@ -328,8 +329,8 @@ void XPUBiGRUCompute::BiGRURun() {
 }
 
 void XPUBiGRUCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   int r =
       xdnn::findmax<float>(ctx.GetRawContext(),
                            param.input->data<float>(),

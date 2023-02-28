@@ -46,7 +46,7 @@ class PowComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("pow");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
@@ -82,11 +82,18 @@ TEST(Pow, precision) {
   abs_error = 1e-1;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-1;
 #else
   return;
 #endif
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
+  abs_error = 3e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else

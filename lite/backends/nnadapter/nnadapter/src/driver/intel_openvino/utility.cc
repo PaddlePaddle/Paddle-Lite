@@ -20,6 +20,14 @@
 namespace nnadapter {
 namespace intel_openvino {
 
+void InitializeDeviceConfig(
+    const std::string& device,
+    std::shared_ptr<ov::Core> core,
+    std::shared_ptr<std::map<std::string, ov::AnyMap>> config) {
+  NNADAPTER_VLOG(5) << "Initialize Openvino device config.";
+  core->set_property(device, config->at(device));
+}
+
 PadType ConvertToOVPadType(const NNAdapterAutoPadCode& auto_pad_code) {
   switch (auto_pad_code) {
     case NNADAPTER_AUTO_PAD_VALID:
@@ -31,6 +39,52 @@ PadType ConvertToOVPadType(const NNAdapterAutoPadCode& auto_pad_code) {
     default:
       return PadType::NOTSET;
   }
+}
+
+Shape ConvertToOVShape(const NNAdapterOperandDimensionType& dimensions) {
+  std::vector<size_t> ov_shape;
+  int count = dimensions.count;
+  auto data = dimensions.data;
+  for (int i = 0; i < count; i++) {
+    NNADAPTER_CHECK_NE(data[i], NNADAPTER_UNKNOWN);
+    ov_shape.emplace_back(data[i]);
+  }
+  return Shape(ov_shape);
+}
+
+ov::PartialShape ConvertDynamicDimensions(
+    NNAdapterOperandDimensionType* dimensions) {
+  ov::PartialShape partial_shape;
+  int count = dimensions->count;
+  int dynamic_count = dimensions->dynamic_count;
+  auto& dynamic_data = dimensions->dynamic_data;
+  for (int i = 0; i < count; i++) {
+    int min_shape = dynamic_data[0][i];
+    int max_shape = dynamic_data[0][i];
+    bool shape_joined = false;
+    for (int j = 0; j < dynamic_count; j++) {
+      // Number -1 has highest priority.
+      int shape = dynamic_data[j][i];
+      if (shape == -1) {
+        partial_shape.push_back(ov::Dimension());
+        shape_joined = true;
+        break;
+      }
+      if (shape < min_shape) {
+        min_shape = shape;
+      }
+      if (shape > max_shape) {
+        max_shape = shape;
+      }
+    }
+    if (shape_joined) continue;
+    if (min_shape == max_shape) {
+      partial_shape.push_back(ov::Dimension(min_shape));
+    } else {
+      partial_shape.push_back(ov::Dimension(min_shape, max_shape));
+    }
+  }
+  return partial_shape;
 }
 
 ElementType ConvertToOVElementType(
@@ -73,6 +127,24 @@ ElementType ConvertToOVElementType(
           << ") to OpenVINO element type !";
   }
   return ov::element::f32;
+}
+
+PadMode ConvertPadModeCodeToOVPadMode(int pad_mode_code) {
+  switch (pad_mode_code) {
+    case NNADAPTER_PAD_MODE_CONSTANT:
+      return PadMode::CONSTANT;
+    case NNADAPTER_PAD_MODE_REFLECT:
+      return PadMode::REFLECT;
+    case NNADAPTER_PAD_MODE_EDGE:
+    case NNADAPTER_PAD_MODE_REPLICATE:
+      return PadMode::EDGE;
+    default:
+      NNADAPTER_LOG(FATAL)
+          << "Failed to convert the NNAdapter operand pad mode code("
+          << pad_mode_code << ") to pad mode !";
+      break;
+  }
+  return PadMode::CONSTANT;
 }
 
 template <>

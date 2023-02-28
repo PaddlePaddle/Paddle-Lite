@@ -26,9 +26,9 @@ class NaiveSoftmaxKernel : public KernelBase {
  public:
   virtual ~NaiveSoftmaxKernel() {}
 
-  int Run(
-      core::Operation* operation,
-      std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map) override;
+  int Run(core::Operation* operation,
+          std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map,
+          cudaStream_t stream = nullptr) override;
 };
 
 }  // namespace host

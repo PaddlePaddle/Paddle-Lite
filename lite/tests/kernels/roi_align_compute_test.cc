@@ -274,7 +274,7 @@ class RoiAlignComputeTester : public arena::TestCase {
 
   void RunBaseline(Scope* scope) override { Compute<float>(scope); }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("roi_align");
 
     op_desc->SetInput("X", {x_});
@@ -374,6 +374,8 @@ TEST(RoiAlign, precision) {
 #else
   return;
 #endif
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
 #elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #else

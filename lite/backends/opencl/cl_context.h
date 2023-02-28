@@ -75,7 +75,7 @@ class CLContext {
 
   std::set<cl::NDRange, CompareByRange> DefaultLocalWorkSize(
       const cl::NDRange &global_work_size,
-      register size_t max_work_size,
+      size_t max_work_size,
       size_t tune_type = 0,
       const int &divitor = 2,
       const bool &tune_reverse = false,

@@ -24,65 +24,71 @@ namespace operators {
 bool SliceOp::CheckShape() const {
   CHECK(!(param_.X == nullptr && param_.XTensorList == nullptr));
   CHECK(!(param_.Out == nullptr && param_.OutTensorList == nullptr));
-  CHECK_LT(param_.X->dims().size(), 7u)
-      << "The rank of input X should be less than 7";
+  if (param_.X) {
+    CHECK_LT(param_.X->dims().size(), 7u)
+        << "The rank of input X should be less than 7";
+  }
   return true;
 }
 
 bool SliceOp::InferShapeImpl() const {
   // TODO(Superjomn) Enable data sharing.
-  auto in_dims = param_.X->dims();
-  auto out_dims = in_dims;
-  // CHECK_EQ(param_.starts.size(), param_.ends.size())
-  //    << "for slice op starts and ends must be equal";
-  int dim_value, start, end;
-  auto axes = param_.axes;
-  auto starts = param_.starts;
-  auto ends = param_.ends;
-  auto decrease_axis = param_.decrease_axis;
-  for (size_t i = 0; i < axes.size(); ++i) {
-    CHECK_LT(param_.axes[i], in_dims.size()) << "The index of dimension in "
-                                                "axes must be less than the "
-                                                "size of input shape.";
-    if (param_.infer_flags.size() > i && param_.infer_flags[i] == -1) {
-      out_dims[axes[i]] = -1;
-    } else {
-      // infer out_dim shape
-      dim_value = out_dims[axes[i]];
-      if (dim_value > 0) {
-        start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
-        end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
-        start = (std::max)(start, 0);
-        end = (std::max)(end, 0);
-        end = (std::min)(end, dim_value);
-        out_dims[axes[i]] = end - start;
+  if (param_.XTensorList) {
+    return true;
+  } else if (param_.X) {
+    auto in_dims = param_.X->dims();
+    auto out_dims = in_dims;
+    int dim_value, start, end;
+    auto axes = param_.axes;
+    auto starts = param_.starts;
+    auto ends = param_.ends;
+    auto decrease_axis = param_.decrease_axis;
+    for (size_t i = 0; i < axes.size(); ++i) {
+      CHECK_LT(param_.axes[i], in_dims.size()) << "The index of dimension in "
+                                                  "axes must be less than the "
+                                                  "size of input shape.";
+      if (param_.infer_flags.size() > i && param_.infer_flags[i] == -1) {
+        out_dims[axes[i]] = -1;
+      } else {
+        // infer out_dim shape
+        dim_value = out_dims[axes[i]];
+        if (dim_value > 0) {
+          start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
+          end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
+          start = (std::max)(start, 0);
+          end = (std::max)(end, 0);
+          end = (std::min)(end, dim_value);
+          out_dims[axes[i]] = end - start;
+        }
       }
     }
-  }
-  // generate new shape
-  if (decrease_axis.size() > 0) {
-    std::vector<int64_t> new_out_shape;
-    for (size_t i = 0; i < decrease_axis.size(); ++i) {
-      if (param_.infer_flags[i] != -1) {
-        CHECK_EQ(out_dims[decrease_axis[i]], 1) << "decrease dim should be 1";
+    // generate new shape
+    if (decrease_axis.size() > 0) {
+      std::vector<int64_t> new_out_shape;
+      for (size_t i = 0; i < decrease_axis.size(); ++i) {
+        if (param_.infer_flags[i] != -1) {
+          CHECK_EQ(out_dims[decrease_axis[i]], 1) << "decrease dim should be 1";
+        }
+        out_dims[decrease_axis[i]] = 0;
       }
-      out_dims[decrease_axis[i]] = 0;
-    }
-    for (size_t i = 0; i < out_dims.size(); ++i) {
-      if (out_dims[i] != 0) {
-        new_out_shape.push_back(out_dims[i]);
+      for (size_t i = 0; i < out_dims.size(); ++i) {
+        if (out_dims[i] != 0) {
+          new_out_shape.push_back(out_dims[i]);
+        }
       }
+      if (new_out_shape.size() == 0) {
+        new_out_shape.push_back(1);
+      }
+      DDim new_dims;
+      new_dims.ConstructFrom(new_out_shape);
+      out_dims = new_dims;
     }
-    if (new_out_shape.size() == 0) {
-      new_out_shape.push_back(1);
+    param_.Out->Resize(out_dims);
+    if (axes[0] != 0) {
+      param_.Out->set_lod(param_.X->lod());
     }
-    DDim new_dims;
-    new_dims.ConstructFrom(new_out_shape);
-    out_dims = new_dims;
-  }
-  param_.Out->Resize(out_dims);
-  if (axes[0] != 0) {
-    param_.Out->set_lod(param_.X->lod());
+  } else {
+    LOG(FATAL) << "x or x_array must be set.";
   }
   return true;
 }

@@ -38,44 +38,6 @@ TEST(timer, real_latency) {
   LOG(INFO) << "LapTimes().Avg() = " << timer.LapTimes().Avg();
 }
 
-#ifdef LITE_WITH_CUDA
-TEST(gpu_timer, real_latency) {
-  DeviceTimer<TargetType::kCUDA> timer;
-  KernelContext ctx;
-  cudaStream_t exec_stream;
-  cudaStreamCreate(&exec_stream);
-  (&ctx.As<CUDAContext>())->SetExecStream(exec_stream);
-
-  timer.Start(&ctx);
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  timer.Stop(&ctx);
-
-  (&timer)->Start(&ctx);
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
-  timer.Stop(&ctx);
-
-  LOG(INFO) << "LapTimes().Avg() = " << timer.LapTimes().Avg();
-}
-
-TEST(profiler, real_latency) {
-  KernelContext ctx;
-  cudaStream_t exec_stream;
-  cudaStreamCreate(&exec_stream);
-  (&ctx.As<CUDAContext>())->SetExecStream(exec_stream);
-
-  Profiler profiler("name");
-  profile::OpCharacter ch;
-  ch.target = TargetType::kCUDA;
-  ch.op_type = "operator/1";
-  ch.kernel_name = "kernel/1";
-  int idx = profiler.NewTimer(ch);
-  profiler.StartTiming(Type::kDispatch, idx, &ctx);
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  profiler.StopTiming(Type::kDispatch, idx, &ctx);
-  std::cout << profiler.Summary(Type::kDispatch);
-}
-#endif
-
 }  // namespace profile
 }  // namespace lite
 }  // namespace paddle

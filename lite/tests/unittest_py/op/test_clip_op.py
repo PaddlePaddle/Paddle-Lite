@@ -55,12 +55,18 @@ class TestClipOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(
-            device_names=["cambricon_mlu", "nvidia_tensorrt"])
+        self.enable_devices_on_nnadapter(device_names=[
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino",
+            "kunlunxin_xtcl"
+        ])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        if "kunlunxin_xtcl" in self.get_nnadapter_device_name():
+            in_num = len(program_config.inputs)
+            if in_num == 3:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -135,6 +141,16 @@ class TestClipOp(AutoScanTest):
             teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support '3 input tensors' or 'in_shape_size == 1' on nvidia_tensorrt."
         )
+
+        def teller2(program_config, predictor_config):
+            if "intel_openvino" in self.get_nnadapter_device_name():
+                in_num = len(program_config.inputs)
+                if in_num == 3:
+                    return True
+
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support '3 input tensors' on intel_openvino.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

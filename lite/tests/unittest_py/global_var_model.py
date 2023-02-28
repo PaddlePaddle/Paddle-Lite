@@ -25,10 +25,12 @@ statics_data = {
         "ARM": set(),
         "OpenCL": set(),
         "Metal": set(),
+        "XPU": set(),
         "NNAdapter": {
             "kunlunxin_xtcl": set(),
             "cambricon_mlu": set(),
-            "nvidia_tensorrt": set()
+            "nvidia_tensorrt": set(),
+            "intel_openvino": set()
         }
     },
     "success_ops": {
@@ -37,10 +39,12 @@ statics_data = {
         "ARM": set(),
         "OpenCL": set(),
         "Metal": set(),
+        "XPU": set(),
         "NNAdapter": {
             "kunlunxin_xtcl": set(),
             "cambricon_mlu": set(),
-            "nvidia_tensorrt": set()
+            "nvidia_tensorrt": set(),
+            "intel_openvino": set()
         }
     },
     "out_diff_ops": {
@@ -49,10 +53,12 @@ statics_data = {
         "ARM": set(),
         "OpenCL": set(),
         "Metal": set(),
+        "XPU": set(),
         "NNAdapter": {
             "kunlunxin_xtcl": set(),
             "cambricon_mlu": set(),
-            "nvidia_tensorrt": set()
+            "nvidia_tensorrt": set(),
+            "intel_openvino": set()
         }
     },
     "lite_not_supported_ops": {
@@ -61,10 +67,12 @@ statics_data = {
         "ARM": set(),
         "OpenCL": set(),
         "Metal": set(),
+        "XPU": set(),
         "NNAdapter": {
             "kunlunxin_xtcl": set(),
             "cambricon_mlu": set(),
-            "nvidia_tensorrt": set()
+            "nvidia_tensorrt": set(),
+            "intel_openvino": set()
         }
     },
     "paddle_not_supported_ops": {
@@ -73,10 +81,12 @@ statics_data = {
         "ARM": set(),
         "OpenCL": set(),
         "Metal": set(),
+        "XPU": set(),
         "NNAdapter": {
             "kunlunxin_xtcl": set(),
             "cambricon_mlu": set(),
-            "nvidia_tensorrt": set()
+            "nvidia_tensorrt": set(),
+            "intel_openvino": set()
         }
     },
 }

@@ -30,7 +30,12 @@ bool XPUFcOp::CheckShape() const {
   const auto w_dims = param_.w->dims();
   CHECK_EQ_OR_FALSE(w_dims.size(), 2UL);
 
+  int64_t w_dims_0 = w_dims[0];
   int64_t w_dims_1 = w_dims[1];
+  if (param_.transpose_w) {
+    w_dims_1 = w_dims[0];
+    w_dims_0 = w_dims[1];
+  }
   if (param_.bias) {
     const auto bias_dims = param_.bias->dims();
     if (bias_dims.size() == 2) {
@@ -40,11 +45,14 @@ bool XPUFcOp::CheckShape() const {
       CHECK_EQ_OR_FALSE(bias_dims[0], w_dims_1);
     }
   }
+  if (param_.in_num_col_dims == -1) {
+    param_.in_num_col_dims += input_dims.size();
+  }
 
   CHECK_GT_OR_FALSE(input_dims.size(),
                     static_cast<size_t>(param_.in_num_col_dims));
   param_.in_mat_dims = input_dims.Flatten2D(param_.in_num_col_dims);
-  CHECK_EQ_OR_FALSE(param_.in_mat_dims[1], w_dims[0]);
+  CHECK_EQ_OR_FALSE(param_.in_mat_dims[1], w_dims_0);
 
   return true;
 }
@@ -54,6 +62,9 @@ bool XPUFcOp::InferShapeImpl() const {
   const auto& w_dims = param_.w->dims();
   int in_num_col_dims = param_.in_num_col_dims;
   int64_t w_dims_1 = w_dims[1];
+  if (param_.transpose_w) {
+    w_dims_1 = w_dims[0];
+  }
 
   // Set output dims
   std::vector<DDim::value_type> output_dims(in_num_col_dims + 1);
@@ -88,7 +99,11 @@ bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.act_param = op_desc.GetAttr<float>("act_param");
   param_.has_bias = op_desc.GetAttr<bool>("has_bias");
   param_.in_num_col_dims = op_desc.GetAttr<int>("in_num_col_dims");
-
+  param_.transpose_x = op_desc.GetAttr<bool>("transpose_x");
+  param_.transpose_w = op_desc.GetAttr<bool>("transpose_w");
+  if (op_desc.HasAttr("alpha")) {
+    param_.alpha = op_desc.GetAttr<float>("alpha");
+  }
   // optional params
   std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
   if (std::find(input_arg_names.begin(), input_arg_names.end(), "Bias") !=
@@ -101,23 +116,33 @@ bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       }
     }
   }
+
   if (op_desc.HasAttr("has_input_max") &&
       op_desc.GetAttr<bool>("has_input_max")) {
     CHECK(scope->FindVar(op_desc.Input("InputMax").front()));
     param_.input_max =
         scope->FindVar(op_desc.Input("InputMax").front())->GetMutable<Tensor>();
   }
-  if (op_desc.HasAttr("precision")) {
-    param_.precision = op_desc.GetAttr<std::string>("precision");
-  }
+
   if (op_desc.HasAttr("enable_int8") && op_desc.GetAttr<bool>("enable_int8")) {
-    CHECK(param_.precision == "int8") << "enable_int8 precison:"
-                                      << param_.precision;
+    param_.enable_int8 = op_desc.GetAttr<bool>("enable_int8");
+    // Equivalent use Input0_scale,Filter0_scale
     param_.quant_input_max =
-        127 * op_desc.GetAttr<std::vector<float>>("X0_scale")[0];
-    param_.quant_w_max =
-        127 * op_desc.GetAttr<std::vector<float>>("Y0_scale")[0];
+        op_desc.GetAttr<std::vector<float>>("Input0_scale")[0];
+    param_.weight_max = op_desc.GetAttr<std::vector<float>>("Filter0_scale");
+    param_.quant_output_max =
+        op_desc.GetAttr<std::vector<float>>("Output0_scale")[0];
+    param_.per_channel = op_desc.GetAttr<bool>("per_channel");
   }
+
+  if (op_desc.HasAttr("enable_int16") &&
+      op_desc.GetAttr<bool>("enable_int16")) {
+    param_.enable_int16 = true;
+    param_.quant_input_max =
+        op_desc.GetAttr<std::vector<float>>("Input0_scale")[0];
+    param_.weight_max = op_desc.GetAttr<std::vector<float>>("Filter0_scale");
+  }
+
   return true;
 }
 

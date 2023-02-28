@@ -162,6 +162,9 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
             y_dims.size() == 1
                 ? DDim(std::vector<DDim::value_type>{1, 4, 1, y_dims[0]})
                 : DDim(std::vector<DDim::value_type>{1, 4, k_y, n_});
+      } else if (x_dims.size() == 2 && y_dims.size() == 1) {
+        y_ext_dims =
+            DDim(std::vector<DDim::value_type>{ROUND_UP(y_dims[0], 4)});
       }
 
       auto y_cpu_t = std::unique_ptr<Tensor>(new Tensor);
@@ -181,6 +184,20 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
                 ? DDim(std::vector<DDim::value_type>{1, 1, 1, y_dims[0]})
                 : DDim(std::vector<DDim::value_type>{1, 1, k_y, n_});
         convert(y_cpu, y_buffer_data, tmp_dim);
+      } else if (x_dims.size() == 2 && y_dims.size() == 1) {
+        batch_ = x_dims.count(0, x_dims.size() - y_dims.size());
+        DDim tmp_dim =
+            y_dims.size() == 1
+                ? DDim(std::vector<DDim::value_type>{1, 1, 1, y_dims[0]})
+                : DDim(std::vector<DDim::value_type>{1, 1, k_y, n_});
+        float* image_fp32 = static_cast<float*>(y_buffer_data);
+        half_t* image_fp16 = static_cast<half_t*>(y_buffer_data);
+        bool fp16_support =
+            CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+        for (int i = 0; i < tmp_dim.production(); i++) {
+          fp16_support ? image_fp16[i] = Float2Half(y_cpu[i]) : image_fp32[i] =
+                                                                    y_cpu[i];
+        }
       } else {
         VLOG(4) << "y_ext_dims: " << y_ext_dims;
         RearrangeByBlk4x4(y_cpu, y_buffer_data, k_y, n_);
@@ -268,16 +285,20 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
           k_ = 1;
           kernel_func_name_ = "matmul_transpose_x";
           kernel_file_name_ = "image/matmul_xtranspose_kernel.cl";
-        } else if (x_dims.size() > 2 && y_dims.size() == 1 &&
+        } else if (x_dims.size() >= 2 && y_dims.size() == 1 &&
                    x_dims[x_dims.size() - 1] == y_dims[0]) {
           m_ = 1, n_ = 1;
           k_ = y_dims[0];
           N = x_dims.size() == 4 ? x_dims[0] : 1;
-          C = x_dims.size() == 4 ? x_dims[1] : x_dims[0];
+          C = x_dims.size() == 4 ? x_dims[1]
+                                 : (x_dims.size() == 3 ? x_dims[0] : 1);
           H = x_dims[x_dims.size() - 2], W = x_dims[x_dims.size() - 1];
-          c_blks_ = UP_DIV(x_dims[x_dims.size() - 3], 4);
-          kernel_func_name_ =
-              x_dims.size() == 4 ? "matmul_xdim4_ydim1" : "matmul_xdim3_ydim1";
+          c_blks_ =
+              x_dims.size() == 2 ? 1 : UP_DIV(x_dims[x_dims.size() - 3], 4);
+          kernel_func_name_ = x_dims.size() == 4
+                                  ? "matmul_xdim4_ydim1"
+                                  : (x_dims.size() == 3 ? "matmul_xdim3_ydim1"
+                                                        : "matmul_xdim2_ydim1");
           kernel_file_name_ = "image/matmul_kernel.cl";
         } else if (x_dims.size() > 2 && y_dims.size() == 2) {
           N = x_dims.size() == 4 ? x_dims[0] : 1;
@@ -404,7 +425,10 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     out_img_shape = folder_converter->InitImageDimInfoWith(out_dims);
 
     if (matmul_v2_param_->Y->persistable()) {
-      if (x_dims.size() <= 2 && y_dims.size() <= 2) {
+      if (x_dims.size() == 2 && y_dims.size() == 1) {
+        local_work_size_ = cl::NDRange(1, 1);
+        global_work_size_ = cl::NDRange(UP_DIV(H, 4), c_blks_);
+      } else if (x_dims.size() <= 2 && y_dims.size() <= 2) {
         if (transpose_x_) {
           local_work_size_ = cl::NDRange(32, 4, 1);
           global_work_size_ =
@@ -412,19 +436,20 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
                           local_work_size_[1],
                           UP_DIV(m_, 4));
         } else {
-          local_work_size_ = cl::NDRange(8, 4, 16);
-          if (device_version.find("Adreno(TM) 506") != std::string::npos) {
-            local_work_size_ = cl::NDRange(4, 4, 16);
+          size_t max_work_group_size = 0;
+          kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
+                                           CL_KERNEL_WORK_GROUP_SIZE,
+                                           &max_work_group_size);
+          local_work_size_ = cl::NDRange(
+              std::min(static_cast<int>(max_work_group_size / 64), 8), 4, 16);
+          if (is_mali_ || is_apple_m1_) {
+            local_work_size_ = cl::NDRange(
+                std::min(static_cast<int>(max_work_group_size / 64), 4), 4, 16);
           }
           global_work_size_ =
-              cl::NDRange(m_, local_work_size_[1], UP_DIV(n_, 4));
-          if (is_mali_ || is_apple_m1_) {
-            local_work_size_ = cl::NDRange(4, 4, 16);
-            global_work_size_ =
-                cl::NDRange(ROUND_UP(m_, local_work_size_[0]),
-                            local_work_size_[1],
-                            ROUND_UP(UP_DIV(n_, 4), local_work_size_[2]));
-          }
+              cl::NDRange(ROUND_UP(m_, local_work_size_[0]),
+                          local_work_size_[1],
+                          ROUND_UP(UP_DIV(n_, 4), local_work_size_[2]));
         }
       } else if (x_dims.size() > 2 && y_dims.size() >= 2) {
         local_work_size_ =
@@ -494,7 +519,14 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
       }
       status = kernel.setArg(arg_idx++, m_);
       CL_CHECK_FATAL(status);
-      if (x_dims.size() <= 2 && y_dims.size() <= 2) {
+      if (x_dims.size() == 2 && y_dims.size() == 1) {
+        status = kernel.setArg(arg_idx++, C);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(arg_idx++, H);
+        CL_CHECK_FATAL(status);
+        status = kernel.setArg(arg_idx++, W);
+        CL_CHECK_FATAL(status);
+      } else if (x_dims.size() <= 2 && y_dims.size() <= 2) {
         status = kernel.setArg(arg_idx++, k_blks_);
         CL_CHECK_FATAL(status);
         status = kernel.setArg(arg_idx++, n_blks_);

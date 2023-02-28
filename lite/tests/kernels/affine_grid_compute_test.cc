@@ -130,7 +130,7 @@ class AffineGridComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("affine_grid");
     op_desc->SetInput("Theta", {theta_});
     op_desc->SetAttr("output_shape", output_shape_);

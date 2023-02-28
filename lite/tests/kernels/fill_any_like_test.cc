@@ -76,7 +76,7 @@ class FillAnyLikeComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("fill_any_like");
     op_desc->SetInput("X", {x_});
     op_desc->SetAttr("value", value_);
@@ -117,6 +117,8 @@ TEST(fill_any_like, precision) {
   TestFillAnyLike(place, abs_error, 1.f, -1);
   return;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
 #else
   return;

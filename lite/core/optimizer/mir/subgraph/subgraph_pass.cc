@@ -27,99 +27,27 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-static std::string ReadSubgraphPartitionConfigsFromEnv() {
-  std::string configs;
-  auto path = GetStringFromEnv(SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE);
-  if (!path.empty()) {
-    std::vector<char> buffer;
-    if (ReadFile(path, &buffer, false)) {
-      if (!buffer.empty()) {
-        configs.insert(configs.begin(), buffer.begin(), buffer.end());
-      }
-    } else {
-      LOG(WARNING)
-          << "Missing the subgraph custom partition configuration file "
-          << path;
-    }
-  }
-  return configs;
-}
-
-void NPUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::set<std::string> supported_lists;
-#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
-#include "lite/kernels/npu/bridges/paddle_use_bridges.h"
-#undef USE_SUBGRAPH_BRIDGE
-  auto teller = [&](Node* node) {
-    if (!node->IsStmt()) return false;
-    auto& stmt = node->AsStmt();
-    return supported_lists.count(stmt.op_type()) != 0;
-  };
-  auto subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
-  SubgraphFuser fuser(graph.get(),
-                      teller,
-                      1 /* min_subgraph_size */,
-                      subgraph_partition_configs);
-  fuser();
-}
-
-void BMSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::set<std::string> supported_lists;
-#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
-#include "lite/kernels/bm/bridges/paddle_use_bridges.h"
-#undef USE_SUBGRAPH_BRIDGE
-  auto teller = [&](Node* node) {
-    if (!node->IsStmt()) return false;
-    auto& stmt = node->AsStmt();
-    return supported_lists.count(stmt.op_type()) != 0;
-  };
-  auto subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
-  SubgraphFuser fuser(graph.get(),
-                      teller,
-                      1 /* min_subgraph_size */,
-                      subgraph_partition_configs);
-  fuser();
-}
-
-void MLUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::set<std::string> supported_lists;
-#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
-#include "lite/kernels/mlu/bridges/paddle_use_bridges.h"
-#undef USE_SUBGRAPH_BRIDGE
-  auto teller = [&](Node* node) {
-    if (!node->IsStmt()) return false;
-    auto& stmt = node->AsStmt();
-    return supported_lists.count(stmt.op_type()) != 0;
-  };
-  auto subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
-  SubgraphFuser fuser(graph.get(),
-                      teller,
-                      1 /* min_subgraph_size */,
-                      subgraph_partition_configs);
-  fuser();
-}
-
 bool NNAdapterSubgraphOpTeller(const std::string& device_name,
                                SSAGraph* graph,
                                Node* node,
                                Scope* scope) {
-  auto op_info = node->AsStmt().op_info();
-  auto op_type = op_info->Type();
-  // Add extra op filter for each device
-  if (device_name == "nvidia_tensorrt") {
-    if (op_type == "depthwise_conv2d" || op_type == "conv2d") {
-      auto filter_name = op_info->Input("Filter").front();
-      auto filter_tensor = scope->FindMutableTensor(filter_name);
-      auto filter_dims = filter_tensor->dims();
-      auto filter_width = filter_dims[3];
-      auto filter_height = filter_dims[2];
-      if (filter_width != filter_height) return false;
-      auto output_channel_size = filter_dims[0];
-      auto groups = op_info->GetAttr<int>("groups");
-      int multiplier = output_channel_size / groups;
-      if (groups != 1 && multiplier != 1) return false;
-    }
-  }
+  // auto op_info = node->AsStmt().op_info();
+  // auto op_type = op_info->Type();
+  // // Add extra op filter for each device
+  // if (device_name == "nvidia_tensorrt") {
+  //   if (op_type == "depthwise_conv2d" || op_type == "conv2d") {
+  //     auto filter_name = op_info->Input("Filter").front();
+  //     auto filter_tensor = scope->FindMutableTensor(filter_name);
+  //     auto filter_dims = filter_tensor->dims();
+  //     auto filter_width = filter_dims[3];
+  //     auto filter_height = filter_dims[2];
+  //     if (filter_width != filter_height) return false;
+  //     auto output_channel_size = filter_dims[0];
+  //     auto groups = op_info->GetAttr<int>("groups");
+  //     int multiplier = output_channel_size / groups;
+  //     if (groups != 1 && multiplier != 1) return false;
+  //   }
+  // }
   return true;
 }
 
@@ -163,7 +91,8 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 #endif
   // Read the config path from environment and load the partition configurations
   if (subgraph_partition_configs.empty()) {
-    subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
+    subgraph_partition_configs = GetConfigsFromEnv(
+        SUBGRAPH_PARTITION_CONFIG_FILE, SUBGRAPH_PARTITION_CONFIG_BUFFER);
   }
   std::set<std::string> all_supported_ops;
   std::map<std::string, std::set<std::string>> device_supported_ops;
@@ -217,12 +146,6 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(npu_subgraph_pass, paddle::lite::mir::NPUSubgraphPass)
-    .BindTargets({TARGET(kNPU)});
-REGISTER_MIR_PASS(bm_subgraph_pass, paddle::lite::mir::BMSubgraphPass)
-    .BindTargets({TARGET(kBM)});
-REGISTER_MIR_PASS(mlu_subgraph_pass, paddle::lite::mir::MLUSubgraphPass)
-    .BindTargets({TARGET(kMLU)});
 REGISTER_MIR_PASS(nnadapter_subgraph_pass,
                   paddle::lite::mir::NNAdapterSubgraphPass)
     .BindTargets({TARGET(kNNAdapter)});

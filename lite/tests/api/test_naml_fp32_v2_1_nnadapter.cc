@@ -28,8 +28,10 @@ namespace paddle {
 namespace lite {
 
 TEST(naml, test_naml_fp32_v2_1_nnadapter) {
+  FLAGS_warmup = 1;
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
+  std::string nnadapter_subgraph_partition_config_buffer;
   std::vector<paddle::lite_api::Place> valid_places;
   valid_places.push_back(
       lite_api::Place{TARGET(kNNAdapter), PRECISION(kFloat)});
@@ -44,6 +46,24 @@ TEST(naml, test_naml_fp32_v2_1_nnadapter) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  nnadapter_device_names.emplace_back("intel_openvino");
+// Error:ERROR: A single op (36a900000030) requires 0xe02000 bytes of TCM, which
+// is greater than the TCM size of 0x400000!
+// #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+//   nnadapter_device_names.emplace_back("qualcomm_qnn");
+//   FLAGS_warmup = 0;
+//   // Not support int64 datatype
+//   nnadapter_subgraph_partition_config_buffer =
+//       "concat::concat_0.tmp_0\n"
+//       "reshape2:concat_0.tmp_0\n"
+//       "concat::concat_1.tmp_0\n"
+//       "reshape2:concat_1.tmp_0\n"
+//       "concat::concat_2.tmp_0\n"
+//       "reshape2:concat_2.tmp_0\n"
+//       "concat::concat_3.tmp_0\n"
+//       "reshape2:concat_3.tmp_0\n"
+//       "lookup_table_v2";
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -55,6 +75,8 @@ TEST(naml, test_naml_fp32_v2_1_nnadapter) {
   cxx_config.set_valid_places(valid_places);
   cxx_config.set_nnadapter_device_names(nnadapter_device_names);
   cxx_config.set_nnadapter_context_properties(nnadapter_context_properties);
+  cxx_config.set_nnadapter_subgraph_partition_config_buffer(
+      nnadapter_subgraph_partition_config_buffer);
   predictor = lite_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
                                 paddle::lite_api::LiteModelType::kNaiveBuffer);
@@ -86,7 +108,6 @@ TEST(naml, test_naml_fp32_v2_1_nnadapter) {
                    predictor,
                    "output");
 
-  FLAGS_warmup = 1;
   for (int i = 0; i < FLAGS_warmup; i++) {
     FillModelInput(input_data_set[i], input_data_set_shapes[i], predictor);
     predictor->Run();

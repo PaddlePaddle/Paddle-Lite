@@ -17,6 +17,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 #include "lite/kernels/arm/conv_depthwise.h"
+#include "lite/kernels/arm/conv_depthwise_common.h"
 #include "lite/kernels/arm/conv_direct.h"
 #include "lite/kernels/arm/conv_gemmlike.h"
 #include "lite/kernels/arm/conv_winograd.h"
@@ -93,11 +94,12 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run DepthwiseConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 2 && sh == 2 &&
-             no_dilation && pads_equal && ks_equal && !ctx.has_dot()) {
+             no_dilation && pads_equal && ks_equal && !ctx.has_dot() &&
+             !ctx.has_sve2()) {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run DirectConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
-             pads_equal && ks_equal && !ctx.has_dot()) {
+             pads_equal && ks_equal && !ctx.has_dot() && !ctx.has_sve2()) {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kFloat)>;
     // VLOG(3) << "Run WinogradConv Int8";
   } else {
@@ -118,11 +120,12 @@ void ConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run DepthwiseConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 2 && sh == 2 &&
-             no_dilation && pads_equal && ks_equal && !ctx.has_dot()) {
+             no_dilation && pads_equal && ks_equal && !ctx.has_dot() &&
+             !ctx.has_sve2()) {
     impl_ = new DirectConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run DirectConv Int8";
   } else if (param.groups == 1 && kw == 3 && sw == 1 && no_dilation &&
-             pads_equal && ks_equal && !ctx.has_dot()) {
+             pads_equal && ks_equal && !ctx.has_dot() && !ctx.has_sve2()) {
     impl_ = new WinogradConv<PRECISION(kInt8), PRECISION(kInt8)>;
     // VLOG(3) << "Run WinogradConv Int8";
   } else {
@@ -146,9 +149,14 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   bool pads_less = ((paddings[1] < 2) && (paddings[3] < 2));
   bool conv_3x3_wino = (ic <= 8) || (oc <= 8);
   bool stride_less = (sw == 1) || (sw == 2);
-  if (param.groups == ic && ic == oc && no_dilation && stride_less &&
-      ((flag_dw_5x5 && ks_equal) || (flag_dw_3x3 && kps_equal && pads_less))) {
-    impl_ = new DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>;
+  if (param.groups == ic && ic == oc) {
+    if (no_dilation && stride_less &&
+        ((flag_dw_5x5 && ks_equal) ||
+         (flag_dw_3x3 && kps_equal && pads_less))) {
+      impl_ = new DepthwiseConv<PRECISION(kFP16), PRECISION(kFP16)>;
+    } else {
+      impl_ = new DepthwiseConvCommon<PRECISION(kFP16), PRECISION(kFP16)>;
+    }
   } else if (param.groups == 1 && kw == 3 && sw == 2 && no_dilation &&
              chin * chout < 4 * hin * win && ks_equal) {
     impl_ = new DirectConv<PRECISION(kFP16), PRECISION(kFP16)>;

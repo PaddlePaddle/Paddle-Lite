@@ -18,20 +18,39 @@
 namespace nnadapter {
 namespace nvidia_tensorrt {
 
+Tensor::~Tensor() {
+  if (own_cuda_buffer_ && cuda_buffer_) {
+    cudaFree(cuda_buffer_);
+  }
+}
+
+void Tensor::SetData(void* cuda_buffer,
+                     const std::vector<int32_t>& dims,
+                     nvinfer1::DataType data_type) {
+  NNADAPTER_CHECK(cuda_buffer);
+  NNADAPTER_CHECK(!dims.empty());
+  cuda_buffer_ = cuda_buffer;
+  dims_ = dims;
+  data_type_ = data_type;
+  cuda_buffer_length_ = Length() * GetNVTypeSize(data_type_);
+  own_cuda_buffer_ = false;
+}
+
 void* Tensor::Data(bool return_cuda_buffer) {
   uint32_t dst_length = Length() * GetNVTypeSize(data_type_);
   if (return_cuda_buffer) {
-    if (host_buffer_length_ > 0 && cuda_buffer_length_ == 0) {
-      // Host tensor should not return cuda buffer
-      return nullptr;
-    }
+    NNADAPTER_CHECK(!(host_buffer_length_ > 0 && cuda_buffer_length_ == 0))
+        << "Host tensor should not return cuda buffer";
     if (dst_length > cuda_buffer_length_) {
-      void* data{nullptr};
-      NNADAPTER_CHECK_EQ(cudaMalloc(&data, dst_length), cudaSuccess);
-      cuda_buffer_.reset(data);
+      NNADAPTER_CHECK(own_cuda_buffer_)
+          << "Should not reset external device buffer.";
+      if (cuda_buffer_) {
+        cudaFree(cuda_buffer_);
+      }
+      NNADAPTER_CHECK_EQ(cudaMalloc(&cuda_buffer_, dst_length), cudaSuccess);
       cuda_buffer_length_ = dst_length;
     }
-    return cuda_buffer_.get();
+    return cuda_buffer_;
   } else {
     if (dst_length > host_buffer_length_) {
       void* data = malloc(dst_length);
@@ -41,7 +60,7 @@ void* Tensor::Data(bool return_cuda_buffer) {
     if (cuda_buffer_length_ > 0) {
       NNADAPTER_CHECK_GE(host_buffer_length_, cuda_buffer_length_);
       NNADAPTER_CHECK_EQ(cudaMemcpy(host_buffer_.get(),
-                                    cuda_buffer_.get(),
+                                    cuda_buffer_,
                                     cuda_buffer_length_,
                                     cudaMemcpyDeviceToHost),
                          cudaSuccess);
@@ -50,8 +69,17 @@ void* Tensor::Data(bool return_cuda_buffer) {
   }
 }
 
+uint32_t Tensor::Length() {
+  if (dims_.empty()) return 0;
+  uint32_t length = 1;
+  for (auto i : dims_) {
+    length *= static_cast<uint32_t>(i);
+  }
+  return length;
+}
+
 void TrtLogger::log(nvinfer1::ILogger::Severity severity,
-                    const char* msg) noexcept {
+                    const char* msg) TRT_NOEXCEPT {
   switch (severity) {
     case Severity::kVERBOSE:
       NNADAPTER_VLOG(3) << "[Tensorrt]" << msg;

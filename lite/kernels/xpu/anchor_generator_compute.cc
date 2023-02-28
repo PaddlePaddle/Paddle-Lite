@@ -33,8 +33,8 @@ void AnchorGeneratorCompute::PrepareForRun() {
 }
 
 void AnchorGeneratorCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto* anchors = param.Anchors;
   auto* variances = param.Variances;
   auto* input = param.Input;

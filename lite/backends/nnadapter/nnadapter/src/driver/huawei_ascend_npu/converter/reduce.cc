@@ -42,6 +42,7 @@ int ConvertReduce(Converter* converter, core::Operation* operation) {
   } break;
     CONVERT_REDUCE(REDUCE_MEAN, ReduceMean);
     CONVERT_REDUCE(REDUCE_SUM, ReduceSum);
+    CONVERT_REDUCE(REDUCE_MAX, ReduceMax);
 #undef CONVERT_REDUCE
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported reduce operation type "

@@ -97,7 +97,7 @@ std::shared_ptr<Tensor> Converter::ConvertOperand(
     auto parameter_node = std::make_shared<default_opset::Parameter>(
         ConvertToOVElementType(operand->type.precision),
         ConvertToOVShape(dimensions));
-    parameter_nodes_->push_back(parameter_node);
+    parameter_node_map_->insert({operand, parameter_node});
     auto output_tensor = std::make_shared<Tensor>(parameter_node->output(0));
     UpdateTensorMap(operand, output_tensor);
     return output_tensor;
@@ -105,6 +105,41 @@ std::shared_ptr<Tensor> Converter::ConvertOperand(
   NNADAPTER_LOG(FATAL) << "Only constant and model input operands can be "
                           "converted to OpenVINO Tensor!";
   return nullptr;
+}
+
+// Filter's layer is [cout, cin , k_w, k_h],
+// Divide cout with groups,
+// final filter is [groups, cout / groups, cin, k_w, k_h].
+std::shared_ptr<Operator> Converter::GetGroupConvFilterShape(
+    std::shared_ptr<Tensor> filter, const int groups) {
+  auto axis_index = std::make_shared<default_opset::Constant>(
+      GetElementType<int64_t>(), Shape({}), std::vector<int64_t>({0}));
+  auto filter_cout_index = std::make_shared<default_opset::Constant>(
+      GetElementType<int64_t>(), Shape({1}), std::vector<int64_t>({0}));
+  auto filter_ihw_index = std::make_shared<default_opset::Constant>(
+      GetElementType<int64_t>(), Shape({3}), std::vector<int64_t>({1, 2, 3}));
+  auto shape_op = std::make_shared<default_opset::ShapeOf>(*filter);
+  auto filter_cout_tensor =
+      std::make_shared<default_opset::Gather>(shape_op->output(0),
+                                              filter_cout_index->output(0),
+                                              axis_index->output(0))
+          ->output(0);
+  auto filter_ihw_tensor =
+      std::make_shared<default_opset::Gather>(shape_op->output(0),
+                                              filter_ihw_index->output(0),
+                                              axis_index->output(0))
+          ->output(0);
+  auto groups_tensor =
+      std::make_shared<default_opset::Constant>(
+          GetElementType<int64_t>(), Shape({1}), std::vector<int64_t>({groups}))
+          ->output(0);
+  auto group_num_tensor =
+      std::make_shared<default_opset::Divide>(filter_cout_tensor, groups_tensor)
+          ->output(0);
+  auto target_filter_shape = std::make_shared<default_opset::Concat>(
+      TensorVector{groups_tensor, group_num_tensor, filter_ihw_tensor}, 0);
+  return std::make_shared<default_opset::Reshape>(
+      *filter, target_filter_shape->output(0), false);
 }
 
 }  // namespace intel_openvino

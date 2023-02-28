@@ -28,6 +28,8 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
   if (has_x_scale) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
+  auto input_tensor = scope->FindTensor(x_name);
+  auto input_precision = input_tensor->precision();
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
 
   // Scale and bias
@@ -37,8 +39,8 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
   if (!bias_after_scale) {
     bias *= scale;
   }
-  auto has_scale = fabs(scale - 1.0f) > 1e-6f;
-  auto has_bias = fabs(bias) > 1e-6f;
+  auto has_scale = fabs(scale - 1.0f) > 1e-5f;
+  auto has_bias = fabs(bias) > 1e-5f;
 
   // Output
   auto out_name = op->Output("Out").front();
@@ -49,9 +51,7 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
   }
 
   if (!has_scale && !has_bias) {
-    auto output_operand = converter->AddOutputOperand(out_name);
-    converter->AddOperation(
-        NNADAPTER_ASSIGN, {input_operand}, {output_operand});
+    converter->UpdateOperandMap(out_name, input_operand);
   } else if (has_scale) {
     // Scale operand
     NNAdapterOperand* scale_operand = nullptr;
@@ -66,7 +66,19 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
           true,
           {fabsf(scale)});
     } else {
-      scale_operand = converter->AddConstantOperand(scale);
+      if (input_precision == PrecisionType::kFloat) {
+        scale_operand = converter->AddConstantOperand(scale);
+      } else if (input_precision == PrecisionType::kInt32) {
+        scale_operand =
+            converter->AddConstantOperand(static_cast<int32_t>(scale));
+      } else if (input_precision == PrecisionType::kInt64) {
+        scale_operand =
+            converter->AddConstantOperand(static_cast<int64_t>(scale));
+      } else {
+        LOG(FATAL) << "Unsupported a fluid data type("
+                   << static_cast<int32_t>(input_precision)
+                   << ") for scale operand";
+      }
     }
     // Fuse code operand
     int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
@@ -91,7 +103,19 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
             true,
             {fabsf(bias)});
       } else {
-        bias_operand = converter->AddConstantOperand(bias);
+        if (input_precision == PrecisionType::kFloat) {
+          bias_operand = converter->AddConstantOperand(bias);
+        } else if (input_precision == PrecisionType::kInt32) {
+          bias_operand =
+              converter->AddConstantOperand(static_cast<int32_t>(bias));
+        } else if (input_precision == PrecisionType::kInt64) {
+          bias_operand =
+              converter->AddConstantOperand(static_cast<int64_t>(bias));
+        } else {
+          LOG(FATAL) << "Unsupported a fluid data type("
+                     << static_cast<int32_t>(input_precision)
+                     << ") for bias operand";
+        }
       }
       // Fuse code operand
       auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
@@ -117,7 +141,19 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
           true,
           {fabsf(bias)});
     } else {
-      bias_operand = converter->AddConstantOperand(bias);
+      if (input_precision == PrecisionType::kFloat) {
+        bias_operand = converter->AddConstantOperand(bias);
+      } else if (input_precision == PrecisionType::kInt32) {
+        bias_operand =
+            converter->AddConstantOperand(static_cast<int32_t>(bias));
+      } else if (input_precision == PrecisionType::kInt64) {
+        bias_operand =
+            converter->AddConstantOperand(static_cast<int64_t>(bias));
+      } else {
+        LOG(FATAL) << "Unsupported a fluid data type("
+                   << static_cast<int32_t>(input_precision)
+                   << ") for bias operand";
+      }
     }
     // Fuse code operand
     int32_t fuse_code_value = NNADAPTER_FUSED_NONE;

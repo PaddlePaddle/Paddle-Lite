@@ -21,17 +21,11 @@
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 
-#ifdef LITE_WITH_CUDA
-#include "lite/backends/cuda/target_wrapper.h"
-#endif
 #ifdef LITE_WITH_XPU
 #include <functional>
 #include <mutex>  // NOLINT
+#include "lite/backends/xpu/runtime_option.h"
 #include "lite/backends/xpu/target_wrapper.h"
-#endif
-
-#ifdef LITE_WITH_MLU
-#include "lite/backends/mlu/target_wrapper.h"
 #endif
 
 #ifdef LITE_WITH_OPENCL
@@ -159,20 +153,6 @@ void Tensor::CopyFromCpu(const T *src_data) {
   if (type == TargetType::kHost || type == TargetType::kARM) {
     lite::TargetWrapperHost::MemcpySync(
         data, src_data, num * sizeof(T), lite::IoDirection::HtoH);
-  } else if (type == TargetType::kCUDA) {
-#ifdef LITE_WITH_CUDA
-    lite::TargetWrapperCuda::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::HtoD);
-#else
-    LOG(FATAL) << "Please compile the lib with CUDA.";
-#endif
-  } else if (type == TargetType::kMLU) {
-#ifdef LITE_WITH_MLU
-    lite::TargetWrapperMlu::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::HtoD);
-#else
-    LOG(FATAL) << "Please compile the lib with MLU.";
-#endif
   } else if (type == TargetType::kMetal) {
 #ifdef LITE_WITH_METAL
     lite::TargetWrapperMetal::MemcpySync(
@@ -181,7 +161,7 @@ void Tensor::CopyFromCpu(const T *src_data) {
     LOG(FATAL) << "Please compile the lib with METAL.";
 #endif
   } else {
-    LOG(FATAL) << "The CopyFromCpu interface just support kHost, kARM, kCUDA";
+    LOG(FATAL) << "The CopyFromCpu interface just support kHost, kARM";
   }
 }
 template <typename T>
@@ -196,20 +176,6 @@ void Tensor::CopyToCpu(T *data) const {
   if (type == TargetType::kHost || type == TargetType::kARM) {
     lite::TargetWrapperHost::MemcpySync(
         data, src_data, num * sizeof(T), lite::IoDirection::HtoH);
-  } else if (type == TargetType::kCUDA) {
-#ifdef LITE_WITH_CUDA
-    lite::TargetWrapperCuda::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::DtoH);
-#else
-    LOG(FATAL) << "Please compile the lib with CUDA.";
-#endif
-  } else if (type == TargetType::kMLU) {
-#ifdef LITE_WITH_MLU
-    lite::TargetWrapperMlu::MemcpySync(
-        data, src_data, num * sizeof(T), lite::IoDirection::DtoH);
-#else
-    LOG(FATAL) << "Please compile the lib with MLU.";
-#endif
   } else if (type == TargetType::kMetal) {
 #ifdef LITE_WITH_METAL
     lite::TargetWrapperMetal::MemcpySync(
@@ -218,30 +184,21 @@ void Tensor::CopyToCpu(T *data) const {
     LOG(FATAL) << "Please compile the lib with METAL.";
 #endif
   } else {
-    LOG(FATAL) << "The CopyToCpu interface just support kHost, kARM, kCUDA";
+    LOG(FATAL) << "The CopyToCpu interface just support kHost, kARM";
   }
 }
 
 template void Tensor::CopyFromCpu<int, TargetType::kHost>(const int *);
+template void Tensor::CopyFromCpu<int64_t, TargetType::kHost>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kHost>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kHost>(const int8_t *);
 template void Tensor::CopyFromCpu<uint8_t, TargetType::kHost>(const uint8_t *);
 
 template void Tensor::CopyFromCpu<int, TargetType::kARM>(const int *);
+template void Tensor::CopyFromCpu<int64_t, TargetType::kARM>(const int64_t *);
 template void Tensor::CopyFromCpu<float, TargetType::kARM>(const float *);
 template void Tensor::CopyFromCpu<int8_t, TargetType::kARM>(const int8_t *);
 template void Tensor::CopyFromCpu<uint8_t, TargetType::kARM>(const uint8_t *);
-
-template void Tensor::CopyFromCpu<int, TargetType::kCUDA>(const int *);
-template void Tensor::CopyFromCpu<int64_t, TargetType::kCUDA>(const int64_t *);
-template void Tensor::CopyFromCpu<float, TargetType::kCUDA>(const float *);
-template void Tensor::CopyFromCpu<uint8_t, TargetType::kCUDA>(const uint8_t *);
-template void Tensor::CopyFromCpu<int8_t, TargetType::kCUDA>(const int8_t *);
-
-template void Tensor::CopyFromCpu<int, TargetType::kMLU>(const int *);
-template void Tensor::CopyFromCpu<int64_t, TargetType::kMLU>(const int64_t *);
-template void Tensor::CopyFromCpu<float, TargetType::kMLU>(const float *);
-template void Tensor::CopyFromCpu<int8_t, TargetType::kMLU>(const int8_t *);
 
 template void Tensor::CopyToCpu(float *) const;
 template void Tensor::CopyToCpu(int *) const;
@@ -309,6 +266,11 @@ ConfigBase::ConfigBase(PowerMode mode, int threads) {
   lite::DeviceInfo::Global().SetRunMode(mode, threads);
   mode_ = lite::DeviceInfo::Global().mode();
   threads_ = lite::DeviceInfo::Global().threads();
+#endif
+#ifdef LITE_WITH_XPU
+  std::shared_ptr<void> runtime_option =
+      std::shared_ptr<lite::XPURunTimeOption>(new lite::XPURunTimeOption);
+  target_configs_.emplace(TARGET(kXPU), std::move(runtime_option));
 #endif
 }
 
@@ -417,6 +379,13 @@ void ConfigBase::add_discarded_pass(const std::string pass) {
   return;
 }
 
+// Set external custom allocator
+void ConfigBase::set_custom_allocator(TargetType target_type,
+                                      CustomAllocator custom_allocator) {
+  // TODO(shentanyue): TargetType will be supported in the future.
+  lite::Allocator::Global().SetCustomAllocator(custom_allocator);
+}
+
 #ifdef LITE_WITH_X86
 void ConfigBase::set_x86_math_num_threads(int threads) {
   x86_math_num_threads_ = threads;
@@ -493,32 +462,6 @@ const CxxModelBuffer &CxxConfig::get_model_buffer() const {
   return *model_buffer_;
 }
 
-#ifdef LITE_WITH_MLU
-void CxxConfig::set_mlu_core_version(lite_api::MLUCoreVersion core_version) {
-  mlu_core_version_ = core_version;
-}
-void CxxConfig::set_mlu_core_number(int core_number) {
-  mlu_core_number_ = core_number;
-}
-void CxxConfig::set_mlu_input_layout(DataLayoutType layout) {
-  mlu_input_layout_ = layout;
-}
-void CxxConfig::set_mlu_firstconv_param(const std::vector<float> &mean,
-                                        const std::vector<float> &std) {
-  mlu_first_conv_mean_ = mean;
-  mlu_first_conv_std_ = std;
-}
-lite_api::MLUCoreVersion CxxConfig::mlu_core_version() const {
-  return mlu_core_version_;
-}
-int CxxConfig::mlu_core_number() const { return mlu_core_number_; }
-DataLayoutType CxxConfig::mlu_input_layout() const { return mlu_input_layout_; }
-std::pair<std::vector<float>, std::vector<float>>
-CxxConfig::mlu_firstconv_param() const {
-  return std::make_pair(mlu_first_conv_mean_, mlu_first_conv_std_);
-}
-#endif
-
 // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
 void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
 #ifdef LITE_WITH_XPU
@@ -548,10 +491,14 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
       CHECK(lite::TargetWrapperXPU::shared_l3_size >= l3_size)
           << "Enlarge XPU Shared L3 Cache Is Not Allowed.";
     }
-    lite::TargetWrapperXPU::local_l3_size = 0;
+    reinterpret_cast<lite::XPURunTimeOption *>(
+        target_configs()[TARGET(kXPU)].get())
+        ->xpu_local_l3_size = 0;
     lite::TargetWrapperXPU::need_l3_mutex = true;
   } else {
-    lite::TargetWrapperXPU::local_l3_size = l3_size;
+    reinterpret_cast<lite::XPURunTimeOption *>(
+        target_configs()[TARGET(kXPU)].get())
+        ->xpu_local_l3_size = l3_size;
     lite::TargetWrapperXPU::need_l3_mutex = false;
   }
 #else
@@ -561,9 +508,23 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 #endif
 }
 
-void set_xpu_gm_workspace_method(size_t gm_size) {
+void CxxConfig::set_xpu_l3_cache_autotune(bool autotune) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::local_gm_size = gm_size;
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_local_l3_autotune = autotune;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_l3_cache_autotune' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_gm_workspace_method(size_t gm_size) {
+#ifdef LITE_WITH_XPU
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_local_gm_size = gm_size;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_gm_workspace_method' is ignored, please "
@@ -573,7 +534,9 @@ void set_xpu_gm_workspace_method(size_t gm_size) {
 
 void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::SetDev(dev_no);
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_dev_num = dev_no;
 #else
   LOG(WARNING) << "The invoking of the function 'set_xpu_dev_per_thread' is "
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
@@ -582,7 +545,9 @@ void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 
 void CxxConfig::enable_xpu_multi_stream() {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::enable_xpu_multi_stream();
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_enable_multi_stream = true;
 #else
   LOG(WARNING)
       << "The invoking of the function 'enable_xpu_stream_per_thread' is "
@@ -604,8 +569,12 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
 void CxxConfig::set_xpu_multi_encoder_method(const std::string &precision,
                                              bool adaptive_seqlen) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::multi_encoder_precision = precision;
-  lite::TargetWrapperXPU::multi_encoder_adaptive_seqlen = adaptive_seqlen;
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->multi_encoder_precision = precision;
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->multi_encoder_adaptive_seqlen = adaptive_seqlen;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_multi_encoder_method' is "
@@ -613,14 +582,90 @@ void CxxConfig::set_xpu_multi_encoder_method(const std::string &precision,
 #endif
 }
 
+void CxxConfig::set_xpu_local_quant(bool local_quant) {
+#ifdef LITE_WITH_XPU
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->local_quant = local_quant;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_local_quant' is "
+                  "ignored, please rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_compute_precision(const std::string &precision) {
+#ifdef LITE_WITH_XPU
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->compute_precision = precision;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'xpu_compute_precision' is "
+                  "ignored, please rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
 void CxxConfig::set_xpu_conv_autotune(bool autotune,
                                       const std::string &autotune_file) {
 #ifdef LITE_WITH_XPU
-  lite::TargetWrapperXPU::conv_autotune = autotune;
-  lite::TargetWrapperXPU::conv_autotune_file = autotune_file;
+  LOG(WARNING)
+      << "This function "
+         "'set_xpu_conv_autotune' is deprecated, "
+         "if you want to use autotune, please refer to "
+         "http://agroup.baidu.com/share/md/f9233d84df11452488a1fdd4f859647f";
+
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_conv_autotune' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_cluster_num(const int num) {
+#ifdef LITE_WITH_XPU
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_cluster_num = num;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_cluster_num' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_sdnn_num(const int num) {
+#ifdef LITE_WITH_XPU
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_sdnn_num = num;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_sdnn_num' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_dump_tensor_path(const std::string dump_tensor_path) {
+#ifdef LITE_WITH_XPU
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_dump_tensor_path = dump_tensor_path;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_dump_tensor_path' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::set_xpu_dump_log_path(const std::string dump_log_path) {
+#ifdef LITE_WITH_XPU
+  reinterpret_cast<lite::XPURunTimeOption *>(
+      target_configs()[TARGET(kXPU)].get())
+      ->xpu_dump_log_path = dump_log_path;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_dump_log_path' is ignored, please "
                   "rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }
@@ -687,10 +732,22 @@ _SetPreferredInputsForWarmup(int64_t);
 void MobileConfig::set_model_from_file(const std::string &x) {
   lite_model_file_ = x;
 }
+
 void MobileConfig::set_model_from_buffer(const std::string &x) {
   lite_model_file_ = x;
   model_from_memory_ = true;
 }
+
+void MobileConfig::set_model_from_buffer(std::string &&x) {
+  lite_model_file_.assign(std::forward<std::string>(x));
+  model_from_memory_ = true;
+}
+
+void MobileConfig::set_model_from_buffer(const char *buffer, size_t length) {
+  lite_model_file_.assign(buffer, length);
+  model_from_memory_ = true;
+}
+
 void MobileConfig::set_model_buffer(const char *model_buffer,
                                     size_t model_buffer_size,
                                     const char *param_buffer,
@@ -708,6 +765,15 @@ void MobileConfig::SetArmL3CacheSize(L3CacheSetMethod method,
                                      int absolute_val) {
 #ifdef LITE_WITH_ARM
   lite::DeviceInfo::Global().SetArmL3CacheSize(method, absolute_val);
+#endif
+}
+
+// This is the method for check fp16 instruction is valid
+bool MobileConfig::check_fp16_valid() {
+#ifdef LITE_WITH_ARM
+  return lite::DeviceInfo::Global().has_fp16();
+#else
+  return false;
 #endif
 }
 

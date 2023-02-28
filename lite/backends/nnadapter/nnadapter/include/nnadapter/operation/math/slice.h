@@ -28,11 +28,12 @@ static int slice(const T* input_data,
                  int32_t* axes,
                  int32_t* starts,
                  int32_t* ends,
+                 int32_t* steps,
                  T* output_data) {
   std::vector<int32_t> output_shape(input_shape);
   std::vector<int> real_starts(input_shape.size(), 0);
   std::vector<int> real_ends(input_shape.size(), 0);
-  std::vector<int> real_step(input_shape.size(), 0);
+  std::vector<int> real_step(input_shape.size(), 1);
   for (size_t i = 0; i < input_shape.size(); i++) {
     real_ends[i] = input_shape[i];
   }
@@ -41,12 +42,14 @@ static int slice(const T* input_data,
     if (dim_value > 0) {
       int start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
       int end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
+      int step = std::abs(steps[i]);
       start = std::max(start, 0);
       end = std::max(end, 0);
       end = std::min(end, dim_value);
-      output_shape[axes[i]] = end - start;
+      output_shape[axes[i]] = (std::abs(end - start) + step - 1) / step;
       real_starts[axes[i]] = start;
       real_ends[axes[i]] = end;
+      real_step[axes[i]] = step;
     }
   }
   const int length = input_shape.size();
@@ -71,7 +74,7 @@ static int slice(const T* input_data,
     for (size_t j = 0; j < output_shape.size(); j++) {
       int cur_id = index_id / dst_step[j];
       index_id = index_id % dst_step[j];
-      src_id += (cur_id + real_starts[j]) * src_step[j];
+      src_id += (cur_id * real_step[j] + real_starts[j]) * src_step[j];
     }
     output_data[dst_id] = input_data[src_id];
   }

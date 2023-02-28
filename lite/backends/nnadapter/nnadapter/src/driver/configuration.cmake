@@ -15,7 +15,7 @@
 # The configuration of this file applies only to NNAdapter and its driver HALs.
 
 # Enable throwing exception when check failed in logging.cc
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -fasynchronous-unwind-tables -funwind-tables")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os -fvisibility=hidden -fvisibility-inlines-hidden -fexceptions -fasynchronous-unwind-tables -funwind-tables")
 
 # Avoid the export symbols being stripped, which will cause 'undefined reference' errors when HAL is compiled independently.
 string(REPLACE "-Wl,--exclude-libs,ALL" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})

@@ -17,6 +17,9 @@
 
 REGISTER_CONVERTER(ADD, ValidateElementwise, ConvertElementwise)
 REGISTER_CONVERTER(AVERAGE_POOL_2D, ValidatePool2D, ConvertPool2D)
+REGISTER_CONVERTER(BATCH_NORMALIZATION,
+                   ValidateBatchNormalization,
+                   ConvertBatchNormalization)
 REGISTER_CONVERTER(CONCAT, ValidateConcat, ConvertConcat)
 REGISTER_CONVERTER(CONV_2D, ValidateConv2D, ConvertConv2D)
 REGISTER_CONVERTER(CONV_2D_TRANSPOSE,
@@ -27,12 +30,15 @@ REGISTER_CONVERTER(FLATTEN, ValidateFlatten, ConvertFlatten)
 REGISTER_CONVERTER(FULLY_CONNECTED,
                    ValidateFullyConnected,
                    ConvertFullyConnected)
+REGISTER_CONVERTER(LEAKY_RELU, ValidateLeakyRelu, ConvertLeakyRelu)
 REGISTER_CONVERTER(MAT_MUL, ValidateMatmul, ConvertMatmul)
 REGISTER_CONVERTER(MAX_POOL_2D, ValidatePool2D, ConvertPool2D)
 REGISTER_CONVERTER(MUL, ValidateElementwise, ConvertElementwise)
 REGISTER_CONVERTER(RELU, ValidateUnaryActivations, ConvertUnaryActivations)
 REGISTER_CONVERTER(RELU6, ValidateUnaryActivations, ConvertUnaryActivations)
 REGISTER_CONVERTER(RESHAPE, ValidateReshape, ConvertReshape)
+REGISTER_CONVERTER(RESIZE_LINEAR, ValidateResizeLinear, ConvertResizeLinear)
+REGISTER_CONVERTER(RESIZE_NEAREST, ValidateResizeNearest, ConvertResizeNearest)
 REGISTER_CONVERTER(SIGMOID, ValidateUnaryActivations, ConvertUnaryActivations)
 REGISTER_CONVERTER(SOFTMAX, ValidateSoftmax, ConvertSoftmax)
 REGISTER_CONVERTER(SUB, ValidateElementwise, ConvertElementwise)

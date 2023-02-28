@@ -13,9 +13,14 @@
 // limitations under the License.
 
 #include "driver/huawei_ascend_npu/model_client.h"
+
+#if defined(NNADAPTER_WITH_PYTHON)
+#include <pybind11/pybind11.h>
+#endif
 #include <memory>
 #include <sstream>
 #include <string>
+
 #include "driver/huawei_ascend_npu/engine.h"
 #include "driver/huawei_ascend_npu/utility.h"
 #include "utility/logging.h"
@@ -284,6 +289,9 @@ bool AclModelClient::Process(uint32_t input_count,
                              std::vector<NNAdapterOperandType>* output_types,
                              core::Argument* output_arguments,
                              DynamicShapeMode dynamic_shape_mode) {
+#if defined(NNADAPTER_WITH_PYTHON)
+  pybind11::gil_scoped_release no_gil;
+#endif
   if (!model_desc_) {
     NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
     return false;
@@ -322,7 +330,7 @@ bool AclModelClient::Process(uint32_t input_count,
     NNADAPTER_CHECK(arg->memory);
     NNADAPTER_CHECK(arg->access);
     auto type = input_types->at(i);
-    auto host_ptr = arg->access(arg->memory, &type);
+    auto host_ptr = arg->access(arg->memory, &type, nullptr);
     NNADAPTER_CHECK(host_ptr);
     auto length = GetOperandTypeBufferLength(type);
     // Reallocate dataset memory space in dynamic_shape_range mode if the
@@ -425,36 +433,50 @@ bool AclModelClient::Process(uint32_t input_count,
     NNADAPTER_CHECK(arg->memory);
     NNADAPTER_CHECK(arg->access);
     auto type = &output_types->at(i);
-    aclmdlIODims dimensions;
-    ACL_CALL(aclmdlGetCurOutputDims(model_desc_, i, &dimensions));
-    NNADAPTER_CHECK_EQ(dimensions.dimCount, type->dimensions.count);
-    ConvertACLDimsToGEDims(
-        dimensions, type->dimensions.data, &type->dimensions.count);
-    auto host_ptr = arg->access(arg->memory, type);
-    NNADAPTER_CHECK(host_ptr);
-    auto length = GetOperandTypeBufferLength(*type);
-    // Reallocate dataset memory space in dynamic_shape_range mode if the
-    // current buffer length exceeds max_length
     if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_SHAPE_RANGE) {
-      if (length > dynamic_shape_range_initial_buffer_length_) {
-        NNADAPTER_LOG(WARNING) << "Not enough device memory for the " << i
-                               << "th output tensor, expect >= " << length
-                               << " but recevied "
-                               << dynamic_shape_range_initial_buffer_length_;
-        NNADAPTER_LOG(WARNING) << "Reallocate dataset memory space...";
-        CreateModelOutputDataset(true, length);
+      auto output_tensor_desc = aclmdlGetDatasetTensorDesc(output_dataset_, i);
+      auto dim_count = aclGetTensorDescNumDims(output_tensor_desc);
+      NNADAPTER_CHECK_EQ(dim_count, type->dimensions.count);
+      for (size_t j = 0; j < dim_count; j++) {
+        int64_t dim_value = 0;
+        aclGetTensorDescDimV2(output_tensor_desc, j, &dim_value);
+        type->dimensions.data[j] = dim_value;
       }
+      auto host_ptr = arg->access(arg->memory, type, nullptr);
+      NNADAPTER_CHECK(host_ptr);
+      auto length = aclGetTensorDescSize(output_tensor_desc);
+      NNADAPTER_CHECK_LE(length, dynamic_shape_range_initial_buffer_length_)
+          << "Not enough device memory for the " << i
+          << "th output tensor, expect >= " << length << " but recevied "
+          << dynamic_shape_range_initial_buffer_length_
+          << ", please export "
+             "HUAWEI_ASCEND_NPU_INITIAL_BUFFER_LENGTH_OF_DYNAMIC_SHAPE_RANGE="
+          << length << ", and rerun";
+      auto data_buffer = aclmdlGetDatasetBuffer(output_dataset_, i);
+      auto device_ptr = aclGetDataBufferAddr(data_buffer);
+      NNADAPTER_CHECK(device_ptr);
+      ACL_CALL(aclrtMemcpy(
+          host_ptr, length, device_ptr, length, ACL_MEMCPY_DEVICE_TO_HOST));
+    } else {
+      aclmdlIODims dimensions;
+      ACL_CALL(aclmdlGetCurOutputDims(model_desc_, i, &dimensions));
+      NNADAPTER_CHECK_EQ(dimensions.dimCount, type->dimensions.count);
+      ConvertACLDimsToGEDims(
+          dimensions, type->dimensions.data, &type->dimensions.count);
+      auto host_ptr = arg->access(arg->memory, type, nullptr);
+      NNADAPTER_CHECK(host_ptr);
+      auto length = GetOperandTypeBufferLength(*type);
+      auto data_buffer = aclmdlGetDatasetBuffer(output_dataset_, i);
+      auto data_size = aclGetDataBufferSizeV2(data_buffer);
+      NNADAPTER_CHECK_LE(length, data_size)
+          << "Not enough device memory for the " << i
+          << "th output tensor, expect >= " << length << " but recevied "
+          << data_size;
+      auto device_ptr = aclGetDataBufferAddr(data_buffer);
+      NNADAPTER_CHECK(device_ptr);
+      ACL_CALL(aclrtMemcpy(
+          host_ptr, length, device_ptr, length, ACL_MEMCPY_DEVICE_TO_HOST));
     }
-    auto data_buffer = aclmdlGetDatasetBuffer(output_dataset_, i);
-    auto data_size = aclGetDataBufferSizeV2(data_buffer);
-    NNADAPTER_CHECK_LE(length, data_size)
-        << "Not enough device memory for the " << i
-        << "th output tensor, expect >= " << length << " but recevied "
-        << data_size;
-    auto device_ptr = aclGetDataBufferAddr(data_buffer);
-    NNADAPTER_CHECK(device_ptr);
-    ACL_CALL(aclrtMemcpy(
-        host_ptr, length, device_ptr, length, ACL_MEMCPY_DEVICE_TO_HOST));
   }
   NNADAPTER_VLOG(5) << "Process a ACL model success.";
   return true;

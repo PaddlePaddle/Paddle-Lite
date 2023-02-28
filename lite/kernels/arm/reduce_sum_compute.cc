@@ -45,8 +45,9 @@ void ReduceSumCompute<T, Ptype>::Run() {
     if (x_vec.size() >= 5 && x_vec[0] == 1) {
       x_vec.erase(x_vec.begin());
       for (auto& val : dim) val--;
-    } else
+    } else {
       break;
+    }
   }
   auto x_dims = lite::DDim(x_vec);
 
@@ -116,6 +117,8 @@ using reduce_sum_arm_int32 =
     paddle::lite::kernels::arm::ReduceSumCompute<int, PRECISION(kFloat)>;
 using reduce_sum_arm_float =
     paddle::lite::kernels::arm::ReduceSumCompute<float, PRECISION(kFloat)>;
+using reduce_sum_arm_int64 =
+    paddle::lite::kernels::arm::ReduceSumCompute<int64_t, PRECISION(kFloat)>;
 REGISTER_LITE_KERNEL(
     reduce_sum, kARM, kFloat, kNCHW, reduce_sum_arm_int32, def_int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
@@ -125,4 +128,10 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(reduce_sum, kARM, kFloat, kNCHW, reduce_sum_arm_float, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFloat))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    reduce_sum, kARM, kFloat, kNCHW, reduce_sum_arm_int64, def_int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();

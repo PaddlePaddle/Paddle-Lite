@@ -43,7 +43,6 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
   if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
     if (global_pooling) {
       auto axes_tensor = converter->AddConstantTensor(
-          {2},
           std::vector<int64_t>({input_operand->type.dimensions.count - 2,
                                 input_operand->type.dimensions.count - 1}));
       pool2d_op = std::make_shared<default_opset::ReduceMean>(
@@ -61,7 +60,6 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
   } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
     if (global_pooling) {
       auto axes_tensor = converter->AddConstantTensor(
-          {2},
           std::vector<int64_t>({input_operand->type.dimensions.count - 2,
                                 input_operand->type.dimensions.count - 1}));
       pool2d_op = std::make_shared<default_opset::ReduceMax>(

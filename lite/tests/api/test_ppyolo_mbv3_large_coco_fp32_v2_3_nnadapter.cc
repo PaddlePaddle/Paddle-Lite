@@ -48,6 +48,11 @@ TEST(ppyolo_mbv3_large, test_ppyolo_mbv3_large_coco_fp32_v2_3_nnadapter) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  nnadapter_device_names.emplace_back("intel_openvino");
+// TODO(hong19860320) Fix timeout
+// #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+//   nnadapter_device_names.emplace_back("qualcomm_qnn");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

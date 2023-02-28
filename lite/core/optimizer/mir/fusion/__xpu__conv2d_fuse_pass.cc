@@ -379,6 +379,7 @@ class XPUConv2dFuser : public FuseBase {
               << ", size of `conv_filter_channels` is: " << f_dims[0];
           return;
         }
+
       } else {
         for (int i = 0; i < f_dims[0]; ++i) {
           fusion_bias_ptr[i] = 0.0f;
@@ -404,10 +405,12 @@ class XPUConv2dFuser : public FuseBase {
         float* bias_on_host = bias_t->mutable_data<float>();
         float* mean_on_host = mean_t->mutable_data<float>();
         float* var_on_host = var_t->mutable_data<float>();
+        auto eps_on_host =
+            matched.at("bn")->stmt()->op_info()->GetAttr<float>("epsilon");
 
         for (int i = 0; i < mean_len; ++i) {
           scale_on_host[i] =
-              scale_on_host[i] / sqrtf(var_on_host[i] + 0.00001f);
+              scale_on_host[i] / sqrtf(var_on_host[i] + eps_on_host);
         }
         for (int i = 0; i < mean_len; ++i) {
           for (int j = 0; j < filter_stride; ++j) {
@@ -435,6 +438,7 @@ class XPUConv2dFuser : public FuseBase {
                                        {"relu", 1},
                                        {"sigmoid", 2},
                                        {"tanh", 3},
+                                       {"gelu", 4},
                                        {"leaky_relu", 5},
                                        {"hard_swish", 14},
                                        {"hard_sigmoid", 15},
@@ -491,6 +495,77 @@ class XPUConv2dFuser : public FuseBase {
     max_output_tensor->set_persistable(true);
     op_desc.SetOutput("OutputMax", {max_output_name});
 
+    // set conv2d int8 attributes
+    if (matched.at("conv")->stmt()->op_info()->HasAttr("enable_int8") &&
+        matched.at("conv")->stmt()->op_info()->GetAttr<bool>("enable_int8")) {
+      op_desc.SetAttr<bool>("enable_int8", true);
+      auto op_info = matched.at("conv")->stmt()->op_info();
+
+      auto get_scale_name = [&op_info](const std::string& name) {
+        std::string argname;
+        int index;
+        CHECK(op_info->GetInputArgname(name, &argname));
+        CHECK(op_info->GetInputIndex(name, &index));
+        std::string scale_name = argname + to_string(index) + "_scale";
+        return scale_name;
+      };
+
+      op_desc.SetAttr<std::vector<float>>(
+          get_scale_name(input_name),
+          {127 *
+           matched.at("conv")->stmt()->op_info()->GetInputScale(
+               input_name)[0]});
+
+      op_desc.SetAttr<std::vector<float>>(
+          get_scale_name(filter_name),
+          {127 *
+           matched.at("conv")->stmt()->op_info()->GetInputScale(
+               filter_name)[0]});
+
+      if (with_branch_) {
+        std::string branch_name = matched.at("ew_branch_add_in")->arg()->name;
+        op_desc.SetAttr<std::vector<float>>(
+            "Branch0_scale",
+            {127 *
+             matched.at("ew_branch_add")
+                 ->stmt()
+                 ->op_info()
+                 ->GetInputScale(branch_name)[0]});
+      }
+
+      std::string op_name{};
+      if (act_type_ != "linear") {
+        op_name = "act";
+      } else if (with_branch_) {
+        op_name = "ew_branch_add";
+      } else if (with_conv_bias_) {
+        op_name = "ew_bias_add";
+      } else {
+        op_name = "conv";
+      }
+      op_desc.SetAttr<std::vector<float>>(
+          "Output0_scale",
+          {matched.at(op_name)->stmt()->op_info()->GetAttr<float>(
+              "out_threshold")});
+    }
+
+    // set conv2d int16 attributes
+    if (matched.at("conv")->stmt()->op_info()->HasAttr("enable_int16") &&
+        matched.at("conv")->stmt()->op_info()->GetAttr<bool>("enable_int16")) {
+      op_desc.SetAttr<bool>("enable_int16", true);
+      op_desc.SetAttr<std::vector<float>>(
+          "Input0_scale",
+          {((2 << 15) - 1) *
+           matched.at("conv")->stmt()->op_info()->GetInputScale(
+               input_name)[0]});
+
+      op_desc.SetAttr<std::vector<float>>(
+          "Filter0_scale",
+          {((2 << 15) - 1) *
+           matched.at("conv")->stmt()->op_info()->GetInputScale(
+               filter_name)[0]});
+    }
+
     auto conv_op = LiteOpRegistry::Global().Create("__xpu__conv2d");
     auto& valid_places = conv_old->valid_places();
     conv_op->Attach(op_desc, scope);
@@ -531,6 +606,7 @@ class XPUConv2dFusePass : public ProgramPass {
               for (auto act_type : {"relu",
                                     "sigmoid",
                                     "tanh",
+                                    "gelu",
                                     "leaky_relu",
                                     "hard_swish",
                                     "hard_sigmoid",

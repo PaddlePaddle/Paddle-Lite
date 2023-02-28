@@ -186,6 +186,21 @@ void TypeLayoutTransformPass::AddLayoutInst(
     op_desc.SetType(layout_type);
     op_desc.SetInput("Input", {in->AsArg().name});
     op_desc.SetOutput("Out", {layout_output_name});
+    if (inst_node->AsStmt().place().target == TARGET(kOpenCL)) {
+      if (inst_node->AsStmt().op_type() == "io_copy" ||
+          (inst_node->inlinks.size() >= 1 && in->inlinks.size() >= 1 &&
+           in->inlinks.front()->IsStmt() &&
+           in->inlinks.front()->AsStmt().op_type() == "io_copy")) {
+        op_desc.SetAttr("process_type", 2);
+        if (inst_node->AsStmt().op_type() == "io_copy") {
+          auto inst_op = inst_node->AsStmt().mutable_op_info();
+          inst_op->SetAttr("process_type", 2);
+        } else {
+          auto inst_op = in->inlinks.front()->AsStmt().mutable_op_info();
+          inst_op->SetAttr("process_type", 2);
+        }
+      }
+    }
 
     layout_op->Attach(op_desc, inst_node->AsStmt().op()->scope());
     auto kernels = layout_op->CreateKernels(valid_places);
@@ -304,7 +319,6 @@ void OpenCLTypeLayoutTransformPass::Apply(
 REGISTER_MIR_PASS(type_layout_cast_pass,
                   paddle::lite::mir::TypeLayoutTransformPass)
     .BindTargets({TARGET(kAny)})
-    .ExcludeTargets({TARGET(kMLU)})
     .ExcludeTargets({TARGET(kMetal)})
     .BindKernel("layout_once")
     .BindKernel("layout");
@@ -312,6 +326,5 @@ REGISTER_MIR_PASS(type_layout_cast_pass,
 REGISTER_MIR_PASS(type_layout_cast_preprocess_pass,
                   paddle::lite::mir::OpenCLTypeLayoutTransformPass)
     .BindTargets({TARGET(kAny)})
-    .ExcludeTargets({TARGET(kMLU)})
     .BindKernel("layout_once")
     .BindKernel("layout");

@@ -29,7 +29,7 @@ namespace kernels {
 namespace xpu {
 
 void GenerateProposalsCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   auto anchors_numel = param.Anchors->numel();
   num_guard_ = TargetWrapperXPU::MallocScratchPad(2 * sizeof(int));
   box_sel_guard_ =
@@ -47,8 +47,8 @@ void GenerateProposalsCompute::PrepareForRun() {
 }
 
 void GenerateProposalsCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto* scores = param.Scores;              // N * A * H * W
   auto* bbox_deltas = param.BboxDeltas;     // N * 4A * H * W
   auto* im_info = param.ImInfo;             // N * 3
@@ -133,39 +133,48 @@ void GenerateProposalsCompute::Run() {
     float* props_after_filter = box_decoder_pros + K * 4;
     float* scores_after_filter = topk_scores + K;
     int* index_after_nms = remove_small_boxes_idx + K;
-    int* nms_n_keep = remove_small_boxes_n_keep + 1;
 
-    // TODO(weihaoji) : Change TOPK Impl to XPU Version
+    // TODO(quwei) : Change TOPK Impl to XPU Version(k1)
     // Since XPU Topk Only Support K <= 512, Select CPU Version Right Now
-    // r = xdnn::sorted_topk(ctx.GetRawContext(),
-    //                          trans_scores + batch_idx * M,
-    //                          topk_scores,
-    //                          topk_indices, 1, M, K);
-    std::vector<float> tmp_scores_cpu(M, 0);
-    std::vector<int> topk_indices_cpu(K, 0);
-    std::vector<float> topk_scores_cpu(K, 0);
-    TargetWrapperXPU::MemcpySync(tmp_scores_cpu.data(),
-                                 trans_scores + batch_idx * M,
-                                 sizeof(float) * M,
-                                 IoDirection::DtoH);
+    if ((K <= 512 && ctx.GetRawContext()->dev().type() == xdnn::kXPU1) ||
+        (K <= 6400 && ctx.GetRawContext()->dev().type() == xdnn::kXPU2)) {
+      r = xdnn::sorted_topk(ctx.GetRawContext(),
+                            trans_scores + batch_idx * M,
+                            topk_scores,
+                            topk_indices,
+                            1,
+                            M,
+                            K,
+                            true);
+    } else {
+      std::vector<float> tmp_scores_cpu(M, 0);
+      std::vector<int> topk_indices_cpu(K, 0);
+      std::vector<float> topk_scores_cpu(K, 0);
 
-    xdnn::Context ctx_cpu(xdnn::kCPU);
-    r = xdnn::sorted_topk(&ctx_cpu,
-                          tmp_scores_cpu.data(),
+      TargetWrapperXPU::MemcpySync(tmp_scores_cpu.data(),
+                                   trans_scores + batch_idx * M,
+                                   sizeof(float) * M,
+                                   IoDirection::DtoH);
+
+      xdnn::Context ctx_cpu(xdnn::kCPU);
+      r = xdnn::sorted_topk(&ctx_cpu,
+                            tmp_scores_cpu.data(),
+                            topk_scores_cpu.data(),
+                            topk_indices_cpu.data(),
+                            1,
+                            M,
+                            K,
+                            true);
+      CHECK_EQ(r, 0);
+      XPU_CALL(xpu_memcpy(topk_scores,
                           topk_scores_cpu.data(),
+                          sizeof(float) * K,
+                          XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+      XPU_CALL(xpu_memcpy(topk_indices,
                           topk_indices_cpu.data(),
-                          1,
-                          M,
-                          K);
-    CHECK_EQ(r, 0);
-    XPU_CALL(xpu_memcpy(topk_scores,
-                        topk_scores_cpu.data(),
-                        sizeof(float) * K,
-                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-    XPU_CALL(xpu_memcpy(topk_indices,
-                        topk_indices_cpu.data(),
-                        sizeof(float) * K,
-                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+                          sizeof(float) * K,
+                          XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+    }
 
     // gather
     r = xdnn::gather<float, int>(ctx.GetRawContext(),
@@ -242,16 +251,15 @@ void GenerateProposalsCompute::Run() {
                                  0);
     CHECK_EQ(r, 0);
     // NMS
+    int nms_n_keep_cpu = -1;
     r = xdnn::sorted_nms<float>(ctx.GetRawContext(),
                                 props_after_filter,
                                 index_after_nms,
-                                nms_n_keep,
+                                nms_n_keep_cpu,
                                 remove_small_boxes_n_keep_cpu,
                                 nms_thresh);
     CHECK_EQ(r, 0);
-    int nms_n_keep_cpu = 0;
-    TargetWrapperXPU::MemcpySync(
-        &nms_n_keep_cpu, nms_n_keep, sizeof(int), IoDirection::DtoH);
+
     nms_n_keep_cpu = std::min(nms_n_keep_cpu, post_nms_top_n);
     // Gather After NMS
     r = xdnn::gather<float, int>(ctx.GetRawContext(),

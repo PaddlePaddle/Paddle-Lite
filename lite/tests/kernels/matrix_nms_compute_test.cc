@@ -369,7 +369,7 @@ class MatrixNmsComputeTester : public arena::TestCase {
     index->set_lod(lod);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(type_);
     op_desc->SetInput("BBoxes", {bboxes_});
     op_desc->SetInput("Scores", {scores_});

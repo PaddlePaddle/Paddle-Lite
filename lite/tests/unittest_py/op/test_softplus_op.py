@@ -32,6 +32,9 @@ class TestSoftplusOp(AutoScanTest):
             TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(
+            device_names=["intel_openvino", "kunlunxin_xtcl"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -45,6 +48,9 @@ class TestSoftplusOp(AutoScanTest):
                     min_value=1, max_value=64), min_size=1, max_size=4))
         beta = draw(st.sampled_from([1, 2, 3]))
         threshold = draw(st.integers(min_value=10, max_value=20))
+
+        if "intel_openvino" in self.get_nnadapter_device_name():
+            assume(beta == 1 and threshold == 20)
 
         def generate_input(*args, **kwargs):
             return np.random.normal(1.0, 1.0, in_shape).astype(np.float32)

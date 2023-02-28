@@ -44,7 +44,9 @@ class LITE_API LightPredictor {
   // model file or buffer,`model_from_memory` refers to whther to load model
   // from memory.
   LightPredictor(const std::string& lite_model_file,
-                 bool model_from_memory = false) {
+                 bool model_from_memory = false,
+                 bool use_low_precision = false) {
+    use_low_precision_ = use_low_precision;
     scope_ = std::make_shared<Scope>();
     program_desc_ = std::make_shared<cpp::ProgramDesc>();
     Build(lite_model_file, model_from_memory);
@@ -56,7 +58,9 @@ class LITE_API LightPredictor {
                  const std::string& param_buffer = "",
                  bool model_from_memory = false,
                  lite_api::LiteModelType model_type =
-                     lite_api::LiteModelType::kNaiveBuffer) {
+                     lite_api::LiteModelType::kNaiveBuffer,
+                 bool use_low_precision = false) {
+    use_low_precision_ = use_low_precision;
     scope_ = std::make_shared<Scope>();
     program_desc_ = std::make_shared<cpp::ProgramDesc>();
     Build(model_dir, model_buffer, param_buffer, model_type, model_from_memory);
@@ -74,6 +78,7 @@ class LITE_API LightPredictor {
   ///
   /// \return a boolean variable.
   bool TryShrinkMemory();
+  bool use_low_precision_ = false;
 
   // Get offset-th col of feed inputs.
   Tensor* GetInput(size_t offset);
@@ -125,7 +130,8 @@ class LITE_API LightPredictor {
       bool model_from_memory = false);
 
   void BuildRuntimeProgram(
-      const std::shared_ptr<const cpp::ProgramDesc>& program_desc);
+      const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+      bool use_precision_low);
 
   void DequantizeWeight();
 
@@ -152,7 +158,8 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
   virtual ~LightPredictorImpl();
   std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
   std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
-  std::unique_ptr<lite_api::Tensor> GetInputByName(const std::string& name);
+  std::unique_ptr<lite_api::Tensor> GetInputByName(
+      const std::string& name) override;
   std::unique_ptr<const lite_api::Tensor> GetOutputByName(
       const std::string& name) const;
   void Run() override;
@@ -175,6 +182,8 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
   ///
   /// \return a boolean variable.
   bool TryShrinkMemory() override;
+
+  bool use_low_precision_ = false;
 
  private:
   std::unique_ptr<lite::LightPredictor> raw_predictor_;

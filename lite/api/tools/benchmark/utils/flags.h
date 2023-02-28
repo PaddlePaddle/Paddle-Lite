@@ -43,6 +43,19 @@ static const char input_data_path_msg[] =
     "such as /path/to/in.txt for only one input, "
     "/path/to/in0.txt:/path/to/in1.txt for two inputs."
     "The input of model will be 1.0 if this option in not set.";
+static const char input_data_type_msg[] =
+    "Set input types according to the model, "
+    "separated by colon, "
+    "available types: float32, int64. "
+    "Default to float32, if not available."
+    "such as float32 for only one input, "
+    "float32:int64 for two inputs.";
+static const char output_data_path_msg[] =
+    "Set the path(s) of model output, "
+    "separated by comma and colon, "
+    "such as /path/to/out.txt for only one input, "
+    "/path/to/out0.txt:/path/to/out1.txt for two inputs."
+    "The output of model will not be saved to file.";
 static const char validation_set_msg[] =
     "Use validation images and lables as inputs. Only supports a minival "
     "dataset of ILSVRC_2012 as inputs."
@@ -118,7 +131,9 @@ DECLARE_string(uncombined_model_dir);
 DECLARE_string(model_file);
 DECLARE_string(param_file);
 DECLARE_string(input_shape);
+DECLARE_string(input_data_type);
 DECLARE_string(input_data_path);
+DECLARE_string(output_data_path);
 DECLARE_string(validation_set);
 DECLARE_bool(show_output_elem);
 

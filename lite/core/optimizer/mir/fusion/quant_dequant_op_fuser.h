@@ -39,6 +39,9 @@ namespace fusion {
 /* DeleteQuantOpFuser process
  * fake_quantize_range_abs_max/fake_quantize_moving_average_abs_max
  * + conv2d/mul/depthwise.
+ *
+ * 1. Set next op's input scale info.
+ * 2. Delete quant op
 */
 class DeleteQuantOpFuser : public FuseBase {
  public:
@@ -52,6 +55,10 @@ class DeleteQuantOpFuser : public FuseBase {
 };
 
 /* DequantOpFuser process conv2d/depthwise_conv2d/mul + fake_dequantize_max_abs.
+ *
+ * 1. Set previous op's weight scale info.
+ * 2. Restore float32 weight to int8.
+ * 3. Delete fake_dequantize_max_abs op.
 */
 class DequantOpFuser : public FuseBase {
  public:
@@ -66,6 +73,10 @@ class DequantOpFuser : public FuseBase {
 
 /* ChannelWiseDequantOpFuser process conv2d/depthwise_conv2d +
  * fake_channel_wise_dequantize_max_abs.
+ *
+ * 1. Set previous op's weight channel wise scale info.
+ * 2. Cast previous op's weight to int8.
+ * 3. Delete dequant op.
 */
 class ChannelWiseDequantOpFuser : public FuseBase {
  public:
@@ -83,6 +94,9 @@ class ChannelWiseDequantOpFuser : public FuseBase {
  * The fuser sets the input scale for the quantized_op and
  * deletes the fake_quant_dequant_op. If the input_var is weight,
  * The fuser also quantizes the input_var.
+ *
+ * 1. Set next op's input scale info.
+ * 2. Delete quant_dequant_op
 */
 class QuantDequantOpFuser : public FuseBase {
  public:
@@ -126,7 +140,8 @@ class DynamicQuantOpFuser : public FuseBase {
 */
 class QuantDequantLinearOpFuser : public FuseBase {
  public:
-  explicit QuantDequantLinearOpFuser(const std::string& quant_dequant_op_type) {
+  explicit QuantDequantLinearOpFuser(const bool shared_zero_point) {
+    shared_zero_point_ = shared_zero_point;
   }
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
@@ -139,6 +154,7 @@ class QuantDequantLinearOpFuser : public FuseBase {
                                               "mul",
                                               "matmul",
                                               "matmul_v2"};
+  bool shared_zero_point_{};
 };
 
 /* The pattern like "dequantize_linear_op + quantized_op "
@@ -148,8 +164,7 @@ class QuantDequantLinearOpFuser : public FuseBase {
 */
 class DequantLinearOpFuser : public FuseBase {
  public:
-  explicit DequantLinearOpFuser(const std::string& dequant_op_type)
-      : dequant_op_type_(dequant_op_type) {}
+  DequantLinearOpFuser() {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 

@@ -30,6 +30,10 @@ namespace lite {
 
 TEST(ch_ppocr_mobile_v2_0_rec,
      test_ch_ppocr_mobile_v2_0_rec_fp32_v2_3_nnadapter) {
+  FLAGS_warmup = 1;
+  float out_accuracy_threshold = 0.99;
+  bool prepare_before_timing = true;
+  std::string nnadapter_subgraph_partition_config_buffer;
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -46,6 +50,22 @@ TEST(ch_ppocr_mobile_v2_0_rec,
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  nnadapter_device_names.emplace_back("intel_openvino");
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  nnadapter_device_names.emplace_back("qualcomm_qnn");
+  // 1. Not support dynamic shape
+  // 2. Reduce execute time
+  FLAGS_iteration = 1;
+  FLAGS_warmup = 0;
+  prepare_before_timing = false;
+  out_accuracy_threshold = 0.97;
+  // TODO(zhupengyang): Last matmul is not supported on htp+fp16.
+  nnadapter_subgraph_partition_config_buffer =
+      "transpose2:lstm_0.tmp_0:transpose_2.tmp_0,transpose_2.tmp_1\n"
+      "matmul:transpose_2.tmp_0,ctc_fc_w_attr:ctc_fc.tmp_0\n"
+      "elementwise_add:ctc_fc.tmp_0,ctc_fc_b_attr:ctc_fc.tmp_1\n"
+      "softmax:ctc_fc.tmp_1:save_infer_model/scale_0.tmp_1";
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -57,6 +77,8 @@ TEST(ch_ppocr_mobile_v2_0_rec,
   cxx_config.set_valid_places(valid_places);
   cxx_config.set_nnadapter_device_names(nnadapter_device_names);
   cxx_config.set_nnadapter_context_properties(nnadapter_context_properties);
+  cxx_config.set_nnadapter_subgraph_partition_config_buffer(
+      nnadapter_subgraph_partition_config_buffer);
   predictor = lite_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
                                 paddle::lite_api::LiteModelType::kNaiveBuffer);
@@ -68,6 +90,13 @@ TEST(ch_ppocr_mobile_v2_0_rec,
       static_cast<lite_api::PowerMode>(FLAGS_power_mode));
   mobile_config.set_nnadapter_device_names(nnadapter_device_names);
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
+  // Set dynamic shape info.
+  std::map<std::string, std::vector<std::vector<int64_t>>> dynamic_shape_info;
+#if defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  dynamic_shape_info["x"] = {{1, 3, 32, 100}, {1, 3, 32, 413}};
+  dynamic_shape_info["lstm_0.tmp_0"] = {{80, 1, 96}, {103, 1, 96}};
+  mobile_config.set_nnadapter_dynamic_shape_info(dynamic_shape_info);
+#endif
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
@@ -91,7 +120,6 @@ TEST(ch_ppocr_mobile_v2_0_rec,
         ReadRawData(raw_data_dir, input_names[i], input_shapes[i]));
   }
 
-  FLAGS_warmup = 1;
   for (int i = 0; i < FLAGS_warmup; ++i) {
     fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
     predictor->Run();
@@ -101,7 +129,7 @@ TEST(ch_ppocr_mobile_v2_0_rec,
   std::vector<std::vector<float>> results;
   for (size_t i = 0; i < raw_data.size(); ++i) {
     fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
-    predictor->Run();
+    if (prepare_before_timing) predictor->Run();
 
     double start = GetCurrentUS();
     predictor->Run();
@@ -125,7 +153,8 @@ TEST(ch_ppocr_mobile_v2_0_rec,
   for (float abs_error : {1e-1, 1e-2, 1e-3, 1e-4}) {
     float acc = CalOutAccuracy(results, gt_data, abs_error);
     LOG(INFO) << "acc: " << acc << ", if abs_error < " << abs_error;
-    ASSERT_GE(CalOutAccuracy(results, gt_data, abs_error), 0.99);
+    ASSERT_GE(CalOutAccuracy(results, gt_data, abs_error),
+              out_accuracy_threshold);
   }
 
   LOG(INFO) << "================== Speed Report ===================";

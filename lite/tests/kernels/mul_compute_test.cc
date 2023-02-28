@@ -83,7 +83,7 @@ class MulComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(type_);
     op_desc->SetInput("X", {x_});
     op_desc->SetInput("Y", {y_});
@@ -124,12 +124,7 @@ TEST(Mul, precision) {
   LOG(INFO) << "test mul op";
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // use fp16 in npu
-#else
   return;
-#endif
   TestMul({4, 5}, {5, 4}, 1, 1, place, abs_error);
   TestMul({4, 5}, {5, 4, 3, 2}, 1, 1, place, abs_error);
   TestMul({4, 20}, {5, 4, 3, 2}, 1, 2, place, abs_error);

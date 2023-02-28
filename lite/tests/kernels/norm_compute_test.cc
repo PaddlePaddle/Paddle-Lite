@@ -66,7 +66,7 @@ class NormComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("norm");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
@@ -115,6 +115,11 @@ TEST(Norm, precision) {
   abs_error = 1e-2;
   axis_vec = std::vector<int>{1};
   epsilon = {1e-4};
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-3;
+  epsilon = {1e-12};
 #else
   return;
 #endif

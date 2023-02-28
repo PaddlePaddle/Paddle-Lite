@@ -65,6 +65,7 @@ class Program {
   std::vector<NNAdapterOperandType> output_types_;
   int max_batch_size_{1};
   bool is_sub_model_from_cache_{false};
+  bool io_use_device_buffer_{false};
 };
 
 }  // namespace nvidia_tensorrt

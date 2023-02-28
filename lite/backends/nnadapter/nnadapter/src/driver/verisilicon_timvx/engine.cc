@@ -18,9 +18,17 @@
 #include <vector>
 #include "driver/verisilicon_timvx/converter/converter.h"
 #include "driver/verisilicon_timvx/optimizer/convert_fill_like_into_mul_add.h"
+#include "driver/verisilicon_timvx/optimizer/convert_meshgrid_into_reshape_expand.h"
 #include "driver/verisilicon_timvx/optimizer/unpack_op_fusion.h"
+#include "optimizer/constant_fold_operations.h"
+#include "optimizer/convert_adaptive_pool2d_into_pool2d.h"
 #include "optimizer/convert_quantization_symm_to_asymm.h"
+#include "optimizer/fuse_conv2d_activation_into_conv2d.h"
+#include "optimizer/fuse_conv2d_add_into_conv2d.h"
+#include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
+#include "optimizer/fuse_reshape_transpose_reshape_into_channel_shuffle.h"
+#include "optimizer/fuse_sigmoid_mul_into_swish.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -31,7 +39,23 @@ namespace nnadapter {
 namespace verisilicon_timvx {
 
 Context::Context(void* device, const char* properties) : device_(device) {
-  // TODO(hong19860320) create the raw context from tim-vx
+  // By dafault, set the
+  // VERISILICON_TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION
+  // as -1.0f, user can modify the threshold by context_property or ENV
+  NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
+  auto key_values = GetKeyValues(properties);
+  if (key_values.count(
+          VERISILICON_TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION)) {  // NOLINT
+    batchnorm_fusion_max_allowed_quant_scale_deviation_ = string_parse<double>(
+        key_values
+            [VERISILICON_TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION]);  // NOLINT
+  } else {
+    batchnorm_fusion_max_allowed_quant_scale_deviation_ = GetDoubleFromEnv(
+        VERISILICON_TIMVX_BATCHNORM_FUSION_MAX_ALLOWED_QUANT_SCALE_DEVIATION,
+        -1.0f);
+  }
+  NNADAPTER_LOG(INFO) << "bn_fusion_max_allowed_quant_scale_deviation: "
+                      << batchnorm_fusion_max_allowed_quant_scale_deviation_;
 }
 
 Context::~Context() {}
@@ -95,8 +119,19 @@ int Program::Build(core::Model* model, core::Cache* cache) {
   } else {
     // Build from model
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
-    FuseMatMulAddIntoFullyConnected(model);
     ConvertFillLikeIntoMulAdd(model);
+    ConstantFoldOperations(model);
+    ConvertMeshgridIntoReshapeExpand(model);
+    FuseConv2DBatchNormIntoConv2D(
+        model, context_->batchnorm_fusion_max_allowed_quant_scale_deviation());
+    FuseConv2DAddIntoConv2D(model);
+    FuseConv2DBatchNormIntoConv2D(
+        model, context_->batchnorm_fusion_max_allowed_quant_scale_deviation());
+    FuseConv2DActivationIntoConv2D(model);
+    FuseMatMulAddIntoFullyConnected(model);
+    FuseReshapeTransposeReshapeIntoChannelShuffle(model);
+    FuseSigmoidMulIntoSwish(model);
+    ConvertAdaptivePool2dIntoPool2d(model);
     UnpackOpFusion(model);
     ConvertQuantizationSymmToAsymm(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
@@ -168,7 +203,7 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
     // Get actual type
     auto& arg = input_arguments[i];
     NNAdapterOperandType type;
-    arg.access(arg.memory, &type);
+    arg.access(arg.memory, &type, nullptr);
     // Check dimensions count
     uint32_t count = type.dimensions.count;
     int32_t* data = type.dimensions.data;
@@ -205,7 +240,7 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
     auto type = input_types_[arg.index];
-    auto buffer = arg.access(arg.memory, &type);
+    auto buffer = arg.access(arg.memory, &type, nullptr);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(type);
     if (IsUInt8AsymmPerLayerQuantType(type.precision)) {
@@ -233,7 +268,7 @@ int Program::Execute(uint32_t input_count,
     // TODO(hong19860320) Get the dimensions of the outputs from tim-vx
     // according to the dynamic dimensions of the inputs, fill them to 'type'
     // and call the 'access' function to re-allocate the host output memory
-    auto buffer = arg.access(arg.memory, type);
+    auto buffer = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(*type);
     if (!output_tensors_[arg.index]->CopyDataFromTensor(buffer)) {

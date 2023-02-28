@@ -24,84 +24,11 @@ namespace kernels {
 namespace xpu {
 
 void SearchGrnnCompute::PrepareForRun() {
-  offset_xpu_guard_ =
-      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
-  new_offset_xpu_guard_ =
-      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SEQ_LEN * sizeof(int));
-  maxs_xpu_guard_ = TargetWrapperXPU::MallocScratchPad(16 * sizeof(float));
-
-  idx_sorted_by_width_data_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  int maxptr_size = ctx.GetRawContext()->max_ptr_size();
+  maxs_xpu_guard_ =
+      TargetWrapperXPU::MallocScratchPad(6 * maxptr_size * sizeof(float));
   offset_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
-  new_offset_cpu.reset(new int[XPU_MAX_LOD_SEQ_LEN]);
-}
-
-void SearchGrnnCompute::prepare_layout(const operators::SearchGrnnParam& param,
-                                       const paddle::lite::Tensor* bottom) {
-  auto* idx_sorted_by_width = param.idx_sorted_by_width;
-  auto* layout_input = param.layout_input;
-
-  int dim0 = bottom->dims()[0];
-  int dim1 = 1;
-  if (bottom->dims().size() > 1) {
-    dim1 = bottom->dims()[1];
-  }
-  int batch = bottom->lod()[0].size() - 1;
-  auto& offset = bottom->lod()[0];
-
-  idx_sorted_by_width->Resize({batch});
-  std::vector<int> width;
-  width.resize(batch);
-
-  // sort sequences by width (descending) and find the largest width in the
-  // batch
-  for (int i = 0; i < batch; i++) {
-    width[i] = offset[i + 1] - offset[i];
-    idx_sorted_by_width_data_cpu[i] = i;
-  }
-  std::sort(idx_sorted_by_width_data_cpu.get(),
-            idx_sorted_by_width_data_cpu.get() + batch,
-            [&width](int a, int b) { return width[a] > width[b]; });
-  int max_width = width[idx_sorted_by_width_data_cpu[0]];
-
-  // start of reorganizing the input
-  std::vector<size_t> new_offset;
-  new_offset.resize(max_width + 1);
-  new_offset[0] = 0;
-  int j = batch - 1;
-  int last_width = 0;
-  int sub_row = 0;
-  int sub_col = 0;
-
-  for (int i = 1; i <= max_width;) {
-    for (int k = j; k >= 0; --k) {
-      if (width[idx_sorted_by_width_data_cpu[k]] > last_width) {
-        sub_row = width[idx_sorted_by_width_data_cpu[k]] - last_width;
-        sub_col = k + 1;
-        for (int s = 0; s < sub_row; s++) {
-          new_offset[i] = new_offset[i - 1] + sub_col;
-          i++;
-        }
-        // move on
-        last_width = width[idx_sorted_by_width_data_cpu[k]];
-        j = k - 1;
-        break;
-      }
-    }
-  }
-
-  // copying to the reorganized buffer
-  if (bottom->dims().size() == 1) {
-  } else {
-    LoD new_lod;
-    new_lod.push_back(new_offset);
-    layout_input->set_lod(new_lod);
-    layout_input->Resize({dim0, dim1});
-  }
-
-  XPU_CALL(xpu_memcpy(idx_sorted_by_width->mutable_data<int>(TARGET(kXPU)),
-                      idx_sorted_by_width_data_cpu.get(),
-                      idx_sorted_by_width->numel() * sizeof(int),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 }
 
 void SearchGrnnCompute::Run() {
@@ -112,9 +39,6 @@ void SearchGrnnCompute::Run() {
   auto* wi = param.wi;
   auto* wh = param.wh;
   auto* top = param.out;
-  auto* tmp_buffer = param.tmp_buffer;
-  auto* idx_sorted_by_width = param.idx_sorted_by_width;
-  auto* layout_input = param.layout_input;
   int cap_h = param.num_hidden;
   int cap_e = param.num_input;
   int cap_l = bottom->dims()[0];
@@ -138,127 +62,42 @@ void SearchGrnnCompute::Run() {
   const auto* dense_e2h = wi->data<int16_t>();
   const auto* dense_h2h = wh->data<int16_t>();
 
-  // Prepare idx_sorted_by_width
-  prepare_layout(param, bottom);
-  int batch = bottom->lod()[0].size() - 1;
-  int max_width = layout_input->lod()[0].size() - 1;
-  const auto& new_offset = layout_input->lod()[0];
-  auto* new_emb = layout_input->mutable_data<float>(TARGET(kXPU));
-
-  // Prepare offset and new_offset
-  int* offset_xpu = reinterpret_cast<int*>(offset_xpu_guard_->addr_);
-  int* new_offset_xpu = reinterpret_cast<int*>(new_offset_xpu_guard_->addr_);
-  float* maxs_xpu = reinterpret_cast<float*>(maxs_xpu_guard_->addr_);
   CHECK_LE(offset.size(), 64);
-  CHECK_LE(new_offset.size(), 256);
-
   for (size_t i = 0; i < offset.size(); ++i) {
     offset_cpu[i] = offset[i];
   }
-  for (size_t i = 0; i < new_offset.size(); ++i) {
-    new_offset_cpu[i] = new_offset[i];
+  int xpu_maxptr_size = ctx.GetRawContext()->max_ptr_size();
+  std::vector<float> maxs_cpu(6 * xpu_maxptr_size, 0.0f);
+  for (int idx = 0; idx < 3; idx++) {
+    maxs_cpu[idx * xpu_maxptr_size] = wi_max[idx];
+    maxs_cpu[(idx + 3) * xpu_maxptr_size] = wh_max[idx];
   }
-  XPU_CALL(xpu_memcpy(offset_xpu,
-                      offset_cpu.get(),
-                      offset.size() * sizeof(int),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-  XPU_CALL(xpu_memcpy(new_offset_xpu,
-                      new_offset_cpu.get(),
-                      new_offset.size() * sizeof(int),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-
-  int r = xdnn::search_seq2batch(ctx.GetRawContext(),
-                                 batch,
-                                 max_width,
-                                 dim,
-                                 idx_sorted_by_width->data<int>(),
-                                 offset_xpu,
-                                 new_offset_xpu,
-                                 bottom->data<float>(),
-                                 new_emb);
-  CHECK_EQ(r, 0);
-
-  // this buffer is used for book keeping info which will be used in bp
-  // buffer also needed in bp, so make it larger
-  tmp_buffer->Resize({20, cap_l, cap_h});
-  auto* buffer_data = tmp_buffer->mutable_data<float>(TARGET(kXPU));
-  // the internal hidden
-  auto* hidden = buffer_data + 19 * cap_l * cap_h;
-
-  // do-findmax
-  float maxs_cpu[16] = {0.0f,
-                        0.0f,
-                        0.0f,
-                        0.0f,
-                        wi_max[0],
-                        0.0f,
-                        0.0f,
-                        0.0f,
-                        wi_max[1],
-                        0.0f,
-                        0.0f,
-                        0.0f,
-                        wi_max[2],
-                        0.0f,
-                        0.0f,
-                        0.0f};
+  float* maxs_xpu = reinterpret_cast<float*>(maxs_xpu_guard_->addr_);
   XPU_CALL(xpu_memcpy(maxs_xpu,
-                      maxs_cpu,
-                      16 * sizeof(float),
+                      maxs_cpu.data(),
+                      6 * xpu_maxptr_size * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-  r = xdnn::findmax<float>(
-      ctx.GetRawContext(), new_emb, maxs_xpu, cap_l * cap_e);
-  CHECK_EQ(r, 0);
-
-  // precompute embedding to hidden
-  for (int i = 0; i < 3; ++i) {
-    const int16_t* data_b = dense_e2h + i * cap_e * cap_h;  // e2h, e2hr, e2hz
-    float* data_c = buffer_data + i * cap_l * cap_h;  // w_x_e, wr_x_e, wz_x_e
-    int r = xdnn::gemm_int16_maxptr<float, int16_t, float>(
-        ctx.GetRawContext(),
-        false,
-        true,  // trans_a, trans_b
-        cap_l,
-        cap_h,
-        cap_e,  // m, n, k
-        1.0f,
-        new_emb,
-        cap_e,  // alpha, data_a, lda
-        data_b,
-        cap_e,
-        0.0f,  // data_b, ldb, beta
-        data_c,
-        cap_h,  // data_c, ldc
-        nullptr,
-        xdnn::Activation_t::LINEAR,  // bias, act
-        maxs_xpu,
-        maxs_xpu + 4 * (i + 1));  // max_a, max_b
-    CHECK_EQ(r, 0);
-  }
-
-  r = xdnn::search_grnn<float, int16_t>(ctx.GetRawContext(),
-                                        cap_l,
-                                        cap_h,
-                                        cap_e,
-                                        max_width,
-                                        new_offset_xpu,
-                                        buffer_data,
-                                        dense_h2h,
-                                        hidden,
-                                        wh_max[0],
-                                        wh_max[1],
-                                        wh_max[2]);
-  CHECK_EQ(r, 0);
-
-  r = xdnn::search_batch2seq(ctx.GetRawContext(),
-                             batch,
-                             max_width,
-                             cap_h,
-                             idx_sorted_by_width->data<int>(),
-                             offset_xpu,
-                             new_offset_xpu,
-                             hidden,
-                             top_hidden);
+  float* weight_x_max = maxs_xpu;
+  float* weight_w_max = maxs_xpu + 3 * xpu_maxptr_size;
+  int r = xdnn::grnn_cell<float, int16_t, int, int16_t>(
+      ctx.GetRawContext(),
+      bottom->data<float>(),
+      nullptr,
+      {dense_e2h, dense_e2h + cap_e * cap_h, dense_e2h + cap_e * cap_h * 2},
+      {dense_h2h, dense_h2h + cap_h * cap_h, dense_h2h + cap_h * cap_h * 2},
+      top_hidden,
+      cap_e,
+      cap_h,
+      {offset_cpu.get(), static_cast<int>(offset.size()), nullptr},
+      nullptr,
+      nullptr,
+      {weight_x_max,
+       weight_x_max + xpu_maxptr_size,
+       weight_x_max + xpu_maxptr_size * 2},
+      {weight_w_max,
+       weight_w_max + xpu_maxptr_size,
+       weight_w_max + xpu_maxptr_size * 2},
+      nullptr);
   CHECK_EQ(r, 0);
 }
 

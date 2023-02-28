@@ -241,7 +241,7 @@ class ElementwiseComputeTester : public arena::TestCase {
 #endif
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     std::string op_type = "elementwise_" + elt_type_;
     if (!act_type_.empty()) {
       op_type = "fusion_" + op_type + "_activation";
@@ -460,19 +460,34 @@ TEST(Elementwise, precision) {
   abs_error = 1e-1;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+  TestEltDims(place, abs_error);
+  for (auto elt_type : std::vector<std::string>{
+           "add", "sub", "mul", "div", "floordiv", "max", "min", "pow"}) {
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1);
+  }
+  for (auto elt_type : std::vector<std::string>{
+           "add", "sub", "mul", "div", "floordiv", "max", "min", "pow"}) {
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0, "relu");
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1, "relu");
+  }
+  return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-1;
+  for (auto elt_type : std::vector<std::string>{
+           "add", "sub", "mul", "div", "max", "min", "pow"}) {
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
+  }
+  return;
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
-#elif defined(LITE_WITH_X86)
-  place = TARGET(kX86);
-#else
-  return;
-#endif
 #ifdef ENABLE_ARM_FP16
   Place place1(TARGET(kARM), PRECISION(kFP16));
   TestFp16EltDims(place1, abs_error, "add");
@@ -484,13 +499,16 @@ TEST(Elementwise, precision) {
   TestFp16EltDims(place1, abs_error, "div");
   TestFp16EltFuseAct(place1, abs_error, "div");
 #endif
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+  TestEltFuseActFloat(place, abs_error);
+#else
+  return;
+#endif
 
   TestEltDims(place, abs_error);
   TestEltTypes(place, abs_error);
   TestEltFuseAct(place, abs_error);
-#ifdef LITE_WITH_X86
-  TestEltFuseActFloat(place, abs_error);
-#endif
 }
 
 }  // namespace lite

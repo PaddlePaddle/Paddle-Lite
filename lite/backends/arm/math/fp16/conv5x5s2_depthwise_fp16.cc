@@ -70,26 +70,30 @@ namespace fp16 {
   FMLA_S2_w4
 
 #define COMPUTE                                                               \
-  "ldp    q0, q1,   [%[inr0]], #32\n" /* load r0, 0-1 */                      \
+  "mov    x0, %[inr0]\n" \
+  "mov    x1, %[inr1]\n" \
+  "mov    x2, %[inr2]\n" \
+  "mov    x3, %[inr3]\n" \
+  "mov    x4, %[inr4]\n" \
+  "ldp    q0, q1,   [x0], #32\n" /* load r0, 0-1 */                      \
   "and    v19.16b,  %[vbias].16b, %[vbias].16b\n"                             \
-  "ldp    q2, q3,   [%[inr0]], #32\n" /* load r0, 2-3 */                      \
+  "ldp    q2, q3,   [x0], #32\n" /* load r0, 2-3 */                      \
   "and    v20.16b,  %[vbias].16b, %[vbias].16b\n"                             \
-  "ldp    q4, q5,   [%[inr0]], #32\n" /* load r0, 4-5 */                      \
+  "ldp    q4, q5,   [x0], #32\n" /* load r0, 4-5 */                      \
   "and    v21.16b,  %[vbias].16b, %[vbias].16b\n"                             \
-  "ldp    q6, q7,   [%[inr0]], #32\n" /* load r0, 6-7 */                      \
+  "ldp    q6, q7,   [x0], #32\n" /* load r0, 6-7 */                      \
   "and    v22.16b,  %[vbias].16b, %[vbias].16b\n"                             \
-  "ldp    q8, q9,   [%[inr0]], #32\n"  /* load r0, 8-9 */                     \
+  "ldp    q8, q9,   [x0], #32\n"  /* load r0, 8-9 */                     \
   "fmla   v19.8h,  %[w0].8h,  v0.8h\n" /* outr0 = w0 * r0, 0*/                \
   "fmla   v20.8h,  %[w0].8h,  v2.8h\n" /* outr1 = w0 * r0, 2*/                \
   "fmla   v21.8h,  %[w0].8h,  v4.8h\n" /* outr2 = w0 * r0, 4*/                \
   "fmla   v22.8h,  %[w0].8h,  v6.8h\n" /* outr3 = w0 * r0, 6*/                \
-  "ldr    q10,   [%[inr0]] \n"         /* load r0, 10 */                      \
+  "ldr    q10,   [x0] \n"         /* load r0, 10 */                      \
   "fmla   v19.8h,  %[w1].8h,  v1.8h\n" /* outr0 = w1 * r0, 1*/                \
   "fmla   v20.8h,  %[w1].8h,  v3.8h\n" /* outr1 = w1 * r0, 3*/                \
   "fmla   v21.8h,  %[w1].8h,  v5.8h\n" /* outr2 = w1 * r0, 5*/                \
   "fmla   v22.8h,  %[w1].8h,  v7.8h\n" /* outr3 = w1 * r0, 7*/                \
-  "sub    %[inr0], %[inr0], #32\n"     /* inr0 -= 32 */                       \
-  "ldp    q0, q1,   [%[inr1]], #32\n"  /* load r1, 0-1 */                     \
+  "ldp    q0, q1,   [x1], #32\n"  /* load r1, 0-1 */                     \
   "fmla   v19.8h,  %[w2].8h,  v2.8h\n" /* outr0 = w0 * r0, 2*/                \
   "fmla   v20.8h,  %[w2].8h,  v4.8h\n" /* outr1 = w0 * r0, 4*/                \
   "fmla   v21.8h,  %[w2].8h,  v6.8h\n" /* outr2 = w0 * r0, 6*/                \
@@ -100,66 +104,62 @@ namespace fp16 {
   "fmla   v21.8h,  %[w3].8h,  v7.8h\n" /* outr2 = w3 * r1, 4*/                \
   "fmla   v22.8h,  %[w3].8h,  v9.8h\n" /* outr3 = w3 * r1, 6*/                \
   "ldp    q16, q17, [%[wc0]], #32\n"   /* load w2-3, to q16-17*/              \
-  "ldp    q2, q3,   [%[inr1]], #32\n"  /* load r1, 2-3 */                     \
+  "ldp    q2, q3,   [x1], #32\n"  /* load r1, 2-3 */                     \
   "fmla   v19.8h,  %[w4].8h,  v4.8h\n" /* outr0 = w3 * r1, 0*/                \
   "fmla   v20.8h,  %[w4].8h,  v6.8h\n" /* outr1 = w3 * r1, 2*/                \
   "fmla   v21.8h,  %[w4].8h,  v8.8h\n" /* outr2 = w3 * r1, 4*/                \
   "fmla   v22.8h,  %[w4].8h,  v10.8h\n" /* outr3 = w3 * r1, 6*/               \
   /* MULA_S2_R1 */                                                            \
-  "ldp    q4, q5,   [%[inr1]], #32\n"                /* load r1, 4-5 */       \
+  "ldp    q4, q5,   [x1], #32\n"                /* load r1, 4-5 */       \
   "ldr    q18,  [%[wc0]], #16\n"                     /* load w4, to q18*/     \
-  "ldp    q6, q7,   [%[inr1]], #32\n"                /* load r0, 6-7 */       \
+  "ldp    q6, q7,   [x1], #32\n"                /* load r0, 6-7 */       \
   FMLA_S2_w0                                                                  \
-  "ldp    q8, q9,   [%[inr1]], #32\n" /* load r0, 8-9 */                      \
+  "ldp    q8, q9,   [x1], #32\n" /* load r0, 8-9 */                      \
   FMLA_S2_w1                                                                  \
-  "ldr    q10,   [%[inr1]] \n"        /* load r0, 10 */                       \
+  "ldr    q10,   [x1] \n"        /* load r0, 10 */                       \
   FMLA_S2_w2                                                                  \
-  "sub    %[inr1], %[inr1], #32\n"    /* inr1 -= 32 */                        \
-  "ldp    q0, q1,   [%[inr2]], #32\n" /* load r1, 0-1 */                      \
+  "ldp    q0, q1,   [x2], #32\n" /* load r1, 0-1 */                      \
   "ldp    q14, q15, [%[wc0]], #32\n"  /* load w0-1, to q14-15*/               \
   FMLA_S2_w3                                                                  \
   "ldp    q16, q17, [%[wc0]], #32\n"  /* load w2-3, to q16-17*/               \
-  "ldp    q2, q3,   [%[inr2]], #32\n" /* load r1, 2-3 */                      \
+  "ldp    q2, q3,   [x2], #32\n" /* load r1, 2-3 */                      \
   FMLA_S2_w4                                                                  \
-  "ldp    q4, q5,   [%[inr2]], #32\n"                /* load r1, 4-5 */       \
+  "ldp    q4, q5,   [x2], #32\n"                /* load r1, 4-5 */       \
   "ldr    q18,  [%[wc0]], #16\n"                     /* load w4, to q18*/     \
-  "ldp    q6, q7,   [%[inr2]], #32\n"                /* load r0, 6-7 */       \
+  "ldp    q6, q7,   [x2], #32\n"                /* load r0, 6-7 */       \
   FMLA_S2_w0                                                                  \
-  "ldp    q8, q9,   [%[inr2]], #32\n" /* load r0, 8-9 */                      \
+  "ldp    q8, q9,   [x2], #32\n" /* load r0, 8-9 */                      \
   FMLA_S2_w1                                                                  \
-  "ldr    q10,   [%[inr2]] \n"        /* load r0, 10 */                       \
+  "ldr    q10,   [x2] \n"        /* load r0, 10 */                       \
   FMLA_S2_w2                                                                  \
-  "sub    %[inr2], %[inr2], #32\n"    /* inr0 -= 32 */                        \
-  "ldp    q0, q1,   [%[inr3]], #32\n" /* load r1, 0-1 */                      \
+  "ldp    q0, q1,   [x3], #32\n" /* load r1, 0-1 */                      \
   "ldp    q14, q15, [%[wc0]], #32\n"  /* load w0-1, to q14-15*/               \
   FMLA_S2_w3                                                                  \
   "ldp    q16, q17, [%[wc0]], #32\n"  /* load w2-3, to q16-17*/               \
-  "ldp    q2, q3,   [%[inr3]], #32\n" /* load r1, 2-3 */                      \
+  "ldp    q2, q3,   [x3], #32\n" /* load r1, 2-3 */                      \
   FMLA_S2_w4                                                                  \
-  "ldp    q4, q5,   [%[inr3]], #32\n"                /* load r1, 4-5 */       \
+  "ldp    q4, q5,   [x3], #32\n"                /* load r1, 4-5 */       \
   "ldr    q18,  [%[wc0]], #16\n"                     /* load w4, to q18*/     \
-  "ldp    q6, q7,   [%[inr3]], #32\n"                /* load r0, 6-7 */       \
+  "ldp    q6, q7,   [x3], #32\n"                /* load r0, 6-7 */       \
   FMLA_S2_w0                                                                  \
-  "ldp    q8, q9,   [%[inr3]], #32\n" /* load r0, 8-9 */                      \
+  "ldp    q8, q9,   [x3], #32\n" /* load r0, 8-9 */                      \
   FMLA_S2_w1                                                                  \
-  "ldr    q10,   [%[inr3]] \n"        /* load r0, 10 */                       \
+  "ldr    q10,   [x3] \n"        /* load r0, 10 */                       \
   FMLA_S2_w2                                                                  \
-  "sub    %[inr3], %[inr3], #32\n"    /* inr0 -= 32 */                        \
-  "ldp    q0, q1,   [%[inr4]], #32\n" /* load r1, 0-1 */                      \
+  "ldp    q0, q1,   [x4], #32\n" /* load r1, 0-1 */                      \
   "ldp    q14, q15, [%[wc0]], #32\n"  /* load w0-1, to q14-15*/               \
   FMLA_S2_w3                                                                  \
   "ldp    q16, q17, [%[wc0]], #32\n"  /* load w2-3, to q16-17*/               \
-  "ldp    q2, q3,   [%[inr4]], #32\n" /* load r1, 2-3 */                      \
+  "ldp    q2, q3,   [x4], #32\n" /* load r1, 2-3 */                      \
   FMLA_S2_w4                                                                  \
-  "ldp    q4, q5,   [%[inr4]], #32\n"                /* load r1, 4-5 */       \
+  "ldp    q4, q5,   [x4], #32\n"                /* load r1, 4-5 */       \
   "ldr    q18,  [%[wc0]], #16\n"                     /* load w4, to q18*/     \
-  "ldp    q6, q7,   [%[inr4]], #32\n"                /* load r0, 6-7 */       \
+  "ldp    q6, q7,   [x4], #32\n"                /* load r0, 6-7 */       \
   FMLA_S2_w0                                                                  \
-  "ldp    q8, q9,   [%[inr4]], #32\n" /* load r0, 8-9 */                      \
+  "ldp    q8, q9,   [x4], #32\n" /* load r0, 8-9 */                      \
   FMLA_S2_w1                                                                  \
-  "ldr    q10,   [%[inr4]] \n"        /* load r0, 10 */                       \
+  "ldr    q10,   [x4] \n"        /* load r0, 10 */                       \
   FMLA_S2_w2                                                                  \
-  "sub    %[inr4], %[inr4], #32\n"    /* inr0 -= 32 */                        \
   FMLA_S2_w3                                                                  \
   FMLA_S2_w4                                                                  \
   "sub    %[wc0], %[wc0], #320\n" /* weight -= 320 */                         \
@@ -254,7 +254,7 @@ namespace fp16 {
   "vld1.16    {d14-d17}, [%[wc0]]!\n" /* load w0-1, to q7-8 */               \
   "vmla.f16   q15, q10, q2               @ w3 * inr9\n"                      \
   "vld1.16    {d4-d5}, [%[inr1]]!         @ load r1, 2\n"                      \
-  "sub %[inr0], %[inr0], #16             @ r0 - 16 to nextline address\n"        \
+  "sub %[inr0], %[inr0], #16         @ r0 - 16 to nextline address\n"        \
   "vld1.16    {d18-d21}, [%[wc0]]!\n" /* load w2-3, to q9-10 */              \
   "vmla.f16   q12, q7, q0              @ w0 * inr0\n"                        \
   "vmla.f16   q13, q7, q2              @ w0 * inr2\n"                        \
@@ -285,7 +285,7 @@ namespace fp16 {
   "vmla.f16   q15, q11, q3              @ w4 * inr10\n"                      \
   "vld1.16    {d0-d3}, [%[inr2]]!         @ load r2, 0, 1\n"                   \
   "vld1.16    {d18-d21}, [%[wc0]]!\n" /* load w2-3, to q9-10 */              \
-  "sub %[inr1], %[inr1], #16                @ r1 - 16 to nextline address\n"     \
+  "sub %[inr1], %[inr1], #16           @ r1 - 16 to nextline address\n"     \
   "vld1.16    {d4-d7}, [%[inr2]]!         @ load r2, 2, 3\n"                   \
   "vld1.16    {d22-d23}, [%[wc0]]!\n" /* load w4 to q11 */                   \
   "vmla.f16   q12, q7, q0              @ w0 * inr0\n"                        \
@@ -311,7 +311,7 @@ namespace fp16 {
   "vmla.f16   q14, q10, q0              @ w3 * inr7\n"                       \
   "vmla.f16   q15, q10, q2              @ w3 * inr9\n"                       \
   "vld1.16    {d14-d17}, [%[wc0]]!\n" /* load w0-1, to q7-8 */               \
-  "sub %[inr2], %[inr2], #16                @ r1 - 16 to nextline address\n"     \
+  "sub %[inr2], %[inr2], #16            @ r1 - 16 to nextline address\n"     \
   "vmla.f16   q14, q11, q1              @ w4 * inr8\n"                       \
   "vld1.16    {d0-d3}, [%[inr3]]!         @ load r3, 0, 1\n"                   \
   "vmla.f16   q15, q11, q3              @ w4 * inr10\n"                      \
@@ -341,7 +341,7 @@ namespace fp16 {
   "vmla.f16   q14, q10, q0              @ w3 * inr7\n"                       \
   "vmla.f16   q15, q10, q2              @ w3 * inr9\n"                       \
   "vld1.16    {d14-d17}, [%[wc0]]!\n" /* load w0-1, to q7-8 */               \
-  "sub %[inr3], %[inr3], #16                @ r1 - 16 to nextline address\n"     \
+  "sub %[inr3], %[inr3], #16           @ r1 - 16 to nextline address\n"     \
   "vmla.f16   q14, q11, q1              @ w4 * inr8\n"                       \
   "vld1.16    {d0-d3}, [%[inr4]]!         @ load r4, 0, 1\n"                   \
   "vmla.f16   q15, q11, q3              @ w4 * inr10\n"                      \
@@ -371,13 +371,13 @@ namespace fp16 {
   "vmla.f16   q14, q10, q0              @ w3 * inr7\n"                       \
   "vmla.f16   q15, q10, q2              @ w3 * inr9\n"                       \
   "sub    %[wc0], %[wc0], #400          @ wc0 - 400 to start address\n"      \
-  "sub %[inr4], %[inr4], #16                @ r1 - 16 to nextline address\n"     \
+  "sub %[inr4], %[inr4], #16            @ r1 - 16 to nextline address\n"     \
   "vmla.f16   q14, q11, q1              @ w4 * inr8\n"                       \
   "vmla.f16   q15, q11, q3              @ w4 * inr10\n"                      \
 
 #define RELU /* relu */             \
   "vmov.u16 q0, #0\n"               \
-  "vld1.16 {d2-d3}, [%[six_ptr]]\n" \  
+  "vld1.16 {d2-d3}, [%[six_ptr]]\n" \
   "vmax.f16 q12, q12, q0\n"         \
   "vmax.f16 q13, q13, q0\n"         \
   "vmax.f16 q14, q14, q0\n"         \
@@ -449,12 +449,7 @@ void act_switch_5x5s2(const float16_t* inr0,
       case lite_api::ActivationType::kRelu:
 #ifdef __aarch64__
         asm volatile(COMPUTE RELU STORE
-                     : [inr0] "+r"(inr0),
-                       [inr1] "+r"(inr1),
-                       [inr2] "+r"(inr2),
-                       [inr3] "+r"(inr3),
-                       [inr4] "+r"(inr4),
-                       [wc0] "+r"(weight_c),
+                     : [wc0] "+r"(weight_c),
                        [outc0] "+r"(outc0),
                        [outc1] "+r"(outc1),
                        [outc2] "+r"(outc2),
@@ -463,7 +458,12 @@ void act_switch_5x5s2(const float16_t* inr0,
                        [outc5] "+r"(outc5),
                        [outc6] "+r"(outc6),
                        [outc7] "+r"(outc7)
-                     : [w0] "w"(w0),
+                     : [inr0] "r"(inr0),
+                       [inr1] "r"(inr1),
+                       [inr2] "r"(inr2),
+                       [inr3] "r"(inr3),
+                       [inr4] "r"(inr4),
+                       [w0] "w"(w0),
                        [w1] "w"(w1),
                        [w2] "w"(w2),
                        [w3] "w"(w3),
@@ -471,6 +471,11 @@ void act_switch_5x5s2(const float16_t* inr0,
                        [vbias] "w"(vbias)
                      : "cc",
                        "memory",
+                       "x0",
+                       "x1",
+                       "x2",
+                       "x3",
+                       "x4",
                        "v0",
                        "v1",
                        "v2",
@@ -491,6 +496,11 @@ void act_switch_5x5s2(const float16_t* inr0,
                        "v20",
                        "v21",
                        "v22");
+        inr0 += 64;
+        inr1 += 64;
+        inr2 += 64;
+        inr3 += 64;
+        inr4 += 64;
 #else
         asm volatile(COMPUTE RELU STORE
                      : [inr0] "+r"(inr0),
@@ -527,12 +537,7 @@ void act_switch_5x5s2(const float16_t* inr0,
       case lite_api::ActivationType::kRelu6:
 #ifdef __aarch64__
         asm volatile(COMPUTE RELU RELU6 STORE
-                     : [inr0] "+r"(inr0),
-                       [inr1] "+r"(inr1),
-                       [inr2] "+r"(inr2),
-                       [inr3] "+r"(inr3),
-                       [inr4] "+r"(inr4),
-                       [wc0] "+r"(weight_c),
+                     : [wc0] "+r"(weight_c),
                        [outc0] "+r"(outc0),
                        [outc1] "+r"(outc1),
                        [outc2] "+r"(outc2),
@@ -541,7 +546,12 @@ void act_switch_5x5s2(const float16_t* inr0,
                        [outc5] "+r"(outc5),
                        [outc6] "+r"(outc6),
                        [outc7] "+r"(outc7)
-                     : [w0] "w"(w0),
+                     : [inr0] "r"(inr0),
+                       [inr1] "r"(inr1),
+                       [inr2] "r"(inr2),
+                       [inr3] "r"(inr3),
+                       [inr4] "r"(inr4),
+                       [w0] "w"(w0),
                        [w1] "w"(w1),
                        [w2] "w"(w2),
                        [w3] "w"(w3),
@@ -550,6 +560,11 @@ void act_switch_5x5s2(const float16_t* inr0,
                        [vsix] "w"(vsix)
                      : "cc",
                        "memory",
+                       "x0",
+                       "x1",
+                       "x2",
+                       "x3",
+                       "x4",
                        "v0",
                        "v1",
                        "v2",
@@ -570,6 +585,11 @@ void act_switch_5x5s2(const float16_t* inr0,
                        "v20",
                        "v21",
                        "v22");
+        inr0 += 64;
+        inr1 += 64;
+        inr2 += 64;
+        inr3 += 64;
+        inr4 += 64;
 #else
         asm volatile(COMPUTE RELU RELU6 STORE
                      : [inr0] "+r"(inr0),
@@ -606,12 +626,7 @@ void act_switch_5x5s2(const float16_t* inr0,
       case lite_api::ActivationType::kLeakyRelu:
 #ifdef __aarch64__
         asm volatile(COMPUTE LEAKY_RELU STORE
-                     : [inr0] "+r"(inr0),
-                       [inr1] "+r"(inr1),
-                       [inr2] "+r"(inr2),
-                       [inr3] "+r"(inr3),
-                       [inr4] "+r"(inr4),
-                       [wc0] "+r"(weight_c),
+                     : [wc0] "+r"(weight_c),
                        [outc0] "+r"(outc0),
                        [outc1] "+r"(outc1),
                        [outc2] "+r"(outc2),
@@ -620,7 +635,12 @@ void act_switch_5x5s2(const float16_t* inr0,
                        [outc5] "+r"(outc5),
                        [outc6] "+r"(outc6),
                        [outc7] "+r"(outc7)
-                     : [w0] "w"(w0),
+                     : [inr0] "r"(inr0),
+                       [inr1] "r"(inr1),
+                       [inr2] "r"(inr2),
+                       [inr3] "r"(inr3),
+                       [inr4] "r"(inr4),
+                       [w0] "w"(w0),
                        [w1] "w"(w1),
                        [w2] "w"(w2),
                        [w3] "w"(w3),
@@ -629,6 +649,11 @@ void act_switch_5x5s2(const float16_t* inr0,
                        [vscale] "w"(vscale)
                      : "cc",
                        "memory",
+                       "x0",
+                       "x1",
+                       "x2",
+                       "x3",
+                       "x4",
                        "v0",
                        "v1",
                        "v2",
@@ -649,6 +674,11 @@ void act_switch_5x5s2(const float16_t* inr0,
                        "v20",
                        "v21",
                        "v22");
+        inr0 += 64;
+        inr1 += 64;
+        inr2 += 64;
+        inr3 += 64;
+        inr4 += 64;
 #else
         asm volatile(COMPUTE LEAKY_RELU STORE
                      : [inr0] "+r"(inr0),
@@ -690,12 +720,7 @@ void act_switch_5x5s2(const float16_t* inr0,
   } else {
 #ifdef __aarch64__
     asm volatile(COMPUTE STORE
-                 : [inr0] "+r"(inr0),
-                   [inr1] "+r"(inr1),
-                   [inr2] "+r"(inr2),
-                   [inr3] "+r"(inr3),
-                   [inr4] "+r"(inr4),
-                   [wc0] "+r"(weight_c),
+                 : [wc0] "+r"(weight_c),
                    [outc0] "+r"(outc0),
                    [outc1] "+r"(outc1),
                    [outc2] "+r"(outc2),
@@ -704,7 +729,12 @@ void act_switch_5x5s2(const float16_t* inr0,
                    [outc5] "+r"(outc5),
                    [outc6] "+r"(outc6),
                    [outc7] "+r"(outc7)
-                 : [w0] "w"(w0),
+                 : [inr0] "r"(inr0),
+                   [inr1] "r"(inr1),
+                   [inr2] "r"(inr2),
+                   [inr3] "r"(inr3),
+                   [inr4] "r"(inr4),
+                   [w0] "w"(w0),
                    [w1] "w"(w1),
                    [w2] "w"(w2),
                    [w3] "w"(w3),
@@ -712,6 +742,11 @@ void act_switch_5x5s2(const float16_t* inr0,
                    [vbias] "w"(vbias)
                  : "cc",
                    "memory",
+                   "x0",
+                   "x1",
+                   "x2",
+                   "x3",
+                   "x4",
                    "v0",
                    "v1",
                    "v2",
@@ -732,6 +767,11 @@ void act_switch_5x5s2(const float16_t* inr0,
                    "v20",
                    "v21",
                    "v22");
+    inr0 += 64;
+    inr1 += 64;
+    inr2 += 64;
+    inr3 += 64;
+    inr4 += 64;
 #else
     asm volatile(COMPUTE STORE
                  : [inr0] "+r"(inr0),

@@ -22,8 +22,8 @@ namespace kernels {
 namespace xpu {
 
 void BoxClipCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   const auto* input = param.Input;
   const auto* im_info = param.ImInfo;
   float h = im_info->data<float>()[0] / im_info->data<float>()[2];

@@ -40,7 +40,7 @@ class Converter {
   // Mapping a XTCL expr to a NNAdapter operand
   xtcl::xExpr GetMappedExpr(core::Operand* operand);
   xtcl::xExpr UpdateExprMap(core::Operand* operand, xtcl::xExpr expr);
-  xtcl::xExpr AddInputTensor(const std::string& name,
+  xtcl::xExpr AddInputTensor(std::string name,
                              NNAdapterOperandPrecisionCode precision,
                              const int32_t* dimensions_data,
                              uint32_t dimensions_count);

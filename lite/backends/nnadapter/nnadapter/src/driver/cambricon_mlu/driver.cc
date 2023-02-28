@@ -39,7 +39,10 @@ void CloseDevice(void* device) {
   }
 }
 
-int CreateContext(void* device, const char* properties, void** context) {
+int CreateContext(void* device,
+                  const char* properties,
+                  int (*callback)(int event_id, void* user_data),
+                  void** context) {
   if (!device || !context) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -55,7 +58,7 @@ int CreateContext(void* device, const char* properties, void** context) {
 }
 
 void DestroyContext(void* context) {
-  if (!context) {
+  if (context) {
     auto c = reinterpret_cast<Context*>(context);
     delete c;
   }

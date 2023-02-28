@@ -1,7 +1,7 @@
 # get the name of current operation system: Linux or Darwin
 SYSTEM=$(shell "uname")
 
-CXX_DEFINES = -DARM_WITH_OMP -DHPPL_STUB_FUNC -DLITE_WITH_ARM -DLITE_WITH_LINUX \
+CXX_DEFINES = -DARM_WITH_OMP -DLITE_WITH_ARM -DLITE_WITH_LINUX \
               -DPADDLE_DISABLE_PROFILER -DPADDLE_NO_PYTHON -DPADDLE_WITH_TESTING
 LDFLAGS = -latomic -pthread -ldl -llog -lz -static-libstdc++
 

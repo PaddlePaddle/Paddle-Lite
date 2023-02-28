@@ -38,7 +38,8 @@ __global__ void Softmax(const T* input, T* output, int num) {
 
 int SpecialSoftmaxKernel::Run(
     core::Operation* operation,
-    std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map) {
+    std::map<core::Operand*, std::shared_ptr<Tensor>>* operand_map,
+    cudaStream_t stream) {
   NNADAPTER_CHECK_EQ(operation->type, NNADAPTER_SPECIAL_SOFTMAX);
   SPECIAL_SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
@@ -48,7 +49,7 @@ int SpecialSoftmaxKernel::Run(
   int num = input_tensor->Length();
   const float* input = reinterpret_cast<const float*>(input_tensor->Data());
   float* output = reinterpret_cast<float*>(output_tensor->Data());
-  Softmax<float><<<1, num>>>(input, output, num);
+  Softmax<float><<<1, num, 0, stream>>>(input, output, num);
   return NNADAPTER_NO_ERROR;
 }
 

@@ -55,7 +55,8 @@ class TestElementwiseMinOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_valid_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
-        self.enable_devices_on_nnadapter(device_names=["kunlunxin_xtcl"])
+        self.enable_devices_on_nnadapter(
+            device_names=["kunlunxin_xtcl", "intel_openvino"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -99,11 +100,16 @@ class TestElementwiseMinOp(AutoScanTest):
         if self.get_target().upper() == 'X86':
             input_data_type = draw(
                 st.sampled_from([np.float32, np.int32, np.int64]))
+        elif self.get_target() == 'NNAdapter':
+            input_data_type = draw(
+                st.sampled_from([np.float32, np.int32, np.int64]))
         elif self.get_target().upper() == 'ARM':
             input_data_type = draw(st.sampled_from([np.float32]))
         elif self.get_target().upper() == 'OPENCL':
             input_data_type = draw(st.sampled_from([np.float32]))
         elif self.get_target().upper() == 'METAL':
+            input_data_type = draw(st.sampled_from([np.float32]))
+        else:
             input_data_type = draw(st.sampled_from([np.float32]))
 
         def gen_input_data(*args, **kwargs):

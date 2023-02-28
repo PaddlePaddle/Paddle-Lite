@@ -179,6 +179,8 @@ def RunModel(args):
             args.nnadapter_subgraph_partition_config_path)
         config.set_nnadapter_mixed_precision_quantization_config_path(
             args.nnadapter_mixed_precision_quantization_config_path)
+    elif args.backend.upper() in ["XPU"]:
+        places = [Place(TargetType.XPU, PrecisionType.FP32)]
     else:
         raise ValueError("Unsupported backend: %s." % args.backend)
 

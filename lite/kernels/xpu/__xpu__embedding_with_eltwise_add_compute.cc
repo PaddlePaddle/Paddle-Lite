@@ -22,7 +22,7 @@ namespace kernels {
 namespace xpu {
 
 void XPUEmbeddingWithEltwiseAddCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
+  auto& param = this->template Param<param_t>();
   CHECK_GT(param.Tables.size(), 0);
   auto embed_dim = param.Tables[0]->dims()[1];
   for (auto* table : param.Tables) {
@@ -32,11 +32,19 @@ void XPUEmbeddingWithEltwiseAddCompute::PrepareForRun() {
     table_lens_cpu_.push_back(table_dims[0]);
     arg_tables_.push_back(table->data<float>());
   }
+
+  padding_idx_ = static_cast<int>(param.padding_idx);
+
+  if (GetBoolFromEnv("XPU_PADDING_IDX", true)) {
+    padding_idx_ = -1;
+  }
+  VLOG(3) << "model padding_idx: " << param.padding_idx
+          << ", xpu padding_idx: " << padding_idx_;
 }
 
 void XPUEmbeddingWithEltwiseAddCompute::Run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto& id_dims = param.Ids[0]->dims();
   int idx_len = id_dims[0] * id_dims[1];
   int emb_layer_num = param.Ids.size();
@@ -53,11 +61,23 @@ void XPUEmbeddingWithEltwiseAddCompute::Run() {
     auto* seq_lod = param.SeqLod;
     seq_lod->Resize({batch_size + 1});
     std::vector<int> cpu_seq_lod{0};
-    auto* mask_ptr = param.Mask->data<float>();
+
+    const void* mask_ptr = nullptr;
+    if (param.mask_dtype == static_cast<int>(VarDescAPI::VarDataType::INT64)) {
+      mask_ptr = param.Mask->data<int64_t>();
+    } else {
+      mask_ptr = param.Mask->data<float>();
+    }
+
     for (auto batch_idx = 0; batch_idx < batch_size; batch_idx++) {
       int cur_batch_seq_len = 0;
       for (auto seq_idx = 0; seq_idx < pad_seq_len; seq_idx++) {
-        if (mask_ptr[batch_idx * pad_seq_len + seq_idx] > 1e-7) {
+        if ((param.mask_dtype ==
+                 static_cast<int>(VarDescAPI::VarDataType::INT64) &&
+             reinterpret_cast<const int64_t*>(
+                 mask_ptr)[batch_idx * pad_seq_len + seq_idx] > 0) ||
+            reinterpret_cast<const float*>(
+                mask_ptr)[batch_idx * pad_seq_len + seq_idx] > 1e-7) {
           cur_batch_seq_len += 1;
         } else {
           break;
@@ -101,8 +121,7 @@ void XPUEmbeddingWithEltwiseAddCompute::Run() {
       table_lens_cpu_,
       embed_dim,
       std::vector<float>(table_lens_cpu_.size(), 1.0f),
-      std::vector<int>(table_lens_cpu_.size(),
-                       static_cast<int>(param.padding_idx)));
+      std::vector<int>(table_lens_cpu_.size(), padding_idx_));
   CHECK_EQ(r, 0);
 }
 

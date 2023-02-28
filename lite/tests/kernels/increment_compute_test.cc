@@ -51,7 +51,7 @@ class IncrementComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("increment");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
@@ -69,9 +69,6 @@ void test_increment(Place place, float abs_error) {
   std::vector<std::vector<int64_t>> x_dims{{3, 5, 4, 4}, {3, 5}, {1}};
   for (auto dims : x_dims) {
     for (float step : {1, 2}) {
-#if LITE_WITH_NPU
-      if (dims.size() != 1) continue;
-#endif
       std::unique_ptr<arena::TestCase> tester(
           new IncrementComputeTester(place, "def", step, DDim(dims)));
       arena::Arena arena(std::move(tester), place, abs_error);
@@ -83,10 +80,7 @@ void test_increment(Place place, float abs_error) {
 TEST(Increment, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // use fp16 in npu
-#elif defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
   abs_error = 1e-2;
 #elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)

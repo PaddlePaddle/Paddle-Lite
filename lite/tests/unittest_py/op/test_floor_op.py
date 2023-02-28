@@ -40,6 +40,8 @@ class TestFloorOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
+        self.enable_devices_on_nnadapter(device_names=["kunlunxin_xtcl"])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -50,7 +52,7 @@ class TestFloorOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), max_size=2))
+                    min_value=1, max_value=8), min_size=1, max_size=2))
         floor_op = OpConfig(
             type="floor",
             inputs={"X": ["input_data"]},

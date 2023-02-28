@@ -27,7 +27,6 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   bool has_int8 = false;
   bool has_arm = false;
   bool has_opencl = false;
-  bool has_cuda = false;
   bool has_x86 = false;
   bool has_metal = false;
   bool has_nnadapter = false;
@@ -40,9 +39,6 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     }
     if (place.target == TARGET(kOpenCL)) {
       has_opencl = true;
-    }
-    if (place.target == TARGET(kCUDA)) {
-      has_cuda = true;
     }
     if (place.target == TARGET(kX86)) {
       has_x86 = true;
@@ -73,9 +69,6 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     act_types.push_back("abs");
   }
 
-  if (!has_int8 && has_cuda) {
-    act_types.push_back("leaky_relu");
-  }
   if (has_x86) {
     act_types.push_back("relu");
     act_types.push_back("relu6");
@@ -130,5 +123,4 @@ REGISTER_MIR_PASS(lite_conv_activation_fuse_pass,
                   paddle::lite::mir::ConvActivationFusePass)
     .BindTargets({TARGET(kAny)})
     .ExcludeTargets({TARGET(kXPU)})
-    .ExcludeTargets({TARGET(kMLU)})
     .BindKernel("conv2d");

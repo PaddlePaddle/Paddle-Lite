@@ -119,7 +119,7 @@ class GatherComputeTest : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(op_type_);
     op_desc->SetInput("X", {x_});
     op_desc->SetInput("Index", {index_});
@@ -168,18 +168,19 @@ TEST(Gather, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-3;
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // use fp16 in npu
-  // TODO(zhupengyang): enable later
-  return;
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #elif defined(LITE_WITH_X86)
@@ -192,7 +193,7 @@ TEST(Gather, precision) {
            {5, 7, 10, 12}, {8, 12, 16}, {12, 17}}) {
     for (auto index_dims : std::vector<std::vector<int64_t>>{{3}, {7}, {10}}) {
       for (auto axis_dims : std::vector<std::vector<int64_t>>{{1}, {0}}) {
-#if (defined(LITE_WITH_NPU) || defined(LITE_WITH_NNADAPTER))
+#if defined(LITE_WITH_NNADAPTER)
         axis_dims = {{0}};
         TestGather<float, int32_t, int32_t>(
             x_dims, index_dims, axis_dims, place, abs_error, "def");

@@ -1,4 +1,4 @@
-set(ops_src_list "${CMAKE_BINARY_DIR}/ops_src_list.txt")
+set(ops_src_list "${PADDLE_BINARY_DIR}/ops_src_list.txt")
 set(OPS_SRC CACHE INTERNAL "")
 file(WRITE ${ops_src_list} "") # clean
 if(LITE_BUILD_TAILOR)
@@ -36,17 +36,16 @@ function(add_operator TARGET level)
 endfunction()
 
 
-set(kernels_src_list "${CMAKE_BINARY_DIR}/kernels_src_list.txt")
+set(kernels_src_list "${PADDLE_BINARY_DIR}/kernels_src_list.txt")
 file(WRITE ${kernels_src_list} "") # clean
 
 # file to record faked kernels for opt python lib
-set(fake_kernels_src_list "${CMAKE_BINARY_DIR}/fake_kernels_src_list.txt")
+set(fake_kernels_src_list "${PADDLE_BINARY_DIR}/fake_kernels_src_list.txt")
 file(WRITE ${fake_kernels_src_list} "") # clean
 
 # add a kernel for some specific device
 set(IS_FAKED_KERNEL false CACHE INTERNAL "judget faked kernel")
-set(cuda_kernels CACHE INTERNAL "cuda kernels")
-# device: one of (Host, ARM, X86, NPU, MLU, HUAWEI_ASCEND_NPU, APU, FPGA, OPENCL, CUDA, BM, RKNPU IMAGINATION_NNA)
+# device: one of (Host, ARM, X86, OPENCL)
 # level: one of (basic, extra)
 function(add_kernel TARGET device level)
     set(options "")
@@ -67,13 +66,13 @@ function(add_kernel TARGET device level)
       return()
     endif()
 
-    # strp lib according to useful kernel names.
+    # strip lib according to useful kernel names.
     if(LITE_BUILD_TAILOR)
       set(dst_file "")
       foreach(src ${args_SRCS})
         string(TOLOWER "${device}" device_name) # ARM => arm, Host => host
         get_filename_component(filename ${src} NAME_WE) # conv_compute.cc => conv_compute
-        set(kernel_tailor_src_dir "${CMAKE_BINARY_DIR}/kernel_tailor_src_dir")
+        set(kernel_tailor_src_dir "${PADDLE_BINARY_DIR}/kernel_tailor_src_dir")
         set(suffix "for_strip")
         set(src_file "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.cc") # conv_compute_arm.cc
         if("${device}" STREQUAL "METAL")
@@ -90,21 +89,6 @@ function(add_kernel TARGET device level)
       return()
     endif()
 
-    if ("${device}" STREQUAL "CUDA")
-        if (NOT LITE_WITH_CUDA)
-            foreach(src ${args_SRCS})
-                file(APPEND ${fake_kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
-            endforeach()
-            return()
-        endif()
-        set(cuda_kernels "${cuda_kernels};${TARGET}" CACHE INTERNAL "")
-        foreach(src ${args_SRCS})
-          file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
-        endforeach()
-        nv_library(${TARGET} SRCS ${args_SRCS})
-        return()
-    endif()
-
     # compile actual kernels
     foreach(src ${args_SRCS})
         file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
@@ -115,7 +99,7 @@ function(add_kernel TARGET device level)
 endfunction()
 
 # Add a unit-test name to file for latter offline manual test.
-set(offline_test_registry_file "${CMAKE_BINARY_DIR}/lite_tests.txt")
+set(offline_test_registry_file "${PADDLE_BINARY_DIR}/lite_tests.txt")
 file(WRITE ${offline_test_registry_file} "") # clean
 
 function(lite_cc_test TARGET)
@@ -125,8 +109,8 @@ function(lite_cc_test TARGET)
   set(options "")
   set(oneValueArgs "")
 
-  set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS
-        IMAGINATION_NNA_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
+  set(multiValueArgs SRCS DEPS X86_DEPS CL_DEPS METAL_DEPS ARM_DEPS
+        XPU_DEPS  NNADAPTER_DEPS PROFILE_DEPS
         LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS CV_DEPS
         ARGS
         COMPILE_LEVEL # (basic|extra)
@@ -136,25 +120,15 @@ function(lite_cc_test TARGET)
   lite_deps(deps
             DEPS ${args_DEPS}
             X86_DEPS ${args_X86_DEPS}
-            CUDA_DEPS ${args_CUDA_DEPS}
             CL_DEPS ${args_CL_DEPS}
             METAL_DEPS ${args_METAL_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
-            FPGA_DEPS ${args_FPGA_DEPS}
-            INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
-            NPU_DEPS ${args_NPU_DEPS}
-            APU_DEPS ${args_APU_DEPS}
             XPU_DEPS ${args_XPU_DEPS}
-            RKNPU_DEPS ${args_RKNPU_DEPS}
-            BM_DEPS ${args_BM_DEPS}
-            IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
             NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}
             CV_DEPS ${args_CV_DEPS}
-            MLU_DEPS ${args_MLU_DEPS}
-            HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
             )
   if(LITE_WITH_ARM)
     cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} core_tester gflags gtest)
@@ -164,9 +138,9 @@ function(lite_cc_test TARGET)
   file(APPEND ${offline_test_registry_file} "${TARGET}\n")
   add_dependencies(${TARGET} bundle_full_api)
   if(NOT WIN32)
-    target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a)
+    target_link_libraries(${TARGET} ${PADDLE_BINARY_DIR}/libpaddle_api_full_bundled.a)
   else()
-    target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
+    target_link_libraries(${TARGET} ${PADDLE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
   endif()
   # windows
   if(NOT WIN32)
@@ -181,20 +155,15 @@ function(lite_cc_test TARGET)
   if(LITE_WITH_XPU)
       target_link_libraries(${TARGET} ${xpu_builder_libs} ${xpu_runtime_libs})
   endif()
-  if(LITE_WITH_NPU)
-      target_link_libraries(${TARGET} ${npu_builder_libs} ${npu_runtime_libs})
-  endif()
-  if(LITE_WITH_CUDA)
-      get_property(cuda_deps GLOBAL PROPERTY CUDA_MODULES)
-      target_link_libraries(${TARGET} ${cuda_deps})
-  endif()
 
+  set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
+  set_target_properties(${TARGET} PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
   common_link(${TARGET})
   add_test(NAME ${TARGET}
           COMMAND ${TARGET} ${args_ARGS}
           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   # No unit test should exceed 10 minutes.
-  set_tests_properties(${TARGET} PROPERTIES TIMEOUT 600)
+  set_tests_properties(${TARGET} PROPERTIES TIMEOUT 1200)
 
 endfunction()
 

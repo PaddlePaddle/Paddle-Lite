@@ -1,4 +1,4 @@
-# 颖脉 NNA 部署示例
+# 颖脉 NNA
 
 Paddle Lite 已支持 Imagination NNA 的预测部署。
 其接入原理是与之前华为 Kirin NPU 类似，即加载并分析 Paddle 模型，将 Paddle 算子转成 Imagination DNN APIs 进行网络构建，在线生成并执行模型。
@@ -46,8 +46,6 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 
 您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
-**不经过 NNAdapter 标准算子转换，而是直接将 Paddle 算子转换成 `Imagination NNA IR` 的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/imagination_nna.html)**。
-
 ## 参考示例演示
 
 ### 测试设备( Roc1 开发板)
@@ -65,7 +63,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 ### 准备交叉编译环境
 
 - 按照以下两种方式配置交叉编译环境：
-  - Docker 交叉编译环境：由于 Roc1 运行环境为Ubuntu 18.04，且 Imagination NNA DDK 依赖高版本的 glibc，因此不能直接使用[编译环境准备](../source_compile/docker_env)中的 Docker image，而需要按照如下方式在Host机器上手动构建 Ubuntu 18.04 的 Docker image；
+  - Docker 交叉编译环境：由于 Roc1 运行环境为Ubuntu 18.04，且 Imagination NNA DDK 依赖高版本的 glibc，因此不能直接使用 [Docker 统一编译环境搭建](../source_compile/docker_env) 中的 Docker image，而需要按照如下方式在Host机器上手动构建 Ubuntu 18.04 的 Docker image；
 
     ```
     $ wget https://paddlelite-demo.bj.bcebos.com/devices/imagination/Dockerfile
@@ -77,7 +75,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 - 由于需要通过 `scp` 和 `ssh` 命令将交叉编译生成的 Paddle Lite 库和示例程序传输到设备上执行，因此，在进入 Docker 容器后还需要安装如下软件：
 
   ```
-  # apt-get install openssh-client sshpass
+  $ apt-get install openssh-client sshpass
   ```
 
 ### 运行图像分类示例程序
@@ -88,13 +86,18 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
     - PaddleLite-generic-demo
       - image_classification_demo
         - assets
-          - images
-            - tabby_cat.jpg # 测试图片
-            - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
-          - labels
+          - configs
+            - imagenet_224.txt # config 文件
             - synset_words.txt # 1000 分类 label 文件
+          - datasets
+            - test # dataset
+              - inputs
+                - tabby_cat.jpg # 输入图片
+              - outputs
+                - tabby_cat.jpg # 输出图片
+              - list.txt # 图片清单
           - models
-            - mobilenet_v1_int8_224_per_layer # Paddle non-combined 格式的 mobilenet_v1 int8 全量化模型
+            - mobilenet_v1_int8_224_per_layer
               - __model__ # Paddle fluid 模型组网文件，可使用 netron 查看网络结构
               — conv1_weights # Paddle fluid 模型参数文件
               - batch_norm_0.tmp_2.quant_dequant.scale # Paddle fluid 模型量化参数文件
@@ -103,10 +106,10 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
         - shell
           - CMakeLists.txt # 示例程序 CMake 脚本
           - build.linux.arm64 # arm64 编译工作目录
-            - image_classification_demo # 已编译好的，适用于 arm64 的示例程序
+            - demo # 已编译好的，适用于 arm64 的示例程序
             ...
           ...
-          - image_classification_demo.cc # 示例程序源码
+          - demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
           - run_with_ssh.sh # 示例程序 adb 运行脚本
           - run_with_adb.sh # 示例程序 ssh 运行脚本
@@ -142,56 +145,45 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 
   在 ARM CPU 上运行 mobilenetv1 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
-  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 192.168.100.10 22 img imgroc1
-  ...
-  iter 0 cost: 61.130001 ms
-  iter 1 cost: 61.073002 ms
-  iter 2 cost: 61.081001 ms
-  iter 3 cost: 61.088001 ms
-  iter 4 cost: 61.096001 ms
-  warmup: 1 repeat: 5, average: 61.093601 ms, max: 61.130001 ms, min: 61.073002 ms
-  results: 3
-  Top0  tabby, tabby cat - 0.490191
-  Top1  Egyptian cat - 0.441032
-  Top2  tiger cat - 0.060051
-  Preprocess time: 0.798000 ms
-  Prediction time: 61.093601 ms
-  Postprocess time: 0.167000 ms
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 cpu 192.168.100.10 22 img imgroc1
 
+    Top1 Egyptian cat - 0.503239
+    Top2 tabby, tabby cat - 0.419854
+    Top3 tiger cat - 0.065506
+    Top4 lynx, catamount - 0.007992
+    Top5 cougar, puma, catamount, mountain lion, painter, panther, Felis concolor - 0.000494
+    Preprocess time: 7.667000 ms, avg 7.667000 ms, max 7.667000 ms, min 7.667000 ms
+    Prediction time: 60.589000 ms, avg 60.589000 ms, max 60.589000 ms, min 60.589000 ms
+    Postprocess time: 8.914000 ms, avg 8.914000 ms, max 8.914000 ms, min 8.914000 ms
 
   在 Imagination NNA 上运行 mobilenetv1 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
-  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 imagination_nna 192.168.100.10 22 img imgroc1
-  ...
-  iter 0 cost: 3.288000 ms
-  iter 1 cost: 3.220000 ms
-  iter 2 cost: 3.167000 ms
-  iter 3 cost: 3.268000 ms
-  iter 4 cost: 3.146000 ms
-  warmup: 1 repeat: 5, average: 3.217800 ms, max: 3.288000 ms, min: 3.146000 ms
-  results: 3
-  Top0  tabby, tabby cat - 0.514779
-  Top1  Egyptian cat - 0.421183
-  Top2  tiger cat - 0.052648
-  Preprocess time: 0.818000 ms
-  Prediction time: 3.217800 ms
-  Postprocess time: 0.157000 ms
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test linux arm64 imagination_nna 192.168.100.10 22 img imgroc1
+
+    Top1 tabby, tabby cat - 0.462131
+    Top2 Egyptian cat - 0.462131
+    Top3 tiger cat - 0.058498
+    Top4 lynx, catamount - 0.011700
+    Top5 tiger shark, Galeocerdo cuvieri - 0.000000
+    Preprocess time: 7.547000 ms, avg 7.547000 ms, max 7.547000 ms, min 7.547000 ms
+    Prediction time: 4.026000 ms, avg 4.026000 ms, max 4.026000 ms, min 4.026000 ms
+    Postprocess time: 8.780000 ms, avg 8.780000 ms, max 8.780000 ms, min 8.780000 ms
   ```
 
-  - 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/images` 目录下，然后调用 `convert_to_raw_image.py` 生成相应的 RGB Raw 图像，最后修改 `run_with_adb.sh` 的 IMAGE_NAME 变量即可；
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
   ```shell
   注意：
   1）请根据 `buid.sh` 配置正确的参数值。
   2）需在 Docker 环境中编译。
 
-  ./build.sh linux arm64
+  $ ./build.sh linux arm64
   ```
 
 
 ### 更新模型
 
 - 通过 Paddle Fluid 训练，或 X2Paddle 转换得到 MobileNetv1 foat32 模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
-- 参考[模型量化-静态离线量化](../user_guides/quant_post_static)使用 PaddleSlim 对  `float32` 模型进行量化（注意：由于 Imagination NNA 只支持 tensor-wise 的全量化模型，在启动量化脚本时请注意相关参数的设置），最终得到全量化 MobileNetV1 模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/imagination/mobilenet_v1_int8_224_fluid.tar.gz)；
+- 参考[模型量化](../user_guides/quant_aware)使用 PaddleSlim 对  `float32` 模型进行量化（注意：由于 Imagination NNA 只支持 tensor-wise 的全量化模型，在启动量化脚本时请注意相关参数的设置），最终得到全量化 MobileNetV1 模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/imagination/mobilenet_v1_int8_224_fluid.tar.gz)；
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用 opt 工具转换生成 Imagination NNA 模型，仅需要将 `valid_targets` 设置为 imagination_nna,arm 即可。
 
   ```shell
@@ -232,15 +224,19 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 
     - 替换头文件和库
       ```shell
-      # 替换 include 目录
+      替换 include 目录
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-      # 替换 NNAdapter 运行时库
+      
+      替换 NNAdapter 运行时库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/imagination_nna/
-      # 替换 NNAdapter device HAL 库
+      
+      替换 NNAdapter device HAL 库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libimagination_nna.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/imagination_nna/
-      # 替换 libpaddle_light_api_shared.so
+      
+      替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
-      # 替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
+      
+      替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
       ```
 

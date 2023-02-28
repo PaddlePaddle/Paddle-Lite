@@ -64,16 +64,21 @@ def ParsePaddleLiteConfig(self, config):
     if "thread" in config:
         lite_config.set_threads(config["thread"])
     if self.get_target().upper() == "NNADAPTER":
-        lite_config.set_nnadapter_device_names(
-            self.args.nnadapter_device_names.split(","))
-        lite_config.set_nnadapter_context_properties(
-            self.args.nnadapter_context_properties)
-        lite_config.set_nnadapter_model_cache_dir(
-            self.args.nnadapter_model_cache_dir)
-        lite_config.set_nnadapter_subgraph_partition_config_path(
-            self.args.nnadapter_subgraph_partition_config_path)
-        lite_config.set_nnadapter_mixed_precision_quantization_config_path(
-            self.args.nnadapter_mixed_precision_quantization_config_path)
+        if "nnadapter_device_names" in config:
+            lite_config.set_nnadapter_device_names(config[
+                "nnadapter_device_names"][0].split(","))
+        if "nnadapter_context_properties" in config:
+            lite_config.set_nnadapter_context_properties(config[
+                "nnadapter_context_properties"])
+        if "nnadapter_model_cache_dir" in config:
+            lite_config.set_nnadapter_model_cache_dir(config[
+                "nnadapter_model_cache_dir"])
+        if "nnadapter_subgraph_partition_config_path" in config:
+            lite_config.set_nnadapter_subgraph_partition_config_path(config[
+                "nnadapter_subgraph_partition_config_path"])
+        if "nnadapter_mixed_precision_quantization_config_path" in config:
+            lite_config.set_nnadapter_mixed_precision_quantization_config_path(
+                config["nnadapter_mixed_precision_quantization_config_path"])
     return lite_config
 
 

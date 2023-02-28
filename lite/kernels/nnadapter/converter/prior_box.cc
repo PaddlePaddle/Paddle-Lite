@@ -42,13 +42,18 @@ int ConvertPriorBox(Converter* converter, OpInfo* op, Scope* scope) {
   auto step_h = op->GetAttr<float>("step_h");
   auto offset = op->GetAttr<float>("offset");
   auto min_max_aspect_ratios_order =
-      op->GetAttr<bool>("min_max_aspect_ratios_order");
+      op->HasAttr("min_max_aspect_ratios_order")
+          ? op->GetAttr<bool>("min_max_aspect_ratios_order")
+          : false;
   auto input_operand = converter->AddInputOperand(scope, input_name);
   auto image_operand = converter->AddInputOperand(scope, image_name);
   auto boxes_operand = converter->AddOutputOperand(boxes_name);
   auto Variances_operand = converter->AddOutputOperand(Variances_name);
   auto min_sizes_operand = converter->AddConstantOperand(min_sizes);
-  auto max_sizes_operand = converter->AddConstantOperand(max_sizes);
+  NNAdapterOperand* max_sizes_operand = nullptr;
+  if (max_sizes.size() > 0) {
+    max_sizes_operand = converter->AddConstantOperand(max_sizes);
+  }
   auto aspect_ratios_operand = converter->AddConstantOperand(aspect_ratios);
   auto variances_operand = converter->AddConstantOperand(variances);
   auto flip_operand = converter->AddConstantOperand(flip);

@@ -19,6 +19,7 @@
 #include <common.h>
 #include <interface_builder.h>
 #include <interface_network.h>
+#include <interface_plugin.h>
 #include <interface_runtime.h>
 #include <memory>
 #include <vector>
@@ -42,8 +43,12 @@ namespace cambricon_mlu {
 #define CAMBRICON_MLU_BUILD_CONFIG_FILE_PATH \
   "CAMBRICON_MLU_BUILD_CONFIG_FILE_PATH"
 
+#define CAMBRICON_MLU_OP_PARAMS_FILE_PATH "CAMBRICON_MLU_OP_PARAMS_FILE_PATH"
+
 #define MLU_CNRT_CHECK(msg) \
   NNADAPTER_CHECK_EQ(msg, cnrtSuccess) << (msg) << " " << cnrtGetErrorStr(msg)
+
+#define MLU_MM_CHECK(msg) NNADAPTER_CHECK(msg.ok()) << " " << msg.ToString()
 
 // Convert NNAdapter types to magicmind dtype
 magicmind::DataType ConvertToMagicMindDtype(
@@ -57,6 +62,7 @@ int64_t ConvertToMagicMindAxis(NNAdapterOperandLayoutCode input_layout);
 magicmind::Dims ConvertToMagicMindDims(const int32_t* input_dimensions,
                                        uint32_t input_dimensions_count);
 bool IsDeviceMemory(magicmind::IRTTensor* pointer);
+bool IsScalar(magicmind::Dims dim);
 
 template <typename T>
 struct MMDestroyer {

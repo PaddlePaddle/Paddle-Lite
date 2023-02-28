@@ -19,7 +19,11 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include "optimizer/fuse_conv2d_activation_into_conv2d.h"
+#include "optimizer/fuse_conv2d_add_into_conv2d.h"
+#include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
+#include "optimizer/fuse_reshape_transpose_reshape_into_channel_shuffle.h"
 #include "utility/debug.h"
 #include "utility/modeling.h"
 #include "utility/string.h"
@@ -70,6 +74,7 @@ class Context {
 };
 
 Context::Context(void* device, const char* properties) : device_(device) {
+  NNADAPTER_CHECK(device_);
   // Extract the runtime parameters from the context properties
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
   std::string key_value;
@@ -85,7 +90,9 @@ Context::Context(void* device, const char* properties) : device_(device) {
 
 class Program {
  public:
-  explicit Program(Context* context) : context_(context) {}
+  explicit Program(Context* context) : context_(context) {
+    NNADAPTER_CHECK(context_);
+  }
   ~Program() { Clear(); }
 
   int Validate(const core::Model* model, bool* supported_operations);
@@ -167,7 +174,11 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_VLOG(5) << "Cached model:" << std::endl << Visualize(model);
   } else {
     // Build from model
+    FuseConv2DBatchNormIntoConv2D(model);
+    FuseConv2DAddIntoConv2D(model);
+    FuseConv2DActivationIntoConv2D(model);
     FuseMatMulAddIntoFullyConnected(model);
+    FuseReshapeTransposeReshapeIntoChannelShuffle(model);
     model_.second = false;
   }
   model_.first = model;
@@ -197,7 +208,7 @@ int Program::CheckInputsAndOutputs(uint32_t input_count,
     // Get the new dimensions
     auto& arg = input_arguments[i];
     NNAdapterOperandType new_type;
-    arg.access(arg.memory, &new_type);
+    arg.access(arg.memory, &new_type, nullptr);
     // Check whether the rank of input operands have been changed
     const NNAdapterOperandType& old_type =
         model_.first->input_operands[arg.index]->type;
@@ -224,7 +235,7 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.access);
     auto operand = model_.first->input_operands[arg.index];
     auto type = &operand->type;
-    auto buffer = arg.access(arg.memory, type);
+    auto buffer = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(buffer);
     type->lifetime = NNADAPTER_CONSTANT_REFERENCE;
     operand->buffer = buffer;
@@ -263,7 +274,7 @@ int Program::Execute(uint32_t input_count,
     auto operand = model_.first->output_operands[arg.index];
     auto type = &operand->type;
     auto length = GetOperandTypeBufferLength(*type);
-    auto buffer = arg.access(arg.memory, type);
+    auto buffer = arg.access(arg.memory, type, nullptr);
     NNADAPTER_CHECK(buffer);
     memcpy(buffer, operand->buffer, length);
   }
@@ -290,7 +301,10 @@ void CloseDevice(void* device) {
   }
 }
 
-int CreateContext(void* device, const char* properties, void** context) {
+int CreateContext(void* device,
+                  const char* properties,
+                  int (*callback)(int event_id, void* user_data),
+                  void** context) {
   if (!device || !context) {
     return NNADAPTER_INVALID_PARAMETER;
   }
@@ -306,7 +320,7 @@ int CreateContext(void* device, const char* properties, void** context) {
 }
 
 void DestroyContext(void* context) {
-  if (!context) {
+  if (context) {
     auto c = reinterpret_cast<Context*>(context);
     delete c;
   }
@@ -398,9 +412,12 @@ Device::Device(const std::string& name) {
 
 Device::~Device() { device_ = nullptr; }
 
-int Device::CreateContext(const char* properties, void** context) {
+int Device::CreateContext(const char* properties,
+                          int (*callback)(int event_id, void* user_data),
+                          void** context) {
   if (device_ && context) {
-    return device_->second->create_context(device_->first, properties, context);
+    return device_->second->create_context(
+        device_->first, properties, callback, context);
   }
   return NNADAPTER_INVALID_PARAMETER;
 }

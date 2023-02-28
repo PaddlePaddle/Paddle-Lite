@@ -21,7 +21,7 @@ public class Place {
 
     /** Place hardware target type. */
     public enum TargetType {
-        UNKNOWN(0), HOST(1), X86(2), CUDA(3), ARM(4), OPEN_CL(5), FPGA(7), NPU(8), ANY(6);
+        UNKNOWN(0), HOST(1), X86(2), CUDA(3), ARM(4), OPEN_CL(5), FPGA(7), ANY(6);
 
         public final int value;
 

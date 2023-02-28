@@ -27,22 +27,54 @@ namespace fusion {
 class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
  public:
   explicit XPUEmbeddingWithEltwiseAddFuser(
-      int n_embedding, const std::string& op_type = "lookup_table")
-      : n_embedding_(n_embedding), op_type_(op_type) {}
+      int n_embedding,
+      const std::string& op_type = "lookup_table",
+      const std::string& pre_op_type = "")
+      : n_embedding_(n_embedding),
+        op_type_(op_type),
+        pre_op_type_(pre_op_type) {}
 
   void BuildPattern() override {
-    auto* ids0 =
-        VarNode("ids0")->assert_is_op_input(op_type_, "Ids")->AsInput();
+    PMNode* x0 = nullptr;
+    PMNode* preproces0 = nullptr;
+    PMNode* preproces_out0 = nullptr;
+    PMNode* preproces_xshape0 = nullptr;
+    PMNode* x1 = nullptr;
+    PMNode* preproces1 = nullptr;
+    PMNode* preproces_out1 = nullptr;
+    PMNode* preproces_xshape1 = nullptr;
+    PMNode* embedding0 = nullptr;
+    if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape2") {
+      x0 = VarNode("x0")->assert_is_op_input(pre_op_type_, "X")->AsInput();
+      preproces0 = OpNode("preproces0", pre_op_type_);
+      preproces_out0 = VarNode("preproces_out0")
+                           ->assert_is_op_output(pre_op_type_, "Out")
+                           ->assert_is_op_input(op_type_, "Ids")
+                           ->AsIntermediate();
+      preproces_xshape0 = VarNode("preproces_xshape0")
+                              ->assert_is_op_output(pre_op_type_, "XShape")
+                              ->AsIntermediate();
+      x1 = VarNode("x1")->assert_is_op_input(pre_op_type_, "X")->AsInput();
+      preproces1 = OpNode("preproces1", pre_op_type_)->AsIntermediate();
+      preproces_out1 = VarNode("preproces_out1")
+                           ->assert_is_op_output(pre_op_type_, "Out")
+                           ->assert_is_op_input(op_type_, "Ids")
+                           ->AsIntermediate();
+      preproces_xshape1 = VarNode("preproces_xshape1")
+                              ->assert_is_op_output(pre_op_type_, "XShape")
+                              ->AsIntermediate();
+      embedding0 = OpNode("embedding0", op_type_)->AsIntermediate();
+    } else {
+      x0 = VarNode("x0")->assert_is_op_input(op_type_, "Ids")->AsInput();
+      x1 = VarNode("x1")->assert_is_op_input(op_type_, "Ids")->AsInput();
+      embedding0 = OpNode("embedding0", op_type_);
+    }
     auto* table0 =
         VarNode("table0")->assert_is_op_input(op_type_, "W")->AsInput();
-    auto* embedding0 = OpNode("embedding0", op_type_);
     auto* embedding_out0 = VarNode("embedding_out0")
                                ->assert_is_op_output(op_type_, "Out")
                                ->assert_is_op_input("elementwise_add", "X")
                                ->AsIntermediate();
-
-    auto* ids1 =
-        VarNode("ids1")->assert_is_op_input(op_type_, "Ids")->AsInput();
     auto* table1 =
         VarNode("table1")->assert_is_op_input(op_type_, "W")->AsInput();
     auto* embedding1 = OpNode("embedding1", op_type_)->AsIntermediate();
@@ -55,24 +87,36 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
     auto* ewadd01_out = VarNode("ewadd01_out")
                             ->assert_is_op_output("elementwise_add", "Out")
                             ->AsIntermediate();
-
-    embedding0->LinksFrom({ids0, table0});
+    if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape2") {
+      preproces0->LinksFrom({x0});
+      preproces0->LinksTo({preproces_out0, preproces_xshape0});
+      embedding0->LinksFrom({preproces_out0, table0});
+      preproces1->LinksFrom({x1});
+      preproces1->LinksTo({preproces_out1, preproces_xshape1});
+      embedding1->LinksFrom({preproces_out1, table1});
+    } else {
+      embedding0->LinksFrom({x0, table0});
+      embedding1->LinksFrom({x1, table1});
+    }
     embedding0->LinksTo({embedding_out0});
-    embedding1->LinksFrom({ids1, table1});
     embedding1->LinksTo({embedding_out1});
     ewadd01->LinksFrom({embedding_out0, embedding_out1});
     ewadd01->LinksTo({ewadd01_out});
 
     auto* last_ewadd_out = ewadd01_out;
     for (int i = 2; i < n_embedding_; ++i) {
-      auto ids_name = paddle::lite::string_format("ids%d", i);
+      auto x_name = paddle::lite::string_format("x%d", i);
+      auto preproces_name = paddle::lite::string_format("preproces%d", i);
+      auto preproces_out_name =
+          paddle::lite::string_format("preproces_out%d", i);
+      auto preproces_xshape_name =
+          paddle::lite::string_format("preproces_xshape%d", i);
       auto table_name = paddle::lite::string_format("table%d", i);
       auto embedding_name = paddle::lite::string_format("embedding%d", i);
       auto embedding_out_name =
           paddle::lite::string_format("embedding_out%d", i);
 
-      auto* new_ids =
-          VarNode(ids_name)->assert_is_op_input(op_type_, "Ids")->AsInput();
+      PMNode* new_x = nullptr;
       auto* new_table =
           VarNode(table_name)->assert_is_op_input(op_type_, "W")->AsInput();
       auto* new_embedding = OpNode(embedding_name, op_type_)->AsIntermediate();
@@ -80,8 +124,26 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
                                     ->assert_is_op_output(op_type_, "Out")
                                     ->assert_is_op_input("elementwise_add", "Y")
                                     ->AsIntermediate();
-
-      new_embedding->LinksFrom({new_ids, new_table});
+      if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape2") {
+        new_x =
+            VarNode(x_name)->assert_is_op_input(pre_op_type_, "X")->AsInput();
+        auto* new_preproces =
+            OpNode(preproces_name, pre_op_type_)->AsIntermediate();
+        auto* new_preproces_out = VarNode(preproces_out_name)
+                                      ->assert_is_op_output(pre_op_type_, "Out")
+                                      ->assert_is_op_input(op_type_, "Ids")
+                                      ->AsIntermediate();
+        auto* new_preproces_xshape =
+            VarNode(preproces_xshape_name)
+                ->assert_is_op_output(pre_op_type_, "XShape")
+                ->AsIntermediate();
+        new_preproces->LinksFrom({new_x});
+        new_preproces->LinksTo({new_preproces_out, new_preproces_xshape});
+        new_embedding->LinksFrom({new_preproces_out, new_table});
+      } else {
+        new_x = VarNode(x_name)->assert_is_op_input(op_type_, "Ids")->AsInput();
+        new_embedding->LinksFrom({new_x, new_table});
+      }
       new_embedding->LinksTo({new_embedding_out});
 
       auto ewadd_name = paddle::lite::string_format("ewadd%d%d", i - 1, i);
@@ -102,15 +164,17 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
     cpp::OpDesc op_desc;
     op_desc.SetType("__xpu__embedding_with_eltwise_add");
-    std::vector<std::string> ids_names;
+    std::vector<std::string> x_names;
     std::vector<std::string> table_names;
     for (int i = 0; i < n_embedding_; ++i) {
-      auto ids_name = paddle::lite::string_format("ids%d", i);
-      ids_names.push_back(matched.at(ids_name)->arg()->name);
+      auto x_name = paddle::lite::string_format("x%d", i);
+      x_names.push_back(matched.at(x_name)->arg()->name);
       auto table_name = paddle::lite::string_format("table%d", i);
       table_names.push_back(matched.at(table_name)->arg()->name);
     }
-    op_desc.SetInput("Ids", ids_names);
+    op_desc.mutable_inputs()->clear();
+    op_desc.mutable_outputs()->clear();
+    op_desc.SetInput("Ids", x_names);
     op_desc.SetInput("Tables", table_names);
     auto output_name = paddle::lite::string_format(
         "ewadd%d%d_out", n_embedding_ - 2, n_embedding_ - 1);
@@ -119,8 +183,10 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
     auto* embedding0_op_info = matched.at("embedding0")->stmt()->op_info();
     op_desc.SetAttr<int64_t>(
         "padding_idx", embedding0_op_info->GetAttr<int64_t>("padding_idx"));
-
     auto* new_stmt = matched.at("embedding0")->stmt();
+    if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape2") {
+      new_stmt = matched.at("preproces0")->stmt();
+    }
     auto new_op = LiteOpRegistry::Global().Create(op_desc.Type());
     new_op->Attach(op_desc, new_stmt->op()->scope());
     new_op->SetValidPlaces(new_stmt->op()->valid_places());
@@ -129,17 +195,27 @@ class XPUEmbeddingWithEltwiseAddFuser : public FuseBase {
     new_stmt->SetKernels(std::move(kernels));
 
     for (int i = 0; i < n_embedding_; ++i) {
-      auto ids_name = paddle::lite::string_format("ids%d", i);
+      auto x_name = paddle::lite::string_format("x%d", i);
       auto table_name = paddle::lite::string_format("table%d", i);
-      DirectedLink(matched.at(ids_name), matched.at("embedding0"));
-      DirectedLink(matched.at(table_name), matched.at("embedding0"));
+      if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape2") {
+        DirectedLink(matched.at(x_name), matched.at("preproces0"));
+        DirectedLink(matched.at(table_name), matched.at("preproces0"));
+      } else {
+        DirectedLink(matched.at(x_name), matched.at("embedding0"));
+        DirectedLink(matched.at(table_name), matched.at("embedding0"));
+      }
     }
-    IR_OP_VAR_LINK(matched.at("embedding0"), matched.at(output_name));
+    if (pre_op_type_ == "squeeze2" || pre_op_type_ == "reshape2") {
+      IR_OP_VAR_LINK(matched.at("preproces0"), matched.at(output_name));
+    } else {
+      IR_OP_VAR_LINK(matched.at("embedding0"), matched.at(output_name));
+    }
   }
 
  private:
   int n_embedding_;
   std::string op_type_;
+  std::string pre_op_type_;
 };
 
 }  // namespace fusion
@@ -148,11 +224,15 @@ class XPUEmbeddingWithEltwiseAddFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
+    std::vector<std::string> preoptypes{"squeeze2", "reshape2", ""};
     std::vector<std::string> optypes{"lookup_table", "lookup_table_v2"};
-    for (int n_embedding : {4, 3, 2}) {
-      for (auto& op_type : optypes) {
-        fusion::XPUEmbeddingWithEltwiseAddFuser fuser(n_embedding, op_type);
-        fuser(graph.get());
+    for (auto& pre_op_type : preoptypes) {
+      for (int n_embedding : {4, 3, 2}) {
+        for (auto& op_type : optypes) {
+          fusion::XPUEmbeddingWithEltwiseAddFuser fuser(
+              n_embedding, op_type, pre_op_type);
+          fuser(graph.get());
+        }
       }
     }
   }

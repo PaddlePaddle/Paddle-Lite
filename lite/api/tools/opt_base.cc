@@ -82,6 +82,12 @@ void OptBase::SetSparseThreshold(float sparse_threshold) {
   }
 }
 
+void OptBase::SetNNAdapterMixedPrecisionQuantizationConfigPath(
+    const std::string& nnadapter_mixed_precision_quantization_config_path) {
+  opt_config_.set_nnadapter_mixed_precision_quantization_config_path(
+      nnadapter_mixed_precision_quantization_config_path);
+}
+
 void OptBase::SetPassesInternal(
     const std::vector<std::string>& passes_internal) {
   opt_config_.set_passes_internal(passes_internal);
@@ -111,6 +117,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageFolder)});
       valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)});
       valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)});
@@ -120,6 +128,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
           Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)});
       valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kInt64), DATALAYOUT(kNCHW)});
       valid_places_.emplace_back(
           TARGET(kARM));  // enable kARM CPU kernel when no opencl kernel
     } else if (target_repr == "metal") {
@@ -162,19 +172,11 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
     } else if (target_repr == "xpu") {
       valid_places_.emplace_back(TARGET(kXPU));
-    } else if (target_repr == "mlu") {
-      valid_places_.emplace_back(TARGET(kMLU));
-    } else if (target_repr == "bm") {
-      valid_places_.emplace_back(TARGET(kBM));
     } else if (target_repr == "imagination_nna") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kInt8), DATALAYOUT(kNCHW));
       nnadapter_device_names.push_back(target_repr);
-    } else if (target_repr == "intel_fpga") {
-      valid_places_.emplace_back(TARGET(kIntelFPGA));
-      valid_places_.emplace_back(
-          Place{TARGET(kIntelFPGA), PRECISION(kFloat), DATALAYOUT(kNCHW)});
     } else if (target_repr == "rockchip_npu") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
@@ -205,7 +207,22 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
       nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "eeasytech_npu") {
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
     } else if (target_repr == "android_nnapi") {
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "qualcomm_qnn") {
+      valid_places_.emplace_back(TARGET(kNNAdapter));
+      valid_places_.emplace_back(
+          TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "kunlunxin_xtcl") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
@@ -359,10 +376,9 @@ void OptBase::PrintHelpInfo() {
       "default\n"
       "        `set_lite_out(output_optimize_model_dir)`\n"
       "        "
-      "`set_valid_places(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
-      "huawei_ascend_npu|imagination_nna|rockchip_npu|"
-      "mediatek_apu|huawei_kirin_npu|amlogic_npu|verisilicon_timvx|"
-      "android_nnapi)`"
+      "`set_valid_places(arm|opencl|x86|metal|xpu|cambricon_mlu|huawei_ascend_"
+      "npu|imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
+      "eeasytech_npu|android_nnapi|qualcomm_qnn|kunlunxin_xtcl)`"
       "\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
       "info for striping lib, false by default`\n"
@@ -404,9 +420,9 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
-      "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu|amlogic_npu|verisilicon_timvx|android_nnapi)`\n"
+      "`--valid_targets=(arm|opencl|x86|metal|xpu|cambricon_mlu|huawei_ascend_"
+      "npu|imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
+      "android_nnapi|qualcomm_qnn|kunlunxin_xtcl)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
@@ -423,14 +439,14 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "operators of "
       "Paddle-Lite in markdown format\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
-      "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu|amlogic_npu|verisilicon_timvx|android_nnapi)`"
+      "--valid_targets=(arm|opencl|x86|metal|xpu|cambricon_mlu|huawei_ascend_"
+      "npu|imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
+      "android_nnapi|qualcomm_qnn|kunlunxin_xtcl)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
-      "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu|amlogic_npu|verisilicon_timvx|android_nnapi)`"
+      "--valid_targets=(arm|opencl|x86|metal|xpu|cambricon_mlu|huawei_ascend_"
+      "npu|imagination_nna|mediatek_apu|huawei_kirin_npu|verisilicon_timvx|"
+      "android_nnapi|qualcomm_qnn|kunlunxin_xtcl)`"
       "  Display operators in the input model\n"
       "  Arguments of optimized nb model visualization: \n"
       "        `--optimized_nb_model_path=<optimized_nb_model_dir>`\n"
@@ -508,34 +524,32 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
                                                   "kXPU",
                                                   "kHost",
                                                   "kX86",
-                                                  "kBM",
-                                                  "kMLU",
-                                                  "kIntelFPGA",
+                                                  "cambricon_mlu",
                                                   "huawei_ascend_npu",
                                                   "mediatek_apu",
-                                                  "rockchip_npu",
                                                   "huawei_kirin_npu",
                                                   "imagination_nna",
-                                                  "amlogic_npu",
                                                   "verisilicon_timvx",
-                                                  "android_nnapi"};
+                                                  "eeasytech_npu",
+                                                  "android_nnapi",
+                                                  "qualcomm_qnn",
+                                                  "kunlunxin_xtcl"};
   const std::vector<std::string> readable_valid_targets = {"ARM",
                                                            "OpenCL",
                                                            "Metal",
-                                                           "百度XPU",
+                                                           "百度 XPU",
                                                            "Host",
-                                                           "X86",
-                                                           "比特大陆NPU",
-                                                           "寒武纪MLU",
-                                                           "英特尔FPGA",
-                                                           "华为昇腾NPU",
-                                                           "联发科APU",
-                                                           "瑞芯微NPU",
-                                                           "华为麒麟NPU",
-                                                           "颖脉NNA",
-                                                           "晶晨NPU",
+                                                           "x86",
+                                                           "寒武纪 MLU",
+                                                           "华为昇腾 NPU",
+                                                           "联发科 APU",
+                                                           "华为麒麟 NPU",
+                                                           "颖脉 NNA",
                                                            "TIM-VX",
-                                                           "Android NNAPI"};
+                                                           "亿智 NPU",
+                                                           "Android NNAPI",
+                                                           "高通 QNN",
+                                                           "昆仑芯 XTCL"};
   // Print the first row: OP_nam taget1 target2 ...
   std::cout << "| "
             << "OP_name ";
@@ -777,17 +791,10 @@ void OptBase::InitSupportedOpInfo() {
   std::vector<std::string> collect_targets = {"kUnk",
                                               "kHost",
                                               "kX86",
-                                              "kCUDA",
                                               "kARM",
                                               "kOpenCL",
                                               "kAny",
-                                              "kFPGA",
-                                              "kNPU",
                                               "kXPU",
-                                              "kBM",
-                                              "kMLU",
-                                              "kRKNPU",
-                                              "kIntelFPGA",
                                               "kMetal",
                                               "kNNAdapter"};
 
@@ -797,18 +804,17 @@ void OptBase::InitSupportedOpInfo() {
                                      "kMetal",
                                      "kXPU",
                                      "kHost",
-                                     "kIntelFPGA",
                                      "kX86",
-                                     "kBM",
-                                     "kMLU",
+                                     "cambricon_mlu",
                                      "huawei_ascend_npu",
                                      "mediatek_apu",
-                                     "rockchip_npu",
                                      "huawei_kirin_npu",
                                      "imagination_nna",
-                                     "amlogic_npu",
                                      "verisilicon_timvx",
+                                     "eeasytech_npu",
                                      "android_nnapi",
+                                     "qualcomm_qnn",
+                                     "kunlunxin_xtcl",
                                      "kUnk"};
   for (size_t idx = 0; idx < supported_ops_target.size(); idx++) {
     if (valid_target.find(collect_targets[idx]) != valid_target.end()) {
@@ -841,14 +847,6 @@ void OptBase::InitSupportedOpInfo() {
   }
 #include "lite/kernels/nnadapter/converter/all.h"
 #undef REGISTER_CONVERTER
-
-// collect operators supported by mlu, bm
-#define USE_SUBGRAPH_BRIDGE(op_type_, target_)        \
-  target_supported_ops_[#target_].emplace(#op_type_); \
-  all_supported_ops_[#op_type_].emplace(#target_);
-#include "lite/kernels/bm/bridges/paddle_use_bridges.h"
-#include "lite/kernels/mlu/bridges/paddle_use_bridges.h"
-#undef USE_SUBGRAPH_BRIDGE
 }
 
 }  // namespace lite_api

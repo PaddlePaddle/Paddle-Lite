@@ -21,6 +21,30 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+// xpu runtime support pinned memory from 4.0.20 in xpu2
+// if buffersize > 1MB, we use pinned mem to improve DMA performace,
+#define PINNED_MEM_SIZE (1024 * 1024)
+
+static bool check_pin_mem_condition() {
+  int cur_dev_idx = 0;
+  uint64_t cur_dev_attr = 0;
+  XPU_CALL(xpu_current_device(&cur_dev_idx));
+  XPU_CALL(xpu_device_get_attr(&cur_dev_attr, XPUATTR_MODEL, cur_dev_idx));
+  if (cur_dev_attr <= 1) {
+    VLOG(4) << "Currents XPU device : XPU1";
+  } else if (cur_dev_attr >= 2 && cur_dev_attr <= 299) {
+    VLOG(4) << "Currents XPU device : XPU2";
+  } else if (cur_dev_attr >= 300 && cur_dev_attr <= 599) {
+    VLOG(4) << "Currents XPU device : XPU3";
+  } else {
+    VLOG(4) << "invaid XPU device";
+  }
+  // get driver version
+  uint32_t major = 0;
+  uint32_t minor = 0;
+  XPU_CALL(xpu_get_driver_version(&major, &minor));
+  return (cur_dev_attr >= 2 && major >= 4);
+}
 /*
  * This kernel copies a tensor from host to XPU.
  */
@@ -34,6 +58,10 @@ class IoCopyHostToXPUCompute
       VLOG(4) << "host to xpu, copy size " << mem_size;
       auto* data = y->mutable_data(TARGET(kXPU), mem_size);
       if (mem_size > 0) {
+        if (can_pinned_ && this->op_type_ == "io_copy" &&
+            mem_size > PINNED_MEM_SIZE) {
+          x->set_host_pinned_memory();
+        }
         TargetWrapperXPU::MemcpySync(
             data, x->raw_data(), mem_size, IoDirection::HtoD);
       }
@@ -44,6 +72,8 @@ class IoCopyHostToXPUCompute
                  << lite_api::TargetToStr(x->target());
     }
   }
+
+  void PrepareForRun() { can_pinned_ = check_pin_mem_condition(); }
 
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
@@ -78,6 +108,9 @@ class IoCopyHostToXPUCompute
   }
 
   std::string doc() const override { return "Copy IO from HOST to XPU"; }
+
+ private:
+  bool can_pinned_{false};
 };
 
 /*
@@ -92,6 +125,10 @@ class IoCopyXPUToHostCompute
       VLOG(4) << "xpu to host, copy size " << mem_size;
       auto* data = y->mutable_data(TARGET(kHost), mem_size);
       if (mem_size > 0) {
+        if (can_pinned_ && this->op_type_ == "io_copy" &&
+            mem_size > PINNED_MEM_SIZE) {
+          y->set_host_pinned_memory();
+        }
         TargetWrapperXPU::MemcpySync(
             data, x->raw_data(), mem_size, IoDirection::DtoH);
       }
@@ -103,6 +140,8 @@ class IoCopyXPUToHostCompute
                  << lite_api::TargetToStr(x->target());
     }
   }
+
+  void PrepareForRun() { can_pinned_ = check_pin_mem_condition(); }
 
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
@@ -117,6 +156,9 @@ class IoCopyXPUToHostCompute
   }
 
   std::string doc() const override { return "Copy IO from XPU to HOST"; }
+
+ private:
+  bool can_pinned_{false};
 };
 
 }  // namespace xpu

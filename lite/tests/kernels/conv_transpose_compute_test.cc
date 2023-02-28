@@ -159,7 +159,7 @@ class ConvTransposeComputeTester : public arena::TestCase {
                                fuse_relu_);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(op_type_);
     op_desc->SetInput("Input", {input_});
     op_desc->SetInput("Filter", {filter_});
@@ -431,6 +431,14 @@ TEST(Conv_transpose, precision) {
   // TestConvTransposeOutputPadding(place, abs_error);
   TestConvTransposeBiasRelu(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 1e-2;
+  TestConvTransposeKsize(place, abs_error);
+  TestConvTransposeStrides(place, abs_error);
+  TestConvTransposePaddings(place, abs_error);
+  TestConvTransposeDilations(place, abs_error);
+  TestConvTransposePaddingAlgorithm(place, abs_error);
+  return;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
   // TODO(liusiyuan): support later
@@ -444,12 +452,23 @@ TEST(Conv_transpose, precision) {
   TestConvTransposeOutputSize(place, abs_error);
   TestConvTransposeOutputPadding(place, abs_error);
   TestConvTransposeBiasRelu(place, abs_error);
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  TestConvTransposeKsize(place, abs_error);
+  TestConvTransposeStrides(place, abs_error);
+  TestConvTransposePaddings(place, abs_error);
+  TestConvTransposeGroups(place, abs_error);
+  // TestConvTransposeDilations(place, abs_error);
+  TestConvTransposePaddingAlgorithm(place, abs_error);
+  TestConvTransposeOutputSize(place, abs_error);
+  TestConvTransposeOutputPadding(place, abs_error);
+  TestConvTransposeBiasRelu(place, abs_error);
+  return;
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 5e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
   abs_error = 5e-4;

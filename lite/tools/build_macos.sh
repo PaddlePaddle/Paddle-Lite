@@ -24,7 +24,6 @@ LITE_ON_TINY_PUBLISH=ON
 WITH_STATIC_MKL=OFF
 WITH_AVX=ON
 WITH_EXCEPTION=OFF
-WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
 WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 WITH_BENCHMARK=OFF
@@ -47,7 +46,7 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
+readonly THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 
 # on mac environment, we should expand the maximum file num to compile successfully
 os_name=`uname -s`
@@ -104,7 +103,6 @@ function prepare_thirdparty {
 function set_benchmark_options {
   BUILD_EXTRA=ON
   WITH_EXCEPTION=ON
-  WITH_OPENCL=ON
   LITE_ON_TINY_PUBLISH=OFF
 
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
@@ -114,9 +112,30 @@ function set_benchmark_options {
   fi
 }
 
+function build_opt {
+    cd $workspace
+    prepare_thirdparty
+    mkdir -p build.opt
+    cd build.opt
+    opt_arch=$(echo `uname -a` | awk -F " " '{print $15}')
+    with_x86=OFF
+    if [ $opt_arch == "arm64" ]; then
+       with_x86=OFF
+    else
+       with_x86=ON
+    fi
+    cmake .. \
+      -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
+      -DWITH_TESTING=OFF \
+      -DLITE_BUILD_EXTRA=ON \
+      -DLITE_WITH_X86=${with_x86} \
+      -DWITH_MKL=OFF
+    make opt -j$NUM_PROC
+}
+
 function make_armosx {
+    prepare_thirdparty
     if [ "${BUILD_PYTHON}" == "ON" ]; then
-      prepare_thirdparty
       BUILD_EXTRA=ON
       LITE_ON_TINY_PUBLISH=OFF
     fi
@@ -166,18 +185,17 @@ function make_armosx {
     mkdir -p ./${GEN_CODE_PATH_PREFIX}
     touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
     cmake $workspace \
-            -DWITH_LITE=ON \
             -DWITH_TESTING=${WITH_TESTING} \
             -DLITE_WITH_ARM=ON \
             -DLITE_WITH_METAL=${WITH_METAL} \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
             -DLITE_ON_TINY_PUBLISH=${LITE_ON_TINY_PUBLISH} \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
             -DLITE_WITH_OPENMP=OFF \
-            -DWITH_ARM_DOTPROD=OFF \
+            -DWITH_ARM_DOTPROD=ON \
             -DLITE_WITH_X86=OFF \
+            -DLITE_WITH_M1=ON \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DPY_VERSION=$PY_VERSION \
             -DLITE_WITH_LOG=$WITH_LOG \
@@ -189,7 +207,6 @@ function make_armosx {
             -DLITE_WITH_CV=$BUILD_CV \
             -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DARM_TARGET_OS=armmacos
     if [ "${WITH_BENCHMARK}" == "ON" ]; then
         make benchmark_bin -j$NUM_PROC
@@ -251,15 +268,12 @@ function make_x86 {
             -DWITH_AVX=${WITH_AVX} \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
-            -DWITH_LITE=ON \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=${WITH_LIGHT_WEIGHT_FRAMEWORK} \
             -DLITE_ON_TINY_PUBLISH=OFF \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
             -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_METAL=${WITH_METAL} \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
-            -DWITH_GPU=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
             -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \
@@ -292,7 +306,7 @@ function print_usage {
     echo -e "|                                                                                                                                      |"
     echo -e "|  for arm macos:                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                  |"
-    echo -e "|     --with_metal: (OFF|ON); controls whether to build with Metal, default is OFF                                                    |"
+    echo -e "|     --with_metal: (OFF|ON); controls whether to build with Metal, default is OFF                                                     |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
@@ -302,6 +316,8 @@ function print_usage {
     echo -e "|     --with_arm82_fp16: (OFF|ON); controls whether to include FP16 kernels, default is OFF                                            |"
     echo -e "|                                  warning: when --with_arm82_fp16=ON, toolchain will be set as clang, arch will be set as armv8.      |"
     echo -e "|                                                                                                                                      |"
+    echo -e "|  compiling for macos OPT tool:                                                                              |"
+    echo -e "|     ./lite/tools/build_macos.sh build_optimize_tool                                                                              |"
     echo -e "|  arguments of benchmark binary compiling for macos x86:                                                                              |"
     echo -e "|     ./lite/tools/build_macos.sh --with_benchmark=ON x86                                                                              |"
     echo -e "|                                                                                                                                      |"
@@ -431,6 +447,10 @@ function main {
                make_x86
                shift
                ;;
+            build_optimize_tool)
+                build_opt
+                shift
+                ;;
             help)
                 print_usage
                 exit 0

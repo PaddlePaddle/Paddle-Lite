@@ -25,7 +25,37 @@ namespace nnadapter {
 namespace operation {
 
 NNADAPTER_EXPORT bool ValidateShape(const core::Operation* operation) {
-  return false;
+  return true;
+}
+
+NNADAPTER_EXPORT int ExecuteShape(core::Operation* operation) {
+  SHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Allocate and calculate the output operands
+  auto output_buffer = AllocateOperand(output_operand);
+  int size = input_operand->type.dimensions.count;
+  auto in_dims = input_operand->type.dimensions.data;
+  switch (dtype) {
+    case NNADAPTER_INT32: {
+      auto out_buf = reinterpret_cast<int32_t*>(output_buffer);
+      for (int i = 0; i < size; i++) {
+        out_buf[i] = in_dims[i];
+      }
+    } break;
+    case NNADAPTER_INT64: {
+      auto out_buf = reinterpret_cast<int64_t*>(output_buffer);
+      for (int i = 0; i < size; i++) {
+        out_buf[i] = in_dims[i];
+      }
+    } break;
+    default:
+      NNADAPTER_LOG(FATAL) << "Unsupported precision code("
+                           << OperandPrecisionCodeToString(dtype) << ") for "
+                           << OperationTypeToString(operation->type)
+                           << " is found!";
+      break;
+  }
+  return NNADAPTER_NO_ERROR;
 }
 
 NNADAPTER_EXPORT int PrepareShape(core::Operation* operation) {
@@ -39,13 +69,14 @@ NNADAPTER_EXPORT int PrepareShape(core::Operation* operation) {
   output_type.dimensions.data[0] = shape_size;
   output_type.precision = static_cast<NNAdapterOperandPrecisionCode>(dtype);
   output_type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
-  SetTemporaryShape(output_operand, input_type.dimensions);
+  if (IsDynamicShapeOperandType(input_operand->type)) {
+    SetTemporaryShape(output_operand, input_type.dimensions);
+  } else {
+    ExecuteShape(operation);
+    output_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+  }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
-}
-
-NNADAPTER_EXPORT int ExecuteShape(core::Operation* operation) {
-  return NNADAPTER_FEATURE_NOT_SUPPORTED;
 }
 
 }  // namespace operation

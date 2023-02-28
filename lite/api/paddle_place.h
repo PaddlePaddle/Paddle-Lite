@@ -78,6 +78,12 @@ enum class PrecisionType : int {
   kFP64 = 10,
   NUM = 11,  // number of fields.
 };
+
+typedef enum {
+  LITE_PRECISION_NORMAL = 0,
+  LITE_PRECISION_LOW = 1,
+} PrecisionMode;
+
 enum class DataLayoutType : int {
   kUnk = 0,
   kNCHW = 1,
@@ -113,8 +119,6 @@ typedef enum {
   CL_PRECISION_FP16 = 2
 } CLPrecisionType;
 
-typedef enum { MLU_220 = 0, MLU_270 = 1 } MLUCoreVersion;
-
 enum class ActivationType : int {
   kIndentity = 0,
   kRelu = 1,
@@ -139,7 +143,8 @@ enum class ActivationType : int {
   kSign = 20,
   kSoftPlus = 21,
   kMish = 22,
-  NUM = 23,
+  kSilu = 23,
+  NUM = 24,
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {
@@ -195,6 +200,11 @@ struct PrecisionTypeTrait {
   }
 
 _ForEachPrecisionType(DefinePrecisionTypeTrait);
+
+#ifdef LITE_WITH_OPENCL
+typedef uint16_t half_t;
+_ForEachPrecisionTypeHelper(DefinePrecisionTypeTrait, half_t, kFP16);
+#endif
 
 #ifdef ENABLE_ARM_FP16
 typedef __fp16 float16_t;
@@ -272,6 +282,11 @@ struct LITE_API Place {
   friend bool operator<(const Place& a, const Place& b);
 
   std::string DebugString() const;
+};
+
+struct LITE_API CustomAllocator {
+  void* (*alloc)(size_t size, size_t alignment) = nullptr;
+  void (*free)(void* ptr) = nullptr;
 };
 
 }  // namespace lite_api

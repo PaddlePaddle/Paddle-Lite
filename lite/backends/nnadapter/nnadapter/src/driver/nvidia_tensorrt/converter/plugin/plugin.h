@@ -25,37 +25,42 @@ class Plugin : public nvinfer1::IPluginV2 {
  public:
   Plugin();
   Plugin(const void* serial_data, size_t serial_length);
-  ~Plugin();
+  ~Plugin() TRT_NOEXCEPT;
   // Override funcs in IPluginV2
-  virtual const char* getPluginType() const noexcept = 0;
-  const char* getPluginVersion() const noexcept;
-  int32_t getNbOutputs() const noexcept;
+  virtual const char* getPluginType() const TRT_NOEXCEPT = 0;
+  const char* getPluginVersion() const TRT_NOEXCEPT;
+  int32_t getNbOutputs() const TRT_NOEXCEPT;
   virtual nvinfer1::Dims getOutputDimensions(int index,
                                              const nvinfer1::Dims* inputs,
-                                             int nb_input_dims) noexcept;
+                                             int nb_input_dims) TRT_NOEXCEPT;
   virtual bool supportsFormat(nvinfer1::DataType type,
-                              nvinfer1::PluginFormat format) const noexcept;
+                              nvinfer1::PluginFormat format) const TRT_NOEXCEPT;
   virtual void configureWithFormat(const nvinfer1::Dims* input_dims,
                                    int nb_inputs,
                                    const nvinfer1::Dims* output_dims,
                                    int nb_outputs,
                                    nvinfer1::DataType type,
                                    nvinfer1::PluginFormat format,
-                                   int max_batch_size) noexcept;
-  virtual int initialize() noexcept;
-  virtual void terminate() noexcept;
-  virtual size_t getWorkspaceSize(int max_batch_size) const noexcept;
+                                   int max_batch_size) TRT_NOEXCEPT;
+  virtual int initialize() TRT_NOEXCEPT;
+  virtual void terminate() TRT_NOEXCEPT;
+  virtual size_t getWorkspaceSize(int max_batch_size) const TRT_NOEXCEPT;
   virtual int enqueue(int batch_size,
+#if TENSORRT_VERSION_GE(8, 0, 0, 0)
+                      void const* const* inputs,
+                      void* const* outputs,
+#else
                       const void* const* inputs,
                       void** outputs,
+#endif
                       void* workspace,
-                      cudaStream_t stream) noexcept = 0;
-  virtual size_t getSerializationSize() const noexcept;
-  virtual void serialize(void* buffer) const noexcept;
-  virtual void destroy() noexcept;
-  virtual IPluginV2* clone() const noexcept = 0;
-  virtual void setPluginNamespace(const char* plugin_namespace) noexcept;
-  virtual const char* getPluginNamespace() const noexcept;
+                      cudaStream_t stream) TRT_NOEXCEPT = 0;
+  virtual size_t getSerializationSize() const TRT_NOEXCEPT;
+  virtual void serialize(void* buffer) const TRT_NOEXCEPT;
+  virtual void destroy() TRT_NOEXCEPT;
+  virtual IPluginV2* clone() const TRT_NOEXCEPT = 0;
+  virtual void setPluginNamespace(const char* plugin_namespace) TRT_NOEXCEPT;
+  virtual const char* getPluginNamespace() const TRT_NOEXCEPT;
 
  protected:
   std::vector<nvinfer1::Dims> input_dims_;
@@ -70,47 +75,48 @@ class PluginDynamic : public nvinfer1::IPluginV2DynamicExt {
  public:
   PluginDynamic();
   PluginDynamic(const void* serial_data, size_t serial_length);
-  ~PluginDynamic();
+  ~PluginDynamic() TRT_NOEXCEPT;
   // Override funcs in IPluginV2DynamicExt
-  virtual nvinfer1::IPluginV2DynamicExt* clone() const noexcept = 0;
+  virtual nvinfer1::IPluginV2DynamicExt* clone() const TRT_NOEXCEPT = 0;
   nvinfer1::DimsExprs getOutputDimensions(
       int32_t output_index,
       const nvinfer1::DimsExprs* inputs,
       int32_t nb_inputs,
-      nvinfer1::IExprBuilder& expr_builder) noexcept;  // NOLINT
+      nvinfer1::IExprBuilder& expr_builder)  // NOLINT
+      TRT_NOEXCEPT;
   bool supportsFormatCombination(int32_t pos,
                                  const nvinfer1::PluginTensorDesc* in_out,
                                  int32_t nb_inputs,
-                                 int32_t nb_outputs) noexcept;
+                                 int32_t nb_outputs) TRT_NOEXCEPT;
   void configurePlugin(const nvinfer1::DynamicPluginTensorDesc* in,
                        int32_t nb_inputs,
                        const nvinfer1::DynamicPluginTensorDesc* out,
-                       int32_t nb_outputs) noexcept;
+                       int32_t nb_outputs) TRT_NOEXCEPT;
   size_t getWorkspaceSize(const nvinfer1::PluginTensorDesc* inputs,
                           int32_t nb_inputs,
                           const nvinfer1::PluginTensorDesc* outputs,
-                          int32_t nb_outputs) const noexcept;
+                          int32_t nb_outputs) const TRT_NOEXCEPT;
   virtual int32_t enqueue(const nvinfer1::PluginTensorDesc* input_desc,
                           const nvinfer1::PluginTensorDesc* output_desc,
-                          const void* const* inputs,
+                          void const* const* inputs,
                           void* const* outputs,
                           void* workspace,
-                          cudaStream_t stream) noexcept = 0;
+                          cudaStream_t stream) TRT_NOEXCEPT = 0;
   // Override funcs in IpluginV2Ext
   nvinfer1::DataType getOutputDataType(int32_t index,
                                        const nvinfer1::DataType* input_types,
-                                       int32_t nb_inputs) const noexcept;
+                                       int32_t nb_inputs) const TRT_NOEXCEPT;
   // Override funcs in IPluginV2
-  virtual const char* getPluginType() const noexcept = 0;
-  const char* getPluginVersion() const noexcept;
-  int32_t getNbOutputs() const noexcept;
-  int32_t initialize() noexcept;
-  void terminate() noexcept;
-  size_t getSerializationSize() const noexcept;
-  void serialize(void* buffer) const noexcept;
-  void destroy() noexcept;
-  void setPluginNamespace(const char* plugin_namespace) noexcept;
-  const char* getPluginNamespace() const noexcept;
+  virtual const char* getPluginType() const TRT_NOEXCEPT = 0;
+  const char* getPluginVersion() const TRT_NOEXCEPT;
+  int32_t getNbOutputs() const TRT_NOEXCEPT;
+  int32_t initialize() TRT_NOEXCEPT;
+  void terminate() TRT_NOEXCEPT;
+  size_t getSerializationSize() const TRT_NOEXCEPT;
+  void serialize(void* buffer) const TRT_NOEXCEPT;
+  void destroy() TRT_NOEXCEPT;
+  void setPluginNamespace(const char* plugin_namespace) TRT_NOEXCEPT;
+  const char* getPluginNamespace() const TRT_NOEXCEPT;
 
  private:
   std::string namespace_;
@@ -121,17 +127,17 @@ class PluginCreator : public nvinfer1::IPluginCreator {
   PluginCreator() = default;
   virtual ~PluginCreator() = default;
   // Override funcs in IPluginCreator
-  virtual const char* getPluginName() const noexcept = 0;
-  const char* getPluginVersion() const noexcept;
-  const nvinfer1::PluginFieldCollection* getFieldNames() noexcept;
+  virtual const char* getPluginName() const TRT_NOEXCEPT = 0;
+  const char* getPluginVersion() const TRT_NOEXCEPT;
+  const nvinfer1::PluginFieldCollection* getFieldNames() TRT_NOEXCEPT;
   nvinfer1::IPluginV2* createPlugin(
-      const char* name, const nvinfer1::PluginFieldCollection* fc) noexcept;
-  virtual nvinfer1::IPluginV2* deserializePlugin(
-      const char* name,
-      void const* serial_data,
-      size_t serial_length) noexcept = 0;
-  void setPluginNamespace(const char* plugin_namespace) noexcept;
-  const char* getPluginNamespace() const noexcept;
+      const char* name, const nvinfer1::PluginFieldCollection* fc) TRT_NOEXCEPT;
+  virtual nvinfer1::IPluginV2* deserializePlugin(const char* name,
+                                                 void const* serial_data,
+                                                 size_t serial_length)
+      TRT_NOEXCEPT = 0;
+  void setPluginNamespace(const char* plugin_namespace) TRT_NOEXCEPT;
+  const char* getPluginNamespace() const TRT_NOEXCEPT;
 
  private:
   std::string namespace_;
@@ -139,14 +145,13 @@ class PluginCreator : public nvinfer1::IPluginCreator {
 };
 
 #define REGISTER_NNADAPTER_TENSORRT_PLUGIN(plugin_, plugin_creater_, name_) \
-  const char* plugin_::getPluginType() const noexcept { return name_; }     \
-  const char* plugin_creater_::getPluginName() const noexcept {             \
+  const char* plugin_::getPluginType() const TRT_NOEXCEPT { return name_; } \
+  const char* plugin_creater_::getPluginName() const TRT_NOEXCEPT {         \
     return name_;                                                           \
   }                                                                         \
   nvinfer1::IPluginV2* plugin_creater_::deserializePlugin(                  \
-      const char* name,                                                     \
-      void const* serial_data,                                              \
-      size_t serial_length) noexcept {                                      \
+      const char* name, void const* serial_data, size_t serial_length)      \
+      TRT_NOEXCEPT {                                                        \
     return new plugin_(serial_data, serial_length);                         \
   }                                                                         \
   REGISTER_TENSORRT_PLUGIN(plugin_creater_);
