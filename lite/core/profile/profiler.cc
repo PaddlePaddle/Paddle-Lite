@@ -218,7 +218,7 @@ std::string Profiler::Summary(Type type, bool concise, size_t w) {
          << item.second.min
          << " " << setw(7) << left << fixed << setprecision(3)
          << item.second.max
-         << " " << setw(7) << left << fixed << setprecision(2) << percent << "%"
+         << " " << left << setprecision(2) << percent << "% "
          << " " << setw(10) << left << fixed << setprecision(3)
          << GetKernelFuncSummaryMFLOPs(item.first.op_type,
                                      item.first.kernel_attr,
