@@ -85,7 +85,7 @@ class XPUSpatialTransformerCompute : public KernelLite<TARGET(kXPU), PType> {
   void prepare_weight_max(const std::vector<lite::Tensor *> &weight_max,
                           int max_ptr_len,
                           std::vector<const float *> *max_xpu_ptrs);
-  void prepare_filter_max(const std::vector<lite::Tensor *> *filter_max,
+  void prepare_filter_max(const std::vector<lite::Tensor *> &filter_max,
                           int max_ptr_len,
                           std::vector<const float *> *max_xpu_ptrs);
 };

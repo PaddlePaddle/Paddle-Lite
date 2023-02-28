@@ -603,7 +603,7 @@ class SpatialTransformerfuser : public FuseBase {
 
 }  // namespace fusion
 
-class XPUUSpatialTransformerfusePass : public ProgramPass {
+class XPUSpatialTransformerfusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;

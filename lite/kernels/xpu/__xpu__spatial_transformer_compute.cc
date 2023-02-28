@@ -34,9 +34,9 @@ static std::vector<const T*> prepare_weight(
 
 template <typename InType, PrecisionType PType>
 void XPUSpatialTransformerCompute<InType, PType>::prepare_weight_max(
-    const std::vector<lite::Tensor*>* weight_max,
+    const std::vector<lite::Tensor*>& weight_max,
     int max_ptr_len,
-    std::vector<const float*>& max_xpu_ptrs) {
+    std::vector<const float*>* max_xpu_ptrs) {
   int max_value_num = 0;
   for (auto max_tensor : weight_max) {
     max_value_num += max_tensor->numel();
@@ -57,7 +57,7 @@ void XPUSpatialTransformerCompute<InType, PType>::prepare_weight_max(
                                        cpu_max.data(),
                                        sizeof(float) * max_ptr_len,
                                        IoDirection::HtoD);
-    max_xpu_ptrs.push_back(cur_weight_max_ptr);
+    max_xpu_ptrs->push_back(cur_weight_max_ptr);
     offset += max_ptr_len;
   }
 }
@@ -87,7 +87,7 @@ void XPUSpatialTransformerCompute<InType, PType>::prepare_filter_max(
                                        cpu_max.data(),
                                        sizeof(float) * max_ptr_len,
                                        IoDirection::HtoD);
-    max_xpu_ptrs.push_back(cur_filter_max_ptr);
+    max_xpu_ptrs->push_back(cur_filter_max_ptr);
     offset += max_ptr_len;
   }
 }
