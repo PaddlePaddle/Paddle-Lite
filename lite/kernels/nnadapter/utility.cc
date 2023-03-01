@@ -544,6 +544,12 @@ NNAdapterOperationType ConvertUnaryActTypeToNNOperationType(
     unary_act_op_code = NNADAPTER_FLOOR;
   } else if (unary_act_op_type == "square") {
     unary_act_op_code = NNADAPTER_SQUARE;
+  } else if (unary_act_op_type == "sin") {
+    unary_act_op_code = NNADAPTER_SIN;
+  } else if (unary_act_op_type == "cos") {
+    unary_act_op_code = NNADAPTER_COS;
+  } else if (unary_act_op_type == "silu") {
+    unary_act_op_code = NNADAPTER_SWISH;
   } else {
     LOG(WARNING) << "Unable to convert a unary activation type("
                  << unary_act_op_type << ") to a NNAdapter operation type!";

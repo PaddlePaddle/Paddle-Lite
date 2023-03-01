@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/model_parser/model_parser.h"
+
 #include <algorithm>
 #include <fstream>
 #include <limits>
@@ -29,6 +30,7 @@
 #include "lite/model_parser/pb/tensor_io.h"
 #ifndef LITE_ON_TINY_PUBLISH
 #include <cstdio>
+
 #include "lite/model_parser/naive_buffer/combined_params_desc.h"
 #include "lite/model_parser/naive_buffer/param_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
@@ -304,10 +306,6 @@ void SaveModelPb(const std::string &model_dir,
       model_parser::pb::LoDTensorSerializer saver;
       auto *var = exec_scope.FindVar(item.name());
       const auto &tensor = var->Get<lite::Tensor>();
-      if (tensor.target() == TARGET(kCUDA)) {
-        LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
-                      "please copy it to the Host Tensor temporarily.";
-      }
       saver.ForwardWrite(tensor, &file);
     }
   }
@@ -335,10 +333,6 @@ void SaveCombinedParamsPb(const std::string &path,
   for (size_t i = 0; i < paramlist.size(); ++i) {
     auto *var = exec_scope.FindVar(paramlist[i]);
     const auto &tensor = var->Get<lite::Tensor>();
-    if (tensor.target() == TARGET(kCUDA)) {
-      LOG(FATAL) << "The storage of the device Tensor is to be implemented, "
-                    "please copy it to the Host Tensor temporarily.";
-    }
     saver.ForwardWrite(tensor, &file);
   }
 }
@@ -386,30 +380,6 @@ void SetParamInfoNaive(naive_buffer::ParamDesc *param_desc,
   CHECK_LT(size, (std::numeric_limits<std::streamsize>::max)())
       << "Index overflow when writing tensor";
 
-#ifdef LITE_WITH_CUDA
-  if (tensor.target() == TARGET(kCUDA)) {
-    switch (tensor.precision()) {
-#define DO(precision, type)                                         \
-  case precision: {                                                 \
-    std::unique_ptr<type> tmp_buffer(new type[tensor.data_size()]); \
-    TargetWrapperCuda::MemcpySync(tmp_buffer.get(),                 \
-                                  tensor.data<type>(),              \
-                                  tensor.data_size(),               \
-                                  IoDirection::DtoH);               \
-    desc.SetData<type>(tmp_buffer.get(), tensor.data_size());       \
-  } break;
-      DO(PRECISION(kFloat), float);
-      DO(PRECISION(kInt8), int8_t);
-      DO(PRECISION(kInt16), int16_t);
-      DO(PRECISION(kInt32), int32_t);
-      DO(PRECISION(kInt64), int64_t);
-#undef DO
-      default:
-        LOG(FATAL) << "unknown precision type: "
-                   << PrecisionToStr(tensor.precision());
-    }
-  } else  // NOLINT
-#endif    // LITE_WITH_CUDA
   {
     switch (tensor.precision()) {
 #define DO(precision, type)                                      \
@@ -769,7 +739,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
  *      topo_size:    length of `topo_data`.
  *      topo_data:    contains model's topology data.
  *      param_data:   contains model's params data.
-*/
+ */
 
 void LoadModelNaiveFromFile(const std::string &filename,
                             Scope *scope,
@@ -930,7 +900,8 @@ void LoadModelFbsFromFile(model_parser::BinaryFileReader *reader,
   }
 }
 
-void LoadModelNaiveFromMemory(const std::string &model_buffer,
+void LoadModelNaiveFromMemory(const char *model_buffer,
+                              size_t model_buffer_size,
                               Scope *scope,
                               cpp::ProgramDesc *cpp_prog) {
   CHECK(cpp_prog);
@@ -939,7 +910,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
 
   // (1)get meta version
   uint16_t meta_version;
-  model_parser::StringBufferReader reader(model_buffer);
+  model_parser::CharBufferReader reader(model_buffer, model_buffer_size);
   reader.Read(&meta_version, sizeof(uint16_t));
   VLOG(4) << "Meta_version:" << meta_version;
 
@@ -965,6 +936,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
       break;
   }
 }
+
 #ifndef LITE_ON_TINY_PUBLISH
 void LoadModelNaiveV0FromMemory(const std::string &model_buffer,
                                 Scope *scope,
@@ -1005,7 +977,7 @@ void LoadModelNaiveV0FromMemory(const std::string &model_buffer,
 ///////////////////////////////////////////////////////////////////
 // Meta_version=1,2
 ///////////////////////////////////////////////////////////////////
-void LoadModelFbsFromMemory(model_parser::StringBufferReader *reader,
+void LoadModelFbsFromMemory(model_parser::CharBufferReader *reader,
                             Scope *scope,
                             cpp::ProgramDesc *cpp_prog,
                             uint16_t meta_version) {

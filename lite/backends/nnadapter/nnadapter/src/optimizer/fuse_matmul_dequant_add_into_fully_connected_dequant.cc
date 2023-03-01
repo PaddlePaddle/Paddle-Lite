@@ -119,7 +119,6 @@ bool MatMulDequantAddFuser::HandleMatchedResults(
   auto add_output_operand = add_operation->output_operands[0];
   auto dequant_operation = nodes.at("dequant")->operation;
   auto dequant_input_operand = dequant_operation->input_operands[0];
-  auto dequant_output_operand = dequant_operation->output_operands[0];
   auto matmul_transpose_y =
       *reinterpret_cast<bool*>(matmul_transpose_y_operand->buffer);
   auto matmul_num_units =

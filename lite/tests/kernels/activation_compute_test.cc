@@ -29,6 +29,7 @@ enum activation_type_test {
   RELU_CLIPPED,
   PRELU,
   SIGMOID,
+  SILU,
   TANH,
   SWISH,
   RELU6,
@@ -162,6 +163,12 @@ class ActivationComputeTester : public arena::TestCase {
       case SIGMOID: {
         for (int i = 0; i < dims_.production(); i++) {
           output_data[i] = 1.f / (1.f + std::exp(-x_data[i]));
+        }
+        break;
+      }
+      case SILU: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] = x_data[i] / (1.f + std::exp(-x_data[i]));
         }
         break;
       }
@@ -313,7 +320,7 @@ class ActivationComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(type_);
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
@@ -408,7 +415,7 @@ void TestAct(const Place& place,
              float abs_error = 2e-5) {
   std::unique_ptr<arena::TestCase> tester(
       new ActivationComputeTester<T>(place,
-                                     "def",
+                                     alias,
                                      leaky_relu_alpha,
                                      relu_clipped_coef,
                                      prelu_mode,
@@ -461,8 +468,6 @@ TEST(Activation_relu, precision) {
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 2e-5;
-#elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
-  abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_ANDROID_NNAPI)
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_GOOGLE_XNNPACK)
@@ -472,9 +477,6 @@ TEST(Activation_relu, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   abs_error = 1e-2;  // Using fp16 in OPENCL
@@ -531,9 +533,6 @@ TEST(Activation_leaky_relu, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
@@ -562,10 +561,7 @@ TEST(Activation_leaky_relu, precision) {
 TEST(Activation_relu_clipped, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
   return;
@@ -590,7 +586,6 @@ TEST(Activation_relu_clipped, precision) {
 }
 
 TEST(Activation_prelu, precision) {
-  LOG(INFO) << "test prelu op";
   Place place;
   float abs_error = 2e-5;
   std::vector<std::string> modes{"all", "channel", "element"};
@@ -600,6 +595,12 @@ TEST(Activation_prelu, precision) {
   abs_error = 1e-2;
   modes = {"all", "channel"};
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  modes = {"all", "channel"};
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  modes = {"all", "channel"};
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-2;
   modes = {"all", "channel"};
 #else
@@ -657,9 +658,6 @@ TEST(Activation_sigmoid, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   abs_error = 1e-2;  // Using fp16 in OPENCL
@@ -682,6 +680,36 @@ TEST(Activation_sigmoid, precision) {
             DDim(dims),
             "sigmoid",
             SIGMOID,
+            abs_error);
+  }
+}
+
+TEST(Activation_silu, precision) {
+  Place place;
+  float abs_error = 2e-5;
+  std::string alias = "def";
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+  alias = "silu_fp32";
+  abs_error = 2e-4;
+#else
+  return;
+#endif
+  for (auto dims : test_dims) {
+    TestAct(place,
+            alias,
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "silu",
+            SILU,
             abs_error);
   }
 }
@@ -715,9 +743,6 @@ TEST(Activation_tanh, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   abs_error = 1e-2;  // Using fp16 in OPENCL
@@ -744,60 +769,6 @@ TEST(Activation_tanh, precision) {
   }
 }
 
-TEST(Activation_swish, precision) {
-  Place place;
-  float abs_error = 2e-5;
-  std::vector<float> coefs{0.01, 0.1};
-  std::vector<std::vector<int64_t>> test_dims{
-      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
-#if defined(LITE_WITH_NNADAPTER)
-  place = TARGET(kNNAdapter);
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 1e-2;
-  coefs = {1.};
-#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
-  abs_error = 1e-2;
-  coefs = {1.};
-#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 1e-2;
-  coefs = {1.};
-#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
-  abs_error = 1e-5;
-  coefs = {1.};
-#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
-  abs_error = 2e-5;
-  coefs = {1.};
-  for (auto& dims : test_dims) {
-    if (dims.size() == 1) {
-      dims.push_back(1);
-    }
-  }
-#else
-  return;
-#endif
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#else
-  return;
-#endif
-
-  for (auto dims : test_dims) {
-    for (auto coef : coefs) {
-      TestAct(place,
-              "def",
-              0.01,
-              6,
-              "all",
-              coef,
-              1.0,
-              DDim(dims),
-              "swish",
-              SWISH,
-              abs_error);
-    }
-  }
-}
-
 TEST(Activation_relu6, precision) {
   Place place;
   float abs_error = 2e-5;
@@ -813,8 +784,6 @@ TEST(Activation_relu6, precision) {
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 2e-5;
-#elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
-  abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
@@ -829,9 +798,6 @@ TEST(Activation_relu6, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   abs_error = 1e-2;  // Using fp16 in OPENCL
@@ -869,6 +835,8 @@ TEST(Activation_log, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
@@ -880,12 +848,11 @@ TEST(Activation_log, precision) {
       dims.push_back(1);
     }
   }
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
@@ -918,6 +885,8 @@ TEST(Activation_exp, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
@@ -928,6 +897,8 @@ TEST(Activation_exp, precision) {
     }
   }
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_error = 1e-3;
 #else
   return;
@@ -961,6 +932,10 @@ TEST(Activation_floor, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
 #else
   return;
 #endif
@@ -1024,11 +999,12 @@ TEST(Activation_sqrt, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_INTEL_OPENVINO)
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-3;
 #else
   return;
 #endif
-#endif
-#if defined(LITE_WITH_OPENCL)
+#elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_error = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_ARM)
@@ -1064,15 +1040,16 @@ TEST(Activation_square, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 5e-2;
 #else
   return;
 #endif
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_error = 1e-2;
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
@@ -1111,6 +1088,8 @@ TEST(Activation_gelu, precision) {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-2;
 #else
   return;
@@ -1179,6 +1158,12 @@ TEST(Activation_softplus, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  // Not support htp
+  return;
 #else
   return;
 #endif
@@ -1279,10 +1264,7 @@ TEST(activation_reciprocal, precision) {
 TEST(Activation_thresholded_relu, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
   return;
@@ -1351,6 +1333,8 @@ TEST(Activation_abs, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 5e-2;
@@ -1445,6 +1429,162 @@ TEST(Activation_hard_sigmoid_fp32, performance) {
   }
 }
 
+TEST(Activation_sigmoid_fp32, precision) {
+  Place place;
+  float abs_error = 2e-5;
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+  for (auto& dims : test_dims) {
+    if (dims.size() == 1) {
+      dims.push_back(1);
+    }
+  }
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
+  abs_error = 1e-2;  // Using fp16 in OPENCL
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+#else
+  return;
+#endif
+
+  for (auto dims : test_dims) {
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "sigmoid",
+            SIGMOID,
+            abs_error);
+  }
+}
+
+TEST(Activation_sigmoid_fp32, performance) {
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 320, 320}}) {
+    TestActPerformance(place,
+                       "sigmoid_fp32_performance",
+                       0.01,
+                       6,
+                       "all",
+                       0.,
+                       1.0,
+                       DDim(dims),
+                       "sigmoid",
+                       SIGMOID,
+                       abs_error);
+  }
+}
+
+TEST(Activation_swish, precision) {
+  Place place;
+  float abs_error = 2e-5;
+  std::vector<float> coefs{0.01, 0.1, 1.0, 10.0};
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  coefs = {1.};
+#elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_error = 1e-2;
+  coefs = {1.};
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  coefs = {1.};
+#elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+  coefs = {1.};
+#elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
+  abs_error = 2e-5;
+  coefs = {1.};
+  for (auto& dims : test_dims) {
+    if (dims.size() == 1) {
+      dims.push_back(1);
+    }
+  }
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : test_dims) {
+    for (auto coef : coefs) {
+      TestAct(place,
+              "def",
+              0.01,
+              6,
+              "all",
+              coef,
+              1.0,
+              DDim(dims),
+              "swish",
+              SWISH,
+              abs_error);
+    }
+  }
+}
+
+TEST(Activation_swish, performance) {
+  Place place;
+  float abs_error = 2e-5;
+  std::vector<float> coefs{0.01, 0.1, 1.0, 10.0};
+#if defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 320, 320}}) {
+    for (auto coef : coefs) {
+      TestActPerformance(place,
+                         "def",
+                         0.01,
+                         6.,
+                         "all",
+                         coef,
+                         1.0,
+                         DDim(dims),
+                         "swish",
+                         SWISH,
+                         abs_error);
+    }
+  }
+}
+
 #if defined(LITE_WITH_ARM) && defined(ENABLE_ARM_FP16)
 TEST(Activation_relu_fp16, precision) {
   Place place(TARGET(kARM), PRECISION(kFP16));
@@ -1463,6 +1603,55 @@ TEST(Activation_relu_fp16, precision) {
                        "relu",
                        RELU,
                        abs_error);
+  }
+}
+
+TEST(Activation_sigmoid_fp16, precision) {
+  Place place;
+  float abs_error = 2e-3;
+#if defined(LITE_WITH_ARM)
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+#else
+  return;
+#endif
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 3, 4, 5}, {1, 3, 5}, {5, 4}, {8}};
+  for (auto dims : test_dims) {
+    TestAct<float16_t>(place,
+                       "def",
+                       0.01,
+                       6.,
+                       "all",
+                       0.,
+                       1.0,
+                       DDim(dims),
+                       "sigmoid",
+                       SIGMOID,
+                       abs_error);
+  }
+}
+
+TEST(Activation_sigmoid_fp16, performance) {
+  Place place;
+  float abs_error = 2e-3;
+#if defined(LITE_WITH_ARM)
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+#else
+  return;
+#endif
+
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 320, 320}}) {
+    TestActPerformance<float16_t>(place,
+                                  "sigmoid_fp16_performance",
+                                  0.01,
+                                  6,
+                                  "all",
+                                  0.,
+                                  1.0,
+                                  DDim(dims),
+                                  "sigmoid",
+                                  SIGMOID,
+                                  abs_error);
   }
 }
 
@@ -1572,6 +1761,60 @@ TEST(Activation_prelu_fp16, performance) {
                                     DDim(dims),
                                     "prelu",
                                     PRELU,
+                                    abs_error);
+    }
+  }
+}
+
+TEST(Activation_swish_fp16, precision) {
+  Place place;
+  float abs_error = 2e-3;
+  std::vector<float> coefs{0.1, 1.0, 10.0};
+  std::vector<std::vector<int64_t>> test_dims{
+      {1, 1, 4, 8}, {1, 1, 1, 10}, {1, 1, 2, 2}, {5, 4}, {8}};
+#ifdef LITE_WITH_ARM
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+#else
+  return;
+#endif
+  for (auto dims : test_dims) {
+    for (auto coef : coefs) {
+      TestAct<float16_t>(place,
+                         "def",
+                         0.01,
+                         6.,
+                         "all",
+                         coef,
+                         1.0,
+                         DDim(dims),
+                         "swish",
+                         SWISH,
+                         abs_error);
+    }
+  }
+}
+
+TEST(Activation_swish_fp16, performance) {
+  Place place;
+  float abs_error = 2e-3;
+  std::vector<float> coefs{0.01, 0.1, 1.0, 10.0};
+#ifdef LITE_WITH_ARM
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+#else
+  return;
+#endif
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 320, 320}}) {
+    for (auto coef : coefs) {
+      TestActPerformance<float16_t>(place,
+                                    "def",
+                                    0.01,
+                                    6.,
+                                    "all",
+                                    0.,
+                                    1.0,
+                                    DDim(dims),
+                                    "swish",
+                                    SWISH,
                                     abs_error);
     }
   }

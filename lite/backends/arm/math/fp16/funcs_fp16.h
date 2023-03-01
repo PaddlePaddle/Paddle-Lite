@@ -53,6 +53,129 @@ void fill_bias_fc(T* tensor,
                   int channel,
                   const operators::ActivationParam* act_param);
 
+static inline float16x4_t reciprocal_ps_f16(const float16x4_t& x) {
+  float16x4_t _reciprocal = vrecpe_f16(x);
+  _reciprocal = vmul_f16(vrecps_f16(x, _reciprocal), _reciprocal);
+  _reciprocal = vmul_f16(vrecps_f16(x, _reciprocal), _reciprocal);
+  return _reciprocal;
+}
+
+static inline float16x8_t reciprocalq_ps_f16(const float16x8_t& x) {
+  float16x8_t _reciprocal = vrecpeq_f16(x);
+  _reciprocal = vmulq_f16(vrecpsq_f16(x, _reciprocal), _reciprocal);
+  _reciprocal = vmulq_f16(vrecpsq_f16(x, _reciprocal), _reciprocal);
+  return _reciprocal;
+}
+
+#define c_exp_hi_f16 10.7421875f
+#define c_exp_lo_f16 -10.7421875f
+
+#define c_cephes_LOG2EF 1.44269504088896341
+#define c_cephes_exp_C1 0.693359375
+#define c_cephes_exp_C2 -2.12194440e-4
+
+#define c_cephes_exp_p0 1.9875691500E-4
+#define c_cephes_exp_p1 1.3981999507E-3
+#define c_cephes_exp_p2 8.3334519073E-3
+#define c_cephes_exp_p3 4.1665795894E-2
+#define c_cephes_exp_p4 1.6666665459E-1
+#define c_cephes_exp_p5 5.0000001201E-1
+
+/* exp() computed for 4 float at once */
+static inline float16x4_t exp_ps_naive(float16x4_t x) {
+  float16x4_t tmp, fx;
+
+  float16x4_t one = vdup_n_f16(1);
+  x = vmin_f16(x, vdup_n_f16(c_exp_hi_f16));
+  x = vmax_f16(x, vdup_n_f16(c_exp_lo_f16));
+
+  /* express exp(x) as exp(g + n*log(2)) */
+  fx = vfma_f16(vdup_n_f16(0.5f), x, vdup_n_f16(c_cephes_LOG2EF));
+
+  /* perform a floorf */
+  tmp = vcvt_f16_s16(vcvt_s16_f16(fx));
+
+  /* if greater, substract 1 */
+  uint16x4_t mask = vcgt_f16(tmp, fx);
+  mask = vand_u16(mask, (uint16x4_t)(one));
+
+  fx = vsub_f16(tmp, (float16x4_t)(mask));
+
+  tmp = vmul_f16(fx, vdup_n_f16(c_cephes_exp_C1));
+  float16x4_t z = vmul_f16(fx, vdup_n_f16(c_cephes_exp_C2));
+  x = vsub_f16(x, tmp);
+  x = vsub_f16(x, z);
+
+  z = vmul_f16(x, x);
+
+  float16x4_t y = vdup_n_f16(c_cephes_exp_p0);
+  y = vfma_f16(vdup_n_f16(c_cephes_exp_p1), y, x);
+  y = vfma_f16(vdup_n_f16(c_cephes_exp_p2), y, x);
+  y = vfma_f16(vdup_n_f16(c_cephes_exp_p3), y, x);
+  y = vfma_f16(vdup_n_f16(c_cephes_exp_p4), y, x);
+  y = vfma_f16(vdup_n_f16(c_cephes_exp_p5), y, x);
+
+  y = vfma_f16(x, y, z);
+  y = vadd_f16(y, one);
+
+  /* build 2^n */
+  int16x4_t mm;
+  mm = vcvt_s16_f16(fx);
+  mm = vadd_s16(mm, vdup_n_s16(0xf));
+  mm = vshl_n_s16(mm, 10);
+  float16x4_t pow2n = vreinterpret_f16_s16(mm);
+
+  y = vmul_f16(y, pow2n);
+  return y;
+}
+
+static inline float16x8_t exp_ps_naive(float16x8_t x) {
+  float16x8_t tmp, fx;
+
+  float16x8_t one = vdupq_n_f16(1);
+  x = vminq_f16(x, vdupq_n_f16(c_exp_hi_f16));
+  x = vmaxq_f16(x, vdupq_n_f16(c_exp_lo_f16));
+
+  /* express exp(x) as exp(g + n*log(2)) */
+  fx = vfmaq_f16(vdupq_n_f16(0.5f), x, vdupq_n_f16(c_cephes_LOG2EF));
+
+  /* perform a floorf */
+  tmp = vcvtq_f16_s16(vcvtq_s16_f16(fx));
+
+  /* if greater, substract 1 */
+  uint16x8_t mask = vcgtq_f16(tmp, fx);
+  mask = vandq_u16(mask, vreinterpretq_u16_f16(one));
+
+  fx = vsubq_f16(tmp, vreinterpretq_f16_u16(mask));
+
+  tmp = vmulq_f16(fx, vdupq_n_f16(c_cephes_exp_C1));
+  float16x8_t z = vmulq_f16(fx, vdupq_n_f16(c_cephes_exp_C2));
+  x = vsubq_f16(x, tmp);
+  x = vsubq_f16(x, z);
+
+  z = vmulq_f16(x, x);
+
+  float16x8_t y = vdupq_n_f16(c_cephes_exp_p0);
+  y = vfmaq_f16(vdupq_n_f16(c_cephes_exp_p1), y, x);
+  y = vfmaq_f16(vdupq_n_f16(c_cephes_exp_p2), y, x);
+  y = vfmaq_f16(vdupq_n_f16(c_cephes_exp_p3), y, x);
+  y = vfmaq_f16(vdupq_n_f16(c_cephes_exp_p4), y, x);
+  y = vfmaq_f16(vdupq_n_f16(c_cephes_exp_p5), y, x);
+
+  y = vfmaq_f16(x, y, z);
+  y = vaddq_f16(y, one);
+
+  /* build 2^n */
+  int16x8_t mm;
+  mm = vcvtq_s16_f16(fx);
+  mm = vaddq_s16(mm, vdupq_n_s16(0xf));
+  mm = vshlq_n_s16(mm, 10);
+  float16x8_t pow2n = vreinterpretq_f16_s16(mm);
+
+  y = vmulq_f16(y, pow2n);
+  return y;
+}
+
 // exp() computed for 8 float at once
 inline float16x8_t expq_ps_f16(float16x8_t x) {
   float32x4_t va = vcvt_f32_f16(vget_low_f16(x));

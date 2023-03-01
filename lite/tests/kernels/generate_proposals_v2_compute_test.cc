@@ -258,10 +258,6 @@ class GenerateProposalsV2ComputeTester : public arena::TestCase {
     const T* im_info_data = im_info.data<T>();
     T offset = pixel_offset ? static_cast<T>(1) : 0;
     T zero(0);
-    T im_w =
-        is_scale ? round(im_info_data[1] / im_info_data[2]) : im_info_data[1];
-    T im_h =
-        is_scale ? round(im_info_data[0] / im_info_data[2]) : im_info_data[0];
     for (int64_t i = 0; i < boxes->numel(); ++i) {
       if (i % 4 == 0) {
         boxes_data[i] =
@@ -301,13 +297,6 @@ class GenerateProposalsV2ComputeTester : public arena::TestCase {
         T x_ctr = boxes_data[4 * i] + ws / 2;
         T y_ctr = boxes_data[4 * i + 1] + hs / 2;
 
-        if (is_scale) {
-          T ws =
-              (boxes_data[4 * i + 2] - boxes_data[4 * i]) / im_info_data[2] + 1;
-          T hs = (boxes_data[4 * i + 3] - boxes_data[4 * i + 1]) /
-                     im_info_data[2] +
-                 1;
-        }
         if (ws >= min_size && hs >= min_size && x_ctr <= im_info_data[1] &&
             y_ctr <= im_info_data[0]) {
           keep_data[keep_len++] = i;
@@ -646,7 +635,7 @@ class GenerateProposalsV2ComputeTester : public arena::TestCase {
 
   void RunBaseline(Scope* scope) override { Compute<float>(scope); }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("generate_proposals_v2");
 
     op_desc->SetInput("Scores", {Scores_});

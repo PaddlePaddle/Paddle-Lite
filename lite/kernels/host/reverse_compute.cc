@@ -85,3 +85,14 @@ REGISTER_LITE_KERNEL(reverse,
                                            DATALAYOUT(kAny))})
     .BindPaddleOpVersion("reverse", 1)
     .Finalize();
+
+REGISTER_LITE_KERNEL(reverse,
+                     kHost,
+                     kAny,
+                     kNCHW,
+                     paddle::lite::kernels::host::ReverseCompute<int>,
+                     int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindPaddleOpVersion("reverse", 1)
+    .Finalize();

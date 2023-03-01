@@ -68,7 +68,7 @@ class SequenceSoftmaxComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("sequence_softmax");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
@@ -112,7 +112,9 @@ void test_sequence_softmax(Place place) {
 
 TEST(SequenceSoftmax, precision) {
   Place place;
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+#if defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
   return;

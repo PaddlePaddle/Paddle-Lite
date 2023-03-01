@@ -24,12 +24,15 @@ namespace xpu {
 template <typename InType, typename OutType, PrecisionType PType>
 void CalibCompute<InType, OutType, PType>::PrepareForRun() {
   auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
   if (param.scale) {
-    std::vector<float> cpu_scale = {param.scale};
-    calib_max_guard_ = TargetWrapperXPU::MallocScratchPad(sizeof(float));
+    std::vector<float> cpu_scale(max_ptr_size, param.scale);
+    calib_max_guard_ =
+        TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
     lite::TargetWrapperXPU::MemcpySync(calib_max_guard_->addr_,
                                        cpu_scale.data(),
-                                       sizeof(float),
+                                       max_ptr_size * sizeof(float),
                                        IoDirection::HtoD);
   }
 }
@@ -110,6 +113,29 @@ using xpu_calib_fp32_to_fp16 =
 using xpu_calib_fp16_to_fp32 =
     paddle::lite::kernels::xpu::CalibCompute<float16, float, PRECISION(kFloat)>;
 
+using xpu_calib_fp32_to_fp16_kfp16 =
+    paddle::lite::kernels::xpu::CalibCompute<float, float16, PRECISION(kFP16)>;
+using xpu_calib_fp16_to_fp32_kfp16 =
+    paddle::lite::kernels::xpu::CalibCompute<float16, float, PRECISION(kFP16)>;
+
+using xpu_calib_int64_to_fp16 =
+    paddle::lite::kernels::xpu::CalibCompute<int64_t,
+                                             float16,
+                                             PRECISION(kFP16)>;
+using xpu_calib_fp16_to_int64 =
+    paddle::lite::kernels::xpu::CalibCompute<float16,
+                                             int64_t,
+                                             PRECISION(kFP16)>;
+
+using xpu_calib_int32_to_fp16 =
+    paddle::lite::kernels::xpu::CalibCompute<int32_t,
+                                             float16,
+                                             PRECISION(kFP16)>;
+using xpu_calib_fp16_to_int32 =
+    paddle::lite::kernels::xpu::CalibCompute<float16,
+                                             int32_t,
+                                             PRECISION(kFP16)>;
+
 REGISTER_LITE_KERNEL(
     calib, kXPU, kFloat, kNCHW, xpu_calib_int64_to_int32, calib_int64_to_int32)
     .BindInput("Input",
@@ -135,6 +161,45 @@ REGISTER_LITE_KERNEL(
     calib, kXPU, kFloat, kNCHW, xpu_calib_fp16_to_fp32, calib_fp16_to_fp32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib, kXPU, kFP16, kNCHW, xpu_calib_fp16_to_fp32_kfp16, calib_fp16_to_fp32)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib, kXPU, kFP16, kNCHW, xpu_calib_fp32_to_fp16_kfp16, calib_fp32_to_fp16)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib, kXPU, kFP16, kNCHW, xpu_calib_int64_to_fp16, calib_int64_to_fp16)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib, kXPU, kFP16, kNCHW, xpu_calib_fp16_to_int64, calib_fp16_to_int64)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib, kXPU, kFP16, kNCHW, xpu_calib_int32_to_fp16, calib_int32_to_fp16)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib, kXPU, kFP16, kNCHW, xpu_calib_fp16_to_int32, calib_fp16_to_int32)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(calib_once,
@@ -172,11 +237,36 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(calib_once,
+                     kXPU,
+                     kFP16,
+                     kNCHW,
+                     xpu_calib_int64_to_fp16,
+                     calib_int64_to_fp16)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(calib_once,
+                     kXPU,
+                     kFP16,
+                     kNCHW,
+                     xpu_calib_fp16_to_int64,
+                     calib_fp16_to_int64)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .Finalize();
+
 using xpu_calib_fp32_to_int8 =
     paddle::lite::kernels::xpu::CalibCompute<float, int8_t, PRECISION(kInt8)>;
 
 using xpu_calib_int8_to_fp32 =
     paddle::lite::kernels::xpu::CalibCompute<int8_t, float, PRECISION(kInt8)>;
+
+using xpu_calib_fp32_to_int32 =
+    paddle::lite::kernels::xpu::CalibCompute<float, int32_t, PRECISION(kFloat)>;
+
 REGISTER_LITE_KERNEL(
     calib, kXPU, kInt8, kNCHW, xpu_calib_fp32_to_int8, calib_fp32_to_int8)
     .BindInput("Input",
@@ -188,4 +278,11 @@ REGISTER_LITE_KERNEL(
     calib, kXPU, kInt8, kNCHW, xpu_calib_int8_to_fp32, calib_int8_to_fp32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib, kXPU, kFloat, kNCHW, xpu_calib_fp32_to_int32, calib_fp32_to_int32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();

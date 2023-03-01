@@ -52,25 +52,25 @@ typedef __fp16 float16_t;
       const dtype **inptr12, const dtype **inptr13, const dtype **inptr14, \
       const dtype **inptr15, int numa, int numb
 
-#define X_BLOCK_COMPUTE_FP16(llc_size, MBLOCK, NBLOCK, KBLOCK, beta)  \
-  /* MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2*/          \
-  int x_block =                                                       \
-      (llc_size - (MBLOCK * K)) / (sizeof(float16_t) * (K + MBLOCK)); \
-  x_block /= NBLOCK;                                                  \
-  x_block = (x_block == 0) ? 1 : x_block;                             \
-  x_block *= NBLOCK;                                                  \
-  int x_num = (N + (x_block - 1)) / x_block;                          \
-  x_block = (N + x_num - 1) / x_num;                                  \
-  x_block = (x_block + NBLOCK - 1) / NBLOCK;                          \
-  x_block *= NBLOCK;                                                  \
-  x_block = x_block < NBLOCK ? NBLOCK : x_block;                      \
-  int tail_pre = (K & (KBLOCK - 1));                                  \
-  int k_pre = ((K + KBLOCK - 1) / KBLOCK) - 1;                        \
-  bool flag_p_remain = false;                                         \
-  int remain = 0;                                                     \
-  if (tail_pre == 0) {                                                \
-    tail_pre = KBLOCK;                                                \
-  }                                                                   \
+#define X_BLOCK_COMPUTE_FP16(llc_size, MBLOCK, NBLOCK, KBLOCK, beta) \
+  /* MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2*/         \
+  int x_block = (llc_size - (MBLOCK * K) * sizeof(float16_t)) /      \
+                (sizeof(float16_t) * (K + MBLOCK));                  \
+  x_block /= NBLOCK;                                                 \
+  x_block = (x_block == 0) ? 1 : x_block;                            \
+  x_block *= NBLOCK;                                                 \
+  int x_num = (N + (x_block - 1)) / x_block;                         \
+  x_block = (N + x_num - 1) / x_num;                                 \
+  x_block = (x_block + NBLOCK - 1) / NBLOCK;                         \
+  x_block *= NBLOCK;                                                 \
+  x_block = x_block < NBLOCK ? NBLOCK : x_block;                     \
+  int tail_pre = (K & (KBLOCK - 1));                                 \
+  int k_pre = ((K + KBLOCK - 1) / KBLOCK) - 1;                       \
+  bool flag_p_remain = false;                                        \
+  int remain = 0;                                                    \
+  if (tail_pre == 0) {                                               \
+    tail_pre = KBLOCK;                                               \
+  }                                                                  \
   int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
 
 #define DIRECT_WORKSPACE_COMPUTE(                                              \

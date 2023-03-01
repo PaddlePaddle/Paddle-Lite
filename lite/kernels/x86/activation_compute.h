@@ -190,7 +190,7 @@ struct GeluFunctor : public BaseActivationFunctor<T> {
 // Because the execute or device context can not be deliver here, it keep the
 // marco for NVCC.
 #if defined(PADDLE_WITH_MKLML) && !defined(_WIN32) && !defined(__APPLE__) && \
-    !defined(__OSX__) && !defined(PADDLE_WITH_CUDA)
+    !defined(__OSX__)
     auto x_data = x.data();
     auto out_data = out.data();
     int n = std::min(x.size(), out.size());
@@ -391,6 +391,26 @@ class HardSwishComputeCompute
   }
 
   virtual ~HardSwishComputeCompute() = default;
+};
+
+template <typename T>
+class ErfCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<param_t>();
+    auto x_dims = param.X->dims();
+    auto x_data = param.X->template data<T>();
+    auto output_data = param.Out->template mutable_data<T>();
+    for (int i = 0; i < x_dims.production(); ++i) {
+      output_data[0] = std::erf(x_data[0]);
+      x_data++;
+      output_data++;
+    }
+  }
+
+  virtual ~ErfCompute() = default;
 };
 
 }  // namespace x86

@@ -133,29 +133,26 @@ void Run(const std::string& model_file,
 #endif
   perf_data.set_init_time(timer.Stop());
 
+  // Get input types
+  auto input_types = lite::Split(FLAGS_input_data_type, ":");
+
   // Set inputs
   if (FLAGS_validation_set.empty()) {
+    auto paths = lite::Split(FLAGS_input_data_path, ":");
     for (size_t i = 0; i < input_shapes.size(); i++) {
       auto input_tensor = predictor->GetInput(i);
-      input_tensor->Resize(input_shapes[i]);
-      // NOTE: Change input data type to other type as you need.
-      auto input_data = input_tensor->mutable_data<float>();
-      auto input_num = lite::ShapeProduction(input_shapes[i]);
+      std::string path;
+
       if (FLAGS_input_data_path.empty()) {
-        for (auto j = 0; j < input_num; j++) {
-          input_data[j] = 1.f;
-        }
+        path = "";
       } else {
-        auto paths = lite::Split(FLAGS_input_data_path, ":");
-        std::ifstream fs(paths[i]);
-        if (!fs.is_open()) {
-          std::cerr << "Open input image " << paths[i] << " error."
-                    << std::endl;
-        }
-        for (int k = 0; k < input_num; k++) {
-          fs >> input_data[k];
-        }
-        fs.close();
+        path = paths[i];
+      }
+
+      if ((i < input_types.size()) && (input_types[i] == "int64")) {
+        setInputValue<int64_t>(input_tensor, input_shapes[i], path);
+      } else {  // default input_type float32
+        setInputValue<float>(input_tensor, input_shapes[i], path);
       }
     }
   } else {
@@ -245,6 +242,22 @@ void Run(const std::string& model_file,
       for (int i = 0; i < ele_num; ++i) {
         out_ss << "out[" << tidx << "][" << i
                << "]:" << output_tensor->data<float>()[i] << std::endl;
+      }
+    }
+
+    // TODO(sprouteer): Only support float for now, add more types if needed.
+    if (!FLAGS_output_data_path.empty()) {
+      std::stringstream out_data;
+      auto output_path = lite::Split(FLAGS_output_data_path, ":");
+      if (output_path.size() <= tidx) {
+        std::cerr << "Fail to write output tensor to file, tensor_output_path "
+                     "not matching output tensor number. "
+                  << std::endl;
+      } else {
+        for (int i = 0; i < ele_num; ++i) {
+          out_data << output_tensor->data<float>()[i] << std::endl;
+        }
+        StoreOutputTensor(out_data, output_path[tidx]);
       }
     }
   }

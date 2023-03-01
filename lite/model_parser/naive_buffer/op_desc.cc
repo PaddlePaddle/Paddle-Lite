@@ -55,6 +55,7 @@ SET_ATTR_IMPL(float, FLOAT, Float32, f);
 SET_ATTR_IMPL(bool, BOOLEAN, Bool, b);
 SET_ATTR_IMPL(std::string, STRING, String, s);
 SET_ATTR_IMPL(int64_t, LONG, Int64, l);
+SET_ATTR_IMPL(double, FLOAT64, Float64, float64);
 #undef SET_ATTR_IMPL
 
 #define SET_ATTRS_IMPL(T, ty__, bd__, pb_f__)                              \
@@ -79,6 +80,7 @@ SET_ATTRS_IMPL(int, INTS, Int32, ints);
 SET_ATTRS_IMPL(float, FLOATS, Float32, floats);
 SET_ATTRS_IMPL(std::string, STRINGS, String, strings);
 SET_ATTRS_IMPL(int64_t, LONGS, Int64, longs);
+SET_ATTRS_IMPL(double, FLOAT64S, Float64, float64s);
 #undef SET_ATTRS_IMPL
 
 const proto::OpDesc::Attr& GetFindAttr(const proto::OpDesc& desc,
@@ -106,6 +108,7 @@ GET_ATTR_IMPL(float, Float32, f);
 GET_ATTR_IMPL(bool, Bool, b);
 GET_ATTR_IMPL(int64_t, Int64, l);
 GET_ATTR_IMPL(std::string, String, s);
+GET_ATTR_IMPL(double, Float64, float64);
 #undef GET_ATTR_IMPL
 
 #define GET_ATTRS_IMPL(T, bd__, pb_f__)                                    \
@@ -124,6 +127,7 @@ GET_ATTRS_IMPL(int, Int32, ints);
 GET_ATTRS_IMPL(float, Float32, floats);
 GET_ATTRS_IMPL(std::string, String, strings);
 GET_ATTRS_IMPL(int64_t, Int64, longs);
+GET_ATTRS_IMPL(double, Float64, float64s);
 #undef GET_ATTRS_IMPL
 
 }  // namespace naive_buffer

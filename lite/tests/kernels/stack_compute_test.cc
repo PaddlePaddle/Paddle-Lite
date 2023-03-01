@@ -77,7 +77,7 @@ class StackComputeTester : public arena::TestCase {
     stack<T>(x, out, axis_);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("stack");
     op_desc->SetInput("X", {input1_, input2_});
     op_desc->SetOutput("Y", {output_});
@@ -118,6 +118,8 @@ TEST(Stack, precision) {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-2;
 #else
   return;

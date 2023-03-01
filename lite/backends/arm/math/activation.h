@@ -111,6 +111,9 @@ void softplus(const T* din, T* dout, int size, float beta, int threads);
 template <typename T>
 void mish(const T* din, T* dout, int size, float threshold);
 
+template <typename T>
+void act_silu(const T* din, T* dout, int size, int threads);
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

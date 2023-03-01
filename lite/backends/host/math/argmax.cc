@@ -41,20 +41,18 @@ void argmax_func(const lite::Tensor *input,
   for (int n = 0; n < out_stride; n++) {
     for (int k = 0; k < in_stride; k++) {
       const InType *in_ptr = input->data<InType>() + n * in_channel + k;
-      std::vector<std::pair<InType, OutType>> vec;
-      vec.resize(size);
-      for (int i = 0; i < size; i++) {
-        vec[i] = std::make_pair(in_ptr[i * in_stride], i);
+      std::pair<InType, OutType> max_pair;
+      max_pair.first = in_ptr[0];
+      max_pair.second = 0;
+      for (int i = 1; i < size; i++) {
+        if (in_ptr[i * in_stride] > max_pair.first) {
+          max_pair.first = in_ptr[i * in_stride];
+          max_pair.second = i;
+        }
       }
-      // sort
-      std::partial_sort(vec.begin(),
-                        vec.begin() + 1,
-                        vec.end(),
-                        std::greater<std::pair<InType, OutType>>());
-
       // out
       OutType *out_ptr = output->mutable_data<OutType>() + n * out_channel + k;
-      *out_ptr = vec[0].second;
+      *out_ptr = max_pair.second;
     }
   }
 }

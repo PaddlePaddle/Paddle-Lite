@@ -23,15 +23,7 @@ namespace lite {
 
 const lite::Tensor* RunHvyModel() {
   lite::Predictor predictor;
-#ifndef LITE_WITH_CUDA
   std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
-#else
-  std::vector<Place> valid_places({
-      Place{TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)},
-      Place{TARGET(kCUDA), PRECISION(kAny), DATALAYOUT(kNCHW)},
-      Place{TARGET(kCUDA), PRECISION(kAny), DATALAYOUT(kAny)},
-  });
-#endif
 
   predictor.Build(FLAGS_model_dir, "", "", valid_places);
 

@@ -482,7 +482,7 @@ class MulticlassNmsComputeTester : public arena::TestCase {
 #endif
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(type_);
     op_desc->SetInput("BBoxes", {bboxes_});
     op_desc->SetInput("Scores", {scores_});
@@ -551,7 +551,7 @@ TEST(multiclass_nms, precision) {
 #endif
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
-  alias = "DISABLE_XPU2_MulticlassNms3";
+  alias = "def";
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #else

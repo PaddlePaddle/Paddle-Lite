@@ -39,9 +39,6 @@ int ConvertGroupNorm(Converter* converter, OpInfo* op, Scope* scope) {
     auto scale_tensor = scope->FindMutableTensor(scale_name);
     CHECK(scale_tensor->persistable());
     scale_operand = converter->AddConstantOperand(*scale_tensor);
-  } else {
-    scale_operand = converter->AddConstantOperand(
-        std::vector<float>(input_channel_size, 1));
   }
   // Bias operand
   NNAdapterOperand* bias_operand = nullptr;
@@ -50,9 +47,6 @@ int ConvertGroupNorm(Converter* converter, OpInfo* op, Scope* scope) {
     auto bias_tensor = scope->FindMutableTensor(bias_name);
     CHECK(bias_tensor->persistable());
     bias_operand = converter->AddConstantOperand(*bias_tensor);
-  } else {
-    bias_operand = converter->AddConstantOperand(
-        std::vector<float>(input_channel_size, 0));
   }
   // Epsilon operand
   auto epsilon = op->GetAttr<float>("epsilon");
@@ -62,7 +56,12 @@ int ConvertGroupNorm(Converter* converter, OpInfo* op, Scope* scope) {
   auto groups_operand = converter->AddConstantOperand(groups);
   // Output operand
   auto out_name = op->Output("Y").front();
-  auto output_operand = converter->AddOutputOperand(out_name);
+  auto out_scale_name = "Y0_scale";
+  std::vector<float> out_scales;
+  if (op->HasOutputScale(out_scale_name, true)) {
+    out_scales = op->GetOutputScale(out_scale_name, true);
+  }
+  auto output_operand = converter->AddOutputOperand(out_name, out_scales);
   // GroupNorm operand
   converter->AddOperation(NNADAPTER_GROUP_NORMALIZATION,
                           {input_operand,

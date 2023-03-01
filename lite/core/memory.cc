@@ -24,107 +24,76 @@ namespace lite {
 
 void* TargetMalloc(TargetType target, size_t size) {
   void* data{nullptr};
-  switch (target) {
-    case TargetType::kHost:
-    case TargetType::kX86:
-    case TargetType::kARM:
-      data = TargetWrapper<TARGET(kHost)>::Malloc(size);
-      break;
-#ifdef LITE_WITH_CUDA
-    case TargetType::kCUDA:
-      data = TargetWrapper<TARGET(kCUDA)>::Malloc(size);
-      break;
-#endif  // LITE_WITH_CUDA
+  if (lite::Allocator::Global().GetCustomAllocator().alloc) {
+    data = lite::Allocator::Global().GetCustomAllocator().alloc(
+        size, host::MALLOC_ALIGN);
+  } else {
+    switch (target) {
+      case TargetType::kHost:
+      case TargetType::kX86:
+      case TargetType::kARM:
+        data = TargetWrapper<TARGET(kHost)>::Malloc(size);
+        break;
 #ifdef LITE_WITH_OPENCL
-    case TargetType::kOpenCL:
-      data = TargetWrapperCL::Malloc(size);
-      break;
+      case TargetType::kOpenCL:
+        data = TargetWrapperCL::Malloc(size);
+        break;
 #endif  // LITE_WITH_OPENCL
-#ifdef LITE_WITH_FPGA
-    case TargetType::kFPGA:
-      data = TargetWrapper<TARGET(kFPGA)>::Malloc(size);
-      break;
-#endif  // LITE_WITH_OPENCL
-#ifdef LITE_WITH_BM
-    case TargetType::kBM:
-      data = TargetWrapper<TARGET(kBM)>::Malloc(size);
-      break;
-#endif
-#ifdef LITE_WITH_MLU
-    case TargetType::kMLU:
-      data = TargetWrapper<TARGET(kMLU)>::Malloc(size);
-      break;
-#endif  // LITE_WITH_MLU
 #ifdef LITE_WITH_XPU
-    case TargetType::kXPU:
-      data = TargetWrapperXPU::Malloc(size);
-      break;
+      case TargetType::kXPU:
+        data = TargetWrapperXPU::Malloc(size);
+        break;
 #endif  // LITE_WITH_XPU
 #ifdef LITE_WITH_METAL
-    case TargetType::kMetal: {
-      data = TargetWrapperMetal::Malloc(size);
-      break;
-    }
+      case TargetType::kMetal: {
+        data = TargetWrapperMetal::Malloc(size);
+        break;
+      }
 #endif  // LITE_WITH_METAL
-    default:
-      LOG(FATAL) << "Unknown supported target " << TargetToStr(target);
+      default:
+        LOG(FATAL) << "Unknown supported target " << TargetToStr(target);
+    }
   }
   return data;
 }
 
 void TargetFree(TargetType target, void* data, std::string free_flag) {
-  switch (target) {
-    case TargetType::kHost:
-    case TargetType::kX86:
-    case TargetType::kARM:
-      TargetWrapper<TARGET(kHost)>::Free(data);
-      break;
+  if (lite::Allocator::Global().GetCustomAllocator().free) {
+    lite::Allocator::Global().GetCustomAllocator().free(data);
+  } else {
+    switch (target) {
+      case TargetType::kHost:
+      case TargetType::kX86:
+      case TargetType::kARM:
+        TargetWrapper<TARGET(kHost)>::Free(data);
+        break;
 
-#ifdef LITE_WITH_CUDA
-    case TargetType::kCUDA:
-      TargetWrapper<TARGET(kCUDA)>::Free(data);
-      break;
-#endif  // LITE_WITH_CUDA
 #ifdef LITE_WITH_OPENCL
-    case TargetType::kOpenCL:
-      if (free_flag == "cl_use_image2d_") {
-        TargetWrapperCL::FreeImage(data);
-      } else {
-        TargetWrapperCL::Free(data);
-      }
-      break;
+      case TargetType::kOpenCL:
+        if (free_flag == "cl_use_image2d_") {
+          TargetWrapperCL::FreeImage(data);
+        } else {
+          TargetWrapperCL::Free(data);
+        }
+        break;
 #endif  // LITE_WITH_OPENCL
-#ifdef LITE_WITH_FPGA
-    case TargetType::kFPGA:
-      TargetWrapper<TARGET(kFPGA)>::Free(data);
-      break;
-#endif  // LITE_WITH_CUDA
-#ifdef LITE_WITH_BM
-    case TargetType::kBM:
-      TargetWrapper<TARGET(kBM)>::Free(data);
-      break;
-#endif
-#ifdef LITE_WITH_MLU
-    case TargetType::kMLU:
-      TargetWrapper<TARGET(kMLU)>::Free(data);
-      break;
-#endif  // LITE_WITH_MLU
 #ifdef LITE_WITH_XPU
-    case TargetType::kXPU:
-      TargetWrapperXPU::Free(data);
-      break;
+      case TargetType::kXPU:
+        TargetWrapperXPU::Free(data);
+        break;
 #endif  // LITE_WITH_XPU
 #ifdef LITE_WITH_METAL
-    case TargetType::kMetal:
-      if (free_flag == "metal_use_image2d_") {
-        TargetWrapperMetal::FreeImage(data);
-      } else {
-        TargetWrapperMetal::Free(data);
-      }
-      break;
+      case TargetType::kMetal:
+        if (free_flag == "metal_use_image2d_") {
+          TargetWrapperMetal::FreeImage(data);
+        } else {
+          TargetWrapperMetal::Free(data);
+        }
+        break;
 #endif
-    default:
-      LOG(FATAL) << "Unknown type";
+      default:
+        LOG(FATAL) << "Unknown supported target:" << TargetToStr(target);
+    }
   }
 }
 
@@ -137,29 +106,6 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
           dst, src, size, IoDirection::DtoD);
       break;
 
-#ifdef LITE_WITH_CUDA
-    case TargetType::kCUDA:
-      TargetWrapper<TARGET(kCUDA)>::MemcpySync(
-          dst, src, size, IoDirection::DtoD);
-      break;
-#endif
-#ifdef LITE_WITH_FPGA
-    case TargetType::kFPGA:
-      TargetWrapper<TARGET(kFPGA)>::MemcpySync(
-          dst, src, size, IoDirection::DtoD);
-      break;
-#endif
-#ifdef LITE_WITH_BM
-    case TargetType::kBM:
-      TargetWrapper<TARGET(kBM)>::MemcpySync(dst, src, size, IoDirection::DtoD);
-      break;
-#endif
-#ifdef LITE_WITH_MLU
-    case TargetType::kMLU:
-      TargetWrapper<TARGET(kMLU)>::MemcpySync(
-          dst, src, size, IoDirection::HtoD);
-      break;
-#endif
 #ifdef LITE_WITH_XPU
     case TargetType::kXPU:
       TargetWrapperXPU::MemcpySync(dst, src, size, IoDirection::HtoD);
@@ -176,7 +122,7 @@ void TargetCopy(TargetType target, void* dst, const void* src, size_t size) {
       break;
 #endif
     default:
-      LOG(FATAL) << "unsupported type";
+      LOG(FATAL) << "Unknown supported target:" << TargetToStr(target);
   }
 }
 

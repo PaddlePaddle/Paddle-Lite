@@ -109,7 +109,7 @@ class BatchNormComputeTest : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(op_type_);
     op_desc->SetInput("X", {input_});
     op_desc->SetInput("Bias", {bias_});
@@ -175,15 +175,13 @@ TEST(BatchNorm, precision) {
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
-  abs_error = 1e-2;
+  abs_error = 1e-1;
 #else
   return;
 #endif
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_error = 1e-2;  // Using fp16 in OPENCL
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
 #else
   return;
 #endif

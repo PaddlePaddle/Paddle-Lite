@@ -29,7 +29,8 @@
         * [picodet](http://10.127.28.26:8879/bridge/picodet_m_320_coco_75.tar)
 
 * 测试机器
-   ||骁龙 865|骁龙 855|骁龙 845|骁龙 835|骁龙 625|麒麟 990|麒麟 980|RK3399|
+
+   |SOC|骁龙 865|骁龙 855|骁龙 845|骁龙 835|骁龙 625|麒麟 990|麒麟 980|RK3399|
    |:----|----:|----:|----:|----:|----:|----:|----:|----:|
    |设备|Xiaomi MI10 |Xiaomi MI9 |Xiaomi MI8 |Xiaomi mi6 |Xiaomi Redmi6 Pro |Huawei Mate 30 |Huawei Mate 20 |瑞芯微RK3399开发板 |
    |CPU|1xA77 @2.84GHz + 3xA77 @2.42GHz + 4xA55 @1.8GHz |1xA76 @2.84GHz + 3xA76 @2.42GHz + 4xA55 @1.78GHz |4xA75 @2.8GHz + 4xA75 @1.7GHz |4xA73 @2.45GHz + 4xA53 @1.9GHz |4xA53 @1.8GHz + 4xA53 @1.6GHz |2xA76 @2.86GHz + 2xA76 @2.09GHz + 4xA55 @1.86GHz |2xA76 @2.6GHz + 2xA76 @1.92Ghz + 4xA55 @1.8Ghz |2xA72 @1.8GHz + 4xA53 @1.4Ghz | 
@@ -163,31 +164,37 @@
 |SSD_MobileNetV3_large_quant|27.64 |31.40 |73.19 |92.01 |194.78 |36.87 |33.25 |131.47 |
 
 ## 华为昇腾 NPU 的性能数据
-请参考 [Paddle Lite 使用华为昇腾 NPU 预测部署](../demo_guides/huawei_ascend_npu)的最新性能数据
+请参考 [华为昇腾 NPU](../demo_guides/huawei_ascend_npu)的最新性能数据
 
 ## 华为麒麟 NPU 的性能数据
-请参考 [Paddle Lite 使用华为麒麟 NPU 预测部署](../demo_guides/huawei_kirin_npu)的最新性能数据
+请参考 [华为麒麟 NPU](../demo_guides/huawei_kirin_npu)的最新性能数据
 
-## 瑞芯微 NPU 的性能数据
-请参考 [Paddle Lite 使用瑞芯微 NPU 预测部署](../demo_guides/rockchip_npu)的最新性能数据
+## 昆仑芯 XPU 的性能数据
+请参考 [昆仑芯 XPU](../demo_guides/kunlunxin_xpu)的最新性能数据
 
-## 晶晨 NPU 的性能数据
-请参考 [Paddle Lite 使用晶晨 NPU 预测部署](../demo_guides/amlogic_npu)的最新性能数据
+## 昆仑芯 XTCL 的性能数据
+请参考 [昆仑芯 XTCL](../demo_guides/kunlunxin_xtcl)的最新性能数据
+
+## 高通 QNN 的性能数据
+请参考 [高通 QNN](../demo_guides/qualcomm_qnn)的最新性能数据
+
+## 寒武纪 MLU 的性能数据
+请参考 [寒武纪 MLU](../demo_guides/cambricon_mlu)的最新性能数据
 
 ## 芯原 TIM-VX 的性能数据
-请参考 [Paddle Lite 使用芯原 TIM-VX 预测部署](../demo_guides/verisilicon_timvx)的最新性能数据
+请参考 [芯原 TIM-VX](../demo_guides/verisilicon_timvx)的最新性能数据
 
 ## Android NNAPI 的性能数据
-请参考 [Paddle Lite 使用 Android NNAPI 预测部署](../demo_guides/android_nnapi)的最新性能数据
+请参考 [Android NNAPI](../demo_guides/android_nnapi)的最新性能数据
 
 ## 联发科 APU 的性能数据
-请参考 [Paddle Lite 使用联发科 APU 预测部署](../demo_guides/mediatek_apu)的最新性能数据
+请参考 [联发科 APU](../demo_guides/mediatek_apu)的最新性能数据
 
 ## 颖脉 NNA 的性能数据
-请参考 [Paddle Lite 使用颖脉 NNA 预测部署](../demo_guides/imagination_nna)的最新性能数据
+请参考 [颖脉 NNA](../demo_guides/imagination_nna)的最新性能数据
 
-## 英特尔 OpenVINO 的性能数据
-请参考 [Paddle Lite 使用英特尔 OpenVINO 预测部署](../demo_guides/intel_openvino)的最新性能数据
+## Intel OpenVINO 的性能数据
+请参考 [Intel OpenVINO](../demo_guides/intel_openvino)的最新性能数据
 
 ## 亿智 NPU 的性能数据
-请参考 [Paddle Lite 使用亿智 NPU 预测部署](../demo_guides/eeasytech_npu)的最新性能数据
+请参考 [亿智 NPU](../demo_guides/eeasytech_npu)的最新性能数据

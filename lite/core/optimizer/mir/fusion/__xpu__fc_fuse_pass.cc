@@ -36,7 +36,27 @@ class XPUFcFuser : public FuseBase {
   void BuildPattern() override {
     auto* x = VarNode("x")->assert_is_op_input(mul_type_, "X")->AsInput();
     auto* W = VarNode("W")->assert_is_op_input(mul_type_, "Y")->AsInput();
-    auto* mul = OpNode("mul", mul_type_)->AsIntermediate();
+    // check w.dims() == 2 and x.trans == false.
+    auto mul_input_check = [this](const Node* node) -> bool {
+      auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+      auto mul_input_y_name = op_desc.Input("Y").front();
+      auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
+      auto mul_y_shape = scope->FindMutableTensor(mul_input_y_name)->dims();
+      if (this->mul_type_ == "mul") {
+        return mul_y_shape.size() == 2;
+      }
+      if (this->mul_type_ == "matmul") {
+        return (mul_y_shape.size() == 2 &&
+                !op_desc.GetAttr<bool>("transpose_X"));
+      }
+      if (this->mul_type_ == "matmul_v2") {
+        return (mul_y_shape.size() == 2 && !op_desc.GetAttr<bool>("trans_x"));
+      }
+      return false;
+    };
+    auto* mul = OpNode("mul", mul_type_)
+                    ->AsIntermediate()
+                    ->assert_node_satisfied(mul_input_check);
     auto* mul_out = VarNode("mul_out")->assert_is_op_output(mul_type_, "Out");
     PMNode* bias = nullptr;
     PMNode* add = nullptr;
@@ -179,7 +199,8 @@ class XPUFcFuser : public FuseBase {
                                        {"leaky_relu", 5},
                                        {"hard_swish", 14},
                                        {"hard_sigmoid", 15},
-                                       {"relu6", 17}};
+                                       {"relu6", 17},
+                                       {"__xpu__quick_gelu", 19}};
 
     float act_param_ = 0.0f;
     if (act_type_ == "leaky_relu") {
@@ -194,25 +215,20 @@ class XPUFcFuser : public FuseBase {
 
     op_desc.SetAttr<int>("in_num_col_dims", -1);
     if (mul_type_ == "mul") {
-      op_desc.SetAttr(
-          "in_num_col_dims",
-          matched.at("mul")->stmt()->op_info()->GetAttr<int>("x_num_col_dims"));
+      op_desc.SetAttr("in_num_col_dims",
+                      op_info->GetAttr<int>("x_num_col_dims"));
+      // trans_x and trans_y is not existed in mul op. set false
       op_desc.SetAttr("transpose_x", false);
-      op_desc.SetAttr("transpose_w", true);
+      op_desc.SetAttr("transpose_w", false);
     } else if (mul_type_ == "matmul") {
-      op_desc.SetAttr(
-          "transpose_x",
-          matched.at("mul")->stmt()->op_info()->GetAttr<bool>("transpose_X"));
-      op_desc.SetAttr(
-          "transpose_w",
-          matched.at("mul")->stmt()->op_info()->GetAttr<bool>("transpose_Y"));
+      op_desc.SetAttr("transpose_x", op_info->GetAttr<bool>("transpose_X"));
+      op_desc.SetAttr("transpose_w", op_info->GetAttr<bool>("transpose_Y"));
     } else {
-      op_desc.SetAttr(
-          "transpose_x",
-          matched.at("mul")->stmt()->op_info()->GetAttr<bool>("trans_x"));
-      op_desc.SetAttr(
-          "transpose_w",
-          matched.at("mul")->stmt()->op_info()->GetAttr<bool>("trans_y"));
+      op_desc.SetAttr("transpose_x", op_info->GetAttr<bool>("trans_x"));
+      op_desc.SetAttr("transpose_w", op_info->GetAttr<bool>("trans_y"));
+    }
+    if (op_info->HasAttr("alpha")) {
+      op_desc.SetAttr("alpha", op_info->GetAttr<float>("alpha"));
     }
 
     std::string max_output_name = output_name + "_xpu_max";
@@ -246,7 +262,7 @@ class XPUFcFuser : public FuseBase {
     bool per_tensor = true;
     CHECK_GT(weight_max.size(), 0) << "fc channel size: " << weight_max.size();
     auto first = weight_max[0];
-    for (int i = 1; i < weight_max.size(); ++i) {
+    for (size_t i = 1; i < weight_max.size(); ++i) {
       if (std::abs(first - weight_max[i]) > 1e-6) {
         per_tensor = false;
         break;
@@ -263,9 +279,10 @@ class XPUFcFusePass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     // TODO(weihaoji) support with_no_bias and more activation types
-    for (auto with_bias : {true, /*false*/}) {
+    for (auto with_bias : {true, false}) {
       for (auto act_type : {"relu",
                             "gelu",
+                            "__xpu__quick_gelu",
                             /*"sigmoid",
                             "tanh",
                             "leaky_relu",
@@ -273,7 +290,7 @@ class XPUFcFusePass : public ProgramPass {
                             "hard_sigmoid",
                             "relu6",*/
                             "linear"}) {
-        for (auto mul_type : {"mul", "matmul_v2"}) {
+        for (auto mul_type : {"mul", "matmul", "matmul_v2"}) {
           fusion::XPUFcFuser fuser(with_bias, act_type, mul_type);
           fuser(graph.get());
         }

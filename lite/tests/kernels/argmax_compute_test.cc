@@ -123,7 +123,7 @@ class ArgmaxComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("arg_max");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
@@ -213,6 +213,12 @@ TEST(Argmax, precision) {
   TestArgmax(place, aliases, {2});
   return;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  TestArgmax(place, aliases, {2});
+  return;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  TestArgmax(place, aliases, {2});
+  return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   TestArgmax(place, aliases, {2});
   return;
 #else

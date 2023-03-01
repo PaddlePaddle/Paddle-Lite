@@ -109,7 +109,21 @@ __kernel void yolo_box(__global const CL_DTYPE* x_data,
                                         x_stride,
                                         4);
     float conf = nati_sigmoid(x_data[obj_idx]);
-    if (conf < conf_thresh) continue;
+    if (conf < conf_thresh) {
+      int box_idx =
+          (imgsize_idx * box_num + anchor_idx * x_stride + k * x_w + l) * 4;
+      int score_idx =
+          (imgsize_idx * box_num + anchor_idx * x_stride + k * x_w + l) *
+          class_num;
+      boxes_data[box_idx] = 0.f;
+      boxes_data[box_idx + 1] = 0.f;
+      boxes_data[box_idx + 2] = 0.f;
+      boxes_data[box_idx + 3] = 0.f;
+      for (int i = 0; i < class_num; i++) {
+        scores_data[score_idx + i] = 0.f;
+      }
+      continue;
+    }
 
     // get yolo box
     int box_idx = get_entry_index(imgsize_idx,

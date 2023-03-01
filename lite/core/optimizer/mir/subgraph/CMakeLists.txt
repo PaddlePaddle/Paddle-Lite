@@ -1,4 +1,4 @@
-if (WITH_TESTING AND NOT LITE_WITH_CUDA AND NOT LITE_WITH_XPU)
+if (WITH_TESTING AND NOT LITE_WITH_XPU)
     lite_cc_test(test_subgraph_detector
         SRCS subgraph_detector_test.cc
         ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 SERIAL)

@@ -44,12 +44,20 @@ class LITE_API LightPredictor {
   // model file or buffer,`model_from_memory` refers to whther to load model
   // from memory.
   LightPredictor(const std::string& lite_model_file,
-                 bool model_from_memory = false,
                  bool use_low_precision = false) {
     use_low_precision_ = use_low_precision;
     scope_ = std::make_shared<Scope>();
     program_desc_ = std::make_shared<cpp::ProgramDesc>();
-    Build(lite_model_file, model_from_memory);
+    Build(lite_model_file);
+  }
+
+  LightPredictor(const char* lite_model_buffer_ptr,
+                 size_t lite_model_buffer_size,
+                 bool use_low_precision = false) {
+    use_low_precision_ = use_low_precision;
+    scope_ = std::make_shared<Scope>();
+    program_desc_ = std::make_shared<cpp::ProgramDesc>();
+    Build(lite_model_buffer_ptr, lite_model_buffer_size);
   }
 
   // NOTE: This is a deprecated API and will be removed in latter release.
@@ -118,8 +126,8 @@ class LITE_API LightPredictor {
   // would be called in Run().
   void CheckInputValid();
 
-  void Build(const std::string& lite_model_file,
-             bool model_from_memory = false);
+  void Build(const std::string& lite_model_file);
+  void Build(const char* lite_model_buffer_ptr, size_t lite_model_buffer_size);
 
   // NOTE: This is a deprecated API and will be removed in latter release.
   void Build(

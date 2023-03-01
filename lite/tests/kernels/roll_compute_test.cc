@@ -97,7 +97,6 @@ class RollComputeTester : public arena::TestCase {
 
   void RunBaseline(Scope* scope) override {
     auto* x = scope->FindTensor(x_);
-    const auto* x_data = x->data<float>();
     std::vector<int64_t> shifts;
     if (!shifts_tensor_.empty()) {
       auto* shift = scope->FindTensor(shifts_tensor_);
@@ -121,12 +120,11 @@ class RollComputeTester : public arena::TestCase {
     out->CopyDataFrom(*x);
     auto* out_data = out->mutable_data<float>();
     for (size_t i = 0; i < nums; i++) {
-      int64_t input_size = input_dim.size();
       ShiftAlongDim(out_data, input_dim, axis_[i], shifts_[i]);
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("roll");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
@@ -182,7 +180,14 @@ void TestRoll(const Place& place, float abs_error) {
 TEST(roll, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #else
   return;

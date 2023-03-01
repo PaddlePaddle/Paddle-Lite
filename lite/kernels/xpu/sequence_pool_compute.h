@@ -31,6 +31,8 @@ class XPUSequencePoolCompute
 
   void Run() override;
 
+  virtual ~XPUSequencePoolCompute() = default;
+
  private:
   std::unique_ptr<int[]> lod_cpu;
 };

@@ -319,7 +319,7 @@ __kernel void broadcast_elementwise_common(
   output = fuse_scale(output, SCALE_SLOPE, SCALE_BIAS, SCALE_ALPHA);
 #endif
 
-#if defined(RELU) || defined(RELU6) || defined(GELU)
+#if defined(RELU) || defined(RELU6) || defined(GELU) || defined(TANH)
   CL_DTYPE4 alpha;
   output = activation_type4(output, alpha);
 #endif

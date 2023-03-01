@@ -15,6 +15,7 @@
 #include "operation/meshgrid.h"
 #include <vector>
 #include "core/types.h"
+#include "operation/math/meshgrid.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
@@ -25,15 +26,15 @@ namespace nnadapter {
 namespace operation {
 
 NNADAPTER_EXPORT bool ValidateMeshgrid(const core::Operation* operation) {
-  return false;
+  return true;
 }
 
 NNADAPTER_EXPORT int PrepareMeshgrid(core::Operation* operation) {
   MESHGRID_OPERATION_EXTRACT_INPUTS_OUTPUTS
   for (auto output_operand : output_operands) {
-    output_operand->type.dimensions.count = input_count;
     CopyOperandTypeExceptQuantParams(&output_operand->type,
                                      input_operands[0]->type);
+    output_operand->type.dimensions.count = input_count;
   }
 
   // Infer the shape and type of output operands
@@ -72,7 +73,54 @@ NNADAPTER_EXPORT int PrepareMeshgrid(core::Operation* operation) {
 }
 
 NNADAPTER_EXPORT int ExecuteMeshgrid(core::Operation* operation) {
-  return NNADAPTER_FEATURE_NOT_SUPPORTED;
+  MESHGRID_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Allocate and calculate the output operands
+  int status = -1;
+  auto input_precision = input_operands[0]->type.precision;
+  std::vector<std::vector<int32_t>> input_shapes;
+  for (int i = 0; i < input_count; i++) {
+    auto in_dims = input_operands[i]->type.dimensions.data;
+    auto in_dims_count = input_operands[i]->type.dimensions.count;
+    input_shapes.push_back(
+        std::vector<int32_t>(in_dims, in_dims + in_dims_count));
+  }
+  switch (input_precision) {
+    case NNADAPTER_FLOAT32: {
+      std::vector<float*> input_datas;
+      for (int i = 0; i < input_count; i++) {
+        input_datas.push_back(
+            reinterpret_cast<float*>(input_operands[i]->buffer));
+      }
+      std::vector<float*> output_datas;
+      for (int i = 0; i < output_count; i++) {
+        output_datas.push_back(
+            reinterpret_cast<float*>(AllocateOperand(output_operands[i])));
+      }
+      status = math::meshgrid(input_datas, input_shapes, output_datas);
+    } break;
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER: {
+      std::vector<int8_t*> input_datas;
+      for (int i = 0; i < input_count; i++) {
+        input_datas.push_back(
+            reinterpret_cast<int8_t*>(input_operands[i]->buffer));
+      }
+      std::vector<int8_t*> output_datas;
+      for (int i = 0; i < output_count; i++) {
+        output_datas.push_back(
+            reinterpret_cast<int8_t*>(AllocateOperand(output_operands[i])));
+      }
+      status = math::meshgrid(input_datas, input_shapes, output_datas);
+    } break;
+    default:
+      NNADAPTER_LOG(FATAL) << "Unsupported precision code("
+                           << OperandPrecisionCodeToString(input_precision)
+                           << ") for " << OperationTypeToString(operation->type)
+                           << " is found!";
+      break;
+  }
+  NNADAPTER_CHECK_EQ(status, 0);
+  return NNADAPTER_NO_ERROR;
 }
 
 }  // namespace operation

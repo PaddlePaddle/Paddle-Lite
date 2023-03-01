@@ -56,11 +56,11 @@ if (WIN32)
   target_link_libraries(${TARGET} ${MATH_LIB})
 
   add_custom_command(TARGET ${TARGET} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy ${MKLML_DIR}/lib/libiomp5md.dll ${PADDLE_BINARY_DIR}/Release
+      COMMAND ${CMAKE_COMMAND} -E copy ${MKLML_DIR}/lib/libiomp5md.dll ${CMAKE_CURRENT_BINARY_DIR}/Release
   )
   if(NOT WITH_STATIC_MKL)
     add_custom_command(TARGET ${TARGET} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy ${MKLML_DIR}/lib/mklml.dll ${PADDLE_BINARY_DIR}/Release
+        COMMAND ${CMAKE_COMMAND} -E copy ${MKLML_DIR}/lib/mklml.dll ${CMAKE_CURRENT_BINARY_DIR}/Release
     )
   endif()
 else()

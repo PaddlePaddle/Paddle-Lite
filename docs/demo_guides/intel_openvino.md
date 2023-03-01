@@ -1,6 +1,6 @@
-# 英特尔 OpenVINO 部署示例
+# Intel OpenVINO
 
-Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 OpenVINO 组网 API (API 2.0) 进行网络构建，在线生成并执行模型。
+Paddle Lite 已支持 Intel OpenVINO 在 X86 服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 OpenVINO 组网 API (API 2.0) 进行网络构建，在线生成并执行模型。
 
 ## 支持现状
 
@@ -130,11 +130,16 @@ Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署�
     - PaddleLite-generic-demo
       - image_classification_demo
         - assets
-          - images
-            - tabby_cat.jpg # 测试图片
-            - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
-          - labels
+          - configs
+            - imagenet_224.txt # config 文件
             - synset_words.txt # 1000 分类 label 文件
+          - datasets
+            - test # dataset
+              - inputs
+                - tabby_cat.jpg # 输入图片
+              - outputs
+                - tabby_cat.jpg # 输出图片
+              - list.txt # 图片清单
           - models
             - resnet50_fp32_224 # Paddle non-combined 格式的 resnet50 float32 模型
               - __model__ # Paddle fluid 模型组网文件，可拖入 https://lutzroeder.github.io/netron/ 进行可视化显示网络结构
@@ -144,12 +149,12 @@ Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署�
         - shell
           - CMakeLists.txt # 示例程序 CMake 脚本
           - build.linux.amd64 # 已编译好的，适用于 amd64
-            - image_classification_demo # 已编译好的，适用于 amd64 的示例程序
+            - demo # 已编译好的，适用于 amd64 的示例程序
           - build.linux.arm64 # 已编译好的，适用于 arm64
-            - image_classification_demo # 已编译好的，适用于 arm64 的示例程序
+            - demo # 已编译好的，适用于 arm64 的示例程序
             ...
           ...
-          - image_classification_demo.cc # 示例程序源码
+          - demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
           - run.sh # 示例程序本地运行脚本
           - run_with_ssh.sh # 示例程序 ssh 运行脚本
@@ -163,12 +168,13 @@ Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署�
             - amd64
               - include # Paddle Lite 头文件
               - lib # Paddle Lite 库文件
+                - cpu
+                  - libiomp5.so # Intel OpenMP 库
+                  - libmklml_intel.so # Intel MKL 库
+                  - libmklml_gnu.so # GNU MKL 库
                 - intel_openvino # NNAdapter 运行时库、device HAL 库
                 	- libnnadapter.so # NNAdapter 运行时库
                 	- libintel_openvino.so # NNAdapter device HAL 库
-                - libiomp5.so # Intel OpenMP 库
-                - libmklml_intel.so # Intel MKL 库
-                - libmklml_gnu.so # GNU MKL 库
                 - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
                 - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
             - arm64
@@ -177,7 +183,7 @@ Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署�
             - armhf
             	...
         - OpenCV # OpenCV 预编译库
-      - ssd_detection_demo # 基于 ssd 的目标检测示例程序
+      - object_detection_demo # 目标检测示例程序
   ```
 
 - 进入 `PaddleLite-generic-demo/image_classification_demo/shell/`；
@@ -189,37 +195,39 @@ Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署�
   	
   For amd64
   (intel x86 cpu only)
-  $ ./run.sh resnet50_fp32_224 linux amd64
-      warmup: 1 repeat: 5, average: 195.586401 ms, max: 203.028000 ms, min: 189.692001 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.739791
-      Top1  tiger cat - 0.130985
-      Top2  Egyptian cat - 0.101033
-      Preprocess time: 1.504000 ms
-      Prediction time: 195.586401 ms
-      Postprocess time: 0.287000 ms
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux amd64
+
+    Top1 tabby, tabby cat - 0.705223
+    Top2 tiger cat - 0.134570
+    Top3 Egyptian cat - 0.121521
+    Top4 lynx, catamount - 0.028652
+    Top5 ping-pong ball - 0.001043
+    Preprocess time: 3.832000 ms, avg 3.832000 ms, max 3.832000 ms, min 3.832000 ms
+    Prediction time: 158.328000 ms, avg 158.328000 ms, max 158.328000 ms, min 158.328000 ms
+    Postprocess time: 5.354000 ms, avg 5.354000 ms, max 5.354000 ms, min 5.354000 ms
+
   (intel x86 cpu + OpenVINO)
-  $ ./run.sh resnet50_fp32_224 linux amd64 intel_openvino
-      warmup: 1 repeat: 5, average: 24.080800 ms, max: 31.004000 ms, min: 19.587999 ms
-      results: 3
-      Top0  tabby, tabby cat - 0.739792
-      Top1  tiger cat - 0.130985
-      Top2  Egyptian cat - 0.101032
-      Preprocess time: 0.994000 ms
-      Prediction time: 24.080800 ms
-      Postprocess time: 0.146000 ms
+  $ ./run.sh resnet50_fp32_224 imagenet_224.txt test linux amd64 intel_openvino
+
+    Top1 tabby, tabby cat - 0.705224
+    Top2 tiger cat - 0.134570
+    Top3 Egyptian cat - 0.121519
+    Top4 lynx, catamount - 0.028652
+    Top5 ping-pong ball - 0.001043
+    Preprocess time: 4.293000 ms, avg 4.293000 ms, max 4.293000 ms, min 4.293000 ms
+    Prediction time: 16.415000 ms, avg 16.415000 ms, max 16.415000 ms, min 16.415000 ms
+    Postprocess time: 5.891000 ms, avg 5.891000 ms, max 5.891000 ms, min 5.891000 ms
   
   ```
 
-- 如果需要更改测试图片，请将图片拷贝到 **`PaddleLite-generic-demo/image_classification_demo/assets/images`** 目录下，修改并执行 **`convert_to_raw_image.py`** 生成相应的 RGB Raw 图像，最后修改 `run.sh` 的 IMAGE_NAME 即可；
-
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
 - 如果需要重新编译示例程序，直接运行
 
   ```shell
   $ ./build.sh linux amd64
   ```
 
-  ### 更新支持英特尔 OpenVINO 的 Paddle Lite 库
+  ### 更新支持 Intel OpenVINO 的 Paddle Lite 库
 
 - 下载 Paddle Lite 源码
 
@@ -238,17 +246,22 @@ Paddle Lite 已支持英特尔 OpenVINO 在 X86 服务器上进行预测部署�
 
   - 替换头文件和库
     ```shell
-    # 清理原有 include 目录
+    清理原有 include 目录
     $ rm -rf PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-    # 替换 include 目录
+    
+    替换 include 目录
     $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-    # 替换 NNAdapter 运行时库
+    
+    替换 NNAdapter 运行时库
     $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/intel_openvino/
-    # 替换 NNAdapter device HAL 库
+    
+    替换 NNAdapter device HAL 库
     $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libintel_openvino.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/intel_openvino/
-    # 替换 libpaddle_full_api_shared.so
+    
+    替换 libpaddle_full_api_shared.so
     $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
-    # 替换 libpaddle_light_api_shared.so
+    
+    替换 libpaddle_light_api_shared.so
     $ cp build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
     ```
 

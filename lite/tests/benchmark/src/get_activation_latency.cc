@@ -142,7 +142,7 @@ int main(int argc, char** argv) {
       t0.Stop();
     }
   } else if (act_type == 5) {
-    paddle::lite::kernels::arm::SigmoidCompute act_compute;
+    paddle::lite::kernels::arm::SigmoidCompute<PRECISION(kFloat)> act_compute;
     act_compute.SetParam(act_param);
     std::unique_ptr<paddle::lite::KernelContext> ctx1(
         new paddle::lite::KernelContext);
@@ -182,7 +182,7 @@ int main(int argc, char** argv) {
       t0.Stop();
     }
   } else if (act_type == 7) {
-    paddle::lite::kernels::arm::SwishCompute act_compute;
+    paddle::lite::kernels::arm::SwishCompute<PRECISION(kFloat)> act_compute;
     act_compute.SetParam(act_param);
     std::unique_ptr<paddle::lite::KernelContext> ctx1(
         new paddle::lite::KernelContext);

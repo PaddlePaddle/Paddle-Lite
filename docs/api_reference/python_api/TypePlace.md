@@ -7,8 +7,7 @@ class TargetType;
 
 枚举型变量`TargetType`的所有可能取值包括：
 
-`{X86, CUDA, ARM, OpenCL, FPGA, NPU}`
-
+`{Host, X86, ARM, OpenCL, XPU, Metal, NNAdapter}`
 
 ## PrecisionType
 ```python

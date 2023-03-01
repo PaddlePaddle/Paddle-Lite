@@ -35,7 +35,6 @@ int ConvertPool(Converter* converter, OpInfo* op, Scope* scope) {
           : "";
   auto auto_pad_operand = converter->AddConstantOperand(static_cast<int32_t>(
       ConvertPaddingAlgorithmToNNAutoPadCode(padding_algorithm)));
-
   // Pads operand(optional)
   std::vector<int> paddings = op->GetAttr<std::vector<int>>("paddings");
   if (paddings.size() == 2L) {
@@ -112,7 +111,6 @@ int ConvertPool(Converter* converter, OpInfo* op, Scope* scope) {
     input_operands.push_back(ceil_mode_operand);
     input_operands.push_back(fuse_code_operand);
   }
-
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperationType pool2d_operation_type;
   std::string pooling_type = op->GetAttr<std::string>("pooling_type");

@@ -198,6 +198,7 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
       case NNADAPTER_MUL:
       case NNADAPTER_POW:
       case NNADAPTER_SUB:
+      case NNADAPTER_FLOOR_DIV:
         input_args = {"input0", "input1", "fuse_code"};
         output_args = {"output"};
         break;
@@ -303,6 +304,8 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
       case NNADAPTER_SQUARE:
       case NNADAPTER_SWISH:
       case NNADAPTER_TANH:
+      case NNADAPTER_SIN:
+      case NNADAPTER_COS:
         input_args = {"input"};
         output_args = {"output"};
         break;
@@ -560,6 +563,10 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
                       "score_threshold"};
         output_args = {"Out", "NmsRoisNum", "Index"};
         break;
+      case NNADAPTER_ROLL:
+        input_args = {"input", "shifts", "axes"};
+        output_args = {"output"};
+        break;
       default:
         if (operation->type < 0) {
           input_args.resize(input_count);
@@ -696,6 +703,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(CONCAT);
     NNADAPTER_TYPE_TO_STRING(CONV_2D);
     NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
+    NNADAPTER_TYPE_TO_STRING(COS);
     NNADAPTER_TYPE_TO_STRING(CUM_SUM);
     NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D);
     NNADAPTER_TYPE_TO_STRING(DEQUANTIZE);
@@ -707,6 +715,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(FILL_LIKE);
     NNADAPTER_TYPE_TO_STRING(FLATTEN);
     NNADAPTER_TYPE_TO_STRING(FLOOR);
+    NNADAPTER_TYPE_TO_STRING(FLOOR_DIV);
     NNADAPTER_TYPE_TO_STRING(FULLY_CONNECTED);
     NNADAPTER_TYPE_TO_STRING(GATHER);
     NNADAPTER_TYPE_TO_STRING(GELU);
@@ -741,14 +750,17 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(RELU);
     NNADAPTER_TYPE_TO_STRING(RELU6);
     NNADAPTER_TYPE_TO_STRING(RANGE);
+    NNADAPTER_TYPE_TO_STRING(REDUCE_MAX);
     NNADAPTER_TYPE_TO_STRING(REDUCE_MEAN);
     NNADAPTER_TYPE_TO_STRING(REDUCE_SUM);
     NNADAPTER_TYPE_TO_STRING(RESHAPE);
     NNADAPTER_TYPE_TO_STRING(RESIZE_NEAREST);
     NNADAPTER_TYPE_TO_STRING(RESIZE_LINEAR);
     NNADAPTER_TYPE_TO_STRING(ROI_ALIGN);
+    NNADAPTER_TYPE_TO_STRING(ROLL);
     NNADAPTER_TYPE_TO_STRING(SHAPE);
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
+    NNADAPTER_TYPE_TO_STRING(SIN);
     NNADAPTER_TYPE_TO_STRING(SLICE);
     NNADAPTER_TYPE_TO_STRING(STACK);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);

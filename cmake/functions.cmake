@@ -45,8 +45,7 @@ file(WRITE ${fake_kernels_src_list} "") # clean
 
 # add a kernel for some specific device
 set(IS_FAKED_KERNEL false CACHE INTERNAL "judget faked kernel")
-set(cuda_kernels CACHE INTERNAL "cuda kernels")
-# device: one of (Host, ARM, X86, NPU, MLU, HUAWEI_ASCEND_NPU, APU, FPGA, OPENCL, CUDA, BM, RKNPU IMAGINATION_NNA)
+# device: one of (Host, ARM, X86, OPENCL)
 # level: one of (basic, extra)
 function(add_kernel TARGET device level)
     set(options "")
@@ -67,7 +66,7 @@ function(add_kernel TARGET device level)
       return()
     endif()
 
-    # strp lib according to useful kernel names.
+    # strip lib according to useful kernel names.
     if(LITE_BUILD_TAILOR)
       set(dst_file "")
       foreach(src ${args_SRCS})
@@ -90,21 +89,6 @@ function(add_kernel TARGET device level)
       return()
     endif()
 
-    if ("${device}" STREQUAL "CUDA")
-        if (NOT LITE_WITH_CUDA)
-            foreach(src ${args_SRCS})
-                file(APPEND ${fake_kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
-            endforeach()
-            return()
-        endif()
-        set(cuda_kernels "${cuda_kernels};${TARGET}" CACHE INTERNAL "")
-        foreach(src ${args_SRCS})
-          file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
-        endforeach()
-        nv_library(${TARGET} SRCS ${args_SRCS})
-        return()
-    endif()
-
     # compile actual kernels
     foreach(src ${args_SRCS})
         file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
@@ -125,8 +109,8 @@ function(lite_cc_test TARGET)
   set(options "")
   set(oneValueArgs "")
 
-  set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS
-        IMAGINATION_NNA_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
+  set(multiValueArgs SRCS DEPS X86_DEPS CL_DEPS METAL_DEPS ARM_DEPS
+        XPU_DEPS  NNADAPTER_DEPS PROFILE_DEPS
         LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS CV_DEPS
         ARGS
         COMPILE_LEVEL # (basic|extra)
@@ -136,25 +120,15 @@ function(lite_cc_test TARGET)
   lite_deps(deps
             DEPS ${args_DEPS}
             X86_DEPS ${args_X86_DEPS}
-            CUDA_DEPS ${args_CUDA_DEPS}
             CL_DEPS ${args_CL_DEPS}
             METAL_DEPS ${args_METAL_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
-            FPGA_DEPS ${args_FPGA_DEPS}
-            INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
-            NPU_DEPS ${args_NPU_DEPS}
-            APU_DEPS ${args_APU_DEPS}
             XPU_DEPS ${args_XPU_DEPS}
-            RKNPU_DEPS ${args_RKNPU_DEPS}
-            BM_DEPS ${args_BM_DEPS}
-            IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
             NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}
             CV_DEPS ${args_CV_DEPS}
-            MLU_DEPS ${args_MLU_DEPS}
-            HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
             )
   if(LITE_WITH_ARM)
     cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} core_tester gflags gtest)
@@ -180,13 +154,6 @@ function(lite_cc_test TARGET)
   # link to dynamic runtime lib
   if(LITE_WITH_XPU)
       target_link_libraries(${TARGET} ${xpu_builder_libs} ${xpu_runtime_libs})
-  endif()
-  if(LITE_WITH_NPU)
-      target_link_libraries(${TARGET} ${npu_builder_libs} ${npu_runtime_libs})
-  endif()
-  if(LITE_WITH_CUDA)
-      get_property(cuda_deps GLOBAL PROPERTY CUDA_MODULES)
-      target_link_libraries(${TARGET} ${cuda_deps})
   endif()
 
   set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")

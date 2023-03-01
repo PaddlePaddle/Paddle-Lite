@@ -130,8 +130,6 @@ endif()
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX OR ARMMACOS)
-  set(WITH_GPU OFF CACHE STRING
-    "Disable GPU when cross-compiling for Android and iOS" FORCE)
   set(WITH_DSO OFF CACHE STRING
     "Disable DSO when cross-compiling for Android and iOS" FORCE)
   set(WITH_AVX OFF CACHE STRING

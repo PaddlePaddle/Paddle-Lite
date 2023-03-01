@@ -112,7 +112,7 @@ class TransposeComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(op_type_);
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
@@ -203,9 +203,6 @@ void TestTranspose4D(Place place, float abs_error) {
 #if !defined(LITE_WITH_XPU)
     {0, 1, 2, 3}, {0, 1, 3, 2}, {0, 2, 1, 3}, {3, 1, 2, 0}, {3, 1, 0, 2},
 #endif
-#if !defined(LITE_WITH_NPU)
-        {0, 2, 3, 1}, {0, 3, 1, 2},
-#endif
   };
   for (auto axis : axes) {
     std::unique_ptr<arena::TestCase> tester(
@@ -229,9 +226,6 @@ TEST(Transpose, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW));
   abs_error = 1e-2;  // Using fp16 in OPENCL

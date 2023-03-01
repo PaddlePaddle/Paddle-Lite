@@ -289,6 +289,17 @@ void SoftplusCompute::Run() {
   }
 }
 
+void SiluCompute::Run() {
+  auto& param = this->Param<param_t>();
+  CHECK(param.X);
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
+  for (int i = 0; i < x_dims.production(); i++) {
+    output_data[i] = x_data[i] / (1 + std::exp(-x_data[i]));
+  }
+}
+
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite
@@ -432,6 +443,11 @@ REGISTER_LITE_KERNEL(softplus,
                      kNCHW,
                      paddle::lite::kernels::host::SoftplusCompute,
                      def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
+    silu, kHost, kFloat, kNCHW, paddle::lite::kernels::host::SiluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

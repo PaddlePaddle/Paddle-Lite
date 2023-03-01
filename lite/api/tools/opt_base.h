@@ -87,19 +87,16 @@ class LITE_API OptBase {
                          "kXPU",
                          "kHost",
                          "kX86",
-                         "kBM",
-                         "kIntelFPGA",
-                         "kMLU",
+                         "cambricon_mlu",
                          "huawei_ascend_npu",
                          "mediatek_apu",
-                         "rockchip_npu",
                          "huawei_kirin_npu",
                          "imagination_nna",
-                         "amlogic_npu",
                          "verisilicon_timvx",
                          "eeasytech_npu",
                          "android_nnapi",
                          "qualcomm_qnn",
+                         "kunlunxin_xtcl",
                          "kUnK"});  // print supported ops on target_types
   void PrintAllOps();               // print all ops
   void PrintSupportedOps();         // print ops supported on valid_places_

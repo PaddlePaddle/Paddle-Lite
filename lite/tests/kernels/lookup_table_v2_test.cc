@@ -73,7 +73,7 @@ class LookupTableV2ComputeTest : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(op_type_);
     op_desc->SetInput("Ids", {ids_});
     op_desc->SetInput("W", {w_});
@@ -122,6 +122,10 @@ TEST(LookupTableV2, precision) {
   TestLookupTableV2Case<int>(place, abs_error);
   return;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  TestLookupTableV2Case<int>(place, abs_error);
+  return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-2;
   TestLookupTableV2Case<int>(place, abs_error);
   return;

@@ -101,6 +101,8 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   } else if (act_type == "relu6") {
     fuse_code_value = NNADAPTER_FUSED_RELU6;
     act_type = "";
+  } else {
+    CHECK(act_type.empty()) << "Not support fuse act type: " << act_type;
   }
   auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
 
@@ -137,6 +139,9 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   } else if (op_type == "elementwise_pow" ||
              op_type == "fusion_elementwise_pow_activation") {
     eltwise_operation_type = NNADAPTER_POW;
+  } else if (op_type == "elementwise_floordiv" ||
+             op_type == "fusion_elementwise_floordiv_activation") {
+    eltwise_operation_type = NNADAPTER_FLOOR_DIV;
   } else {
     LOG(WARNING) << "Unsupported elementwise op type: " << op_type;
     return UNSUPPORTED_FEATURE;

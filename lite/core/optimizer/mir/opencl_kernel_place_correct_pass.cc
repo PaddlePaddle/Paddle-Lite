@@ -30,5 +30,4 @@ void OpenCLKernelPlaceCorrectPass::Apply(
 }  // namespace paddle
 
 REGISTER_MIR_PASS(opencl_kernel_place_correct_pass,
-                  paddle::lite::mir::OpenCLKernelPlaceCorrectPass)
-    .BindTargets({TARGET(kOpenCL)});
+                  paddle::lite::mir::OpenCLKernelPlaceCorrectPass);

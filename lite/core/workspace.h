@@ -63,25 +63,10 @@ class WorkSpace {
   static WorkSpace& Global_ARM() { return Global_Host(); }
 #endif
 
-#if defined(LITE_WITH_CUDA)
-  static WorkSpace& Global_CUDA() {
-    static LITE_THREAD_LOCAL std::unique_ptr<WorkSpace> x(
-        new WorkSpace(TARGET(kCUDA)));
-    return *x;
-  }
-#endif
 #if defined(LITE_WITH_METAL)
   static WorkSpace& Global_METAL() {
     static LITE_THREAD_LOCAL std::unique_ptr<WorkSpace> x(
         new WorkSpace(TARGET(kMetal)));
-    return *x;
-  }
-#endif
-
-#if defined(LITE_WITH_MLU)
-  static WorkSpace& Global_MLU() {
-    static LITE_THREAD_LOCAL std::unique_ptr<WorkSpace> x(
-        new WorkSpace(TARGET(kMLU)));
     return *x;
   }
 #endif

@@ -100,7 +100,7 @@ class ScatterNdAddTester : public arena::TestCase {
                  add_size);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("scatter_nd_add");
     op_desc->SetInput("X", {x_});
     op_desc->SetInput("Index", {index_});

@@ -52,6 +52,36 @@ class InterpolateV2Op : public OpLite {
   mutable InterpolateParam param_;
 };
 
+class LinearInterpolateV2Op : public OpLite {
+ public:
+  LinearInterpolateV2Op() {}
+
+  explicit LinearInterpolateV2Op(const std::string &op_type)
+      : OpLite(op_type) {}
+
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override { return true; };
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "interpolate"; }
+
+#ifdef LITE_WITH_PROFILE
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+    ch->input_shape = ch->DimToStr(param_.X->dims());
+    ch->output_shape = ch->DimToStr(param_.Out->dims());
+    ch->remark = param_.interp_method;
+    ch->macs = param_.Out->numel() * 14.f;
+  }
+#endif
+
+ private:
+  mutable InterpolateParam param_;
+};
+
 } /* namespace operators */
 } /* namespace lite */
 } /* namespace paddle */

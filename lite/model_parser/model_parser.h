@@ -148,10 +148,11 @@ void LoadModelNaiveFromFile(const std::string& filename,
                             lite::Scope* scope,
                             cpp::ProgramDesc* prog);
 
-void LoadModelNaiveFromMemory(const std::string& model_buffer,
+void LoadModelNaiveFromMemory(const char* model_buffer,
+                              size_t model_buffer_size,
                               lite::Scope* scope,
                               cpp::ProgramDesc* cpp_prog);
-void LoadModelFbsFromMemory(model_parser::StringBufferReader* reader,
+void LoadModelFbsFromMemory(model_parser::CharBufferReader* reader,
                             Scope* scope,
                             cpp::ProgramDesc* cpp_prog,
                             uint16_t meta_version);

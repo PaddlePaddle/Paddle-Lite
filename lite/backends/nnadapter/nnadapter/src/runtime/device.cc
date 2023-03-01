@@ -74,6 +74,7 @@ class Context {
 };
 
 Context::Context(void* device, const char* properties) : device_(device) {
+  NNADAPTER_CHECK(device_);
   // Extract the runtime parameters from the context properties
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
   std::string key_value;
@@ -89,7 +90,9 @@ Context::Context(void* device, const char* properties) : device_(device) {
 
 class Program {
  public:
-  explicit Program(Context* context) : context_(context) {}
+  explicit Program(Context* context) : context_(context) {
+    NNADAPTER_CHECK(context_);
+  }
   ~Program() { Clear(); }
 
   int Validate(const core::Model* model, bool* supported_operations);
@@ -317,7 +320,7 @@ int CreateContext(void* device,
 }
 
 void DestroyContext(void* context) {
-  if (!context) {
+  if (context) {
     auto c = reinterpret_cast<Context*>(context);
     delete c;
   }

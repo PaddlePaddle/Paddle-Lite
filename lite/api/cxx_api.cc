@@ -23,6 +23,9 @@
 
 #include "lite/api/paddle_use_passes.h"
 #include "lite/utils/io.h"
+#ifdef ENABLE_ARM_FP16
+#include "lite/backends/arm/math/fp16/type_trans_fp16.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -177,8 +180,13 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
           << kpf_path;
 }
 
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_METAL)
 lite::Tensor *Predictor::GetInput(size_t offset) {
+#ifdef LITE_WITH_XPU
+  XPU_CALL(xpu_set_device(reinterpret_cast<lite::XPURunTimeOption *>(
+                              target_configs_[TARGET(kXPU)].get())
+                              ->xpu_dev_num));
+#endif
   CHECK(input_names_.size() > offset)
       << "The network has " << input_names_.size() << " inputs"
       << ", the offset should be less than this.";
@@ -249,7 +257,7 @@ void Predictor::PrepareFeedFetch() {
   }
 }
 
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_METAL)
 const lite::Tensor *Predictor::GetOutput(size_t offset) const {
   CHECK(output_names_.size() > offset)
       << "The network has " << output_names_.size() << " outputs"
@@ -296,6 +304,54 @@ const cpp::ProgramDesc &Predictor::program_desc() const {
   return *program_desc_.get();
 }
 const RuntimeProgram &Predictor::runtime_program() const { return *program_; }
+
+#ifdef ENABLE_ARM_FP16
+typedef __fp16 float16_t;
+void Predictor::WeightFP32ToFP16() {
+  std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
+  std::vector<std::string> fp16_ops{"conv2d",
+                                    "depthwise_conv2d",
+                                    "conv2d_transpose",
+                                    "fc",
+                                    "mul",
+                                    "matmul",
+                                    "matmul_v2",
+                                    "gru",
+                                    "sequence_conv",
+                                    "elementwise_add",
+                                    "elementwise_sub",
+                                    "elementwise_div",
+                                    "elementwise_mul",
+                                    "prelu"};
+  for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
+    auto *block = program_desc->GetBlock<cpp::BlockDesc>(i);
+    for (size_t k = 0; k < block->OpsSize(); ++k) {
+      auto *op_desc = block->GetOp<cpp::OpDesc>(k);
+      std::string op_type = op_desc->Type();
+      auto iter = std::find(fp16_ops.begin(), fp16_ops.end(), op_type);
+      if (iter != fp16_ops.end()) {
+        auto input_names = op_desc->input_vars();
+        for (auto &input_name : input_names) {
+          std::string input_weight_name = input_name + "_fp16";
+          if (op_desc->HasAttr(input_weight_name)) {  // the input is fp16
+            Tensor tmp_tensor;
+            auto input_tensor =
+                scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
+            if (input_tensor->precision() != PRECISION(kFloat)) continue;
+            tmp_tensor.CopyDataFrom(*input_tensor);
+            input_tensor->clear();
+            input_tensor->set_precision(PRECISION(kFP16));
+            float16_t *fp_data = input_tensor->mutable_data<float16_t>();
+            const float *in_data = tmp_tensor.data<float>();
+            lite::arm::math::fp16::fp32_to_fp16(
+                in_data, fp_data, input_tensor->numel());
+          }
+        }
+      }
+    }
+  }
+}
+#endif  // ENABLE_ARM_FP16
 
 void Predictor::Build(const lite_api::CxxConfig &config,
                       const std::vector<Place> &valid_places,
@@ -413,6 +469,11 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
 
   // Update the runtime program to program_desc only once
   program_->SaveRuntimProgramIntoProgramDesc(program_desc_);
+
+#ifdef ENABLE_ARM_FP16
+  // fp16 Weight convert
+  WeightFP32ToFP16();
+#endif
 }
 
 void Predictor::GenRuntimeProgram() {
@@ -501,14 +562,14 @@ void Predictor::CheckPaddleOpVersions(
           // registry.
           if ((model_op_version_index > iter->second) &&
               (model_op_version_index != -1)) {
-            LOG(INFO) << "Warning: incompatible paddle op version. Kernel ("
-                      << kernel->name() << ") requires that op_version("
-                      << iter->first << ")==" << iter->second
-                      << ". However, the op_version(" << iter->first
-                      << ") in this models is " << model_op_version_index
-                      << ". It's suggested to use PaddlePaddle and "
-                         "Paddle-Lite of the same op_version("
-                      << iter->first << ").";
+            VLOG(5) << "Warning: incompatible paddle op version. Kernel ("
+                    << kernel->name() << ") requires that op_version("
+                    << iter->first << ")==" << iter->second
+                    << ". However, the op_version(" << iter->first
+                    << ") in this models is " << model_op_version_index
+                    << ". It's suggested to use PaddlePaddle and "
+                       "Paddle-Lite of the same op_version("
+                    << iter->first << ").";
           }
         }
       }

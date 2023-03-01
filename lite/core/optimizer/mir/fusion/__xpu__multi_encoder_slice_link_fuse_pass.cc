@@ -57,7 +57,8 @@ class XPUMultiEncoderSliceLinkFuser : public FuseBase {
       layer_norm = OpNode("layer_norm", "layer_norm");
       layer_norm_out = VarNode("layer_norm_out")
                            ->assert_is_op_output("layer_norm", "Y")
-                           ->assert_is_op_input("slice", "Input");
+                           ->assert_is_op_input("slice", "Input")
+                           ->assert_only_one_output();
     } else {
       xpu_encoder->assert_op_attr<bool>("norm_before", false);
       encoder_out->assert_is_op_input("slice", "Input")->AsIntermediate();

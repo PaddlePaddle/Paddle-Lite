@@ -1697,7 +1697,7 @@ public:
 
     cl_type& operator ()() { return object_; }
 
-    const cl_type get() const { return object_; }
+    cl_type get() const { return object_; }
 
     cl_type get() { return object_; }
 
@@ -1826,7 +1826,7 @@ public:
 
     cl_type& operator ()() { return object_; }
 
-    const cl_type get() const { return object_; }
+    cl_type get() const { return object_; }
 
     cl_type get() { return object_; }
 

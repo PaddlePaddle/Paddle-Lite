@@ -137,7 +137,7 @@ class BoxCoderComputeTester : public arena::TestCase {
                      code_type_);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("box_coder");
     op_desc->SetInput("PriorBox", {prior_box_});
     op_desc->SetInput("PriorBoxVar", {prior_box_var_});

@@ -24,41 +24,28 @@ namespace lite {
 namespace operators {
 
 bool GridSamplerOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.x);
-  CHECK_OR_FALSE(param_.out);
-  CHECK_OR_FALSE(param_.grid);
-#ifdef LITE_WITH_XPU
-  return true;
-#endif
-  auto x_dims = param_.x->dims();
-  auto grid_dims = param_.grid->dims();
-
-  CHECK_EQ(x_dims.size(), 4UL) << "Input must have 4 dimensions.";
-  CHECK_EQ(grid_dims.size(), 4UL) << "Grid must have 4 dimensions.";
-  CHECK_EQ(grid_dims[0], x_dims[0])
-      << "Input(X) dims[0] and Input(Grid) dims[0] should be equal.";
-  CHECK_EQ(grid_dims[1], x_dims[2])
-      << "Input(X) dims[2] and Input(Grid) dims[1] should be equal.";
-  CHECK_EQ(grid_dims[2], x_dims[3])
-      << "Input(X) dims[3] and Input(Grid) dims[2] should be equal.";
-
+  CHECK(param_.x);
+  CHECK(param_.grid);
+  CHECK(param_.out);
+  CHECK_EQ(param_.x->dims().size(), 4);
+  CHECK_EQ(param_.grid->dims().size(), 4);
   return true;
 }
 
 bool GridSamplerOp::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
-  param_.out->Resize(x_dims);
+  auto grid_dims = param_.grid->dims();
+  auto out_dims = param_.out->dims();
+  std::vector<int64_t> out_shape{
+      x_dims[0], x_dims[1], grid_dims[1], grid_dims[2]};
+  param_.out->Resize(out_shape);
   return true;
 }
 
 bool GridSamplerOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
-  param_.x = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
-  param_.grid =
-      scope->FindVar(op_desc.Input("Grid").front())->GetMutable<Tensor>();
-  param_.out =
-      scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
-  param_.align_corners =
-      scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
+  param_.x = scope->FindTensor(op_desc.Input("X").front());
+  param_.grid = scope->FindTensor(op_desc.Input("Grid").front());
+  param_.out = scope->FindMutableTensor(op_desc.Output("Output").front());
 
   if (op_desc.HasAttr("align_corners")) {
     param_.align_corners = op_desc.GetAttr<bool>("align_corners");

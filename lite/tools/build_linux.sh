@@ -78,9 +78,11 @@ KUNLUNXIN_XPU_XDNN_URL=""
 KUNLUNXIN_XPU_XRE_URL=""
 KUNLUNXIN_XPU_SDK_ENV=""
 KUNLUNXIN_XPU_SDK_ROOT=""
-# options of compiling intel fpga.
-WITH_INTEL_FPGA=OFF
-INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk"
+# options of compiling baidu XFT lib (XFT depends on XDNN and XRE).
+WITH_KUNLUNXIN_XFT=OFF
+KUNLUNXIN_XFT_ENV=""
+KUNLUNXIN_XFT_URL=""
+KUNLUNXIN_XFT_ROOT=""
 # options of adding training ops
 WITH_TRAIN=OFF
 # options of building tiny publish so
@@ -98,17 +100,15 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 
 
-
-
 #####################################################################################################
 # 2. local variables, these variables should not be changed.
 #####################################################################################################
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
+readonly THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 
 # absolute path of Paddle-Lite.
-readonly workspace=$PWD/$(dirname $0)/../../
+readonly workspace=$(dirname $(readlink -f "$0"))/../../
 # basic options for linux compiling.
 readonly CMAKE_COMMON_OPTIONS="-DCMAKE_BUILD_TYPE=Release \
                             -DWITH_MKLDNN=OFF \
@@ -119,14 +119,6 @@ function set_benchmark_options {
   WITH_EXTRA=ON
   WITH_EXCEPTION=ON
   WITH_NNADAPTER=ON
-  if [ "${ARCH}" == "x86" ]; then
-    # Turn off opencl. Additional third party library need to be installed on
-    # Linux. Otherwise opencl is not supported on Linux. See link for more info:
-    # https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
-    WITH_OPENCL=OFF
-  else
-    WITH_OPENCL=ON
-  fi
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
     WITH_LOG=ON
   else
@@ -170,6 +162,12 @@ function init_cmake_mutable_options {
         WITH_TINY_PUBLISH=OFF
     fi
 
+    if [ "${WITH_KUNLUNXIN_XFT}" == "ON" ]; then
+        WITH_KUNLUNXIN_XPU=ON
+        WITH_EXTRA=ON
+        WITH_TINY_PUBLISH=OFF
+    fi
+
     if [ "${DNNADAPTER_WITH_KUNLUNXIN_XTCL}" == "ON" ]; then
         WITH_EXTRA=ON
         WITH_TINY_PUBLISH=OFF
@@ -205,6 +203,10 @@ function init_cmake_mutable_options {
                         -DXPU_XRE_URL=$KUNLUNXIN_XPU_XRE_URL \
                         -DXPU_SDK_ENV=$KUNLUNXIN_XPU_SDK_ENV \
                         -DXPU_SDK_ROOT=$KUNLUNXIN_XPU_SDK_ROOT \
+                        -DXPU_WITH_XFT=$WITH_KUNLUNXIN_XFT \
+                        -DXPU_XFT_ENV=$KUNLUNXIN_XFT_ENV \
+                        -DXPU_XFT_URL=$KUNLUNXIN_XFT_URL \
+                        -DXPU_XFT_ROOT=$KUNLUNXIN_XFT_ROOT \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN  \
                         -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
                         -DNNADAPTER_WITH_ROCKCHIP_NPU=$NNADAPTER_WITH_ROCKCHIP_NPU \
@@ -241,8 +243,6 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_INTEL_OPENVINO_SDK_VERSION=$NNADAPTER_INTEL_OPENVINO_SDK_VERSION \
                         -DNNADAPTER_WITH_GOOGLE_XNNPACK=$NNADAPTER_WITH_GOOGLE_XNNPACK \
                         -DNNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG=$NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG \
-                        -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
-                        -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
                         -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
                         -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
@@ -251,9 +251,6 @@ function init_cmake_mutable_options {
 
 }
 #####################################################################################################
-
-
-
 
 
 ####################################################################################################
@@ -295,6 +292,7 @@ function prepare_opencl_source_code {
 # 3.3 prepare third_party libraries for compiling
 # here we store third_party libraries into Paddle-Lite/third-party
 function prepare_thirdparty {
+    cd $workspace
     if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
         rm -rf $workspace/third-party
         if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
@@ -304,11 +302,9 @@ function prepare_thirdparty {
     else
         git submodule update --init --recursive
     fi
+    cd -
 }
 ####################################################################################################
-
-
-
 
 
 ####################################################################################################
@@ -324,7 +320,10 @@ function make_publish_so {
         prepare_thirdparty
     else
         if [ ! -d third-party ] ; then
+            cd $workspace
+            rm -rf third-party
             git checkout third-party
+            cd -
         fi
     fi
 
@@ -345,6 +344,9 @@ function make_publish_so {
     mkdir -p $build_dir
     cd $build_dir
 
+    rm -f $workspace/lite/api/paddle_use_ops.h
+    rm -f $workspace/lite/api/paddle_use_kernels.h
+
     prepare_workspace $workspace $build_dir
 
     if [ "${WITH_OPENCL}" = "ON" ]; then
@@ -362,8 +364,26 @@ function make_publish_so {
     fi
     cd - > /dev/null
 }
-####################################################################################################
 
+# 4.2 function of opt
+function build_opt {
+    rm -f $workspace/lite/api/paddle_use_ops.h
+    rm -f $workspace/lite/api/paddle_use_kernels.h
+    prepare_thirdparty
+
+    build_dir=$workspace/build.opt
+    rm -rf $build_dir
+    mkdir -p $build_dir
+    cd $build_dir
+    cmake $workspace \
+      -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
+      -DWITH_TESTING=OFF \
+      -DLITE_BUILD_EXTRA=ON \
+      -DWITH_MKL=OFF
+    make opt -j$NUM_PROC
+}
+
+####################################################################################################
 
 
 function print_usage {
@@ -437,6 +457,15 @@ function print_usage {
     echo -e "|             default is bdcentos_x86_64(if x86) / kylin_aarch64(if arm)                                                                               |"
     echo -e "|     --kunlunxin_xpu_sdk_root: (path to kunlunxin_xpu DDK file) optional, default is None                                                             |"
     echo -e "|  detailed information about Paddle-Lite KUNLUNXIN XPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/kunlunxin_xpu.html                  |"
+    echo -e "|                                                                                                                                                      |"
+    echo -e "|  arguments of kunlunxin xpu-xft library compiling:                                                                                                   |"
+    echo -e "|     --with_kunlunxin_xft: (OFF|ON); controls whether to enable xpu-xft lib for kunlunxin_xpu, default is OFF.                                        |"
+    echo -e "|     --kunlunxin_xft_env: (bdcentos6u3_x86_64_gcc82|bdcentos7u5_x86_64_gcc82|ubuntu1604_x86_64)                                                       |"
+    echo -e "|             'mandatory if --with_kunlunxin_xft=ON and --kunlunxin_xft_url is not empty                                                               |"
+    echo -e "|     --kunlunxin_xft_url: (kunlunxinj_xft sdk download url) optional, default is                                                                      |"
+    echo -e "|             'https://klx-sdk-release-public.su.bcebos.com/xft/dev/latest/'.                                                                          |"
+    echo -e "|     --kunlunxin_xft_root: (path to kunlunxin_xft file) optional, default is None                                                                     |"
+    echo -e "|             'if --kunlunxin_xft_root is not empty, we omit --kunlunxin_xft_url and --kunlunxin_xft_env'                                              |"
     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
@@ -716,13 +745,24 @@ function main {
                 fi
                 shift
                 ;;
-            # compiling lib which can operate on intel fpga.
-            --with_intel_fpga=*)
-                WITH_INTEL_FPGA="${i#*=}"
+            # compiling lib which can operate on kunlunxin-xft .
+            --with_kunlunxin_xft=*)
+                WITH_KUNLUNXIN_XFT="${i#*=}"
                 shift
                 ;;
-            --intel_fpga_sdk_root=*)
-                INTEL_FPGA_SDK_ROOT="${i#*=}"
+            --kunlunxin_xft_env=*)
+                KUNLUNXIN_XFT_ENV="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xft_url=*)
+                KUNLUNXIN_XFT_URL="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xft_root=*)
+                KUNLUNXIN_XFT_ROOT="${i#*=}"
+                if [ -n "${KUNLUNXIN_XFT_ROOT}" ]; then
+                    KUNLUNXIN_XFT_ROOT=$(readlink -f ${KUNLUNXIN_XFT_ROOT})
+                fi
                 shift
                 ;;
             # controls whether to include FP16 kernels, default is OFF
@@ -756,6 +796,11 @@ function main {
             full_publish)
                 WITH_TINY_PUBLISH=OFF
                 make_publish_so
+                exit 0
+                ;;
+            # compile opt
+            build_optimize_tool)
+                build_opt
                 exit 0
                 ;;
             # print help info

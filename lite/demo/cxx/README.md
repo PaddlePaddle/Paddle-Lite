@@ -7,13 +7,13 @@
 ## 1. 简介
 
 准备：
-* 一台可以编译PaddleLite的电脑，具体环境配置，请参考[文档](https://paddle-lite.readthedocs.io/zh/latest/source_compile/compile_env.html)，推荐使用docker。
+* 一台可以编译PaddleLite的电脑，具体环境配置，请参考[文档](https://www.paddlepaddle.org.cn/lite/develop/source_compile/compile_env.html)，推荐使用docker。
 * 一台armv7或armv8架构的安卓手机，安装adb，确保电脑和手机可以通过adb连接。
 
 
-可以参考[文档](https://paddle-lite.readthedocs.io/zh/latest/quick_start/cpp_demo.html)了解下述demo的执行步骤。
+可以参考[文档](https://www.paddlepaddle.org.cn/lite/develop/quick_start/cpp_demo.html)了解下述demo的执行步骤。
 
-可以参考[文档](https://paddle-lite.readthedocs.io/zh/latest/source_compile/compile_andriod.html)编译PaddleLite或者在[链接](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html)下载编译好的文件。
+可以参考[文档](https://www.paddlepaddle.org.cn/lite/develop/source_compile/compile_andriod.html)编译PaddleLite或者在[链接](https://www.paddlepaddle.org.cn/lite/develop/quick_start/release_lib.html)下载编译好的文件。
 
 下述demo：
 * 编译并运行轻量级api的demo
@@ -40,7 +40,7 @@ wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
 tar zxf mobilenet_v1.tar.gz
 ```
 
-使用opt工具进行模型转换，具体参考[文档](https://paddle-lite.readthedocs.io/zh/latest/user_guides/model_optimize_tool.html)。推荐从PaddleLite release界面下载opt工具（注意opt工具版本和预测库版本相同），然后进行模型转换。假定转换后的模型是mobilenet_v1.nb。
+使用opt工具进行模型转换，具体参考[文档](https://www.paddlepaddle.org.cn/lite/develop/user_guides/model_optimize_tool.html)。推荐从PaddleLite release界面下载opt工具（注意opt工具版本和预测库版本相同），然后进行模型转换。假定转换后的模型是mobilenet_v1.nb。
 
 执行测试。如果是在docker中编译，但是docker中无法连接到手机，可以将测试需要的文件和库拷贝到docker外部，进行测试。
 
@@ -94,7 +94,7 @@ wget https://paddle-inference-dist.cdn.bcebos.com/PaddleLite/cxx_demo/test_data.
 tar zxf test_data.tgz
 ```
 
-使用opt工具进行模型转换，具体参考[文档](https://paddle-lite.readthedocs.io/zh/latest/user_guides/model_optimize_tool.html)。推荐从PaddleLite release界面下载opt工具（注意opt工具版本和预测库版本相同），然后进行模型转换。
+使用opt工具进行模型转换，具体参考[文档](https://www.paddlepaddle.org.cn/lite/develop/user_guides/model_optimize_tool.html)。推荐从PaddleLite release界面下载opt工具（注意opt工具版本和预测库版本相同），然后进行模型转换。
 ```
 ./opt --model_dir=mobilenet_v1 --optimize_out_type=naive_buffer --optimize_out=mobilenet_v1
 # 优化后模型为 mobilenet_v1.nb
@@ -193,7 +193,7 @@ adb pull /data/local/tmp/test_yolov3_detection_result.jpg ./
 
 **编译Demo并执行**
 
-参考[编译环境准备](https://paddle-lite.readthedocs.io/zh/latest/source_compile/compile_env.html)准备编译环境。
+参考[编译环境准备](https://www.paddlepaddle.org.cn/lite/develop/source_compile/compile_env.html)准备编译环境。
 
 执行下面命令，下载PaddleLite代码，切换到2.6版本分支。
 ```shell
@@ -203,7 +203,7 @@ git fetch origin release/v2.6:release/v2.6
 git checkout release/v2.6
 ```
 
-进入PaddleLite根目录，编译预测库。详细的编译方法，请参考[文档](https://paddle-lite.readthedocs.io/zh/latest/source_compile/compile_andriod.html)。
+进入PaddleLite根目录，编译预测库。详细的编译方法，请参考[文档](https://www.paddlepaddle.org.cn/lite/develop/source_compile/compile_andriod.html)。
 ```shell
 ./lite/tools/build.sh \
     --arm_os=android \

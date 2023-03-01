@@ -63,6 +63,16 @@ NNADAPTER_EXPORT int ExecuteSlice(core::Operation* operation) {
                            steps,
                            reinterpret_cast<int32_t*>(output_buffer));
       break;
+    case NNADAPTER_INT64:
+      status = math::slice(reinterpret_cast<int64_t*>(input_operand->buffer),
+                           input_shape,
+                           axes_count,
+                           axes,
+                           starts,
+                           ends,
+                           steps,
+                           reinterpret_cast<int64_t*>(output_buffer));
+      break;
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported precision code("
                            << OperandPrecisionCodeToString(input_precision)
@@ -84,11 +94,11 @@ NNADAPTER_EXPORT int PrepareSlice(core::Operation* operation) {
       int dim = output_dimensions[axes[i]];
       if (dim > 0) {
         int start = starts[i] < 0 ? (starts[i] + dim) : starts[i];
+        ends[i] = std::min(ends[i], dim);
         int end = ends[i] < 0 ? (ends[i] + dim) : ends[i];
         int step = std::abs(steps[i]);
         start = std::max(start, 0);
         end = std::max(end, 0);
-        end = std::min(end, dim);
         output_dimensions[axes[i]] = (std::abs(end - start) + step - 1) / step;
       }
     }

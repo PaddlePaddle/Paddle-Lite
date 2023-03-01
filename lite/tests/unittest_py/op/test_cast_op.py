@@ -47,8 +47,7 @@ class TestCastOp(AutoScanTest):
         self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(device_names=[
-            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino",
-            "kunlunxin_xtcl"
+            "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
         ])
 
     def is_program_valid(self,
@@ -136,17 +135,6 @@ class TestCastOp(AutoScanTest):
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "nvidia_tensorrt now support int32<->float32.")
-
-        def _teller3(program_config, predictor_config):
-            if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
-                in_dtype = program_config.ops[0].attrs["in_dtype"]
-                out_dtype = program_config.ops[0].attrs["out_dtype"]
-                if in_dtype == out_dtype:
-                    return True
-
-        self.add_ignore_check_case(
-            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite not support same dtype cast on kunlunxin_xtcl")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

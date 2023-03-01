@@ -17,39 +17,14 @@ limitations under the License. */
 #include <mutex>  // NOLINT
 #include <string>
 
-#include "lite/backends/x86/cupti_lib_path.h"
 #include "lite/backends/x86/port.h"
 #include "lite/backends/x86/warpctc_lib_path.h"
 #include "lite/utils/env.h"
 #include "lite/utils/log/cp_logging.h"
 
-// DEFINE_string(cudnn_dir,
-//               "",
-//               "Specify path for loading libcudnn.so. For instance, "
-//               "/usr/local/cudnn/lib. If empty [default], dlopen "
-//               "will search cudnn from LD_LIBRARY_PATH");
-std::string cudnn_dir = paddle::lite::GetStringFromEnv("cudnn_dir");  // NOLINT
-
-// DEFINE_string(cuda_dir,
-//               "",
-//               "Specify path for loading cuda library, such as libcublas, "
-//               "libcurand. For instance, /usr/local/cuda/lib64. If default, "
-//               "dlopen will search cuda from LD_LIBRARY_PATH");
-std::string cuda_dir = paddle::lite::GetStringFromEnv("cuda_dir");  // NOLINT
-
 // DEFINE_string(warpctc_dir, "", "Specify path for loading libwarpctc.so.");
 std::string f_warpctc_dir =                         // NOLINT
     paddle::lite::GetStringFromEnv("warpctc_dir");  // NOLINT
-
-// DEFINE_string(nccl_dir,
-//               "",
-//               "Specify path for loading nccl library, such as libcublas, "
-//               "libcurand. For instance, /usr/local/cuda/lib64. If default, "
-//               "dlopen will search cuda from LD_LIBRARY_PATH");
-std::string nccl_dir = paddle::lite::GetStringFromEnv("nccl_dir");  // NOLINT
-
-// DEFINE_string(cupti_dir, "", "Specify path for loading cupti.so.");
-std::string cupti_dir = paddle::lite::GetStringFromEnv("cupti_dir");  // NOLINT
 
 // DEFINE_string(
 //     tensorrt_dir,
@@ -64,14 +39,7 @@ std::string mklml_dir = paddle::lite::GetStringFromEnv("mklml_dir");  // NOLINT
 namespace paddle {
 namespace lite {
 namespace x86 {
-static constexpr char cupti_lib_path[] = CUPTI_LIB_PATH;
 static constexpr char warpctc_lib_path[] = WARPCTC_LIB_PATH;
-
-#if defined(_WIN32) && defined(PADDLE_WITH_CUDA)
-static constexpr char* win_cublas_lib = "cublas64_" PADDLE_CUDA_BINVER ".dll";
-static constexpr char* win_curand_lib = "curand64_" PADDLE_CUDA_BINVER ".dll";
-static constexpr char* win_cudnn_lib = "cudnn64_" PADDLE_CUDNN_BINVER ".dll";
-#endif
 
 static inline std::string join(const std::string& part1,
                                const std::string& part2) {
@@ -186,48 +154,6 @@ auto error_msg =
   return dso_handle;
 }
 
-void* GetCublasDsoHandle() {
-#if defined(__APPLE__) || defined(__OSX__)
-  return GetDsoHandleFromSearchPath(cuda_dir, "libcublas.dylib");
-#elif defined(_WIN32) && defined(PADDLE_WITH_CUDA)
-  return GetDsoHandleFromSearchPath(cuda_dir, win_cublas_lib);
-#else
-  return GetDsoHandleFromSearchPath(cuda_dir, "libcublas.so");
-#endif
-}
-
-void* GetCUDNNDsoHandle() {
-#if defined(__APPLE__) || defined(__OSX__)
-  return GetDsoHandleFromSearchPath(cudnn_dir, "libcudnn.dylib", false);
-#elif defined(_WIN32) && defined(PADDLE_WITH_CUDA)
-  return GetDsoHandleFromSearchPath(cudnn_dir, win_cudnn_lib);
-#else
-  return GetDsoHandleFromSearchPath(cudnn_dir, "libcudnn.so", false);
-#endif
-}
-
-void* GetCUPTIDsoHandle() {
-  std::string cupti_path = cupti_lib_path;
-  if (!cupti_dir.empty()) {
-    cupti_path = cupti_dir;
-  }
-#if defined(__APPLE__) || defined(__OSX__)
-  return GetDsoHandleFromSearchPath(cupti_path, "libcupti.dylib", false);
-#else
-  return GetDsoHandleFromSearchPath(cupti_path, "libcupti.so", false);
-#endif
-}
-
-void* GetCurandDsoHandle() {
-#if defined(__APPLE__) || defined(__OSX__)
-  return GetDsoHandleFromSearchPath(cuda_dir, "libcurand.dylib");
-#elif defined(_WIN32) && defined(PADDLE_WITH_CUDA)
-  return GetDsoHandleFromSearchPath(cuda_dir, win_curand_lib);
-#else
-  return GetDsoHandleFromSearchPath(cuda_dir, "libcurand.so");
-#endif
-}
-
 void* GetWarpCTCDsoHandle() {
   std::string warpctc_dir = warpctc_lib_path;
   if (!f_warpctc_dir.empty()) {
@@ -239,14 +165,6 @@ void* GetWarpCTCDsoHandle() {
   return GetDsoHandleFromSearchPath(warpctc_dir, "warpctc.dll");
 #else
   return GetDsoHandleFromSearchPath(warpctc_dir, "libwarpctc.so");
-#endif
-}
-
-void* GetNCCLDsoHandle() {
-#if defined(__APPLE__) || defined(__OSX__)
-  return GetDsoHandleFromSearchPath(nccl_dir, "libnccl.dylib");
-#else
-  return GetDsoHandleFromSearchPath(nccl_dir, "libnccl.so");
 #endif
 }
 

@@ -47,7 +47,8 @@ typedef enum {
   DIV = 4,
   MAX = 5,
   MIN = 6,
-  POW = 7
+  POW = 7,
+  FLOOR_DIV = 8
 } ElementwiseTypeCode;
 
 // Fused activation function types

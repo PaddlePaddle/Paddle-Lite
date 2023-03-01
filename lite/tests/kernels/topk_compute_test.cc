@@ -75,7 +75,7 @@ class TopkComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("top_k");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
@@ -115,12 +115,6 @@ TEST(Topk, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-3;  // Using fp16 in NPU
-  // TODO(zhupengyang): enable later
-  return;
-  test_topk<float, int>(place, abs_error);
 #elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #else

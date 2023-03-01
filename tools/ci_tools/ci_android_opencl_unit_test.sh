@@ -53,9 +53,7 @@ function build_target {
   cd $build_directory
   cmake .. \
       -DLITE_WITH_OPENCL=ON \
-      -DWITH_GPU=OFF \
       -DWITH_MKL=OFF \
-      -DLITE_WITH_CUDA=OFF \
       -DLITE_WITH_X86=OFF \
       -DLITE_WITH_ARM=ON \
       -DWITH_ARM_DOTPROD=ON   \

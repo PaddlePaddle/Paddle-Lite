@@ -5,7 +5,7 @@ about: 您可以提问文档相关的问题。 You could use this template for r
 ---
 
 非常感谢您提交关于飞桨文档的 Issue，我们会认真听取您的意见，并进行改进。
-Paddle Lite [官方文档](https://paddle-lite.readthedocs.io/zh/develop/guide/introduction.html)
+Paddle Lite [官方文档](https://www.paddlepaddle.org.cn/lite/develop/guide/introduction.html)
 
 建立 issue 时，为快速解决问题，请您根据情况给出如下信息：
 - 标题：请包含关键词“XXX文档问题”，例如“OPT 使用文档问题”

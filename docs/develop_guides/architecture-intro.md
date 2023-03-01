@@ -31,7 +31,7 @@ Paddle Lite 的架构尝试从强类型推导的角度建模支持多硬件，�
 
 ### OpLite
 
-[OpLite](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/op_lite.h#L54) 是 Paddle Lite 中的 Operator，用户扩展单个硬件时，最多的就是扩展 Op 和 Kernel。
+[OpLite](https://github.com/PaddlePaddle/Paddle-Lite/blob/391ff4e6fc3474a8bfe6340f9159b0b50bd87fd0/lite/core/op_lite.h#L54) 是 Paddle Lite 中的 Operator，用户扩展单个硬件时，最多的就是扩展 Op 和 Kernel。
 重要方法如下：
 
 ```c++
@@ -174,7 +174,7 @@ Kernel 自身定义是 `kARM` 的，也就是 ARM 上的 Kernel，主要的计�
 
 ### MIR
 
-[MIR](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/op_lite.h#L38) 类似于 LLVM 里的 IR，只是加上了硬件和执行期的信息参与分析优化。
+[MIR](https://github.com/PaddlePaddle/Paddle-Lite/blob/391ff4e6fc3474a8bfe6340f9159b0b50bd87fd0/lite/core/op_lite.h#L38) 类似于 LLVM 里的 IR，只是加上了硬件和执行期的信息参与分析优化。
 
 Pass 是 MIR 中的模块化策略，其输入和输出都是 SSA Graph.
 
@@ -213,7 +213,7 @@ Tensor0(kARM, kFloat, kNCHW) --pass-> IoCopyOp(kARM, kOpenCL) --pass-> Tensor1(k
 
 ### KernelContext
 
-[KernelContext](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/context.h#L632) 是硬件支持的核心封装，主要用于为 Kernel 提供执行期的硬件上下文。
+[KernelContext](https://github.com/PaddlePaddle/Paddle-Lite/blob/391ff4e6fc3474a8bfe6340f9159b0b50bd87fd0/lite/core/context.h#L403) 是硬件支持的核心封装，主要用于为 Kernel 提供执行期的硬件上下文。
 
 KernelContext 的设计类似于 OpParam，两者均没有基类；对于 KernelContext，其假定是，不同的硬件间的接口和逻辑可能完全不同，比如 kARM 和 kCUDA，因此不设定基类，也不需要提供统一的接口来封装不同硬件行为。
 
@@ -241,12 +241,12 @@ KernelContext 的行为可以被 MIR 在分析期确定和调度。
 需要额外扩充如下模块，让框架能够支撑硬件执行：
 
 - TypeSystem，需要扩充其中相关的 Type
-  - 相关 [Enum](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/api/paddle_place.h#L45)
+  - 相关 [Enum](https://github.com/PaddlePaddle/Paddle-Lite/blob/391ff4e6fc3474a8bfe6340f9159b0b50bd87fd0/lite/api/paddle_place.h#L45)
 - MIR，需要扩展其中的 Type Cast 相关的 Pass
-  - [Target Type Cast Pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/type_target_cast_pass.h#L32) 用于拷贝不同硬件上的 Tensor
-  - [Data Layout Cast Pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/type_layout_cast_pass.h#L27) 用于转化不同的 Data Layout
-  - [Precision Cast Pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/type_precision_cast_pass.h#L34) 用于转化不同 Tensor 的量化精度
+  - [Target Type Cast Pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/391ff4e6fc3474a8bfe6340f9159b0b50bd87fd0/lite/core/optimizer/mir/type_target_cast_pass.h#L32) 用于拷贝不同硬件上的 Tensor
+  - [Data Layout Cast Pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/391ff4e6fc3474a8bfe6340f9159b0b50bd87fd0/lite/core/optimizer/mir/type_layout_cast_pass.h#L27) 用于转化不同的 Data Layout
+  - [Precision Cast Pass](https://github.com/PaddlePaddle/Paddle-Lite/blob/391ff4e6fc3474a8bfe6340f9159b0b50bd87fd0/lite/core/optimizer/mir/type_precision_cast_pass.h#L34) 用于转化不同 Tensor 的量化精度
 - KernelContext，具体地可以参考
-  - [ARM Context](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/context.h#L413)
+  - [ARM Context](https://github.com/PaddlePaddle/Paddle-Lite/blob/391ff4e6fc3474a8bfe6340f9159b0b50bd87fd0/lite/core/context.h#L294)
   - 需要注意的是，硬件 Context 的接口只服务于该硬件的 Kernel
   - Context 有分析期和执行期两个阶段，如果分析期没有特殊的优化，则无需考虑；否则，需要注意将分析期的信息整理并序列化到离线模型中，用于执行期直接加载。

@@ -756,6 +756,15 @@ void test_elementwise_broadcast_all_op() {
               "elementwise_mod",
               "",
               [](float l, float r) { return fmod(l, r); });
+          RunElementwiseBroadcast<float>(
+              TARGET(kOpenCL),
+              dim_size,
+              fuse_act,
+              precision_type,
+              "def",
+              "elementwise_floordiv",
+              "",
+              [](float l, float r) { return std::trunc(l / r); });
         }
       }
     }
@@ -781,6 +790,7 @@ USE_LITE_KERNEL(elementwise_max, kOpenCL, kFP16, kImageDefault, def);
 USE_LITE_KERNEL(elementwise_min, kOpenCL, kFP16, kImageDefault, def);
 USE_LITE_KERNEL(elementwise_pow, kOpenCL, kFP16, kImageDefault, def);
 USE_LITE_KERNEL(elementwise_mod, kOpenCL, kFP16, kImageDefault, def);
+USE_LITE_KERNEL(elementwise_floordiv, kOpenCL, kFP16, kImageDefault, def);
 USE_LITE_KERNEL(
     fusion_elementwise_add_activation, kOpenCL, kFP16, kImageDefault, def);
 USE_LITE_KERNEL(

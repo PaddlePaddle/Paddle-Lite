@@ -124,7 +124,7 @@ bool check_sve2_f32mm_vaild() {
 }
 #endif
 
-#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))
+#if defined LITE_WITH_ARM
 LITE_THREAD_LOCAL lite_api::PowerMode DeviceInfo::mode_;
 LITE_THREAD_LOCAL ARMArch DeviceInfo::arch_;
 LITE_THREAD_LOCAL int DeviceInfo::mem_size_;
@@ -1381,86 +1381,6 @@ bool DeviceInfo::ExtendWorkspace(size_t size) {
 }
 
 #endif  // LITE_WITH_ARM
-
-#ifdef LITE_WITH_MLU
-void SetMluDevice(int device_id) {
-  LOG(INFO) << "Set mlu device " << device_id;
-  cnrtDev_t dev_handle;
-  CNRT_CALL(cnrtGetDeviceHandle(&dev_handle, device_id));
-  CNRT_CALL(cnrtSetCurrentDevice(dev_handle));
-}
-
-void Device<TARGET(kMLU)>::Init() {
-  SetMluDevice(idx_);
-  GetInfo();
-  CreateQueue();
-}
-
-void Device<TARGET(kMLU)>::GetInfo() {}
-
-void Device<TARGET(kMLU)>::CreateQueue() {
-  exec_queue_.clear();
-  io_queue_.clear();
-  for (size_t i = 0; i < max_queue_; ++i) {
-    cnrtQueue_t exec_queue;
-    cnrtQueue_t io_queue;
-    cnrtCreateQueue(&exec_queue);
-    cnrtCreateQueue(&io_queue);
-    exec_queue_.push_back(exec_queue);
-    io_queue_.push_back(io_queue);
-
-    cnrtCreateQueue(&exec_queue);
-    exec_queue_.push_back(exec_queue);
-  }
-}
-#endif  // LITE_WITH_MLU
-
-#ifdef LITE_WITH_BM
-void Device<TARGET(kBM)>::SetId(int device_id) {
-  LOG(INFO) << "Set bm device " << device_id;
-  TargetWrapper<TARGET(kBM)>::SetDevice(device_id);
-  idx_ = device_id;
-}
-
-void Device<TARGET(kBM)>::Init() { SetId(idx_); }
-int Device<TARGET(kBM)>::core_num() {
-  return TargetWrapper<TARGET(kBM)>::num_devices();
-}
-#endif  // LITE_WITH_BM
-
-#ifdef LITE_WITH_CUDA
-
-void Device<TARGET(kCUDA)>::Init() {
-  GetInfo();
-  CreateStream();
-}
-
-void Device<TARGET(kCUDA)>::GetInfo() {
-  cudaGetDeviceProperties(&device_prop_, idx_);
-  cudaRuntimeGetVersion(&runtime_version_);
-  sm_version_ = (device_prop_.major << 8 | device_prop_.minor);
-  has_hmma_ =
-      (sm_version_ == 0x0700 || sm_version_ == 0x0702 || sm_version_ == 0x0705);
-  has_fp16_ = (sm_version_ == 0x0602 || sm_version_ == 0x0600 ||
-               sm_version_ == 0x0503 || has_hmma_);
-  has_imma_ = (sm_version_ == 0x0702 || sm_version_ == 0x0705);
-  has_int8_ = (sm_version_ == 0x0601 || sm_version_ == 0x0700 || has_imma_);
-}
-
-void Device<TARGET(kCUDA)>::CreateStream() {
-  exec_stream_.clear();
-  io_stream_.clear();
-  for (int i = 0; i < max_stream_; i++) {
-    cudaStream_t exec_stream;
-    cudaStream_t io_stream;
-    cudaStreamCreate(&exec_stream);
-    cudaStreamCreate(&io_stream);
-    exec_stream_.push_back(exec_stream);
-    io_stream_.push_back(io_stream);
-  }
-}
-
-#endif
 
 #ifdef LITE_WITH_X86
 

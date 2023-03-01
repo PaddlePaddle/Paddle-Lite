@@ -37,7 +37,7 @@ void FixMultipleOutputsOps(core::Model* model) {
           auto output_operand = output_operands[i];
           if (IsModelOutputOperand(output_operand)) {
             auto dummy_output_operand =
-                InsertDummyOperation(model, output_operand);
+                InsertDummyAddOperation(model, output_operand);
             UpdateOperationOutputOperands(
                 operation, output_operand, dummy_output_operand);
           }

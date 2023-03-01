@@ -198,6 +198,24 @@ class StringBufferReader : public ByteReader {
   mutable size_t cur_{0};
 };
 
+class CharBufferReader : public ByteReader {
+ public:
+  explicit CharBufferReader(const char* buffer, size_t length)
+      : buf_(buffer), length_(length) {
+    CHECK(buf_);
+  }
+  ~CharBufferReader() = default;
+  void Read(void* dst, size_t size) const override;
+  bool ReachEnd() const override { return cur_ >= length_; }
+  size_t length() const override { return length_; }
+  size_t current() const override { return cur_; }
+
+ private:
+  const char* buf_;
+  size_t length_;
+  mutable size_t cur_{0};
+};
+
 }  // namespace model_parser
 }  // namespace lite
 }  // namespace paddle
