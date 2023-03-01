@@ -452,12 +452,18 @@ void ElementwiseDivCompute<float16_t, PRECISION(kFP16)>::Run() {
                                OprandSwapable::NO,
                                arm_math::NullNeonConfig>(
       this,
-
       lite::arm::math::fp16::elementwise_div_broadcast<float16_t>,
       lite::arm::math::fp16::elementwise_div<float16_t>,
       paddle::lite::kernels::host::naive_div<float16_t>);
 #else
-  LOG(FATAL) << "it doesn't support v7 fp16 elementwise_div compute";
+  elementwise_compute_template<operators::ElementwiseParam,
+                               float16_t,
+                               OprandSwapable::NO,
+                               arm_math::NullNeonConfig>(
+      this,
+      lite::arm::math::fp16::elementwise_div_broadcast,
+      lite::arm::math::fp16::elementwise_div,
+      paddle::lite::kernels::host::naive_div<float16_t>);
 #endif
 }
 
