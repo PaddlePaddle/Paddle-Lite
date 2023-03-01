@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "operation/unary_activations.h"
+#include "operation/resize_nearest.h"
 #include "driver/mediatek_apu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -20,8 +20,8 @@
 namespace nnadapter {
 namespace mediatek_apu {
 
-int ConvertUnaryActivations(Converter* converter, core::Operation* operation) {
-  UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertResizeNearest(Converter* converter, core::Operation* operation) {
+  RESIZE_NEAREST_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to Neuron operands and operations
   auto input_index = converter->GetMappedIndex(input_operand);
@@ -29,24 +29,22 @@ int ConvertUnaryActivations(Converter* converter, core::Operation* operation) {
     input_index = converter->ConvertOperand(input_operand);
   }
   auto output_index = converter->ConvertOperand(output_operand);
-  NeuronOperationType op_type;
-  if (operation->type == NNADAPTER_SIGMOID) {
-    op_type = NEURON_LOGISTIC;
-  } else if (operation->type == NNADAPTER_RELU) {
-    op_type = NEURON_RELU;
-  } else if (operation->type == NNADAPTER_RELU6) {
-    op_type = NEURON_RELU6;
-  } else if (operation->type == NNADAPTER_TANH) {
-    op_type = NEURON_TANH;
-  } else if (operation->type == NNADAPTER_SIGMOID) {
-    op_type = NEURON_LOGISTIC;
-  } else {
-    NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
-                         << OperationTypeToString(operation->type)
-                         << " is found.";
-  }
+  // NHWC
+  auto output_w = converter->AddInt32ConstantOperand(
+      output_operand->type.dimensions.data[2]);
+  auto output_h = converter->AddInt32ConstantOperand(
+      output_operand->type.dimensions.data[1]);
+  NNADAPTER_CHECK_NE(output_operand->type.dimensions.data[2], NNADAPTER_UNKNOWN)
+      << "The output width should not be dynamic!";
+  NNADAPTER_CHECK_NE(output_operand->type.dimensions.data[1], NNADAPTER_UNKNOWN)
+      << "The output height should not be dynamic!";
+  auto is_nchw_index = converter->AddBool8ConstantOperand(false);
+  align_corners = converter->AddBool8ConstantOperand(align_corners);
+  auto half_pixel_centers = converter->AddBool8ConstantOperand(true);
   NNADAPTER_CHECK_EQ(
-      converter->AddOperation(op_type, {input_index}, {output_index}),
+      converter->AddOperation(NEURON_RESIZE_NEAREST_NEIGHBOR,
+                              {input_index, output_w, output_h, is_nchw_index},
+                              {output_index}),
       NEURON_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }

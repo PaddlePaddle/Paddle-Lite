@@ -18,13 +18,14 @@
 #include "driver/mediatek_apu/converter/converter.h"
 #include "driver/mediatek_apu/optimizer/resolve_operation_liminations.h"
 #include "driver/mediatek_apu/optimizer/restrict_input_output_quant_params.h"
+#include "optimizer/constant_fold_operations.h"
 #include "optimizer/convert_datalayout_nchw_to_nhwc.h"
 #include "optimizer/convert_quantization_symm_to_asymm.h"
+#include "optimizer/convert_reshape_transpose_reshape_5d_into_4d.h"
 #include "optimizer/fuse_conv2d_activation_into_conv2d.h"
 #include "optimizer/fuse_conv2d_add_into_conv2d.h"
 #include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
-#include "optimizer/fuse_reshape_transpose_reshape_into_channel_shuffle.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -76,11 +77,12 @@ int Program::BuildFromModel(core::Model* model) {
   // Convert the data layout and quantization parameters of the operands in the
   // NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
+  ConstantFoldOperations(model);
   FuseConv2DBatchNormIntoConv2D(model);
   FuseConv2DAddIntoConv2D(model);
   FuseConv2DActivationIntoConv2D(model);
   FuseMatMulAddIntoFullyConnected(model);
-  FuseReshapeTransposeReshapeIntoChannelShuffle(model);
+  ConvertReshapeTransposeReshape5DInto4D(model);
   ConvertQuantizationSymmToAsymm(model);
   RestrictInputOutputQuantParams(model);
   ConvertDataLayoutNCHWToNHWC(model);
@@ -91,6 +93,17 @@ int Program::BuildFromModel(core::Model* model) {
   uint32_t version;
   Neuron_getVersion_invoke(&version);
   NNADAPTER_VLOG(3) << "Neuron Adapter version: " << version;
+  uint32_t num_devices = 0;
+  Neuron_getDeviceCount_invoke(&num_devices);
+  NNADAPTER_VLOG(3) << "Neuron Adapter Device Count: " << num_devices;
+  NeuronDevice* target_device[1];
+  for (uint32_t i = 0; i < num_devices; ++i) {
+    NeuronDevice* device = nullptr;
+    const char* name = nullptr;
+    Neuron_getDevice_invoke(i, &device),
+        NeuronDevice_getName_invoke(device, &name);
+    NNADAPTER_VLOG(3) << "Neuron Adapter Device Name: " << name;
+  }
   int result = NeuronModel_create_invoke(&model_);
   if (result != NEURON_NO_ERROR) {
     NNADAPTER_LOG(FATAL) << "Failed to create a Neuron Model(" << result
@@ -146,6 +159,13 @@ int Program::BuildFromModel(core::Model* model) {
   if (result != NEURON_NO_ERROR) {
     NeuronModel_free_invoke(model_);
     NNADAPTER_LOG(FATAL) << "Failed to identify the inputs and outputs("
+                         << result << ")!";
+    return NNADAPTER_DEVICE_INTERNAL_ERROR;
+  }
+  result = NeuronModel_relaxComputationFloat32toFloat16_invoke(model_, true);
+  if (result != NEURON_NO_ERROR) {
+    NeuronModel_free_invoke(model_);
+    NNADAPTER_LOG(FATAL) << "Failed to set relaxComputationFloat32toFloat16("
                          << result << ")!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
@@ -313,6 +333,7 @@ int Program::Execute(uint32_t input_count,
     output_buffers[arg.index].first = buffer;
     output_buffers[arg.index].second = length;
   }
+
   auto start_time = GetCurrentUS();
   NNADAPTER_CHECK_EQ(NeuronExecution_compute_invoke(execution_),
                      NEURON_NO_ERROR);

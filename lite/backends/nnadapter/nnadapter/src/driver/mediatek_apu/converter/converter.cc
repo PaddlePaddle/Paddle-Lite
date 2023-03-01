@@ -116,7 +116,7 @@ uint32_t Converter::AddOperand(int32_t* dimensions_data,
         type.zeroPoint = zero_point[0];
       } else {
         // Symmetric per-layer quantization
-        NNADAPTER_CHECK(precision == NEURON_TENSOR_INT32);
+        // NNADAPTER_CHECK(precision == NEURON_TENSOR_INT32);
         // zeroPoint = 0
       }
     }
