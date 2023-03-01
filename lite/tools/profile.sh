@@ -7,10 +7,12 @@ readonly NPROC=16
 # Set shell script params
 readonly DOCKER_IMAGE_NAME=paddlepaddle/paddle-lite:latest
 readonly workspace=$PWD
-# Set benchmark runtime params
+# Set runtime params
 readonly WARMUP=10
 readonly REPEATS=30
 
+# adjust according to real environment
+DEV_ID=5047ff6e
 # can be customed from terminal input 
 MODELS_DIR=test
 OPT_DIR=nb_models
@@ -20,10 +22,8 @@ RESULTS_DIR=results_profile
 Lite_DIR=Paddle-Lite
 # only support armv8 now
 ABI_LIST="armv8"
-# default 865
-DEV_ID=5047ff6e
 # default fp16 benchmark
-RUN_LOW_PRECISION=true
+RUN_LOW_PRECISION=false
 
 #Download paddle model
 function prepare_models() {
@@ -110,7 +110,7 @@ function build() {
     local LiteDir=${workspace}/${Lite_DIR}
     for abi in ${abis[@]}; do 
         if [[ "$abi" == "armv7" ]]; then
-            # build 32-bit TODO : need update when needed!
+            # TODO : update when needed!
             docker run --net=host -i --privileged --rm -v ${workspace}:/work --workdir /work -u 0 \
                 -e http_proxy=${http_proxy} \
                 -e https_proxy=${https_proxy} \
@@ -233,7 +233,7 @@ run_profile() {
 }
 
 function android_build() {
-    # 1. prepare benchmark models
+    # 1. prepare models
     # 2. download paddlelite repo      
     # 3. convert pdmodel to nb models
     # 4. build Paddle-Lite  
@@ -247,41 +247,44 @@ function android_build() {
 
 function print_help_info() {
     echo "----------------------------------------------------------------------------------------------------------------------------------------"
-    echo -e "| Methods of benchmark tool shell script:                                                                                              |"
+    echo -e "| Methods of profile.sh:                                                                                                          |"
     echo "----------------------------------------------------------------------------------------------------------------------------------------"
     echo -e "|  print help information:                                                                                                             |"
-    echo -e "|     ./benchmark.sh help                                                                                                              |"
+    echo -e "|     ./profile.sh help                                                                                                                |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  before run this shell script, u need Replenish model's shape information at models_list.txt.                                        |"
+    echo -e "|          whose format is like {model_name};{input_name_0:input_shape_s0}' '{input_name_x:input_shape_x}                              |"
+    echo -e "|          eg. AlexNet;images:1,3,224,224                                                                                              |"
+    echo -e "|              inception_v1;X:1,224,224,3                                                                                              |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  default directory tree should like this:                                                                                            |"
+    echo -e "|                          |── profile.sh                                                                                              |"
+    echo -e "|                          ├── {lite_dir} :eg. Work/Paddle-Lite	                                                                    |"
+    echo -e "|                          ├── Work	                                                                                                |"
+    echo -e "|                          |     └──Paddle-Lite	                                                                                    |"
+    echo -e "|                          ├── Models_zoo	                                                                                            |"
+    echo -e "|                          |     └──models_dir	                                                                                        |"
+    echo -e "|                          ├── nb_models_dir	                                                                                        |"
+    echo -e "|                          ├── models_lists.txt	                                                                                    |"
+    echo -e "|                          ├── results_dir	                                                                                            |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                  |"
     echo -e "|     --abi_list: (armv8|armv7), only armv8 is supported now                                                                           |"
     echo -e "|     --dev_id: use 'adb devices -l' to confirm your target android device's serial number                                             |"
-    echo -e "|     --android_dir: default is /data/local/tmp/benchmark_test, you can change the last level directory name                           |"
-    echo -e "|     --run_low_precision: (true|false), controls whether to use low precision, default is true                                        |"
-    echo -e "|     --results_dir: The directory where the result files is stored                                                                    |"
+    echo -e "|     --android_dir: default is /data/local/tmp/profile, you can change the last level directory name 'profile'                        |"
+    echo -e "|     --run_low_precision: (true|false), controls whether to use low precision, default is false                                       |"
+    echo -e "|     --results_dir: The host directory where the result files is stored                                                               |"
     echo -e "|     --lite_dir: The directory where the lite repo is stored                                                                          |"
-    echo -e "|     --opt_dir: The directory where the optimized models is stored                                                                    |"
-    echo -e "|           default directory tree should like this, and results_dir lite_dir                                                          |"
-    echo -e "|                   and opt_dir is in same dir with benchmark.sh                                                                       |"
-    echo -e "|                          |── profile.sh                                                                                              |"
-    echo -e "|                          ├── Models_zoo	                                                                                            |"
-    echo -e "|                          ├── results_dir	                                                                                            |"
-    echo -e "|                          ├── opt_dir	                                                                                                |"
-    echo -e "|                          ├── {lite_dir} :eg. Work/Paddle-Lite CI/Paddle-Lite	                                                        |"
-    echo -e "|                          ├── Work	                                                                                                |"
-    echo -e "|                                └──Paddle-Lite	                                                                                    |"
-    echo -e "|     --models_dir: The directory where the models is stored                                                                           |"
-    echo -e "|                   your model tree should like this, and Model_zoo is in same dir with benchmark.sh                                   |"
+    echo -e "|     --nb_models_dir: The directory where the optimized models is stored                                                              |"
+    echo -e "|     --models_dir: The directory where the pdmodels is stored                                                                         |"
+    echo -e "|                   your model tree should like this, and Model_zoo is in same dir with profile.sh                                     |"
     echo -e "|                          Model_zoo	                                                                                                |"
     echo -e "|                          └── models_dir                                                                                              |"
-    echo -e "|  arguments of benchmark shell script:(models_dir must be set, low_precision, android_build)                                          |"
-    echo -e "|     ./benchmark.sh --dev_id=<> --models_dir=<path_to_model> --results_dir=<path_to_results> android_build                            |"
-    echo -e "|     before run this shell script, u need Replenish model's shape information at models_list.txt.                                     |"
-    echo -e "|          whose format is like {model_name};{input_name0:input_shape0}' '{input_namex:input_shapex}                                   |"
-    echo -e "|          eg. AlexNet;images:1,3,224,224                                                                                              |"
-    echo -e "|              inception_v1;X:1,224,224,3                                                                                              |"
     echo -e "|                                                                                                                                      |"
+    echo -e "|  arguments of profile shell script:(eg: dev_id && models_dir must be set, run profile of fp32 model profile)                         |"
+    echo -e "|     ./profile.sh --dev_id=<> --models_dir=<path_to_model> android_build                                                              |"
     echo -e "|  TODO: other target platform will be supperted later!                                                                                |"
-    echo "----------------------------------------------------------------------------------------------------------------------------------------"
+    echo "----------------------------------------------------------------------------------------------------------------------------------------"  
     echo
 }
 
@@ -306,7 +309,7 @@ function main() {
             MODELS_DIR="${i#*=}"
             shift
             ;;
-        --opt_dir=*)
+        --nb_models_dir=*)
             OPT_DIR="${i#*=}"
             shift
             ;;
