@@ -145,8 +145,8 @@ void XPUSpatialTransformerResBlockCompute<InType, PType>::PrepareForRun() {
   arg_fc_weight_int16_ = prepare_weight<int16_t>(param.fc_weight);
   arg_conv_filter_int16_ = prepare_weight<int16_t>(param.conv_filter);
   const int XPU_QUANT_SCALE_NUM = ctx.GetRawContext()->max_ptr_size();
-  prepare_weight_max(param.weight_max, XPU_QUANT_SCALE_NUM, fc_weight_max_);
-  prepare_filter_max(param.filter_max, XPU_QUANT_SCALE_NUM, conv_filter_max_);
+  prepare_weight_max(param.weight_max, XPU_QUANT_SCALE_NUM, &fc_weight_max_);
+  prepare_filter_max(param.filter_max, XPU_QUANT_SCALE_NUM, &conv_filter_max_);
 #ifdef USE_XFT
   int input2_dim = static_cast<int>(param.input2->dims()[1]);
   int channel = static_cast<int>(param.input1->dims()[1]);
@@ -273,7 +273,7 @@ REGISTER_LITE_KERNEL(__xpu__spatial_transformer_resblock,
                      kXPU,
                      kFP16,
                      kNCHW,
-                     XPUSpatial_transformerResBlock_FP16,
+                     XPUSpatialTransformerResBlock_FP16,
                      def)
     .BindInput("Input1",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
