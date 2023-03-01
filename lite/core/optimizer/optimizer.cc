@@ -211,6 +211,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__softmax_topk_fuse_pass",
        "__xpu__multi_encoder_adaptive_seqlen_fuse_pass",
        "__xpu__multi_encoder_adaptive_seqlen_v2_fuse_pass",
+       "__xpu__multi_encoder_adaptive_seqlen_v3_fuse_pass",
        "__xpu__multi_encoder_slice_link_fuse_pass",
        "__xpu__generate_sequence_fuse_pass",
        "__xpu__logit_fuse_pass",
