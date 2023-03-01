@@ -25,10 +25,16 @@ namespace fusion {
 
 class TransformerAttentionFuser : public FuseBase {
  public:
+  explicit TransformerAttentionFuser(bool reshape_has_xshape,
+                                     bool transpose_has_xshape)
+      : reshape_has_xshape_(reshape_has_xshape),
+        transpose_has_xshape_(transpose_has_xshape) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
+  bool reshape_has_xshape_;
+  bool transpose_has_xshape_;
 };
 
 }  // namespace fusion

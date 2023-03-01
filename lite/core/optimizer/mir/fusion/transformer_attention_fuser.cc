@@ -98,30 +98,39 @@ void TransformerAttentionFuser::BuildPattern() {
   auto* reshape2_out =
       VarNode("reshape2_out")->assert_is_op_output("reshape2", "Out");
 
-  auto* xshape0 = VarNode("xshape0")->assert_is_op_output("reshape2", "XShape");
-  auto* xshape1 = VarNode("xshape1")->assert_is_op_output("reshape2", "XShape");
-  auto* xshape2 = VarNode("xshape2")->assert_is_op_output("reshape2", "XShape");
+  PMNode* xshape0 = nullptr;
+  PMNode* xshape1 = nullptr;
+  PMNode* xshape2 = nullptr;
+  if (reshape_has_xshape_) {
+    xshape0 = VarNode("xshape0")->assert_is_op_output("reshape2", "XShape");
+    xshape1 = VarNode("xshape1")->assert_is_op_output("reshape2", "XShape");
+    xshape2 = VarNode("xshape2")->assert_is_op_output("reshape2", "XShape");
+  }
+
   // transpose2
   auto* transpose0 = OpNode("transpose0", "transpose2")
                          ->assert_op_attr("axis", std::vector<int>{0, 2, 1, 3});
   auto* transpose0_out =
       VarNode("transpose0_out")->assert_is_op_output("transpose2", "Out");
-  auto* xshape3 =
-      VarNode("xshape3")->assert_is_op_output("transpose2", "XShape");
 
   auto* transpose1 = OpNode("transpose1", "transpose2")
                          ->assert_op_attr("axis", std::vector<int>{0, 2, 1, 3});
   auto* transpose1_out =
       VarNode("transpose1_out")->assert_is_op_output("transpose2", "Out");
-  auto* xshape4 =
-      VarNode("xshape4")->assert_is_op_output("transpose2", "XShape");
 
   auto* transpose2 = OpNode("transpose2", "transpose2")
                          ->assert_op_attr("axis", std::vector<int>{0, 2, 1, 3});
   auto* transpose2_out =
       VarNode("transpose2_out")->assert_is_op_output("transpose2", "Out");
-  auto* xshape5 =
-      VarNode("xshape5")->assert_is_op_output("transpose2", "XShape");
+
+  PMNode* xshape3 = nullptr;
+  PMNode* xshape4 = nullptr;
+  PMNode* xshape5 = nullptr;
+  if (transpose_has_xshape_) {
+    xshape3 = VarNode("xshape3")->assert_is_op_output("transpose2", "XShape");
+    xshape4 = VarNode("xshape4")->assert_is_op_output("transpose2", "XShape");
+    xshape5 = VarNode("xshape5")->assert_is_op_output("transpose2", "XShape");
+  }
 
   // scale
   auto* scale0 = OpNode("scale0", "scale");
@@ -161,12 +170,16 @@ void TransformerAttentionFuser::BuildPattern() {
       *transpose1_out;
   fc2_inputs >> *fc2 >> *fc2_out >> *reshape2 >> *reshape2_out >> *transpose2 >>
       *transpose2_out;
-  *reshape0 >> *xshape0;
-  *reshape1 >> *xshape1;
-  *reshape2 >> *xshape2;
-  *transpose0 >> *xshape3;
-  *transpose1 >> *xshape4;
-  *transpose2 >> *xshape5;
+  if (reshape_has_xshape_) {
+    *reshape0 >> *xshape0;
+    *reshape1 >> *xshape1;
+    *reshape2 >> *xshape2;
+  }
+  if (transpose_has_xshape_) {
+    *transpose0 >> *xshape3;
+    *transpose1 >> *xshape4;
+    *transpose2 >> *xshape5;
+  }
 
   std::vector<PMNode*> matmul0_inputs{scale0_out, transpose1_out};
   matmul0_inputs >> *matmul0 >> *matmul0_out;
@@ -176,12 +189,16 @@ void TransformerAttentionFuser::BuildPattern() {
   std::vector<PMNode*> matmul1_inputs{softmax0_out, transpose2_out};
   matmul1_inputs >> *matmul1 >> *Out;
 
-  xshape0->AsIntermediate();
-  xshape1->AsIntermediate();
-  xshape2->AsIntermediate();
-  xshape3->AsIntermediate();
-  xshape4->AsIntermediate();
-  xshape5->AsIntermediate();
+  if (reshape_has_xshape_) {
+    xshape0->AsIntermediate();
+    xshape1->AsIntermediate();
+    xshape2->AsIntermediate();
+  }
+  if (transpose_has_xshape_) {
+    xshape3->AsIntermediate();
+    xshape4->AsIntermediate();
+    xshape5->AsIntermediate();
+  }
   fc0->AsIntermediate();
   fc0_out->AsIntermediate();
   reshape0->AsIntermediate();
