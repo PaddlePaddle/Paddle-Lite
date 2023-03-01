@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/model_parser/model_parser.h"
+
 #include <algorithm>
 #include <fstream>
 #include <limits>
@@ -29,6 +30,7 @@
 #include "lite/model_parser/pb/tensor_io.h"
 #ifndef LITE_ON_TINY_PUBLISH
 #include <cstdio>
+
 #include "lite/model_parser/naive_buffer/combined_params_desc.h"
 #include "lite/model_parser/naive_buffer/param_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
@@ -737,7 +739,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
  *      topo_size:    length of `topo_data`.
  *      topo_data:    contains model's topology data.
  *      param_data:   contains model's params data.
-*/
+ */
 
 void LoadModelNaiveFromFile(const std::string &filename,
                             Scope *scope,
@@ -898,7 +900,8 @@ void LoadModelFbsFromFile(model_parser::BinaryFileReader *reader,
   }
 }
 
-void LoadModelNaiveFromMemory(const std::string &model_buffer,
+void LoadModelNaiveFromMemory(const char *model_buffer,
+                              size_t model_buffer_size,
                               Scope *scope,
                               cpp::ProgramDesc *cpp_prog) {
   CHECK(cpp_prog);
@@ -907,7 +910,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
 
   // (1)get meta version
   uint16_t meta_version;
-  model_parser::StringBufferReader reader(model_buffer);
+  model_parser::CharBufferReader reader(model_buffer, model_buffer_size);
   reader.Read(&meta_version, sizeof(uint16_t));
   VLOG(4) << "Meta_version:" << meta_version;
 
@@ -933,6 +936,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
       break;
   }
 }
+
 #ifndef LITE_ON_TINY_PUBLISH
 void LoadModelNaiveV0FromMemory(const std::string &model_buffer,
                                 Scope *scope,
@@ -973,7 +977,7 @@ void LoadModelNaiveV0FromMemory(const std::string &model_buffer,
 ///////////////////////////////////////////////////////////////////
 // Meta_version=1,2
 ///////////////////////////////////////////////////////////////////
-void LoadModelFbsFromMemory(model_parser::StringBufferReader *reader,
+void LoadModelFbsFromMemory(model_parser::CharBufferReader *reader,
                             Scope *scope,
                             cpp::ProgramDesc *cpp_prog,
                             uint16_t meta_version) {
