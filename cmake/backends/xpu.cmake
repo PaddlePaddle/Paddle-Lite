@@ -72,9 +72,50 @@ macro (prepare_xpu_sdk sdk sdk_url)
   endforeach ()
 endmacro ()
 
+if(XPU_WITH_XFT)
+  if(XPU_XFT_ROOT)
+    set (xpu_xft_root        "${XPU_XFT_ROOT}"  CACHE PATH "xpu xft include directory" FORCE)
+    set (xpu_xft_include_dir "${XPU_XFT_ROOT}/include" CACHE PATH "xpu xft include directory" FORCE)
+
+    include_directories (${xpu_xft_include_dir})
+    add_library (xft SHARED IMPORTED GLOBAL)
+    set_property (TARGET xft PROPERTY IMPORTED_LOCATION "${xpu_xft_root}/so/libxft.so")
+    link_libraries (xft)
+  else()
+    if(NOT XPU_XFT_URL)
+      set(XPU_XFT_URL "https://klx-sdk-release-public.su.bcebos.com/xft/dev/latest/")
+    endif()
+    if(NOT XPU_XFT_ENV)
+      message(FATAL_ERROR "XPU_WITH_XFT=ON and XPU_XFT_ENV can not be null!")
+    endif()
+
+    ExternalProject_Add (
+      extern_xpu_xft
+      ${EXTERNAL_PROJECT_LOG_ARGS}
+      DOWNLOAD_DIR            ${XPU_DOWNLOAD_DIR}
+      DOWNLOAD_COMMAND        wget --no-check-certificate -c -q ${XPU_XFT_URL}/xft_${XPU_XFT_ENV}.tar.gz -O xft.tar.gz && tar xf xft.tar.gz
+      CONFIGURE_COMMAND       ""
+      BUILD_COMMAND           ""
+      UPDATE_COMMAND          ""
+      INSTALL_COMMAND         ${CMAKE_COMMAND} -E copy_directory ${XPU_DOWNLOAD_DIR}/xft_${XPU_XFT_ENV} ${XPU_INSTALL_DIR}/xpu/xft
+    )
+
+    set (xpu_xft_root        "${XPU_INSTALL_DIR}/xpu/xft"  CACHE PATH "xpu xft include directory" FORCE)
+    set (xpu_xft_include_dir "${xpu_xft_root}/include" CACHE PATH "xpu xft include directory" FORCE)
+
+    include_directories (${xpu_xft_include_dir})
+    add_library (xft SHARED IMPORTED GLOBAL)
+    set_property (TARGET xft PROPERTY IMPORTED_LOCATION "${xpu_xft_root}/so/libxft.so")
+    add_dependencies (xft extern_xpu_xft)
+    link_libraries (xft)
+  endif(XPU_XFT_ROOT)
+endif(XPU_WITH_XFT)
+
 if (NOT XPU_SDK_ROOT)
   prepare_xpu_sdk (xdnn ${XPU_XDNN_URL} xpuapi)
   prepare_xpu_sdk (xre ${XPU_XRE_URL} xpurt)
+  set (XPUAPI_LIB "${XPU_INSTALL_DIR}/xpu/xdnn/so/libxpuapi.so" CACHE FILEPATH "libxpuapi.so" FORCE)
+  set (XPURT_LIB  "${XPU_INSTALL_DIR}/xpu/xre/so/libxpurt.so" CACHE FILEPATH "libxpurt.so" FORCE)
   set (xpu_builder_libs xpuapi CACHE INTERNAL "xpu builder libs")
   set (xpu_runtime_libs xpurt CACHE INTERNAL "xpu runtime libs")
   return ()

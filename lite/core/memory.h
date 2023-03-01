@@ -102,7 +102,15 @@ class Buffer {
   TargetType target() const { return target_; }
   size_t space() const { return space_; }
   bool own_data() const { return own_data_; }
-
+#ifdef LITE_WITH_XPU
+  void host_pinned_register() {
+    if (!pinned_ && target_ == TargetType::kHost) {
+      pinned_ = true;
+      CHECK_EQ(xpu_host_register(data_, space_, 0), 0)
+          << "xpu_host_register failed";
+    }
+  }
+#endif
   virtual void ResetLazy(TargetType target, size_t size) {
     if (target != target_ || space_ < size) {
       CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
@@ -191,6 +199,13 @@ class Buffer {
   virtual void Free() {
     if (space_ > 0 && own_data_) {
       if (!cl_use_image2d_ && !metal_use_image2d_) {
+#ifdef LITE_WITH_XPU
+        if (pinned_ && target_ == TargetType::kHost) {
+          pinned_ = false;
+          CHECK_EQ(xpu_host_unregister(data_), 0)
+              << "xpu_host_unregister failed";
+        }
+#endif
         TargetFree(target_, data_);
       } else if (cl_use_image2d_) {
         TargetFree(target_, data_, "cl_use_image2d_");
@@ -239,6 +254,8 @@ class Buffer {
   void* data_{nullptr};
   bool own_data_{true};
   TargetType target_{TargetType::kHost};
+  // is use pinnd memory
+  bool pinned_{false};
 };
 
 }  // namespace lite

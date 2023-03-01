@@ -110,6 +110,8 @@ TEST(Softmax, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
 #else
   return;
 #endif
@@ -125,7 +127,7 @@ TEST(Softmax, precision) {
        std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {2, 3, 4}, {3, 4}}) {
     int ndims = x_dims.size();
     for (int axis = -1; axis < ndims; axis++) {
-#if defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_XPU) || defined(NNADAPTER_WITH_QUALCOMM_QNN)
       if (axis != -1 && axis != ndims - 1)
         continue;  // -1 and dims.size() - 1 are only supported by XPU
 #endif

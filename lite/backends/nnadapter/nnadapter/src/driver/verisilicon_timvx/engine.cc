@@ -18,6 +18,7 @@
 #include <vector>
 #include "driver/verisilicon_timvx/converter/converter.h"
 #include "driver/verisilicon_timvx/optimizer/convert_fill_like_into_mul_add.h"
+#include "driver/verisilicon_timvx/optimizer/convert_meshgrid_into_reshape_expand.h"
 #include "driver/verisilicon_timvx/optimizer/unpack_op_fusion.h"
 #include "optimizer/constant_fold_operations.h"
 #include "optimizer/convert_adaptive_pool2d_into_pool2d.h"
@@ -120,6 +121,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
     ConvertFillLikeIntoMulAdd(model);
     ConstantFoldOperations(model);
+    ConvertMeshgridIntoReshapeExpand(model);
     FuseConv2DBatchNormIntoConv2D(
         model, context_->batchnorm_fusion_max_allowed_quant_scale_deviation());
     FuseConv2DAddIntoConv2D(model);

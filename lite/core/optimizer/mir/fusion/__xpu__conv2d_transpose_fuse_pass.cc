@@ -336,7 +336,7 @@ class XPUConv2dTransFuser : public FuseBase {
         graph->GraphCreateInstructNode(new_conv_op, valid_places);
     DirectedLink(matched.at("input"), new_op_node);
     DirectedLink(matched.at("conv2d_trans_filter"), new_op_node);
-    if (with_bn_ || with_conv_bias_) {
+    if (with_bn_ || with_conv_bias_ || with_ew_bias_) {
       DirectedLink(fusion_bias_node, new_op_node);
     }
     DirectedLink(new_op_node, matched.at(output_node_name));

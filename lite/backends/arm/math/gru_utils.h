@@ -502,6 +502,7 @@ struct GRUUnitFunctor {
                                out_data.get(),
                                nullptr,
                                false,
+                               lite::arm::math::GemmNoBias,
                                scales.data(),
                                act_param,
                                ctx);
@@ -550,6 +551,7 @@ struct GRUUnitFunctor {
                                out_data.get(),
                                nullptr,
                                false,
+                               lite::arm::math::GemmNoBias,
                                scales.data(),
                                act_param,
                                ctx);

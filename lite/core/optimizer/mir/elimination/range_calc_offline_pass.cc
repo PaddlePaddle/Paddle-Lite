@@ -13,12 +13,14 @@
 // limitations under the License.
 
 #include "lite/core/optimizer/mir/elimination/range_calc_offline_pass.h"
+
 #include <algorithm>
 #include <cmath>
 #include <list>
 #include <memory>
 #include <set>
 #include <vector>
+
 #include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/core/optimizer/mir/pattern_matcher.h"
@@ -34,6 +36,18 @@ int64_t GetSpanCount(T start, T end, T step) {
   return std::is_integral<T>::value
              ? ((std::abs(end - start) + std::abs(step) - 1) / std::abs(step))
              : std::ceil(std::abs((end - start) / step));
+}
+
+template <typename T>
+void RangeCompute(
+    int64_t size, T start, T end, T step, lite::Tensor* output_tensor) {
+  output_tensor->Resize(DDim({size}));
+  auto out_data = output_tensor->mutable_data<T>();
+  T value = start;
+  for (int64_t i = 0; i < size; ++i) {
+    out_data[i] = value;
+    value += step;
+  }
 }
 
 void RangeCalcOfflinePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -53,8 +67,8 @@ void RangeCalcOfflinePass::RemoveRangePattern(
       }
     }
     if (has_extra_producers) {
-      LOG(WARNING)
-          << "Unsupported for op output var containing multiple producers";
+      VLOG(5) << "WARNING: Unsupported for op output var containing multiple "
+                 "producers";
       continue;
     }
 
@@ -62,7 +76,6 @@ void RangeCalcOfflinePass::RemoveRangePattern(
     auto& range_instruct = node->AsStmt();
     auto* scope = range_instruct.op()->scope();
     auto op_desc = range_instruct.mutable_op_info();
-
     // Get range's input tensor
     auto start_var = scope->FindVar(op_desc->Input("Start").front());
     auto end_var = scope->FindVar(op_desc->Input("End").front());
@@ -72,28 +85,38 @@ void RangeCalcOfflinePass::RemoveRangePattern(
     auto step_t = step_var->GetMutable<lite::Tensor>();
     if (!start_t->persistable() || !end_t->persistable() ||
         !step_t->persistable()) {
-      LOG(WARNING) << "RangeCalcOfflinePass does not support input that is not "
-                      "persistable";
+      VLOG(5)
+          << "WARNING: RangeCalcOfflinePass does not support input that is not "
+             "persistable";
       continue;
     }
-    auto start = start_t->mutable_data<float>()[0];
-    auto end = end_t->mutable_data<float>()[0];
-    auto step = step_t->mutable_data<float>()[0];
     // Get range's output tensor
     auto out_var = scope->FindVar(op_desc->Output("Out").front());
     auto out_t = out_var->GetMutable<lite::Tensor>();
-
-    // Calc range
-    int64_t size = GetSpanCount(start, end, step);
-
-    out_t->Resize(DDim({size}));
-    auto out_data = out_t->mutable_data<float>();
-
-    float value = start;
-    for (int64_t i = 0; i < size; ++i) {
-      out_data[i] = value;
-      value += step;
+    // Get input precision
+    auto precision = start_t->precision();
+    if (precision == PrecisionType::kInt64) {
+      auto start = start_t->mutable_data<int64_t>()[0];
+      auto end = end_t->mutable_data<int64_t>()[0];
+      auto step = step_t->mutable_data<int64_t>()[0];
+      int64_t size = GetSpanCount(start, end, step);
+      RangeCompute<int64_t>(size, start, end, step, out_t);
+    } else if (precision == PrecisionType::kInt32) {
+      auto start = start_t->mutable_data<int32_t>()[0];
+      auto end = end_t->mutable_data<int32_t>()[0];
+      auto step = step_t->mutable_data<int32_t>()[0];
+      int64_t size = GetSpanCount(start, end, step);
+      RangeCompute<int32_t>(size, start, end, step, out_t);
+    } else if (precision == PrecisionType::kFloat) {
+      auto start = start_t->mutable_data<float>()[0];
+      auto end = end_t->mutable_data<float>()[0];
+      auto step = step_t->mutable_data<float>()[0];
+      int64_t size = GetSpanCount(start, end, step);
+      RangeCompute<float>(size, start, end, step, out_t);
+    } else {
+      LOG(FATAL) << "Unsupported precision: " << PrecisionToStr(precision);
     }
+
     // Offline calc range, only retain output tensor as persistable tensor
     out_t->set_persistable(true);
     auto range_outlinks = node->outlinks;

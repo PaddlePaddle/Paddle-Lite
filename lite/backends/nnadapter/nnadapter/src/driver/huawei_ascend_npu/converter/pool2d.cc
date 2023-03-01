@@ -64,12 +64,10 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
     auto pool2d_op = converter->AddOperator<ge::op::MaxPoolV3>(output_operand);
     pool2d_op->set_attr_ksize(
         ge::Operator::OpListInt({1, 1, kernel_height, kernel_width}));
-    pool2d_op->set_attr_pads(ge::Operator::OpListInt(
-        {pad_height_top, pad_height_bottom, pad_width_left, pad_width_right}));
     pool2d_op->set_attr_strides(
         ge::Operator::OpListInt({1, 1, stride_height, stride_width}));
-    // "0" (ceil mode) or "1" (floor mode). Defaults to "0"
     pool2d_op->set_attr_ceil_mode(ceil_mode);
+    pool2d_op->set_attr_data_format("NCHW");
     auto GetPoolingPaddingMode = [&](int32_t auto_pad) {
       switch (auto_pad) {
         case NNADAPTER_AUTO_PAD_VALID:
@@ -85,6 +83,11 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
         ge::Operator::OpString(GetPoolingPaddingMode(auto_pad)));
     if (auto_pad == NNADAPTER_AUTO_PAD_VALID) {
       pool2d_op->set_attr_ceil_mode(false);
+    } else if (auto_pad == NNADAPTER_AUTO_PAD_NONE) {
+      pool2d_op->set_attr_pads(ge::Operator::OpListInt({pad_height_top,
+                                                        pad_height_bottom,
+                                                        pad_width_left,
+                                                        pad_width_right}));
     }
     pool2d_op->set_attr_global_pooling(global_pooling);
     if (IsDynamicShapeOperandType(input_operand->type)) {

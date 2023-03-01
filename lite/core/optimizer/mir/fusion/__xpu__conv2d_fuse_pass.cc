@@ -405,10 +405,12 @@ class XPUConv2dFuser : public FuseBase {
         float* bias_on_host = bias_t->mutable_data<float>();
         float* mean_on_host = mean_t->mutable_data<float>();
         float* var_on_host = var_t->mutable_data<float>();
+        auto eps_on_host =
+            matched.at("bn")->stmt()->op_info()->GetAttr<float>("epsilon");
 
         for (int i = 0; i < mean_len; ++i) {
           scale_on_host[i] =
-              scale_on_host[i] / sqrtf(var_on_host[i] + 0.00001f);
+              scale_on_host[i] / sqrtf(var_on_host[i] + eps_on_host);
         }
         for (int i = 0; i < mean_len; ++i) {
           for (int j = 0; j < filter_stride; ++j) {
@@ -436,6 +438,7 @@ class XPUConv2dFuser : public FuseBase {
                                        {"relu", 1},
                                        {"sigmoid", 2},
                                        {"tanh", 3},
+                                       {"gelu", 4},
                                        {"leaky_relu", 5},
                                        {"hard_swish", 14},
                                        {"hard_sigmoid", 15},
@@ -603,6 +606,7 @@ class XPUConv2dFusePass : public ProgramPass {
               for (auto act_type : {"relu",
                                     "sigmoid",
                                     "tanh",
+                                    "gelu",
                                     "leaky_relu",
                                     "hard_swish",
                                     "hard_sigmoid",

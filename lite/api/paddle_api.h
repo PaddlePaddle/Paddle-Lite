@@ -352,6 +352,10 @@ class LITE_API ConfigBase {
   std::map<TargetType, std::shared_ptr<void>> target_configs() const {
     return target_configs_;
   }
+
+  // Set external custom allocator
+  void set_custom_allocator(TargetType target_type,
+                            CustomAllocator custom_allocator);
 };
 
 class LITE_API CxxModelBuffer {
@@ -538,8 +542,11 @@ class LITE_API MobileConfig : public ConfigBase {
   bool model_from_memory_{false};
   PrecisionMode precision_mode_{LITE_PRECISION_NORMAL};
 
-  // model data readed from file or memory buffer in combined format.
+  // model data readed from file in combined format.
   std::string lite_model_file_;
+  // model data readed from memory buffer in combined format.
+  const char* lite_model_buffer_ptr_ = nullptr;
+  size_t lite_model_buffer_size_{0};
 
   // NOTE: This is a deprecated variable and will be removed in latter release.
   std::string model_buffer_;
@@ -555,16 +562,15 @@ class LITE_API MobileConfig : public ConfigBase {
   void set_model_from_buffer(const char* buffer, size_t length);
   void set_precision_mode(PrecisionMode mode) { precision_mode_ = mode; }
   PrecisionMode precision_mode() const { return precision_mode_; }
-  // return model data in lite_model_file_, which is in combined format.
+  // return model file path.
   const std::string& lite_model_file() const { return lite_model_file_; }
+  // return model buffer data, which is in combined format.
+  const char* lite_model_buffer_ptr() const { return lite_model_buffer_ptr_; }
+  size_t lite_model_buffer_size() const { return lite_model_buffer_size_; }
 
   // return model_from_memory_, which indicates whether to load model from
   // memory buffer.
   bool is_model_from_memory() const { return model_from_memory_; }
-  // note: `model_from_memory` has the same effect as `is_model_from_memory`,
-  // but is_model_from_memory is recommended and `model_from_memory` will be
-  // abandoned in v3.0.
-  bool model_from_memory() const { return model_from_memory_; }
 
   // NOTE: This is a deprecated API and will be removed in latter release.
   void set_model_buffer(const char* model_buffer,

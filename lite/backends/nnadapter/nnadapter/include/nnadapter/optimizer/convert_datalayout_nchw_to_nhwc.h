@@ -40,6 +40,7 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertAdaptivePool2D(core::Operation* operation);
   void ConvertArgMinMax(core::Operation* operation);
   void ConvertBatchNormalization(core::Operation* operation);
+  void ConvertBinaryLogicalOp(core::Operation* operation);
   void ConvertCast(core::Operation* operation);
   void ConvertChannelShuffle(core::Operation* operation);
   void ConvertClip(core::Operation* operation);
@@ -57,6 +58,7 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertInstanceNormalization(core::Operation* operation);
   void ConvertLayerNormalization(core::Operation* operation);
   void ConvertLeakyRelu(core::Operation* operation);
+  void ConvertLogSoftmax(core::Operation* operation);
   void ConvertLpNormalization(core::Operation* operation);
   void ConvertMatMul(core::Operation* operation);
   void ConvertPad(core::Operation* operation);
@@ -75,10 +77,13 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertSplit(core::Operation* operation);
   void ConvertSqueeze(core::Operation* operation);
   void ConvertStack(core::Operation* operation);
+  void ConvertSum(core::Operation* operation);
   void ConvertTile(core::Operation* operation);
   void ConvertTranspose(core::Operation* operation);
+  void ConvertUnaryLogicalOp(core::Operation* operation);
   void ConvertUnsqueeze(core::Operation* operation);
   void ConvertUnstack(core::Operation* operation);
+  void ConvertWhere(core::Operation* operation);
 
  private:
   core::Model* model_{nullptr};

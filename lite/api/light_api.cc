@@ -22,15 +22,25 @@
 namespace paddle {
 namespace lite {
 
-void LightPredictor::Build(const std::string& lite_model_file,
-                           bool model_from_memory) {
-  if (model_from_memory) {
-    LoadModelNaiveFromMemory(
-        lite_model_file, scope_.get(), program_desc_.get());
-  } else {
-    LoadModelNaiveFromFile(lite_model_file, scope_.get(), program_desc_.get());
-  }
+void LightPredictor::Build(const std::string& lite_model_file) {
+  LoadModelNaiveFromFile(lite_model_file, scope_.get(), program_desc_.get());
+  // For weight quantization of post training, load the int8/16 weights
+  // for optimized model, and dequant it to fp32.
+  DequantizeWeight();
+#ifdef ENABLE_ARM_FP16
+  // fp16 Weight convert
+  WeightFP32ToFP16();
+#endif
+  BuildRuntimeProgram(program_desc_, use_low_precision_);
+  PrepareFeedFetch();
+}
 
+void LightPredictor::Build(const char* lite_model_buffer_ptr,
+                           size_t lite_model_buffer_size) {
+  LoadModelNaiveFromMemory(lite_model_buffer_ptr,
+                           lite_model_buffer_size,
+                           scope_.get(),
+                           program_desc_.get());
   // For weight quantization of post training, load the int8/16 weights
   // for optimized model, and dequant it to fp32.
   DequantizeWeight();

@@ -427,6 +427,7 @@ void matmulv2_add_n_scale_bias(float* o_data, float* scale, int m, int n) {
                                      o_data + i * out_inner,               \
                                      nullptr,                              \
                                      false,                                \
+                                     lite::arm::math::GemmNoBias,          \
                                      scale_one.data(),                     \
                                      act_param,                            \
                                      &ctx);                                \
@@ -445,6 +446,7 @@ void matmulv2_add_n_scale_bias(float* o_data, float* scale, int m, int n) {
                                      o_data + i * out_inner,               \
                                      nullptr,                              \
                                      false,                                \
+                                     lite::arm::math::GemmNoBias,          \
                                      scale_one.data(),                     \
                                      act_param,                            \
                                      &ctx);                                \
@@ -463,6 +465,7 @@ void matmulv2_add_n_scale_bias(float* o_data, float* scale, int m, int n) {
                                      o_data + i * out_inner,               \
                                      nullptr,                              \
                                      false,                                \
+                                     lite::arm::math::GemmNoBias,          \
                                      scale_one.data(),                     \
                                      act_param,                            \
                                      &ctx);                                \
@@ -481,6 +484,7 @@ void matmulv2_add_n_scale_bias(float* o_data, float* scale, int m, int n) {
                                  o_data,                                   \
                                  nullptr,                                  \
                                  false,                                    \
+                                 lite::arm::math::GemmNoBias,              \
                                  scale_one.data(),                         \
                                  act_param,                                \
                                  &ctx);                                    \
@@ -496,6 +500,7 @@ void matmulv2_add_n_scale_bias(float* o_data, float* scale, int m, int n) {
                                  o_data,                                   \
                                  nullptr,                                  \
                                  false,                                    \
+                                 lite::arm::math::GemmNoBias,              \
                                  scale_one.data(),                         \
                                  act_param,                                \
                                  &ctx);                                    \
@@ -511,6 +516,7 @@ void matmulv2_add_n_scale_bias(float* o_data, float* scale, int m, int n) {
                                  o_data,                                   \
                                  nullptr,                                  \
                                  false,                                    \
+                                 lite::arm::math::GemmNoBias,              \
                                  scale_one.data(),                         \
                                  act_param,                                \
                                  &ctx);                                    \
@@ -532,6 +538,7 @@ void matmulv2_add_n_scale_bias(float* o_data, float* scale, int m, int n) {
                                    o_data,                                 \
                                    nullptr,                                \
                                    false,                                  \
+                                   lite::arm::math::GemmNoBias,            \
                                    scale_one.data(),                       \
                                    act_param,                              \
                                    &ctx);                                  \

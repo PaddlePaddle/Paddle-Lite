@@ -379,6 +379,13 @@ void ConfigBase::add_discarded_pass(const std::string pass) {
   return;
 }
 
+// Set external custom allocator
+void ConfigBase::set_custom_allocator(TargetType target_type,
+                                      CustomAllocator custom_allocator) {
+  // TODO(shentanyue): TargetType will be supported in the future.
+  lite::Allocator::Global().SetCustomAllocator(custom_allocator);
+}
+
 #ifdef LITE_WITH_X86
 void ConfigBase::set_x86_math_num_threads(int threads) {
   x86_math_num_threads_ = threads;
@@ -737,7 +744,8 @@ void MobileConfig::set_model_from_buffer(std::string &&x) {
 }
 
 void MobileConfig::set_model_from_buffer(const char *buffer, size_t length) {
-  lite_model_file_.assign(buffer, length);
+  lite_model_buffer_ptr_ = buffer;
+  lite_model_buffer_size_ = length;
   model_from_memory_ = true;
 }
 

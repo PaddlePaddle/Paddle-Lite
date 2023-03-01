@@ -84,6 +84,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_AND:
       case NNADAPTER_DIV:
       case NNADAPTER_EQUAL:
+      case NNADAPTER_FLOOR_DIV:
       case NNADAPTER_FULLY_CONNECTED:
       case NNADAPTER_GATHER:
       case NNADAPTER_GREATER:
@@ -104,6 +105,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_ABS:
       case NNADAPTER_ARG_MAX:
       case NNADAPTER_ARG_MIN:
+      case NNADAPTER_ASSIGN:
       case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_BATCH_NORMALIZATION:
       case NNADAPTER_CAST:
@@ -136,6 +138,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
       case NNADAPTER_RESHAPE:
       case NNADAPTER_RESIZE_NEAREST:
       case NNADAPTER_RESIZE_LINEAR:
+      case NNADAPTER_SIN:
       case NNADAPTER_SLICE:
       case NNADAPTER_SOFTPLUS:
       case NNADAPTER_SQUEEZE:
@@ -150,10 +153,17 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         PropagateAsymmZeroPoint(input_operands[0], output_operands[0]);
       } break;
       case NNADAPTER_CONCAT:
-      case NNADAPTER_STACK:
-      case NNADAPTER_SUM: {
+      case NNADAPTER_STACK: {
         NNADAPTER_CHECK_GE(input_count, 2);
         for (int i = 0; i < input_count - 1; i++) {
+          ConvertOperandSymmToAsymm(input_operands[i], 128);
+        }
+        NNADAPTER_CHECK_EQ(output_count, 1);
+        ConvertOperandSymmToAsymm(output_operands[0], 128);
+      } break;
+      case NNADAPTER_SUM: {
+        NNADAPTER_CHECK_GE(input_count, 2);
+        for (int i = 0; i < input_count; i++) {
           ConvertOperandSymmToAsymm(input_operands[i], 128);
         }
         NNADAPTER_CHECK_EQ(output_count, 1);
@@ -191,6 +201,16 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(core::Model* model) {
         ConvertOperandSymmToAsymm(input_operands[1], 128);
         ConvertOperandSymmToAsymm(input_operands[2], 128);
         ConvertOperandSymmToAsymm(output_operands[0], 128);
+      } break;
+      case NNADAPTER_MESHGRID: {
+        NNADAPTER_CHECK_GE(input_count, 1);
+        for (int i = 0; i < input_count; i++) {
+          ConvertOperandSymmToAsymm(input_operands[i], 128);
+        }
+        NNADAPTER_CHECK_GE(output_count, 1);
+        for (uint32_t i = 0; i < output_count; i++) {
+          ConvertOperandSymmToAsymm(output_operands[i], 128);
+        }
       } break;
       case NNADAPTER_QUANTIZE:
       case NNADAPTER_DEQUANTIZE:

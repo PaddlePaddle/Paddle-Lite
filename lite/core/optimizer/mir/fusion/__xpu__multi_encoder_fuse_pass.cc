@@ -945,14 +945,16 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
                                    const std::string& matmul_type = "matmul",
                                    const std::string& mul_type = "mul",
                                    bool with_fusion_qkv_bias = false,
-                                   bool norm_before = false)
+                                   bool norm_before = false,
+                                   bool with_dyn_reshape = false)
       : act_type_(act_type),
         input_pos_(input_pos),
         qkv_ln_2_out_pos_(qkv_ln_2_out_pos),
         matmul_type_(matmul_type),
         mul_type_(mul_type),
         with_fusion_qkv_bias_(with_fusion_qkv_bias),
-        norm_before_(norm_before) {}
+        norm_before_(norm_before),
+        with_dyn_reshape_(with_dyn_reshape) {}
 
   void BuildPattern() override {
     PMNode* ln_before_scale = nullptr;
@@ -1007,6 +1009,107 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
       fc_qkv_add_out = VarNode("fc_qkv_add_out")
                            ->assert_is_op_output("elementwise_add", "Out")
                            ->AsIntermediate();
+    }
+    // dyn reshape
+    PMNode* shape = nullptr;
+    PMNode* shape_out = nullptr;
+    PMNode* shape_slice = nullptr;
+    PMNode* shape_slice_out = nullptr;
+    PMNode* fill_constant1 = nullptr;
+    PMNode* fill_constant1_out = nullptr;
+    PMNode* fill_constant2 = nullptr;
+    PMNode* fill_constant2_out = nullptr;
+    PMNode* fill_constant3 = nullptr;
+    PMNode* fill_constant3_out = nullptr;
+    PMNode* fill_constant4 = nullptr;
+    PMNode* fill_constant4_out = nullptr;
+
+    PMNode* fill_constant5 = nullptr;
+    PMNode* fill_constant5_out = nullptr;
+    PMNode* fill_constant6 = nullptr;
+    PMNode* fill_constant6_out = nullptr;
+
+    if (with_dyn_reshape_) {
+      shape = OpNode("shape", "shape")->AsIntermediate();
+      shape_out = VarNode("shape_out")
+                      ->assert_is_op_output("shape", "Out")
+                      ->assert_is_op_input("slice", "Input")
+                      ->AsIntermediate();
+
+      shape_slice = OpNode("shape_slice", "slice")
+                        ->assert_op_attr_satisfied<std::vector<int>>(
+                            "axes",
+                            [](const std::vector<int>& attr) {
+                              return attr.size() == 1 && attr[0] == 0;
+                            })
+                        ->assert_op_attr_satisfied<std::vector<int>>(
+                            "starts",
+                            [](const std::vector<int>& attr) {
+                              return attr.size() == 1 && attr[0] == 1;
+                            })
+                        ->assert_op_attr_satisfied<std::vector<int>>(
+                            "ends",
+                            [](const std::vector<int>& attr) {
+                              return attr.size() == 1 && attr[0] == 2;
+                            })
+                        ->AsIntermediate();
+      shape_slice_out =
+          VarNode("shape_slice_out")
+              ->assert_is_op_output("slice", "Out")
+              ->assert_is_op_nth_input("reshape2", "ShapeTensor", 1)
+              ->AsIntermediate();
+
+      fill_constant1 = OpNode("fill_constant1", "fill_constant")
+                           ->assert_op_attr_satisfied<float>(
+                               "value", [](float value) { return value == -1; })
+                           ->AsIntermediate();
+
+      fill_constant1_out =
+          VarNode("fill_constant1_out")
+              ->assert_is_op_output("fill_constant", "Out")
+              ->assert_is_op_nth_input("reshape2", "ShapeTensor", 0)
+              ->AsIntermediate();
+      fill_constant2 = OpNode("fill_constant2", "fill_constant")
+                           ->assert_op_attr_satisfied<float>(
+                               "value", [](float value) { return value == 3; })
+                           ->AsIntermediate();
+
+      fill_constant2_out =
+          VarNode("fill_constant2_out")
+              ->assert_is_op_output("fill_constant", "Out")
+              ->assert_is_op_nth_input("reshape2", "ShapeTensor", 2)
+              ->AsIntermediate();
+      fill_constant3 =
+          OpNode("fill_constant3", "fill_constant")->AsIntermediate();
+      fill_constant3_out =
+          VarNode("fill_constant3_out")
+              ->assert_is_op_output("fill_constant", "Out")
+              ->assert_is_op_nth_input("reshape2", "ShapeTensor", 3)
+              ->AsIntermediate();
+      fill_constant4 =
+          OpNode("fill_constant4", "fill_constant")->AsIntermediate();
+      fill_constant4_out =
+          VarNode("fill_constant4_out")
+              ->assert_is_op_output("fill_constant", "Out")
+              ->assert_is_op_nth_input("reshape2", "ShapeTensor", 4)
+              ->AsIntermediate();
+
+      fill_constant5 = OpNode("fill_constant5", "fill_constant")
+                           ->assert_op_attr_satisfied<float>(
+                               "value", [](float value) { return value == -1; })
+                           ->AsIntermediate();
+      fill_constant5_out =
+          VarNode("fill_constant5_out")
+              ->assert_is_op_output("fill_constant", "Out")
+              ->assert_is_op_nth_input("reshape2", "ShapeTensor", 0)
+              ->AsIntermediate();
+      fill_constant6 =
+          OpNode("fill_constant6", "fill_constant")->AsIntermediate();
+      fill_constant6_out =
+          VarNode("fill_constant6_out")
+              ->assert_is_op_output("fill_constant", "Out")
+              ->assert_is_op_nth_input("reshape2", "ShapeTensor", 2)
+              ->AsIntermediate();
     }
     // reshape2
     auto* fc_qkv_reshape2 =
@@ -1270,22 +1373,41 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
     }
 
     // use links here
-    // ln, qkv
+    // ln
     if (norm_before_) {
       ln_before->LinksFrom({input, ln_before_bias, ln_before_scale})
           .LinksTo({ln_before_out, ln_before_mean, ln_before_var});
-      fc_qkv->LinksFrom({ln_before_out, fc_qkv_y}).LinksTo({fc_qkv_out});
     } else {
-      fc_qkv->LinksFrom({input, fc_qkv_y}).LinksTo({fc_qkv_out});
+      ln_before_out = input;
     }
+    // fusion_qkv
+    fc_qkv->LinksFrom({ln_before_out, fc_qkv_y}).LinksTo({fc_qkv_out});
     // bias and reshape
     if (with_fusion_qkv_bias_) {
       fc_qkv_add->LinksFrom({fc_qkv_out, fc_qkv_add_y})
           .LinksTo({fc_qkv_add_out});
-      fc_qkv_reshape2->LinksFrom({fc_qkv_add_out})
+    } else {
+      fc_qkv_add_out = fc_qkv_out;
+    }
+
+    if (with_dyn_reshape_) {
+      shape->LinksFrom({ln_before_out}).LinksTo({shape_out});
+      shape_slice->LinksFrom({shape_out}).LinksTo({shape_slice_out});
+
+      *fill_constant1 >> *fill_constant1_out >> *fc_qkv_reshape2;
+      *fill_constant2 >> *fill_constant2_out >> *fc_qkv_reshape2;
+      *fill_constant3 >> *fill_constant3_out >> *fc_qkv_reshape2;
+      *fill_constant4 >> *fill_constant4_out >> *fc_qkv_reshape2;
+      fc_qkv_reshape2
+          ->LinksFrom({fc_qkv_add_out,
+                       fill_constant1_out,
+                       shape_slice_out,
+                       fill_constant2_out,
+                       fill_constant3_out,
+                       fill_constant4_out})
           .LinksTo({fc_qkv_reshape2_out, fc_qkv_reshape2_xshape});
     } else {
-      fc_qkv_reshape2->LinksFrom({fc_qkv_out})
+      fc_qkv_reshape2->LinksFrom({fc_qkv_add_out})
           .LinksTo({fc_qkv_reshape2_out, fc_qkv_reshape2_xshape});
     }
     // transpose
@@ -1307,8 +1429,20 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
         .LinksTo({qkv_matmul_out});
     qkv_transpose2->LinksFrom({qkv_matmul_out})
         .LinksTo({qkv_transpose2_out, qkv_transpose2_xshape});
-    qkv_reshape2->LinksFrom({qkv_transpose2_out})
-        .LinksTo({qkv_reshape2_out, qkv_reshape2_xshape});
+
+    if (with_dyn_reshape_) {
+      *fill_constant5 >> *fill_constant5_out >> *qkv_reshape2;
+      *fill_constant6 >> *fill_constant6_out >> *qkv_reshape2;
+      qkv_reshape2
+          ->LinksFrom({qkv_transpose2_out,
+                       fill_constant5_out,
+                       shape_slice_out,
+                       fill_constant6_out})
+          .LinksTo({qkv_reshape2_out, qkv_reshape2_xshape});
+    } else {
+      qkv_reshape2->LinksFrom({qkv_transpose2_out})
+          .LinksTo({qkv_reshape2_out, qkv_reshape2_xshape});
+    }
     // qkv_fc1
     qkv_mul->LinksFrom({qkv_reshape2_out, qkv_mul_y}).LinksTo({qkv_mul_out});
     qkv_add->LinksFrom({qkv_mul_out, qkv_add_y}).LinksTo({qkv_add_out});
@@ -1505,6 +1639,7 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
   std::string mul_type_;
   bool with_fusion_qkv_bias_;
   bool norm_before_;
+  bool with_dyn_reshape_;
   // quant_info: mul input_max, output_max * 6 + matmul x_max:y_max, output_max
   void set_quant_info(Scope* scope,
                       const key2nodes_t& matched,
@@ -1517,8 +1652,6 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
                                                     "qkv_mul_4"};
     const std::vector<std::string> matmul_ops = {"qk_matmul", "qkv_matmul"};
 
-    bool mul_quant = false;
-    bool matmul_quant = false;
     const int ops_size = quant_mul_ops.size() + matmul_ops.size();
     std::vector<std::string> op_quant_types(ops_size, "not_quantized");
     std::vector<std::string> weight_max_tensor_name(quant_mul_ops.size());
@@ -1531,22 +1664,15 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
       weight_max_tensor_name[i] =
           get_weight_max_tensor_name(fc_weight_names[i]);
       auto op_info = matched.at(quant_mul_ops[i])->stmt()->op_info();
-      if (is_int8_quantized_op(op_info) || is_int16_quantized_op(op_info)) {
-        mul_quant = true;
-        break;
-      }
+      CHECK(!is_int8_quantized_op(op_info) && !is_int16_quantized_op(op_info))
+          << "mul quantized will be supported later";
     }
     for (size_t i = 0; i < matmul_ops.size(); ++i) {
       auto op_info = matched.at(matmul_ops[i])->stmt()->op_info();
-      if (is_int8_quantized_op(op_info) || is_int16_quantized_op(op_info)) {
-        matmul_quant = true;
-        break;
-      }
+      CHECK(!is_int8_quantized_op(op_info) && !is_int16_quantized_op(op_info))
+          << "matmul quantized will be supported later";
     }
     // quant is not supported in XPUSingleEncoderV2Fuser
-    if (mul_quant || matmul_quant) {
-      CHECK(false) << "mul matmul quantized will be supported later";
-    }
     op_desc->SetAttr<std::vector<std::string>>("quant_types", op_quant_types);
     op_desc->SetAttr<std::vector<std::string>>("Y0_max",
                                                weight_max_tensor_name);
@@ -2146,27 +2272,29 @@ class XPUMultiEncoderFusePass : public ProgramPass {
         }
       }
     }
-
-    for (auto& act_type : {"gelu"}) {
+    for (auto& act_type : {"gelu", "__xpu__quick_gelu"}) {
       for (auto& input_pos : {"X"}) {
         for (auto& qkv_ln_2_out_pos : {"X"}) {
           for (auto& matmul_type : matmul_types) {
             for (auto& mul_type : mul_types) {
               for (auto& fusion_qkv_bias : {true, false}) {
-                for (auto norm_before : {true}) {
-                  fusion::XPUSingleEncoderV2Fuser single_encoder_fuser(
-                      act_type,
-                      input_pos,
-                      qkv_ln_2_out_pos,
-                      matmul_type,
-                      mul_type,
-                      fusion_qkv_bias,
-                      norm_before);
-                  single_encoder_fuser(graph.get());
+                for (auto& with_dyn_reshape : {true, false}) {
+                  for (auto norm_before : {true}) {
+                    fusion::XPUSingleEncoderV2Fuser single_encoder_fuser(
+                        act_type,
+                        input_pos,
+                        qkv_ln_2_out_pos,
+                        matmul_type,
+                        mul_type,
+                        fusion_qkv_bias,
+                        norm_before,
+                        with_dyn_reshape);
+                    single_encoder_fuser(graph.get());
 
-                  fusion::XPUMultiEncoderFuser multi_encoder_fuser(
-                      fc_precision, adaptive_seqlen, true);
-                  multi_encoder_fuser(graph.get());
+                    fusion::XPUMultiEncoderFuser multi_encoder_fuser(
+                        fc_precision, adaptive_seqlen, true);
+                    multi_encoder_fuser(graph.get());
+                  }
                 }
               }
             }

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/conv_winograd.h"
+
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/backends/arm/math/packed_sgemm.h"
 
@@ -67,12 +68,18 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
       return;
     }
     last_function_ = 1;
-  } else {
+  } else if (wino_unit < 64) {
     wino_iw = 8;
     if (last_function_ == 2) {
       return;
     }
     last_function_ = 2;
+  } else {
+    wino_iw = 10;
+    if (last_function_ == 3) {
+      return;
+    }
+    last_function_ = 3;
   }
   last_function_ = -1;
 
@@ -92,6 +99,10 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
          0,
          weights_.numel() * sizeof(float));
   switch (wino_iw) {
+    case 10:
+      lite::arm::math::weight_trans_c4_10x10(
+          weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
+      break;
     case 8:
       lite::arm::math::weight_trans_c4_8x8(
           weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
@@ -105,7 +116,7 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
           weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
       break;
     default:
-      lite::arm::math::weight_trans_c4_8x8(
+      lite::arm::math::weight_trans_c4_10x10(
           weights_data_, param.filter->data<float>(), ic, oc, trans_tmp_ptr);
   }
 
@@ -141,7 +152,10 @@ void WinogradConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int ow = o_dims[3];
   int oc = o_dims[1];
 
-  if (wino_iw == 8) {
+  if (wino_iw == 10) {
+    lite::arm::math::conv_compute_8x8_3x3(FUNCS_PARAM, param, &ctx);
+    KERNEL_FUNC_NAME("conv_compute_8x8_3x3")
+  } else if (wino_iw == 8) {
     lite::arm::math::conv_compute_6x6_3x3(FUNCS_PARAM, param, &ctx);
     KERNEL_FUNC_NAME("conv_compute_6x6_3x3")
   } else if (wino_iw == 6) {

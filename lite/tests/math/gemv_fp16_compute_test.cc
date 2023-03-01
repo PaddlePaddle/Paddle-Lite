@@ -42,6 +42,7 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
+
 DEFINE_bool(basic_test, false, "do all tests");
 DEFINE_bool(check_result, true, "check the result");
 
@@ -55,21 +56,26 @@ DEFINE_bool(flag_bias, false, "with bias");
 DEFINE_double(leakey_relu_alpha, 1.0, "leakey relu alpha");
 DEFINE_double(clipped_coef, 6.0, "clipped relu coef");
 
-bool test_sgemv_fp16(bool tra,
-                     int m,
-                     int n,
-                     bool has_bias,
-                     int flag_act,
-                     int cls,
-                     int ths,
-                     float six = 6.f,
-                     float alpha = 1.f) {
+bool test_gemv_fp16(bool tra,
+                    int m,
+                    int n,
+                    bool has_bias,
+                    int flag_act,
+                    int cls,
+                    int ths,
+                    float six = 6.f,
+                    float alpha = 1.f) {
   Tensor ta;
+  Tensor ta_fp32;
   Tensor tb;
+  Tensor tb_fp32;
   Tensor tc;
   Tensor tc_basic;
+  Tensor tc_basic_fp32;
   Tensor tc_backup;
   Tensor tbias;
+  Tensor tbias_fp32;
+
   int size_a = m * n;
   int size_b = n;
   int size_c = m;
@@ -80,6 +86,10 @@ bool test_sgemv_fp16(bool tra,
   tc_basic.Resize({size_c});
   tc_backup.Resize({size_c});
   tbias.Resize({m});
+  ta_fp32.Resize({size_a});
+  tb_fp32.Resize({size_b});
+  tc_basic_fp32.Resize({size_c});
+  tbias_fp32.Resize({m});
 
   ta.set_precision(PRECISION(kFP16));
   tb.set_precision(PRECISION(kFP16));
@@ -87,6 +97,11 @@ bool test_sgemv_fp16(bool tra,
   tc_basic.set_precision(PRECISION(kFP16));
   tc_backup.set_precision(PRECISION(kFP16));
   tbias.set_precision(PRECISION(kFP16));
+  // for precision compare
+  ta_fp32.set_precision(PRECISION(kFloat));
+  tb_fp32.set_precision(PRECISION(kFloat));
+  tc_basic_fp32.set_precision(PRECISION(kFloat));
+  tbias_fp32.set_precision(PRECISION(kFloat));
 
   auto da = ta.mutable_data<float16_t>();
   auto db = tb.mutable_data<float16_t>();
@@ -94,21 +109,46 @@ bool test_sgemv_fp16(bool tra,
   auto dc_basic = tc_basic.mutable_data<float16_t>();
   auto dc_backup = tc_backup.mutable_data<float16_t>();
   auto dbias = tbias.mutable_data<float16_t>();
+  auto da_fp32 = ta_fp32.mutable_data<float>();
+  auto db_fp32 = tb_fp32.mutable_data<float>();
+  auto dc_basic_fp32 = tc_basic_fp32.mutable_data<float>();
+  auto dbias_fp32 = tbias_fp32.mutable_data<float>();
 
-  fill_data_rand<float16_t>(da, -1.f, 1.f, size_a);
-  // fill_data_const<float16_t>(da, 1.f, size_a);
+  fill_data_rand<float>(da_fp32, -1.f, 1.f, size_a);
+  float_to_fp16(da_fp32, da, size_a);
 
-  fill_data_rand<float16_t>(db, -1.f, 1.f, size_b);
-  // fill_data_const<float16_t>(db, 1.f, size_b);
+  fill_data_rand<float>(db_fp32, -1.f, 1.f, size_b);
+  float_to_fp16(db_fp32, db, size_b);
 
-  fill_data_rand<float16_t>(dbias, -1.f, 1.f, m);
-  // fill_data_const<float16_t>(dbias, -1.f, m);
-  // fill_data_rand<float16_t>(dc, -1.f, 1.f, size_c);
-  fill_data_const<float16_t>(dc, 1.f, size_c);
+  fill_data_rand<float>(dbias_fp32, -1.f, 1.f, m);
+  float_to_fp16(dbias_fp32, dbias, m);
+
+  fill_data_const<float16_t>(dc, 0.f, size_c);
+  fill_data_const<float>(dc_basic_fp32, 0.f, size_c);
 
   memcpy(dc_basic, dc, sizeof(float16_t) * size_c);
   memcpy(dc_backup, dc, sizeof(float16_t) * size_c);
 
+  LOG(INFO) << " basic gemv M: " << m << ", N: " << n
+            << ", transA: " << (tra ? "true" : "false")
+            << ", flag_act: " << (flag_act)
+            << ", bias: " << (has_bias ? "true" : "false");
+  if (FLAGS_check_result) {
+    basic_gemv<float, float>(m,
+                             n,
+                             da_fp32,
+                             db_fp32,
+                             dbias_fp32,
+                             dc_basic_fp32,
+                             1.f,
+                             0.f,
+                             tra,
+                             has_bias,
+                             flag_act);
+    // fp32->fp16
+    float_to_fp16(dc_basic_fp32, dc_basic, tc_basic.numel());
+  }
+  // prepare params for kernel or math function
   paddle::lite::operators::ActivationParam act_param;
   paddle::lite_api::ActivationType act =
       paddle::lite_api::ActivationType::kIndentity;
@@ -122,29 +162,7 @@ bool test_sgemv_fp16(bool tra,
     act_param.Leaky_relu_alpha = alpha;
   }
   act_param.active_type = act;
-
-  LOG(INFO) << "sgemm M: " << m << ", N: " << n
-            << ", transA: " << (tra ? "true" : "false")
-            << ", flag_act: " << (flag_act)
-            << ", bias: " << (has_bias ? "true" : "false");
-  if (FLAGS_check_result) {
-    basic_gemv(m,
-               n,
-               da,
-               db,
-               dbias,
-               dc_basic,
-               static_cast<float16_t>(1.f),
-               static_cast<float16_t>(0.f),
-               tra,
-               has_bias,
-               flag_act,
-               alpha);
-  }
-  Timer t0;
 #ifdef LITE_WITH_ARM
-  //! compute
-  double ops = 2.0 * m * n;
   std::unique_ptr<paddle::lite::KernelContext> ctx1(
       new paddle::lite::KernelContext);
   auto& ctx = ctx1->As<paddle::lite::ARMContext>();
@@ -154,7 +172,8 @@ bool test_sgemv_fp16(bool tra,
     paddle::lite::arm::math::fp16::gemv_fp16(
         da, db, dc, tra, m, n, 0.f, has_bias, dbias, flag_act, act_param, &ctx);
   }
-
+  // compute
+  Timer t0;
   for (int i = 0; i < FLAGS_repeats; ++i) {
     if (i == FLAGS_repeats - 1) {
       memcpy(dc, dc_backup, sizeof(float16_t) * m);
@@ -164,7 +183,8 @@ bool test_sgemv_fp16(bool tra,
         da, db, dc, tra, m, n, 0.f, has_bias, dbias, flag_act, act_param, &ctx);
     t0.Stop();
   }
-  LOG(INFO) << "M: " << m << ", N: " << n << ", power_mode: " << cls
+  double ops = 2.0 * m * n;
+  LOG(INFO) << "gemv M: " << m << ", N: " << n << ", power_mode: " << cls
             << ", threads: " << ths << ", GOPS: " << ops * 1e-9f
             << " GOPS, avg time: " << t0.LapTimes().Avg()
             << " ms, min time: " << t0.LapTimes().Min()
@@ -190,7 +210,7 @@ bool test_sgemv_fp16(bool tra,
                   (fmax(fabs(basic_ptr[i]), fabs(saber_ptr[i]))) >
               0.05) {
         print_tensor_info_fp16(basic_ptr, saber_ptr, ptr, size, width);
-        LOG(FATAL) << "fp16 gemm M: " << m << ", N: " << n
+        LOG(FATAL) << "test fp16 gemv M: " << m << ", N: " << n
                    << ", bias: " << (has_bias ? "true" : "false")
                    << ", flag_act: " << (flag_act)
                    << ", trans A: " << (tra ? "true" : "false")
@@ -198,6 +218,12 @@ bool test_sgemv_fp16(bool tra,
                    << ", i: " << i << " failed!!\n";
       }
     }
+    LOG(INFO) << "test fp16 gemv M: " << m << ", N: " << n
+              << ", bias: " << (has_bias ? "true" : "false")
+              << ", flag_act: " << (flag_act)
+              << ", trans A: " << (tra ? "true" : "false")
+              << ", threads: " << ths << ", power_mode: " << cls
+              << " successed!!\n";
   }
 #endif
   return true;
@@ -208,24 +234,24 @@ TEST(TestLiteGemvFP16, gemv_fp16) {
 #ifdef LITE_WITH_ARM
     paddle::lite::DeviceInfo::Init();
 #endif
-    LOG(INFO) << "run basic sgemm test";
+    LOG(INFO) << "run basic gemv test";
     for (auto& m : {3, 8, 32, 397}) {
       for (auto& n : {3, 13, 141, 512, 789}) {
-        for (auto& tra : {false, true}) {
-          for (auto& has_bias : {false, true}) {
+        for (auto& tra : {true, false}) {
+          for (auto& has_bias : {false}) {
             for (auto& flag_act : {0, 1}) {
               for (auto& th : {1, 2, 4}) {
                 float six = 6.f;
-                float alpha = 8.88f;
-                auto flag = test_sgemv_fp16(tra,
-                                            m,
-                                            n,
-                                            has_bias,
-                                            flag_act,
-                                            FLAGS_power_mode,
-                                            th,
-                                            six,
-                                            alpha);
+                float alpha = 1.f;
+                auto flag = test_gemv_fp16(tra,
+                                           m,
+                                           n,
+                                           has_bias,
+                                           flag_act,
+                                           FLAGS_power_mode,
+                                           th,
+                                           six,
+                                           alpha);
                 if (flag) {
                   VLOG(4) << "test m = " << m << ", n=" << n
                           << ", bias: " << (has_bias ? "true" : "false")
@@ -252,15 +278,15 @@ TEST(TestGemvFP16Custom, gemv_fp16_custom) {
 #ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
 #endif
-  auto flag = test_sgemv_fp16(FLAGS_traA,
-                              FLAGS_M,
-                              FLAGS_N,
-                              FLAGS_flag_bias,
-                              FLAGS_flag_act,
-                              FLAGS_power_mode,
-                              FLAGS_threads,
-                              FLAGS_clipped_coef,
-                              FLAGS_leakey_relu_alpha);
+  auto flag = test_gemv_fp16(FLAGS_traA,
+                             FLAGS_M,
+                             FLAGS_N,
+                             FLAGS_flag_bias,
+                             FLAGS_flag_act,
+                             FLAGS_power_mode,
+                             FLAGS_threads,
+                             FLAGS_clipped_coef,
+                             FLAGS_leakey_relu_alpha);
   if (!flag) {
     LOG(FATAL) << "test m = " << FLAGS_M << ", n=" << FLAGS_N
                << ", trans A: " << FLAGS_traA << ", bias: " << FLAGS_flag_bias

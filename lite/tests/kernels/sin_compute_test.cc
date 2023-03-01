@@ -73,8 +73,16 @@ void test_sin(Place place) {
 }
 
 TEST(Sin, precision) {
-#ifdef LITE_WITH_ARM
+#if defined(LITE_WITH_NNADAPTER)
+  Place place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  test_sin(place);
+#endif
+#elif defined(LITE_WITH_ARM)
   Place place(TARGET(kHost));
+  test_sin(place);
+#elif defined(LITE_WITH_XPU)
+  Place place(TARGET(kXPU), PRECISION(kFloat));
   test_sin(place);
 #endif
 }

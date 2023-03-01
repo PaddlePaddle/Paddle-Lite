@@ -136,9 +136,79 @@ bool InterpolateOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   return true;
 }
 
+bool LinearInterpolateOp::CheckShape() const {
+  auto* X = param_.X;
+  auto* OutSize = param_.OutSize;
+  CHECK_OR_FALSE(X);
+  CHECK_EQ(X->dims().size(), 3)
+      << "Linear_interp only supports input's dim size = 3, but now is "
+      << X->dims().size();
+  if (OutSize != nullptr) {
+    CHECK_OR_FALSE(OutSize);
+  }
+  CHECK_OR_FALSE(param_.Out);
+  return true;
+}
+
+bool LinearInterpolateOp::AttachImpl(const cpp::OpDesc& op_desc,
+                                     lite::Scope* scope) {
+  auto X = op_desc.Input("X").front();
+  if (op_desc.HasInput("OutSize")) {
+    auto out_size_var_names = op_desc.Input("OutSize");
+    if (out_size_var_names.size() > 0) {
+      param_.OutSize = scope->FindVar(out_size_var_names.front())
+                           ->GetMutable<lite::Tensor>();
+    }
+  } else {
+    param_.OutSize = nullptr;
+  }
+
+  if (op_desc.HasInput("SizeTensor")) {
+    param_.SizeTensor.clear();
+    auto size_tensor = op_desc.Input("SizeTensor");
+    for (auto var : size_tensor) {
+      param_.SizeTensor.push_back(
+          scope->FindVar(var)->GetMutable<lite::Tensor>());
+    }
+  }
+
+  if (op_desc.HasInput("Scale")) {
+    auto scale_var_names = op_desc.Input("Scale");
+    if (scale_var_names.size() > 0) {
+      param_.Scale =
+          scope->FindVar(scale_var_names.front())->GetMutable<lite::Tensor>();
+    }
+  } else {
+    param_.Scale = nullptr;
+  }
+  auto Out = op_desc.Output("Out").front();
+  param_.X = scope->FindVar(X)->GetMutable<lite::Tensor>();
+  param_.Out = scope->FindVar(Out)->GetMutable<lite::Tensor>();
+  if (op_desc.HasAttr("scale")) {
+    param_.scale = op_desc.GetAttr<float>("scale");
+  }
+  if (op_desc.HasAttr("out_w")) {
+    param_.out_w = op_desc.GetAttr<int>("out_w");
+  }
+  if (op_desc.HasAttr("align_mode")) {
+    param_.align_mode = op_desc.GetAttr<int>("align_mode");
+  }
+  param_.align_corners = op_desc.GetAttr<bool>("align_corners");
+  param_.interp_method = op_desc.GetAttr<std::string>("interp_method");
+  auto layout = op_desc.GetAttr<std::string>("data_layout");
+  if (layout == "NCHW")
+    param_.data_layout = DATALAYOUT(kNCHW);
+  else if (layout == "NHWC")
+    param_.data_layout = DATALAYOUT(kNHWC);
+  else
+    LOG(FATAL) << "Linear_interp not support data layout!";
+  return true;
+}
+
 } /* namespace operators */
 } /* namespace lite */
 } /* namespace paddle */
 
 REGISTER_LITE_OP(nearest_interp, paddle::lite::operators::InterpolateOp);
 REGISTER_LITE_OP(bilinear_interp, paddle::lite::operators::InterpolateOp);
+REGISTER_LITE_OP(linear_interp, paddle::lite::operators::LinearInterpolateOp);
