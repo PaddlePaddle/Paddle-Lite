@@ -170,8 +170,8 @@ void XPUSpatialTransformerCompute<InType, PType>::PrepareForRun() {
   arg_fc_weight_int16_ = prepare_weight<int16_t>(param.fc_weight);
   arg_conv_filter_int16_ = prepare_weight<int16_t>(param.conv_weight);
   const int XPU_QUANT_SCALE_NUM = ctx.GetRawContext()->max_ptr_size();
-  prepare_weight_max(param.weight_max, XPU_QUANT_SCALE_NUM, fc_weight_max_);
-  prepare_filter_max(param.conv_max, XPU_QUANT_SCALE_NUM, conv_filter_max_);
+  prepare_weight_max(param.weight_max, XPU_QUANT_SCALE_NUM, &fc_weight_max_);
+  prepare_filter_max(param.conv_max, XPU_QUANT_SCALE_NUM, &conv_filter_max_);
 #ifdef USE_XFT
   int channel = static_cast<int>(param.input->dims()[1]);
   int xh = static_cast<int>(param.input->dims()[2]);
