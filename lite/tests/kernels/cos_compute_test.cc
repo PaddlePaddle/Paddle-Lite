@@ -74,11 +74,12 @@ void test_sin(Place place) {
 
 TEST(Cos, precision) {
   LOG(INFO) << "test cos op";
-#if defined(LITE_WITH_ARM)
-  Place place(TARGET(kHost));
-  test_sin(place);
-#elif defined(LITE_WITH_XPU)
+
+#if defined(LITE_WITH_XPU)
   Place place(TARGET(kXPU), PRECISION(kFloat));
+  test_sin(place);
+#elif defined(LITE_WITH_ARM)
+  Place place(TARGET(kHost));
   test_sin(place);
 #endif
 }

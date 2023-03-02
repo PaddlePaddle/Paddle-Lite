@@ -690,12 +690,13 @@ TEST(Activation_silu, precision) {
   std::string alias = "def";
   std::vector<std::vector<int64_t>> test_dims{
       {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}};
-#if defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
-#elif defined(LITE_WITH_XPU)
+
+#if defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
   alias = "silu_fp32";
   abs_error = 2e-4;
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
 #else
   return;
 #endif

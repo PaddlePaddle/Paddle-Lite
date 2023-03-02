@@ -1798,12 +1798,40 @@ struct XPUMultiEncoderParam : ParamBase {
 };
 
 struct XPUGnSiluParam : ParamBase {
-  lite::Tensor* input{};
+  const lite::Tensor* input{};
   std::vector<lite::Tensor*> gn_scale;
   std::vector<lite::Tensor*> gn_bias;
   lite::Tensor* output{nullptr};
   int groups{};
   float epsilon{};
+};
+
+struct XPUMhsaParam : ParamBase {
+  const lite::Tensor* input{};
+  std::vector<lite::Tensor*> fc_weight;
+  std::vector<lite::Tensor*> fc_bias;
+  std::vector<lite::Tensor*> ln_scale;
+  std::vector<lite::Tensor*> ln_bias;
+  lite::Tensor* output{nullptr};
+  std::vector<lite::Tensor*> weight_max{};
+  int head_num{};
+  int size_per_head{};
+  int hidden_dim{};
+};
+
+struct XPUMhcaParam : ParamBase {
+  const lite::Tensor* input{};
+  const lite::Tensor* embedding{};
+  std::vector<lite::Tensor*> fc_weight;
+  std::vector<lite::Tensor*> fc_bias;
+  std::vector<lite::Tensor*> ln_scale;
+  std::vector<lite::Tensor*> ln_bias;
+  lite::Tensor* output{nullptr};
+  std::vector<lite::Tensor*> weight_max{};
+  int head_num{};
+  int size_per_head{};
+  int hidden_dim{};
+  int embedding_dim{};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {

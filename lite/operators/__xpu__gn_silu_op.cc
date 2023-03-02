@@ -23,20 +23,13 @@ namespace operators {
 bool XPUGnSiluOp::CheckShape() const { return true; }
 
 bool XPUGnSiluOp::InferShapeImpl() const {
-  auto input_shape = param_.input->dims();
-  auto batch_size = input_shape[0];
-  auto channel = input_shape[1];
-  auto h = input_shape[2];
-  auto w = input_shape[3];
-  param_.output->Resize({batch_size, channel, h, w});
+  param_.output->Resize(param_.input->dims());
   return true;
 }
 
 bool XPUGnSiluOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
-  param_.input =
-      scope->FindVar(op_desc.Input("Input").front())->GetMutable<Tensor>();
-  param_.output =
-      scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
+  param_.input = scope->FindTensor(op_desc.Input("Input").front());
+  param_.output = scope->FindMutableTensor(op_desc.Output("Output").front());
 
   param_.gn_scale.clear();
   for (auto& name : op_desc.Input("GNScale")) {
