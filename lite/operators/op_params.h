@@ -1806,6 +1806,18 @@ struct XPUGnSiluParam : ParamBase {
   float epsilon{};
 };
 
+struct XPUGegluParam : ParamBase {
+  const lite::Tensor* input{};
+  std::vector<lite::Tensor*> fc_weight;
+  std::vector<lite::Tensor*> fc_bias;
+  std::vector<lite::Tensor*> ln_scale;
+  std::vector<lite::Tensor*> ln_bias;
+  lite::Tensor* output{nullptr};
+  std::vector<lite::Tensor*> weight_max{};
+  int hidden_dim{};
+  int gelu_dim{};
+};
+
 struct XPUMhsaParam : ParamBase {
   const lite::Tensor* input{};
   std::vector<lite::Tensor*> fc_weight;

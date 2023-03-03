@@ -135,6 +135,7 @@ add_kernel(__xpu__multi_softmax_compute_xpu XPU extra SRCS __xpu__multi_softmax_
 add_kernel(__xpu__gn_silu_compute_xpu XPU extra SRCS __xpu__gn_silu_compute.cc)
 add_kernel(__xpu__multihead_self_attn_compute_xpu XPU extra SRCS __xpu__multihead_self_attn_compute.cc)
 add_kernel(__xpu__multihead_cross_attn_compute_xpu XPU extra SRCS __xpu__multihead_cross_attn_compute.cc)
+add_kernel(__xpu__geglu_compute_xpu XPU extra SRCS __xpu__geglu_compute.cc)
 
 if(XPU_WITH_XFT)
   add_kernel(fusion_decoding_compute_xpu XPU extra SRCS fusion_decoding_compute.cc)
