@@ -23,11 +23,11 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class BitwiseNotOpLite : public OpLite {
+class BitwiseOpLite : public OpLite {
  public:
   BitwiseNotOpLite() {}
 
-  explicit BitwiseNotOpLite(const std::string &op_type) : OpLite(op_type) {}
+  explicit BitwiseOpLite(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -37,7 +37,7 @@ class BitwiseNotOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "bitwise_not"; }
+  std::string DebugString() const override { return "bitwise_ops"; }
 
  private:
   mutable BitwiseParam param_;

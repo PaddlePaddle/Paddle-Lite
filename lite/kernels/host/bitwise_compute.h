@@ -13,10 +13,9 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
+
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/operators/bitwise_not_op.h"
 #ifdef LITE_WITH_PROFILE
 #include <string>
 #include "lite/core/profile/profiler.h"
@@ -26,6 +25,23 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace host {
+
+template <typename T>
+class BitwiseAndCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
+ public:
+  using param_t = operators::BitwiseParam;
+
+  void Run() override;
+
+  virtual ~BitwiseAndCompute() = default;
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+  }
+  std::string kernel_func_name_{"NotImplForBitAnd"};
+#endif
+};
 
 template <typename T>
 class BitwiseNotCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
@@ -40,7 +56,7 @@ class BitwiseNotCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
       paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
   }
-  std::string kernel_func_name_{"NotImplForBitwise"};
+  std::string kernel_func_name_{"NotImplForBitNot"};
 #endif
 };
 
