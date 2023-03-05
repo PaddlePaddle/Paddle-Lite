@@ -21,6 +21,36 @@ namespace lite {
 namespace kernels {
 namespace host {
 
+template <class T>
+T naive_and(T a, T b) {
+  return a & b;
+}
+
+template <class T>
+T naive_or(T a, T b) {
+  return a | b;
+}
+
+template <class T>
+T naive_xor(T a, T b) {
+  return a ^ b;
+}
+
+template <bool>
+bool naive_and(bool a, bool b) {
+  return a && b;
+}
+
+template <class bool>
+bool naive_or(bool a, bool b) {
+  return a || b;
+}
+
+template <class bool>
+bool naive_xor(bool a, bool b) {
+  return a != b;
+}
+
 template <typename T>
 struct BitwiseNotFunctor {
   T operator()(const T a) const { return ~a; }

@@ -173,22 +173,45 @@ class BitwiseComputeTester : public arena::TestCase {
     op_desc->SetAttr("axis_", axis_);
   }
 
-  void PrepareData() override {
-    std::vector<T> dx(x_dims_.production());
-    for (size_t i = 0; i < dx.size(); i++) {
-      dx[i] = static_cast<T>((i % 3) * 1.1f);
-      dx[i] = static_cast<T>(dx[i] == static_cast<T>(0) ? 1 : dx[i]);
-    }
-    SetCommonTensor(x_, x_dims_, dx.data());
+  template <typename T>
+  void PrepareDataHelper();
 
-    std::vector<T> dy(y_dims_.production());
-    for (size_t i = 0; i < dy.size(); i++) {
-      dy[i] = static_cast<T>((i % 5) * 1.1f);
-      dy[i] = static_cast<T>(dy[i] == static_cast<T>(0) ? 1 : dy[i]);
-    }
-    SetCommonTensor(y_, y_dims_, dy.data());
-  }
+  void PrepareData() override;
 };
+
+template <typename T>
+void BitwiseComputeTester::PrepareDataHelper() {
+  std::vector<T> dx(x_dims_.production());
+  for (int i = 0; i < x_dims_.producitoon(); i++) {
+    dx[i] = static_cast<T>(i % 128);
+  }
+  SetCommonTensor(x_, x_dims_, dx.data());
+
+  std::vector<T> dy(y_dims_.production());
+  for (int i = 0; i < y_dims_.producitoon(); i++) {
+    dy[i] = static_cast<T>(i % 128);
+  }
+  SetCommonTensor(y_, y_dims_, dy.data());
+}
+
+template <>
+void BitwiseComputeTester::PrepareDataHelper<bool>() {
+  std::vector<uint8_t> x_data(x_dims_.production());
+  for (int i = 0; i < x_dims_.production(); i++) {
+    x_data[i] = static_cast<uint8_t>(i % 2);
+  }
+  SetCommonTensor(x_, x_dims_, reinterpret_cast<bool*>(x_data.data()));
+
+  std::vector<uint8_t> y_data(y_dims_.production());
+  for (int i = 0; i < y_dims_.production(); i++) {
+    y_data[i] = static_cast<uint8_t>(i % 2);
+  }
+  SetCommonTensor(y_, y_dims_, reinterpret_cast<bool*>(y_data.data()));
+}
+
+void BitwiseComputeTester::PrepareData() override {
+  PrepareDataHelper<T>();
+}
 
 template <class T = int64_t>
 void TestPre(const Place& place,
