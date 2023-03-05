@@ -1,28 +1,3 @@
-// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include <gtest/gtest.h>
 #include <algorithm>
 
@@ -80,15 +55,15 @@ bool xor_op<bool>(bool a, bool b) {
   return a != b;
 }
 
-template <typename T>
-struct NotFunctor {
-  T operator()(const T a) const { return ~a; }
-};
+template <class T>
+T not_op(T a) {
+  return ~a;
+}
 
 template <>
-struct NotFunctor<bool> {
-  bool operator()(const bool a) const { return !a; }
-};
+bool not_op(bool a) {
+  return ~a;
+}
 
 template <class T = int64_t>
 class BitwiseComputeTester : public arena::TestCase {
@@ -157,8 +132,9 @@ class BitwiseComputeTester : public arena::TestCase {
       BITWISE(xor_op);
     } else if (bitwise_type_ == "not") {
       auto numel = x->numel();
-      NotFunctor<T> func;
-      std::transform(input_data, input_data + numel, out_data, func);
+      for (int i = 0; i < numel; ++i) {
+        out_data[i] = not_op(x_data[i]);
+      }
     } else {
       LOG(FATAL) << "unsupported bitwise_op";
     }
@@ -173,29 +149,26 @@ class BitwiseComputeTester : public arena::TestCase {
     op_desc->SetAttr("axis_", axis_);
   }
 
-  template <typename T>
-  void PrepareDataHelper();
-
-  void PrepareData() override;
+  void PrepareData();
 };
 
-template <typename T>
-void BitwiseComputeTester::PrepareDataHelper() {
+template <class T>
+void BitwiseComputeTester<T>::PrepareData() {
   std::vector<T> dx(x_dims_.production());
-  for (int i = 0; i < x_dims_.producitoon(); i++) {
+  for (int i = 0; i < x_dims_.production(); i++) {
     dx[i] = static_cast<T>(i % 128);
   }
   SetCommonTensor(x_, x_dims_, dx.data());
 
   std::vector<T> dy(y_dims_.production());
-  for (int i = 0; i < y_dims_.producitoon(); i++) {
+  for (int i = 0; i < y_dims_.production(); i++) {
     dy[i] = static_cast<T>(i % 128);
   }
   SetCommonTensor(y_, y_dims_, dy.data());
 }
 
 template <>
-void BitwiseComputeTester::PrepareDataHelper<bool>() {
+void BitwiseComputeTester<bool>::PrepareData() {
   std::vector<uint8_t> x_data(x_dims_.production());
   for (int i = 0; i < x_dims_.production(); i++) {
     x_data[i] = static_cast<uint8_t>(i % 2);
@@ -209,10 +182,6 @@ void BitwiseComputeTester::PrepareDataHelper<bool>() {
   SetCommonTensor(y_, y_dims_, reinterpret_cast<bool*>(y_data.data()));
 }
 
-void BitwiseComputeTester::PrepareData() override {
-  PrepareDataHelper<T>();
-}
-
 template <class T = int64_t>
 void TestPre(const Place& place,
              float abs_error,
@@ -220,7 +189,7 @@ void TestPre(const Place& place,
              std::vector<int64_t> y_shape,
              std::string bitwise_type,
              int axis,
-             const std::string& alias = "def") {
+             const std::string& alias = "int64") {
   std::unique_ptr<arena::TestCase> tester(new BitwiseComputeTester<T>(
       place, alias, x_shape, y_shape, bitwise_type, axis));
   arena::Arena arena(std::move(tester), place, abs_error);
@@ -263,12 +232,22 @@ void TestBitTypes(const Place& place, float abs_error) {
   Place host_int32_place(TARGET(kHost), PRECISION(kInt32));
   Place host_int64_place(TARGET(kHost), PRECISION(kInt64));
   for (auto bit_type : std::vector<std::string>{"and", "not"}) {
-    TestPre<bool>(
-        host_bool_place, abs_error, {2, 3, 4, 5}, {2, 3, 4, 5}, bit_type, 0);
-    TestPre<int32_t>(
-        host_int32_place, abs_error, {2, 3, 4, 5}, {2, 3, 4, 5}, bit_type, -1);
+    TestPre<bool>(host_bool_place,
+                  abs_error,
+                  {2, 3, 4, 5},
+                  {2, 3, 4, 5},
+                  bit_type,
+                  0,
+                  "bl");
+    TestPre<int32_t>(host_int32_place,
+                     abs_error,
+                     {2, 3, 4, 5},
+                     {2, 3, 4, 5},
+                     bit_type,
+                     -1,
+                     "int32");
     TestPre<int64_t>(
-        host_int64_place, abs_error, {2, 3, 4, 5}, {3}, bit_type, 1);
+        host_int64_place, abs_error, {2, 3, 4, 5}, {3}, bit_type, 1, "int64");
   }
 }
 

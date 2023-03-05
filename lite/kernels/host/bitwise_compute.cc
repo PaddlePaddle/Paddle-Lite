@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/kernels/host/bitwise_compute.h"
-#include <algorithm>
 #include "lite/kernels/host/elementwise_op_func.h"
 
 namespace paddle {
@@ -36,30 +35,30 @@ T naive_xor(T a, T b) {
   return a ^ b;
 }
 
-template <bool>
-bool naive_and(bool a, bool b) {
+template <class T>
+T naive_not(T a) {
+  return ~a;
+}
+
+template <>
+bool naive_and<bool>(bool a, bool b) {
   return a && b;
 }
 
-template <class bool>
-bool naive_or(bool a, bool b) {
+template <>
+bool naive_or<bool>(bool a, bool b) {
   return a || b;
 }
 
-template <class bool>
-bool naive_xor(bool a, bool b) {
+template <>
+bool naive_xor<bool>(bool a, bool b) {
   return a != b;
 }
 
-template <typename T>
-struct BitwiseNotFunctor {
-  T operator()(const T a) const { return ~a; }
-};
-
 template <>
-struct BitwiseNotFunctor<bool> {
-  bool operator()(const bool a) const { return !a; }
-};
+bool naive_not<bool>(bool a) {
+  return !a;
+}
 
 template <typename T>
 void BitwiseAndCompute<T>::Run() {
@@ -83,8 +82,9 @@ void BitwiseNotCompute<T>::Run() {
   const auto* input_data = param.X->template data<T>();
   auto* out_data = param.Out->template mutable_data<T>();
   auto numel = param.X->numel();
-  BitwiseNotFunctor<T> func;
-  std::transform(input_data, input_data + numel, out_data, func);
+  for (int i = 0; i < numel; ++i) {
+    out_data[i] = naive_not(input_data[i]);
+  }
   return;
 }
 
@@ -94,7 +94,7 @@ void BitwiseNotCompute<T>::Run() {
 }  // namespace paddle
 
 using bitwise_and_bool = paddle::lite::kernels::host::BitwiseAndCompute<bool>;
-REGISTER_LITE_KERNEL(bitwise_and, kHost, kBool, kNCHW, bitwise_and_bool, def)
+REGISTER_LITE_KERNEL(bitwise_and, kHost, kAny, kNCHW, bitwise_and_bool, bl)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
@@ -103,7 +103,7 @@ REGISTER_LITE_KERNEL(bitwise_and, kHost, kBool, kNCHW, bitwise_and_bool, def)
 using bitwise_and_int32_t =
     paddle::lite::kernels::host::BitwiseAndCompute<int32_t>;
 REGISTER_LITE_KERNEL(
-    bitwise_and, kHost, kInt32, kNCHW, bitwise_and_int32_t, def)
+    bitwise_and, kHost, kAny, kNCHW, bitwise_and_int32_t, int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out",
@@ -113,7 +113,7 @@ REGISTER_LITE_KERNEL(
 using bitwise_and_int64_t =
     paddle::lite::kernels::host::BitwiseAndCompute<int64_t>;
 REGISTER_LITE_KERNEL(
-    bitwise_and, kHost, kInt64, kNCHW, bitwise_and_int64_t, def)
+    bitwise_and, kHost, kAny, kNCHW, bitwise_and_int64_t, int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindOutput("Out",
@@ -121,7 +121,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 using bitwise_not_bool = paddle::lite::kernels::host::BitwiseNotCompute<bool>;
-REGISTER_LITE_KERNEL(bitwise_not, kHost, kBool, kNCHW, bitwise_not_bool, def)
+REGISTER_LITE_KERNEL(bitwise_not, kHost, kAny, kNCHW, bitwise_not_bool, bl)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
     .Finalize();
@@ -129,7 +129,7 @@ REGISTER_LITE_KERNEL(bitwise_not, kHost, kBool, kNCHW, bitwise_not_bool, def)
 using bitwise_not_int32_t =
     paddle::lite::kernels::host::BitwiseNotCompute<int32_t>;
 REGISTER_LITE_KERNEL(
-    bitwise_not, kHost, kInt32, kNCHW, bitwise_not_int32_t, def)
+    bitwise_not, kHost, kAny, kNCHW, bitwise_not_int32_t, int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
@@ -138,7 +138,7 @@ REGISTER_LITE_KERNEL(
 using bitwise_not_int64_t =
     paddle::lite::kernels::host::BitwiseNotCompute<int64_t>;
 REGISTER_LITE_KERNEL(
-    bitwise_not, kHost, kInt64, kNCHW, bitwise_not_int64_t, def)
+    bitwise_not, kHost, kAny, kNCHW, bitwise_not_int64_t, int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})

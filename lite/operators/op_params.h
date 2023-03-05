@@ -2375,8 +2375,11 @@ struct RollParam : ParamBase {
 };
 
 struct BitwiseParam : ParamBase {
-  const lite::Tensor* X{};
-  lite::Tensor* Out{};
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* Y{nullptr};
+  lite::Tensor* Out{nullptr};
+  std::string bitwise_type_;
+  int axis_{-1};
 };
 
 struct SetValueParam : ParamBase {

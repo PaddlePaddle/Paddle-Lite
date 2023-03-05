@@ -23,11 +23,11 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class BitwiseOpLite : public OpLite {
+class BitwiseOp : public OpLite {
  public:
-  BitwiseNotOpLite() {}
+  BitwiseOp() {}
 
-  explicit BitwiseOpLite(const std::string &op_type) : OpLite(op_type) {}
+  explicit BitwiseOp(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
