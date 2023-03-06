@@ -7,7 +7,7 @@ readonly NPROC=16
 # Set shell script params
 readonly DOCKER_IMAGE_NAME=paddlepaddle/paddle-lite:latest
 readonly workspace=$PWD
-# Set benchmark runtime params
+# Set profile runtime params
 readonly WARMUP=10
 readonly REPEATS=30
 
@@ -17,29 +17,30 @@ OPT_DIR=nb_models
 ANDROID_DIR=/data/local/tmp/profile
 RESULTS_DIR=results_profile
 
-Lite_DIR=Paddle-Lite
+Lite_DIR=$PWD
 # only support armv8 now
 ABI_LIST="armv8"
-# default 865
-DEV_ID=5047ff6e
-# default fp16 benchmark
-RUN_LOW_PRECISION=true
+# must be set
+DEV_ID=8MY0220C22019318
+# default fp16 profile
+RUN_LOW_PRECISION=false
 
 #Download paddle model
 function prepare_models() {
     if [ ! -d "${workspace}/${RESULTS_DIR}" ]; then
         mkdir ${workspace}/${RESULTS_DIR}
-    fi  
-    if [ ! -d "${workspace}/Model_zoo" ]; then
-        mkdir ${workspace}/Model_zoo
-    fi  
+    fi   
     if [ ! -d "${workspace}/${OPT_DIR}" ]; then
         mkdir ${workspace}/${OPT_DIR}
     fi  
-    if [ ! -d "${workspace}/Model_zoo/${MODELS_DIR}" ]; then
-        cd Model_zoo
-        mkdir -p ${workspace}/Model_zoo/${MODELS_DIR}
-        echo -e "please move Models into ${workspace}/Model_zoo/${MODELS_DIR}"
+    if [ ! -d "${workspace}/${MODELS_DIR}" ]; then
+        mkdir -p ${workspace}/${MODELS_DIR}
+        echo -e "please move Models into ${workspace}/${MODELS_DIR}"
+        exit 1
+    fi
+    if [ ! -f "${workspace}/models_list.txt" ]; then
+        touch ${workspace}/models_list.txt
+        echo -e "please use <./profile.sh help> to set contents of models.txt"
         exit 1
     fi
     cd ${workspace}
@@ -49,13 +50,14 @@ function prepare_models() {
 function download_repo() {
     # download repo
     # Set proxy to accelate github download if necessary
-    export http_proxy=http://172.19.56.199:3128
-    export https_proxy=http://172.19.56.199:3128
-    if [ ! -d "./Paddle-Lite" ]; then
+    # export http_proxy=http://172.19.56.199:3128
+    # export https_proxy=http://172.19.56.199:3128
+    if [ ! -d "${Lite_DIR}/Paddle-Lite" ]; then
+        cd ${Lite_DIR}
         git clone https://github.com/PaddlePaddle/Paddle-Lite.git
     else
         echo "PaddleLite repo exists. Update repo to latest."
-	    cd Paddle-Lite && git checkout . && git pull
+	    cd ${Lite_DIR}/Paddle-Lite && git checkout . && git pull
 	    cd -
     fi
     cd ${workspace}
@@ -64,14 +66,14 @@ function download_repo() {
 # convert models to nb
 opt_models() {
     # build opt tools
-    if [ ! -d "${workspace}/${Lite_DIR}/build.opt" ]; then
-        docker run --net=host -i --privileged --rm -v ${workspace}:/work --workdir /work -u 0 \
+    if [ ! -d "${Lite_DIR}/Paddle-Lite/build.opt" ]; then
+        docker run --net=host -i --privileged --rm -v ${Lite_DIR}:/work --workdir /work -u 0 \
             -e http_proxy=${http_proxy} \
             -e https_proxy=${https_proxy} \
             ${DOCKER_IMAGE_NAME} \
             /bin/bash -x -e -c "
-                cd ${Lite_DIR}
-                git config --global --add safe.directory /work/${Lite_DIR}
+                cd /work/Paddle-Lite
+                git config --global --add safe.directory /work/Paddle-Lite
                 rm -rf third-party
                 ./lite/tools/build.sh build_optimize_tool
             "
@@ -79,14 +81,14 @@ opt_models() {
     else 
         echo "opt tools already existed!"
     fi
-    local opt_path=${workspace}/${Lite_DIR}/build.opt/lite/api/opt
+    local opt_path=${Lite_DIR}/Paddle-Lite/build.opt/lite/api/opt
     #convert to nb models
-    local model_names=$(ls ${workspace}/Model_zoo/${MODELS_DIR})
+    local model_names=$(ls ${workspace}/${MODELS_DIR})
     for model_name in ${model_names[@]}; do
         if [ "${RUN_LOW_PRECISION}" = true ]; then
-            ${opt_path} --model_dir=${workspace}/Model_zoo/${MODELS_DIR}/${model_name} --optimize_out=${workspace}/${OPT_DIR}/${model_name}_fp16 --enable_fp16=true --valid_targets=arm
+            ${opt_path} --model_dir=${workspace}/${MODELS_DIR}/${model_name} --optimize_out=${workspace}/${OPT_DIR}/${model_name}_fp16 --enable_fp16=true --valid_targets=arm
         else 
-            ${opt_path} --model_dir=${workspace}/Model_zoo/${MODELS_DIR}/${model_name} --optimize_out=${workspace}/${OPT_DIR}/${model_name}_fp32 --valid_targets=arm
+            ${opt_path} --model_dir=${workspace}/${MODELS_DIR}/${model_name} --optimize_out=${workspace}/${OPT_DIR}/${model_name}_fp32 --valid_targets=arm
         fi
     done
     echo -e ">>>>>>>>>>>>>>${model_name} is converted success!"
@@ -100,38 +102,33 @@ function build() {
         docker build -t ${DOCKER_IMAGE_NAME} -f Dockerfile.mobile .
     fi
     
-    # unset proxy because proxy will block download
-    if [ "$http_proxy" != "" ]; then
-        unset http_proxy
-        unset https_proxy
-    fi  
     local abi_list=$1
     local abis=(${abi_list//,/ })
-    local LiteDir=${workspace}/${Lite_DIR}
+    local LiteDir=${Lite_DIR}/Paddle-Lite
     for abi in ${abis[@]}; do 
         if [[ "$abi" == "armv7" ]]; then
             # build 32-bit TODO : need update when needed!
-            docker run --net=host -i --privileged --rm -v ${workspace}:/work --workdir /work -u 0 \
+            docker run --net=host -i --privileged --rm -v ${Lite_DIR}:/work --workdir /work -u 0 \
                 -e http_proxy=${http_proxy} \
                 -e https_proxy=${https_proxy} \
                 ${DOCKER_IMAGE_NAME} \
                 /bin/bash -x -e -c "
-                    cd ${Lite_DIR}
-		            git config --global --add safe.directory /work/${Lite_DIR}
+                    cd Paddle-Lite
+		            git config --global --add safe.directory /work/Paddle-Lite
                     rm -rf third-party
-                    ./lite/tools/build_android.sh --build_threads=${NPROC} --toolchain=clang --arch=armv7 --with_arm82_fp16=ON --with_benchmark=ON full_publish
+                    ./lite/tools/build_android.sh --build_threads=${NPROC} --toolchain=clang --arch=armv7 --with_arm82_fp16=ON full_publish
                     mv build.lite.android.armv7.clang build.lite.android.armv7.clang.fp16
                 "
         elif [[ "$abi" == "armv8" ]]; then
             # build 64-bit
             if [ "${RUN_LOW_PRECISION}" = true ] && [ ! -d "${LiteDir}/build.lite.android.armv8.clang.profile.fp16" ]; then
-                docker run --net=host -i --privileged --rm -v ${workspace}:/work --workdir /work -u 0 \
+                docker run --net=host -i --privileged --rm -v ${Lite_DIR}:/work --workdir /work -u 0 \
                     -e http_proxy=${http_proxy} \
                     -e https_proxy=${https_proxy} \
                     ${DOCKER_IMAGE_NAME} \
                     /bin/bash -x -e -c "
-                        cd ${Lite_DIR}
-                        git config --global --add safe.directory /work/${Lite_DIR}
+                        cd Paddle-Lite
+                        git config --global --add safe.directory /work/Paddle-Lite
                         rm -rf third-party
                         ./lite/tools/build_android.sh --toolchain=clang --with_arm82_fp16=ON --with_extra=ON --with_profile=ON full_publish
                         mv build.lite.android.armv8.clang build.lite.android.armv8.clang.profile.fp16
@@ -139,13 +136,13 @@ function build() {
                         make 
                     "
             elif [ "${RUN_LOW_PRECISION}" = false ] && [ ! -d "${LiteDir}/build.lite.android.armv8.clang.profile.fp32" ]; then
-                docker run --net=host -i --privileged --rm -v ${workspace}:/work --workdir /work -u 0 \
+                docker run --net=host -i --privileged --rm -v ${Lite_DIR}:/work --workdir /work -u 0 \
                     -e http_proxy=${http_proxy} \
                     -e https_proxy=${https_proxy} \
                     ${DOCKER_IMAGE_NAME} \
                     /bin/bash -x -e -c "
-                        cd ${Lite_DIR}
-                        git config --global --add safe.directory /work/${Lite_DIR}
+                        cd Paddle-Lite
+                        git config --global --add safe.directory /work/Paddle-Lite
                         rm -rf third-party
                         ./lite/tools/build_android.sh --toolchain=clang --with_extra=ON --with_profile=ON full_publish
                         mv build.lite.android.armv8.clang build.lite.android.armv8.clang.profile.fp32
@@ -172,11 +169,11 @@ run_profile() {
     local abis=(${ABI_LIST//,/ })
     for abi in ${abis[@]}; do
         if [ "${RUN_LOW_PRECISION}" = true ]; then 
-            library_path=${workspace}/${Lite_DIR}/build.lite.android.${abi}.clang.profile.fp16/inference_lite_lib.android.armv8/cxx/lib/libpaddle_light_api_shared.so
-            bin_path=${workspace}/${Lite_DIR}/build.lite.android.${abi}.clang.profile.fp16/inference_lite_lib.android.armv8/demo/cxx/mobile_light/mobilenetv1_light_api
+            library_path=${Lite_DIR}/Paddle-Lite/build.lite.android.${abi}.clang.profile.fp16/inference_lite_lib.android.armv8/cxx/lib/libpaddle_light_api_shared.so
+            bin_path=${Lite_DIR}/Paddle-Lite/build.lite.android.${abi}.clang.profile.fp16/inference_lite_lib.android.armv8/demo/cxx/mobile_light/mobilenetv1_light_api
         else 
-            library_path=${workspace}/${Lite_DIR}/build.lite.android.${abi}.clang.profile.fp32/inference_lite_lib.android.armv8/cxx/lib/libpaddle_light_api_shared.so
-            bin_path=${workspace}/${Lite_DIR}/build.lite.android.${abi}.clang.profile.fp32/inference_lite_lib.android.armv8/demo/cxx/mobile_light/mobilenetv1_light_api
+            library_path=${Lite_DIR}/Paddle-Lite/build.lite.android.${abi}.clang.profile.fp32/inference_lite_lib.android.armv8/cxx/lib/libpaddle_light_api_shared.so
+            bin_path=${Lite_DIR}/Paddle-Lite/build.lite.android.${abi}.clang.profile.fp32/inference_lite_lib.android.armv8/demo/cxx/mobile_light/mobilenetv1_light_api
         fi
     done
     adb -s $DEV_ID shell "mkdir -p ${ANDROID_DIR}"
@@ -185,9 +182,9 @@ run_profile() {
     adb -s $DEV_ID push ${bin_path} ${ANDROID_DIR}
     adb -s $DEV_ID shell "chmod +x ${ANDROID_DIR}/mobilenetv1_light_api"
 
-    # run benchmark for each model
+    # run profile for each model
     local num_threads_list=(1)
-    local model_names=$(ls ${workspace}/Model_zoo/${MODELS_DIR})
+    local model_names=$(ls ${workspace}/${MODELS_DIR})
     echo -e ">>>>>>>>>>>>>>Paddle Profile"
     for threads in ${num_threads_list[@]}; do 
         for model_name in ${model_names[@]}; do
@@ -210,7 +207,7 @@ run_profile() {
             if [ "${input_shape}" = "" ]; then
                 echo -e "\033[41;37m No ${model_name} input shape info, please look for pdmodel file .\033[0m"
             fi
-            # run benchmark for this model
+            # run profile for this model
             if [ "${RUN_LOW_PRECISION}" = true ]; then
                 adb -s $DEV_ID shell "export GLOG_v=0 && \
                                       export LD_LIBRARY_PATH=${ANDROID_DIR} && \
@@ -233,7 +230,7 @@ run_profile() {
 }
 
 function android_build() {
-    # 1. prepare benchmark models
+    # 1. prepare profile models
     # 2. download paddlelite repo      
     # 3. convert pdmodel to nb models
     # 4. build Paddle-Lite  
@@ -247,40 +244,41 @@ function android_build() {
 
 function print_help_info() {
     echo "----------------------------------------------------------------------------------------------------------------------------------------"
-    echo -e "| Methods of benchmark tool shell script:                                                                                              |"
+    echo -e "| Methods of profile tool shell script:                                                                                                |"
     echo "----------------------------------------------------------------------------------------------------------------------------------------"
     echo -e "|  print help information:                                                                                                             |"
-    echo -e "|     ./benchmark.sh help                                                                                                              |"
+    echo -e "|     ./profile.sh help                                                                                                                |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                  |"
-    echo -e "|     --abi_list: (armv8|armv7), only armv8 is supported now                                                                           |"
     echo -e "|     --dev_id: use 'adb devices -l' to confirm your target android device's serial number                                             |"
-    echo -e "|     --android_dir: default is /data/local/tmp/benchmark_test, you can change the last level directory name                           |"
-    echo -e "|     --run_low_precision: (true|false), controls whether to use low precision, default is true                                        |"
-    echo -e "|     --results_dir: The directory where the result files is stored                                                                    |"
-    echo -e "|     --lite_dir: The directory where the lite repo is stored                                                                          |"
-    echo -e "|     --opt_dir: The directory where the optimized models is stored                                                                    |"
-    echo -e "|           default directory tree should like this, and results_dir lite_dir                                                          |"
-    echo -e "|                   and opt_dir is in same dir with benchmark.sh                                                                       |"
-    echo -e "|                          |── profile.sh                                                                                              |"
-    echo -e "|                          ├── Models_zoo	                                                                                            |"
-    echo -e "|                          ├── results_dir	                                                                                            |"
-    echo -e "|                          ├── opt_dir	                                                                                                |"
-    echo -e "|                          ├── {lite_dir} :eg. Work/Paddle-Lite CI/Paddle-Lite	                                                        |"
-    echo -e "|                          ├── Work	                                                                                                |"
-    echo -e "|                                └──Paddle-Lite	                                                                                    |"
-    echo -e "|     --models_dir: The directory where the models is stored                                                                           |"
-    echo -e "|                   your model tree should like this, and Model_zoo is in same dir with benchmark.sh                                   |"
-    echo -e "|                          Model_zoo	                                                                                                |"
-    echo -e "|                          └── models_dir                                                                                              |"
-    echo -e "|  arguments of benchmark shell script:(models_dir must be set, low_precision, android_build)                                          |"
-    echo -e "|     ./benchmark.sh --dev_id=<> --models_dir=<path_to_model> --results_dir=<path_to_results> android_build                            |"
-    echo -e "|     before run this shell script, u need Replenish model's shape information at models_list.txt.                                     |"
-    echo -e "|          whose format is like {model_name};{input_name0:input_shape0}' '{input_namex:input_shapex}                                   |"
+    echo -e "|     --abi_list: (armv8|armv7), default armv8                                                                                         |"
+    echo -e "|     --android_dir: you can change the last level directory name, default is /data/local/tmp/profile_test                             |"
+    echo -e "|     --run_low_precision: (true|false), controls whether to use low precision, default is true,                                       |"
+    echo -e "|     --results_dir: The directory where the result files is stored, default is ${pwd}/results_profile                                 |"
+    echo -e "|     --lite_dir: The directory where the lite repo is stored, default is ${pwd}                                                       |"
+    echo -e "|     --models_dir: The directory where the models is stored, default is ${pwd}/test                                                   |"
+    echo -e "|     --nb_models_dir: The directory where the optimized models is stored , default is ${pwd}/nb_models                                |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  default directory tree should like this, all in same level dir                                                                      |"
+    echo -e "|     |── profile.sh                                                                                                                   |"
+    echo -e "|     ├── models_dir	                                                                                                                |"
+    echo -e "|           └── model_name                                                                                                             |"
+    echo -e "|                 └── inference.pdmodel                                                                                                |"
+    echo -e "|                 └── inference.pdiparams                                                                                              |"
+    echo -e "|     ├── results_dir	                                                                                                                |"
+    echo -e "|     ├── nb_models_dir	                                                                                                            |"
+    echo -e "|     ├── models_list.txt	                                                                                                            |"
+    echo -e "|     ├── Paddle-Lite	                                                                                                                |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  before run this shell script, u need Replenish model's shape information at models_list.txt.                                        |"
+    echo -e "|          whose format is {model_name};{input_name0:input_shape0}' '{input_namex:input_shapex}                                        |"
     echo -e "|          eg. AlexNet;images:1,3,224,224                                                                                              |"
     echo -e "|              inception_v1;X:1,224,224,3                                                                                              |"
     echo -e "|                                                                                                                                      |"
-    echo -e "|  TODO: other target platform will be supperted later!                                                                                |"
+    echo -e "|  arguments of profile shell script:(option dev_id and models_dir must be set )                                                       |"
+    echo -e "|     ./profile.sh --dev_id=<> --models_dir=<path_to_model> android_build                                                              |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  TODO: Now only support armv8 fp32&& fp16 profile!                                                                                   |"
     echo "----------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
@@ -306,7 +304,7 @@ function main() {
             MODELS_DIR="${i#*=}"
             shift
             ;;
-        --opt_dir=*)
+        --nb_models_dir=*)
             OPT_DIR="${i#*=}"
             shift
             ;;
