@@ -5535,13 +5535,13 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
           scale_local[j] = scale[i];
         }
       }
-      Dtype cout0[NBLOCK_INT8_DOT];
-      Dtype cout1[NBLOCK_INT8_DOT];
-      Dtype cout2[NBLOCK_INT8_DOT];
-      Dtype cout3[NBLOCK_INT8_DOT];
-      Dtype cout4[NBLOCK_INT8_DOT];
-      Dtype cout5[NBLOCK_INT8_DOT];
-      Dtype cout6[NBLOCK_INT8_DOT];
+      Dtype cout0[NBLOCK_INT8_DOT + 16];
+      Dtype cout1[NBLOCK_INT8_DOT + 16];
+      Dtype cout2[NBLOCK_INT8_DOT + 16];
+      Dtype cout3[NBLOCK_INT8_DOT + 16];
+      Dtype cout4[NBLOCK_INT8_DOT + 16];
+      Dtype cout5[NBLOCK_INT8_DOT + 16];
+      Dtype cout6[NBLOCK_INT8_DOT + 16];
       Dtype cout7[NBLOCK_INT8_DOT + 16];
 
       Dtype* c_ptr0 = C + y * N + x0;
