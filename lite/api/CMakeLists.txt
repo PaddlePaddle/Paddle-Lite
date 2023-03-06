@@ -197,6 +197,11 @@ if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
     add_subdirectory(tools/benchmark)
 endif()
 
+if(ANDROID AND NOT LITE_ON_TINY_PUBLISH)
+    # test_arm_performance
+    lite_cc_binary(test_arm_performance SRCS tools/get_performance.cc)
+endif()
+
 # opt tool
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
