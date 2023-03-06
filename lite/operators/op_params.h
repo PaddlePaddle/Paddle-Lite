@@ -2562,6 +2562,14 @@ struct TemporalShiftParam : ParamBase {
   std::string data_format{"NCHW"};
 };
 
+struct EmptyParam : ParamBase {
+  lite::Tensor* ShapeTensor{nullptr};
+  std::vector<lite::Tensor*> ShapeTensorList{};
+  std::vector<int64_t> shape{};
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
+  lite::Tensor* Out{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
