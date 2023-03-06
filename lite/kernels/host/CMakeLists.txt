@@ -124,6 +124,7 @@ add_kernel(round_compute_host Host extra SRCS round_compute.cc)
 add_kernel(temporal_shift_compute_host Host extra SRCS temporal_shift_compute.cc)
 add_kernel(empty_compute_host Host extra SRCS empty_compute.cc)
 
+
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc)
   lite_cc_test(test_pixel_shuffle_compute_host SRCS pixel_shuffle_compute.cc)

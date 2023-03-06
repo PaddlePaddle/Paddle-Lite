@@ -22,10 +22,10 @@ namespace lite {
 namespace operators {
 
 class EmptyOp : public OpLite {
-public:
+ public:
   EmptyOp() {}
   explicit EmptyOp(const std::string &op_type) : OpLite(op_type) {}
-  
+
   bool CheckShape() const override;
 
   bool InferShapeImpl() const override;
@@ -35,9 +35,8 @@ public:
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "empty"; }
 
-protected:
+ protected:
   mutable EmptyParam param_;
-
 };
 
 }  // namespace operators

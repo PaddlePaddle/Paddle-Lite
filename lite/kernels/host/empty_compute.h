@@ -22,13 +22,12 @@ namespace kernels {
 namespace host {
 
 class EmptyCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
-  public:
-    using param_t = operators::EmptyParam;
+ public:
+  using param_t = operators::EmptyParam;
 
-    void Run() override;
+  void Run() override;
 
-    virtual ~EmptyCompute() = default;
-
+  virtual ~EmptyCompute() = default;
 };
 
 }  // namespace host
