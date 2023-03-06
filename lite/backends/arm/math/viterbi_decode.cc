@@ -170,12 +170,10 @@ void viterbi_decode(
   lite::Tensor alpha_nxt;
   alpha_nxt.Resize({batch, n_labels});
   auto alpha_nxt_ptr = alpha_nxt.mutable_data<float>();
-
   // treat length_int64 as left_length_int32 for neon(v7/v8)
   lite::Tensor left_length;
   left_length.Resize({batch});
   auto left_length_ptr = left_length.mutable_data<int>();
-
   lite::Tensor last_ids;
   last_ids.Resize({batch});
   auto last_ids_ptr = last_ids.mutable_data<int>();
@@ -202,7 +200,6 @@ void viterbi_decode(
   auto res_trans = trans_ptr;
   auto stop_trans = trans_ptr + (n_labels - 2) * n_labels;
   auto start_trans = stop_trans + n_labels;
-
   float32x4_t vec_1_f32 = vdupq_n_f32(1.f);
   float32x4_t vec_0_f32 = vdupq_n_f32(0.f);
   int32x4_t vec_0_s32 = vdupq_n_s32(0);
@@ -239,11 +236,11 @@ void viterbi_decode(
              n_labels * sizeof(float));
     }
   }
+
   // length -= 1
   for (int i = 0; i < batch; i++) {
     left_length_ptr[i] = static_cast<int>(length_ptr[i] - 1);
   }
-
   for (int sl = 1; sl < max_seq_len; sl++) {
     // alpha_trn_sum{batch, n_labels, n_labels} =
     // alpha{batch, n_labels, 1} + transition{n_labels, n_labels}
@@ -287,10 +284,9 @@ void viterbi_decode(
     for (; i < batch; i++) {
       float_mask_ptr[i] = left_length_ptr[i] > 0 ? 1.f : 0.f;
     }
-
     // alpha_nxt = alpha_nxt * float_mask
     for (int i = 0; i < batch; i++) {
-      vector_add(float_mask_ptr[i],
+      vector_mul(float_mask_ptr[i],
                  alpha_nxt_ptr + i * n_labels,
                  alpha_nxt_ptr + i * n_labels,
                  n_labels);
@@ -341,6 +337,7 @@ void viterbi_decode(
       left_length_ptr[i] = left_length_ptr[i] - 1;
     }
   }
+
   arg_max(alpha_ptr, last_ids_ptr, scores_ptr, batch, n_labels, 1);
   for (int i = 0; i < batch; i++) {
     int_mask_ptr[i] = left_length_ptr[i] >= 0 ? 1 : 0;
@@ -354,7 +351,6 @@ void viterbi_decode(
              batch_path_ptr + (actual_len - last_ids_index) * batch,
              batch);
   arange(batch_offset_ptr, batch, n_labels);
-
   for (int sl = 0; sl < max_seq_len - 1; sl++) {
     ++last_ids_index;
     vector_add(1, left_length_ptr, left_length_ptr, batch);
@@ -375,7 +371,6 @@ void viterbi_decode(
     for (int i = 0; i < batch; i++) {
       zero_len_mask_ptr[i] = left_length_ptr[i] == 0 ? 1 : 0;
     }
-
     vector_mul(last_ids_ptr, zero_len_mask_ptr, last_ids_tmp_ptr, batch);
     vector_sub(1, zero_len_mask_ptr, zero_len_mask_ptr, batch);
     vector_mla(last_ids_update,
