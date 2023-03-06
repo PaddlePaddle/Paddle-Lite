@@ -13,14 +13,13 @@
 // limitations under the License.
 
 #include "lite/kernels/host/empty_compute.h"
-#include "lite/api/paddle_place.h"
 #include <iostream>
+#include "lite/api/paddle_place.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace host {
-
 
 void EmptyCompute::Run() {
   auto& param = *param_.get_mutable<param_t>();
@@ -37,10 +36,12 @@ void EmptyCompute::Run() {
   } else if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
     output->set_precision(PRECISION(kFloat));
     output->template mutable_data<float>();
-  } else if (param.dtype == static_cast<int32_t>(lite::core::FluidType::INT32)) {
+  } else if (param.dtype ==
+             static_cast<int32_t>(lite::core::FluidType::INT32)) {
     output->set_precision(PRECISION(kInt32));
     output->template mutable_data<int32_t>();
-  } else if (param.dtype == static_cast<int32_t>(lite::core::FluidType::INT64)) {
+  } else if (param.dtype ==
+             static_cast<int32_t>(lite::core::FluidType::INT64)) {
     output->set_precision(PRECISION(kInt64));
     output->template mutable_data<int64_t>();
   } else {
@@ -49,25 +50,16 @@ void EmptyCompute::Run() {
   }
 }
 
-
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(empty,
-                     kHost,
-                     kAny,
-                     kNCHW,
-                     paddle::lite::kernels::host::EmptyCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    empty, kHost, kAny, kNCHW, paddle::lite::kernels::host::EmptyCompute, def)
     .BindInput("ShapeTensor",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindInput("ShapeTensorList",
-               {LiteType::GetTensorTy(TARGET(kHost),
-                                      PRECISION(kAny))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kHost),
-                                       PRECISION(kAny))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();

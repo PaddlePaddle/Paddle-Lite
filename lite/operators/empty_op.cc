@@ -42,7 +42,7 @@ bool EmptyOp::InferShapeImpl() const {
     OutShape = param_.shape;
   } else {
     LOG(FATAL) << "no valid out_shape. Must set one of shape_tensor, or "
-                      "shape_tensor_list, or shape.";
+                  "shape_tensor_list, or shape.";
   }
 
   param_.Out->Resize(OutShape);
@@ -51,12 +51,15 @@ bool EmptyOp::InferShapeImpl() const {
 
 bool EmptyOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   if (opdesc.HasInput("ShapeTensor") && !opdesc.Input("ShapeTensor").empty()) {
-    param_.ShapeTensor = scope->FindMutableTensor(opdesc.Input("ShapeTensor").front());
+    param_.ShapeTensor =
+        scope->FindMutableTensor(opdesc.Input("ShapeTensor").front());
   }
   param_.ShapeTensorList.clear();
-  if (opdesc.HasInput("ShapeTensorList") && !opdesc.Input("ShapeTensorList").empty()) {
+  if (opdesc.HasInput("ShapeTensorList") &&
+      !opdesc.Input("ShapeTensorList").empty()) {
     for (auto name : opdesc.Input("ShapeTensorList")) {
-      param_.ShapeTensorList.push_back(GetMutableVar<lite::Tensor>(scope, name));
+      param_.ShapeTensorList.push_back(
+          GetMutableVar<lite::Tensor>(scope, name));
     }
   }
   if (opdesc.HasAttr("shape")) {
