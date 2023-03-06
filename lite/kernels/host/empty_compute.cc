@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include "lite/kernels/host/empty_compute.h"
-#include <iostream>
-#include "lite/api/paddle_place.h"
 
 namespace paddle {
 namespace lite {
@@ -48,6 +46,10 @@ void EmptyCompute::Run() {
     output->set_precision(PRECISION(kInt32));
     output->template mutable_data<int32_t>();
   }
+#ifdef LITE_WITH_PROFILE
+  kernel_func_name_ = "empty_func";
+#endif
+  return;
 }
 
 }  // namespace host
