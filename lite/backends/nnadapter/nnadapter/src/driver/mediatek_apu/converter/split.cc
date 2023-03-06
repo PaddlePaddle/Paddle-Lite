@@ -28,10 +28,8 @@ int ConvertSplit(Converter* converter, core::Operation* operation) {
   if (input_index == INVALID_INDEX) {
     input_index = converter->ConvertOperand(input_operand);
   }
-
   auto axis_index = converter->AddInt32ConstantOperand(axis);
   auto num_index = converter->AddInt32ConstantOperand(output_count);
-
   std::vector<uint32_t> output_indexes;
   for (int i = 0; i < output_count; i++) {
     auto output_operand = output_operands[i];

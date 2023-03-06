@@ -18,6 +18,33 @@
 
 namespace nnadapter {
 
+/*
+ * Convert 5D reshape-transpose-reshape into 4D.
+ * For example:
+ *        in -> shape[1,32,32,24]
+ *         |
+ *      reshape -> shape[1,2,16,32,24]
+ *         |
+ *      transpose -> shape[1,16,2,32,24]
+ *         |
+ *      reshape -> shape[1,32,32,24]
+ *         |
+ *        out
+ *
+ * After applied:
+ *
+ *        in -> shape[1,32,32,24]
+ *         |
+ *      reshape -> shape[1,2,16,32*24]
+ *         |
+ *      transpose -> shape[1,16,2,32*24]
+ *         |
+ *      reshape -> shape[1,32,32,24]
+ *         |
+ *        out
+ *
+ */
+
 void ConvertReshapeTransposeReshape5DInto4D(core::Model* model);
 
 }  // namespace nnadapter

@@ -37,6 +37,28 @@ namespace mediatek_apu {
 
 Context::Context(void* device, const char* properties) : device_(device) {
   // TODO(hong19860320) create the raw context from NeuronAdapter
+  NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
+  std::string key_value;
+  auto key_values = GetKeyValues(properties);
+  uint32_t version;
+  Neuron_getVersion_invoke(&version);
+  NNADAPTER_VLOG(3) << "Neuron Adapter version: " << version;
+  NNADAPTER_VLOG(3) << "Neuron Adapter available devices: ";
+  uint32_t num_devices = 0;
+  Neuron_getDeviceCount_invoke(&num_devices);
+  for (uint32_t i = 0; i < num_devices; ++i) {
+    NeuronDevice* device = nullptr;
+    const char* name = nullptr;
+    Neuron_getDevice_invoke(i, &device);
+    NeuronDevice_getName_invoke(device, &name);
+    NNADAPTER_VLOG(3) << "[" << i << "] name: " << name;
+  }
+  if (key_values.count(MEDIATEK_APU_RELAX_FP32_TO_FP16)) {
+    relax_fp32_to_fp16_ =
+        string_parse<bool>(key_values[MEDIATEK_APU_RELAX_FP32_TO_FP16]);
+  } else {
+    relax_fp32_to_fp16_ = GetBoolFromEnv(MEDIATEK_APU_RELAX_FP32_TO_FP16, true);
+  }
 }
 
 Context::~Context() {}
@@ -90,20 +112,6 @@ int Program::BuildFromModel(core::Model* model) {
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert the NNAdapter model to Neuron model
   operand_indexes_.clear();
-  uint32_t version;
-  Neuron_getVersion_invoke(&version);
-  NNADAPTER_VLOG(3) << "Neuron Adapter version: " << version;
-  uint32_t num_devices = 0;
-  Neuron_getDeviceCount_invoke(&num_devices);
-  NNADAPTER_VLOG(3) << "Neuron Adapter Device Count: " << num_devices;
-  NeuronDevice* target_device[1];
-  for (uint32_t i = 0; i < num_devices; ++i) {
-    NeuronDevice* device = nullptr;
-    const char* name = nullptr;
-    Neuron_getDevice_invoke(i, &device),
-        NeuronDevice_getName_invoke(device, &name);
-    NNADAPTER_VLOG(3) << "Neuron Adapter Device Name: " << name;
-  }
   int result = NeuronModel_create_invoke(&model_);
   if (result != NEURON_NO_ERROR) {
     NNADAPTER_LOG(FATAL) << "Failed to create a Neuron Model(" << result
@@ -162,7 +170,8 @@ int Program::BuildFromModel(core::Model* model) {
                          << result << ")!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
-  result = NeuronModel_relaxComputationFloat32toFloat16_invoke(model_, true);
+  result = NeuronModel_relaxComputationFloat32toFloat16_invoke(
+      model_, context_->relax_fp32_to_fp16());
   if (result != NEURON_NO_ERROR) {
     NeuronModel_free_invoke(model_);
     NNADAPTER_LOG(FATAL) << "Failed to set relaxComputationFloat32toFloat16("
