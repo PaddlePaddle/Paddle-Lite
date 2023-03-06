@@ -38,7 +38,7 @@ namespace fusion {
 *     scale               |                |
 *         \              /                 |
 *          \            /                  |
-*            matmul_v2                    /
+*          matmul_v2/matmul               /
 *              \                         /
 *               \                       /
 *         elementwise_add              /
@@ -47,7 +47,7 @@ namespace fusion {
 *                softmax            /
 *                    \             /
 *                     \           /
-*                       matmul_v2
+*                    matmul_v2/matmul
 *                           |
 *                           |
 *                         output
@@ -56,15 +56,29 @@ namespace fusion {
 void TransformerAttentionFuser::BuildPattern() {
   auto matmul0_attr_teller = [](const Node* node) -> bool {
     auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
-    auto trans_x = op_desc.GetAttr<bool>("trans_x");
-    auto trans_y = op_desc.GetAttr<bool>("trans_y");
+    bool trans_x;
+    bool trans_y;
+    if (op_desc.Type() == "matmul") {
+      trans_x = op_desc.GetAttr<bool>("transpose_X");
+      trans_y = op_desc.GetAttr<bool>("transpose_Y");
+    } else {
+      trans_x = op_desc.GetAttr<bool>("trans_x");
+      trans_y = op_desc.GetAttr<bool>("trans_y");
+    }
     auto res = (trans_x == false && trans_y == true);
     return res;
   };
   auto matmul1_attr_teller = [](const Node* node) -> bool {
     auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
-    auto trans_x = op_desc.GetAttr<bool>("trans_x");
-    auto trans_y = op_desc.GetAttr<bool>("trans_y");
+    bool trans_x;
+    bool trans_y;
+    if (op_desc.Type() == "matmul") {
+      trans_x = op_desc.GetAttr<bool>("transpose_X");
+      trans_y = op_desc.GetAttr<bool>("transpose_Y");
+    } else {
+      trans_x = op_desc.GetAttr<bool>("trans_x");
+      trans_y = op_desc.GetAttr<bool>("trans_y");
+    }
     auto res = (trans_x == false && trans_y == false);
     return res;
   };
@@ -136,11 +150,11 @@ void TransformerAttentionFuser::BuildPattern() {
   auto* scale0 = OpNode("scale0", "scale");
   auto* scale0_out = VarNode("scale0_out")->assert_is_op_output("scale", "Out");
 
-  // matmul_v2
-  auto* matmul0 = OpNode("matmul0", "matmul_v2")
-                      ->assert_node_satisfied(matmul0_attr_teller);
+  // matmul
+  auto* matmul0 =
+      OpNode("matmul0", mul_type_)->assert_node_satisfied(matmul0_attr_teller);
   auto* matmul0_out =
-      VarNode("matmul0_out")->assert_is_op_output("matmul_v2", "Out");
+      VarNode("matmul0_out")->assert_is_op_output(mul_type_, "Out");
 
   // elementwise_add
   auto* residual = VarNode("residual")
@@ -155,9 +169,9 @@ void TransformerAttentionFuser::BuildPattern() {
   auto* softmax0_out =
       VarNode("softmax0_out")->assert_is_op_output("softmax", "Out");
 
-  // matmul_v2
-  auto* matmul1 = OpNode("matmul1", "matmul_v2")
-                      ->assert_node_satisfied(matmul1_attr_teller);
+  // matmul
+  auto* matmul1 =
+      OpNode("matmul1", mul_type_)->assert_node_satisfied(matmul1_attr_teller);
 
   auto* Out = VarNode("Out");
 
