@@ -56,6 +56,9 @@ NNADAPTER_EXPORT void CalcEltwiseBinaryOperationsOutputSize(
           output_dimensions_data[i] = input1_data;
         } else if (input1_data == 1) {
           output_dimensions_data[i] = input0_data;
+        } else if (input0_data == NNADAPTER_UNKNOWN ||
+                   input1_data == NNADAPTER_UNKNOWN) {
+          output_dimensions_data[i] = NNADAPTER_UNKNOWN;
         } else {
           NNADAPTER_LOG(ERROR) << "Cannot broadcast input0: " << input0_data
                                << ", input1: " << input1_data;

@@ -48,9 +48,9 @@ NNADAPTER_EXPORT int ExecuteSlice(core::Operation* operation) {
                            input_shape,
                            axes_count,
                            axes,
-                           starts,
-                           ends,
-                           steps,
+                           starts.data(),
+                           ends.data(),
+                           steps.data(),
                            reinterpret_cast<float*>(output_buffer));
       break;
     case NNADAPTER_INT32:
@@ -58,9 +58,9 @@ NNADAPTER_EXPORT int ExecuteSlice(core::Operation* operation) {
                            input_shape,
                            axes_count,
                            axes,
-                           starts,
-                           ends,
-                           steps,
+                           starts.data(),
+                           ends.data(),
+                           steps.data(),
                            reinterpret_cast<int32_t*>(output_buffer));
       break;
     case NNADAPTER_INT64:
@@ -68,9 +68,9 @@ NNADAPTER_EXPORT int ExecuteSlice(core::Operation* operation) {
                            input_shape,
                            axes_count,
                            axes,
-                           starts,
-                           ends,
-                           steps,
+                           starts.data(),
+                           ends.data(),
+                           steps.data(),
                            reinterpret_cast<int64_t*>(output_buffer));
       break;
     default:
@@ -89,6 +89,20 @@ NNADAPTER_EXPORT int PrepareSlice(core::Operation* operation) {
 
   // Infer the shape and type of output operands
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
+
+  if (IsTemporaryShapeOperand(starts_operand) ||
+      IsTemporaryShapeOperand(ends_operand) ||
+      IsTemporaryShapeOperand(steps_operand)) {
+    output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
+    for (uint32_t i = 0; i < axes_count; i++) {
+      output_operand->type.dimensions.data[axes[i]] = NNADAPTER_UNKNOWN;
+      output_operand->type.dimensions.dynamic_data[i][axes[i]] =
+          NNADAPTER_UNKNOWN;
+    }
+    NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+    return NNADAPTER_NO_ERROR;
+  }
+
   auto infer_output_shape = [&](int32_t* output_dimensions) {
     for (size_t i = 0; i < axes_count; ++i) {
       int dim = output_dimensions[axes[i]];
@@ -103,12 +117,10 @@ NNADAPTER_EXPORT int PrepareSlice(core::Operation* operation) {
       }
     }
   };
-
   infer_output_shape(output_operand->type.dimensions.data);
   for (uint32_t i = 0; i < input_operand->type.dimensions.dynamic_count; i++) {
     infer_output_shape(output_operand->type.dimensions.dynamic_data[i]);
   }
-
   if (IsTemporaryShapeOperand(input_operand)) {
     output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
     auto& temporary_shape = *(GetTemporaryShape(input_operand));
@@ -122,9 +134,9 @@ NNADAPTER_EXPORT int PrepareSlice(core::Operation* operation) {
         std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
         axes_count,
         axes,
-        starts,
-        ends,
-        steps,
+        starts.data(),
+        ends.data(),
+        steps.data(),
         dimension_type.data);
     for (uint32_t i = 0; i < dimension_type.dynamic_count; i++) {
       math::slice<int32_t>(
@@ -132,9 +144,9 @@ NNADAPTER_EXPORT int PrepareSlice(core::Operation* operation) {
           std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
           axes_count,
           axes,
-          starts,
-          ends,
-          steps,
+          starts.data(),
+          ends.data(),
+          steps.data(),
           dimension_type.dynamic_data[i]);
     }
     SetTemporaryShape(output_operand, dimension_type);
