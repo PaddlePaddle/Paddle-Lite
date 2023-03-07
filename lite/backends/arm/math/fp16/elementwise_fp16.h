@@ -48,7 +48,21 @@ typedef __fp16 float16_t;
 elementwise_simple_compute_declare(add);
 elementwise_simple_compute_declare(mul);
 elementwise_simple_compute_declare(sub);
+#ifdef __aarch64__
 elementwise_simple_compute_declare(div);
+#else
+void elementwise_div(const float16_t* dinx,
+                     const float16_t* diny,
+                     float16_t* dout,
+                     int num);
+
+void elementwise_div_broadcast(const float16_t* dinx,
+                               const float16_t* diny,
+                               float16_t* dout,
+                               int batch,
+                               int channels,
+                               int num);
+#endif
 
 }  // namespace fp16
 }  // namespace math

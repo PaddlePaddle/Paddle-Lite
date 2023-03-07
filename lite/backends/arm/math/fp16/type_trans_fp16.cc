@@ -304,15 +304,6 @@ void fp32_to_fp16(const float* in, float16_t* out, int size) {
       "vst1.32 {d16-d17}, [%[out]]!\n"
       "bne 4b\n"
       "2: \n"
-      "cmp %[remain_remain], #1\n"
-      "blt 3f\n"
-      "5: \n"
-      "vld1.16 d0[0], [%[in]]!\n"
-      "subs %[remain_remain], #1\n"
-      "vcvt.f16.f32 d16, q0\n"
-      "vst1.32 d16[0], [%[out]]!\n"
-      "bne 5b\n"
-      "3: \n"
       : [in] "+r"(in),
         [out] "+r"(out),
         [cnt] "+r"(cnt),
@@ -333,6 +324,11 @@ void fp32_to_fp16(const float* in, float16_t* out, int size) {
         "q9",
         "q10",
         "q11");
+  for (int i = 0; i < remain_remain; i++) {
+    *out = static_cast<float16_t>(*in);
+    out++;
+    in++;
+  }
 #endif
 }
 }  // namespace fp16
