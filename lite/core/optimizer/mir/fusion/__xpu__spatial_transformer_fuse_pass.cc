@@ -24,8 +24,7 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-static std::vector<int> Vec2DTo1D_int(
-    const std::vector<std::vector<int>>& vec) {
+static std::vector<int> IntVec2DTo1D(const std::vector<std::vector<int>>& vec) {
   std::vector<int> res;
   for (const auto& v : vec) {
     for (const auto& ele : v) {
@@ -480,10 +479,10 @@ class SpatialTransformerfuser : public FuseBase {
       filter_dims.emplace_back(std::move(filter_dims_tmp));
     }
     op_desc.SetAttr<std::vector<int>>("Conv_Groups", groups);
-    op_desc.SetAttr<std::vector<int>>("Strides", Vec2DTo1D_int(strides));
-    op_desc.SetAttr<std::vector<int>>("Paddings", Vec2DTo1D_int(paddings));
-    op_desc.SetAttr<std::vector<int>>("Dilations", Vec2DTo1D_int(dilations));
-    op_desc.SetAttr<std::vector<int>>("FilterDims", Vec2DTo1D_int(filter_dims));
+    op_desc.SetAttr<std::vector<int>>("Strides", IntVec2DTo1D(strides));
+    op_desc.SetAttr<std::vector<int>>("Paddings", IntVec2DTo1D(paddings));
+    op_desc.SetAttr<std::vector<int>>("Dilations", IntVec2DTo1D(dilations));
+    op_desc.SetAttr<std::vector<int>>("FilterDims", IntVec2DTo1D(filter_dims));
 
     auto spatial_transformer_op =
         LiteOpRegistry::Global().Create(op_desc.Type());

@@ -28,35 +28,30 @@ namespace xpu {
 namespace xft = baidu::xpu::xft;
 
 template <typename InType, PrecisionType PType>
-class XPUSpatialTransformerCompute : public KernelLite<TARGET(kXPU), PType> {
+class XPUSpatialTransformerResBlockCompute
+    : public KernelLite<TARGET(kXPU), PType> {
  public:
-  using param_t = operators::XPUSpatialTransformerParam;
+  using param_t = operators::XPUSpatialTransformerResBlockParam;
 
   virtual void PrepareForRun();
 
   virtual void Run();
 
-  virtual ~XPUSpatialTransformerCompute() = default;
+  virtual ~XPUSpatialTransformerResBlockCompute() = default;
 
  private:
-  xft::SpatialTransformerFusionParam st_param_;
-  std::vector<xft::xftVec<float>> xft_gn_weights_;
+  xft::STResBlockParam resblock_param_;
+  std::vector<xft::xftVec<float>> xft_gn_weight_;
   std::vector<xft::xftVec<float>> xft_gn_bias_;
-  std::vector<xft::xftVec<float>> xft_ln_weights_;
-  std::vector<xft::xftVec<float>> xft_ln_bias_;
-  std::vector<xft::xftMat<int16_t>> xft_q_weights_;
-  std::vector<xft::xftMat<int16_t>> xft_k_weights_;
-  std::vector<xft::xftMat<int16_t>> xft_v_weights_;
-  std::vector<xft::xftMat<int16_t>> xft_attn_fc_weights_;
-  std::vector<xft::xftVec<float>> xft_attn_fc_bias_;
-  std::vector<xft::xftMat<int16_t>> xft_geglu_fc_weights_;
-  std::vector<xft::xftVec<float>> xft_geglu_fc_bias_;
-  std::vector<xft::xftTensor<int16_t, 4>> xft_conv_weights_;
+  std::vector<xft::xftMat<int16_t>> xft_fc_weights_;
   std::vector<xft::xftVec<float>> xft_conv_bias_;
+  std::vector<xft::xftTensor<int16_t, 4>> xft_conv_weights_;
+  std::vector<xft::xftVec<float>> xft_fc_bias_;
   std::vector<const int16_t *> arg_fc_weight_int16_;
   std::vector<const int16_t *> arg_conv_filter_int16_;
   std::vector<const float *> fc_weight_max_;
   std::vector<const float *> conv_filter_max_;
+  std::vector<const float *> input_max_;
   XPUScratchPadGuard weight_max_guard_;
   XPUScratchPadGuard filter_max_guard_;
 
