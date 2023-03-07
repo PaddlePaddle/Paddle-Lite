@@ -24,8 +24,6 @@ namespace {
 
 class Eliminator : public FuseBase {
  public:
-  explicit Eliminator(bool has_mask) : has_mask_(has_mask) {}
-
   static bool DropoutIsTest(const Node* x) {
     if (x && x->IsStmt()) {
       auto* op_info = x->stmt()->op_info();
@@ -53,18 +51,15 @@ class Eliminator : public FuseBase {
                            ->assert_op_attr<std::string>(
                                "dropout_implementation", "upscale_in_train");
     auto* out = VarNode("out")->assert_is_op_output("dropout", "Out");
-    PMNode* mask = nullptr;
-    if (has_mask_) {
-      mask = VarNode("mask")->assert_is_op_output("dropout", "Mask");
-    }
+    auto* mask = VarNode("mask")->assert_is_op_output("dropout", "Mask");
 
     *pre_op >> *x >> *dropout_op >> *out;
-    if (mask) *dropout_op >> *mask;
+    *dropout_op >> *mask;
 
     // The pre_op will be eliminated, and a new output-updated op will insert.
     x->AsIntermediate();  // x is pre_op's output, need to update
     dropout_op->AsIntermediate();
-    if (mask) mask->AsIntermediate();
+    mask->AsIntermediate();
   }
 
  private:
@@ -78,7 +73,6 @@ class Eliminator : public FuseBase {
 
     IR_NODE_LINK_TO(matched.at("preop"), matched.at("out"));
   }
-  bool has_mask_;
 };
 
 }  // namespace
@@ -86,11 +80,8 @@ class Eliminator : public FuseBase {
 class IdentityDropoutEliminatePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
-    std::vector<bool> has_masks = {false, true};
-    for (auto has_mask : has_masks) {
-      Eliminator eliminator(has_mask);
-      eliminator(graph.get());
-    }
+    Eliminator eliminator;
+    eliminator(graph.get());
   }
 };
 

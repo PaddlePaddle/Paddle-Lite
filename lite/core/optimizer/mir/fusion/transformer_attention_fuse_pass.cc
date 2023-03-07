@@ -33,14 +33,17 @@ void TransformerAttentionFusePass::Apply(
   }
   std::vector<bool> reshape_has_xshapes = {false, true};
   std::vector<bool> transpose_has_xshapes = {false, true};
+  std::vector<bool> dropout_masks = {false, true};
   std::vector<std::string> mul_types = {"matmul", "matmul_v2"};
   for (auto reshape_has_xshape : reshape_has_xshapes) {
     for (auto transpose_has_xshape : transpose_has_xshapes) {
-      for (auto mul_type : mul_types) {
-        fusion::TransformerAttentionFuser fuser(
-            reshape_has_xshape, transpose_has_xshape, mul_type);
-        if ((has_int8)) {
-          fuser(graph.get());
+      for (auto dropout_mask : dropout_masks) {
+        for (auto mul_type : mul_types) {
+          fusion::TransformerAttentionFuser fuser(
+              reshape_has_xshape, transpose_has_xshape, dropout_mask, mul_type);
+          if ((has_int8)) {
+            fuser(graph.get());
+          }
         }
       }
     }

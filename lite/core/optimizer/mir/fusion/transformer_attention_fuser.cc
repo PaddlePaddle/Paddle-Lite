@@ -38,15 +38,18 @@ namespace fusion {
 *     scale               |                |
 *         \              /                 |
 *          \            /                  |
-*          matmul_v2/matmul               /
-*              \                         /
-*               \                       /
-*         elementwise_add              /
-*                 \                   /
-*                  \                 /
-*                softmax            /
-*                    \             /
-*                     \           /
+*          matmul_v2/matmul                |
+*              \                           /
+*               \                         /
+*         elementwise_add                /
+*                 \                     /
+*                  \                   /
+*                softmax              /
+*                   |                /
+*                   |               /
+*                dropout           /
+*                    \            /
+*                     \          /
 *                    matmul_v2/matmul
 *                           |
 *                           |
@@ -169,6 +172,15 @@ void TransformerAttentionFuser::BuildPattern() {
   auto* softmax0_out =
       VarNode("softmax0_out")->assert_is_op_output("softmax", "Out");
 
+  // dropout
+  auto* dropout = OpNode("dropout", "dropout");
+  auto* dropout_out =
+      VarNode("dropout_out")->assert_is_op_output("dropout", "Out");
+  PMNode* mask_out = nullptr;
+  if (dropout_mask_) {
+    mask_out = VarNode("mask_out")->assert_is_op_output("dropout", "Mask");
+  }
+
   // matmul
   auto* matmul1 =
       OpNode("matmul1", mul_type_)->assert_node_satisfied(matmul1_attr_teller);
@@ -198,9 +210,14 @@ void TransformerAttentionFuser::BuildPattern() {
   std::vector<PMNode*> matmul0_inputs{scale0_out, transpose1_out};
   matmul0_inputs >> *matmul0 >> *matmul0_out;
   std::vector<PMNode*> add0_inputs{matmul0_out, residual};
-  add0_inputs >> *add >> *add0_out >> *softmax0 >> *softmax0_out;
+  add0_inputs >> *add >> *add0_out >> *softmax0 >> *softmax0_out >> *dropout >>
+      *dropout_out;
 
-  std::vector<PMNode*> matmul1_inputs{softmax0_out, transpose2_out};
+  if (dropout_mask_) {
+    *dropout >> *mask_out;
+  }
+
+  std::vector<PMNode*> matmul1_inputs{dropout_out, transpose2_out};
   matmul1_inputs >> *matmul1 >> *Out;
 
   if (reshape_has_xshape_) {
@@ -212,6 +229,9 @@ void TransformerAttentionFuser::BuildPattern() {
     xshape3->AsIntermediate();
     xshape4->AsIntermediate();
     xshape5->AsIntermediate();
+  }
+  if (dropout_mask_) {
+    mask_out->AsIntermediate();
   }
   fc0->AsIntermediate();
   fc0_out->AsIntermediate();
@@ -239,6 +259,8 @@ void TransformerAttentionFuser::BuildPattern() {
   add0_out->AsIntermediate();
   softmax0->AsIntermediate();
   softmax0_out->AsIntermediate();
+  dropout->AsIntermediate();
+  dropout_out->AsIntermediate();
   matmul1->AsIntermediate();
 }
 

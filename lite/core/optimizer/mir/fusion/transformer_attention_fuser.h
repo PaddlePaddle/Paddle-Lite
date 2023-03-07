@@ -27,9 +27,11 @@ class TransformerAttentionFuser : public FuseBase {
  public:
   explicit TransformerAttentionFuser(bool reshape_has_xshape,
                                      bool transpose_has_xshape,
+                                     bool dropout_mask,
                                      std::string mul_type)
       : reshape_has_xshape_(reshape_has_xshape),
         transpose_has_xshape_(transpose_has_xshape),
+        dropout_mask_(dropout_mask),
         mul_type_(mul_type) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
@@ -37,6 +39,7 @@ class TransformerAttentionFuser : public FuseBase {
  private:
   bool reshape_has_xshape_;
   bool transpose_has_xshape_;
+  bool dropout_mask_;
   std::string mul_type_;
 };
 
