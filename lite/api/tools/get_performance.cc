@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include <sched.h>
-#include <stdlib.h>
 #include <string.h>
 #include <chrono>
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 #ifdef LITE_WITH_ARM
@@ -101,7 +101,7 @@ void GetCpuFreq(int cpuid, std::vector<int>& vec) {
 void CpuFp32NeonFlopsTest(int32_t cnt) {
 #ifdef __aarch64__
   asm volatile(
-      "mov x0, %w0                     \n"
+      "mov w9, %w0                     \n"
       "1:                              \n"
       "fmla v31.4s,  v31.4s,  v0.s[0]  \n"
       "fmla v30.4s,  v30.4s,  v0.s[1]  \n"
@@ -123,7 +123,7 @@ void CpuFp32NeonFlopsTest(int32_t cnt) {
       "fmla v14.4s,  v14.4s,  v4.s[1]  \n"
       "fmla v13.4s,  v13.4s,  v4.s[2]  \n"
       "fmla v12.4s,  v12.4s,  v4.s[3]  \n"
-      "subs x0, x0,  #0x1              \n"
+      "subs    w9,    w9,      #0x1    \n"
       "bne 1b                          \n"
       :
       : "r"(cnt)
@@ -154,7 +154,7 @@ void CpuFp32NeonFlopsTest(int32_t cnt) {
         "v29",
         "v30",
         "v31",
-        "x0");
+        "w9");
 #else
   asm volatile(
       "mov r10, %0                   \n"
@@ -165,8 +165,8 @@ void CpuFp32NeonFlopsTest(int32_t cnt) {
       "vmla.f32   q12, q12, d1[1]    \n"
       "vmla.f32   q11, q11, d2[0]    \n"
       "vmla.f32   q10, q10, d2[1]    \n"
-      "vmla.f32   q9,  q9,  d3[0]    \n"
       "vmla.f32   q8,  q8,  d3[1]    \n"
+      "vmla.f32   q9,  q9,  d3[0]    \n"
       "vmla.f32   q7,  q7,  d4[0]    \n"
       "vmla.f32   q6,  q6,  d4[1]    \n"
       "vmla.f32   q5,  q5,  d5[0]    \n"
@@ -196,6 +196,7 @@ void CpuFp32NeonFlopsTest(int32_t cnt) {
 #endif
 }
 
+// TODO[wz1qqx] : add fp16 peak flops test
 #ifdef ENABLE_ARM_FP16
 void CpuFp16NeonFlopsTest(int32_t cnt) {
 #ifdef __aarch64__
@@ -211,7 +212,7 @@ void TestCPUPerformance(int32_t loop_num) {
     FreqVec.clear();
     GetCpuFreq(i, FreqVec);
     std::cout << "core: " << i << ", max_freq: " << FreqVec.at(0)
-              << ", min_freq : " << FreqVec.at(1) << std::endl;
+              << "KHz, min_freq : " << FreqVec.at(1) << "KHz." << std::endl;
   }
   // prepare
   double flop = 0.f;
@@ -237,11 +238,18 @@ void TestCPUPerformance(int32_t loop_num) {
   CpuFp32NeonFlopsTest(loop_num);
 #endif
   auto cost_ms = t.StopTimer();
+  std::cout << "cost time(ms): " << cost_ms << std::endl;
   double cost_s = (double)cost_ms / 1000.0f;
   double gflop = flop / 1000000000.0f;
   float gflops = gflop / cost_s;
-  std::cout << "CPU float gflops : " << gflops << std::endl;
-
+  std::cout << "CPU FP32 peak gflops : " << gflops << std::endl;
+#ifdef __aarch64__
+  std::cout << "instruction throught: tims(s) * max_freq(Hz) / (20 * "
+            << loop_num << " )" << std::endl;
+#else
+  std::cout << "instruction throught: tims(s) * max_freq(Hz) / (12 * "
+            << loop_num << " )" << std::endl;
+#endif
   return;
 }
 
@@ -251,11 +259,16 @@ int main(int argc, char** argv) {
   std::cout << "run " << loop_num << "times loop at cpu: " << cpu_id
             << std::endl;
   // bind cpu
-  cpu_set_t mask;
-  CPU_ZERO(&mask);
-  CPU_SET(cpu_id, &mask);
-  int result = sched_setaffinity(0, sizeof(mask), &mask);
+  cpu_set_t cpu_set;
+  CPU_ZERO(&cpu_set);
+  CPU_SET(cpu_id, &cpu_set);
+  if (sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set) != 0) {
+    std::cerr << "Error: cpu id :" << cpu_id << " bind failed!" << std::endl;
+    exit(0);
+  }
   // start cpu performance test
+  // all cold start : using memory bandwidth
+  // TODO[wz1qqx] : add more cache bandwidth test
   TestCPUPerformance(loop_num);
   return 0;
 }
