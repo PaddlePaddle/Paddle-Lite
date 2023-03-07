@@ -14,28 +14,45 @@
 
 #include "runtime/device.h"
 #include <stdlib.h>
+#include "adnn/runtime/device.h"
+#include "utilities/dll_export.h"
 #include "utilities/logging.h"
 
 namespace adnn {
-namespace runtime {
 
-void* OpenDevice(int thread_num) { return nullptr; }
+void* DeviceOpen() { return nullptr; }
 
-void CloseDevice(void* device) {}
+void DeviceClose(void* device) {}
 
-void* CreateContext(void* device, int thread_num) { return nullptr; }
+Status DeviceSetParam(void* device, ParamKey key, ParamValue value) {
+  return SUCCESS;
+}
 
-void DestroyContext(void* context) {}
+Status DeviceGetParam(void* device, ParamKey key, ParamValue* value) {
+  return SUCCESS;
+}
 
-void* Alloc(void* context, size_t size) { return malloc(size); }
+void* ContextCreate(void* device) { return nullptr; }
 
-void Free(void* context, void* ptr) {
+void ContextDestroy(void* context) {}
+
+Status ContextSetParam(void* context, ParamKey key, ParamValue value) {
+  return SUCCESS;
+}
+
+Status ContextGetParam(void* context, ParamKey key, ParamValue* value) {
+  return SUCCESS;
+}
+
+void* MemoryAlloc(void* context, size_t size) { return malloc(size); }
+
+void MemoryFree(void* context, void* ptr) {
   if (ptr) {
     free(ptr);
   }
 }
 
-void* AlignedAlloc(void* context, size_t alignment, size_t size) {
+void* MemoryAlignedAlloc(void* context, size_t alignment, size_t size) {
   size_t offset = sizeof(void*) + alignment - 1;
   char* p = static_cast<char*>(malloc(offset + size));
   // Byte alignment
@@ -45,91 +62,219 @@ void* AlignedAlloc(void* context, size_t alignment, size_t size) {
   return r;
 }
 
-void AlignedFree(void* context, void* ptr) {
+void MemoryAlignedFree(void* context, void* ptr) {
   if (ptr) {
     free(static_cast<void**>(ptr)[-1]);
   }
 }
 
-}  // namespace runtime
 }  // namespace adnn
 
 adnn::Callback g_DefaultCallback = {
-    .open_device = adnn::runtime::OpenDevice,
-    .close_device = adnn::runtime::CloseDevice,
-    .create_context = adnn::runtime::CreateContext,
-    .destroy_context = adnn::runtime::DestroyContext,
-    .alloc = adnn::runtime::Alloc,
-    .free = adnn::runtime::Free,
-    .aligned_alloc = adnn::runtime::AlignedAlloc,
-    .aligned_free = adnn::runtime::AlignedFree,
+    .device_open = adnn::DeviceOpen,
+    .device_close = adnn::DeviceClose,
+    .device_setparam = adnn::DeviceSetParam,
+    .device_getparam = adnn::DeviceGetParam,
+    .context_create = adnn::ContextCreate,
+    .context_destroy = adnn::ContextDestroy,
+    .context_setparam = adnn::ContextSetParam,
+    .context_getparam = adnn::ContextGetParam,
+    .memory_alloc = adnn::MemoryAlloc,
+    .memory_free = adnn::MemoryFree,
+    .memory_aligned_alloc = adnn::MemoryAlignedAlloc,
+    .memory_aligned_free = adnn::MemoryAlignedFree,
 };
 
 namespace adnn {
-namespace runtime {
 
-Device::Device(int thread_num, const Callback* callback)
-    : thread_num_(thread_num), callback_(callback) {
+Device::Device(const Callback* callback) : callback_(callback) {
   if (!callback_) {
     callback_ = &g_DefaultCallback;
   }
-  ADNN_CHECK(callback_->open_device);
-  device_ = callback_->open_device(thread_num_);
+  ADNN_CHECK(callback_->device_open);
+  device_ = callback_->device_open();
 }
 
-void* Device::CreateContext(int thread_num) {
-  if (callback_) {
-    ADNN_CHECK(callback_->create_context);
-    return callback_->create_context(device_, thread_num);
-  }
-  return nullptr;
+Status Device::SetParam(ParamKey key, ParamValue value) {
+  params_[key] = value;
+  ADNN_CHECK(callback_);
+  ADNN_CHECK(callback_->device_setparam);
+  return callback_->device_setparam(device_, key, value);
 }
 
-void Device::DestroyContext(void* context) {
-  if (callback_) {
-    ADNN_CHECK(callback_->destroy_context);
-    callback_->destroy_context(context);
+Status Device::GetParam(ParamKey key, ParamValue* value) {
+  if (!params_.count(key)) {
+    return INVALID_PARAMETER;
   }
+  *value = params_[key];
+  ADNN_CHECK(callback_);
+  ADNN_CHECK(callback_->device_getparam);
+  return callback_->device_getparam(device_, key, value);
 }
 
-void* Device::Alloc(void* context, size_t size) {
-  if (callback_) {
-    ADNN_CHECK(callback_->alloc);
-    return callback_->alloc(context, size);
+int32_t Device::GetMaxThreadNum() {
+  if (!params_.count(DEVICE_MAX_THREAD_NUM)) {
+    return 1;
   }
-  return nullptr;
-}
-
-void Device::Free(void* context, void* ptr) {
-  if (callback_) {
-    ADNN_CHECK(callback_->free);
-    callback_->free(context, ptr);
-  }
-}
-
-void* Device::AlignedAlloc(void* context, size_t alignment, size_t size) {
-  if (callback_) {
-    ADNN_CHECK(callback_->aligned_alloc);
-    return callback_->aligned_alloc(context, alignment, size);
-  }
-  return nullptr;
-}
-
-void Device::AlignedFree(void* context, void* ptr) {
-  if (callback_) {
-    ADNN_CHECK(callback_->aligned_free);
-    callback_->aligned_free(context, ptr);
-  }
+  return params_[DEVICE_MAX_THREAD_NUM].i32;
 }
 
 Device::~Device() {
-  if (callback_) {
-    ADNN_CHECK(callback_->close_device);
-    callback_->close_device(device_);
-  }
+  ADNN_CHECK(callback_);
+  ADNN_CHECK(callback_->device_close);
+  callback_->device_close(device_);
   callback_ = nullptr;
   device_ = nullptr;
 }
 
-}  // namespace runtime
+ADNN_DLL_EXPORT void* device_open(const Callback* callback) {
+  return reinterpret_cast<void*>(new Device(callback));
+}
+
+ADNN_DLL_EXPORT void device_close(void* device) {
+  if (device) {
+    delete reinterpret_cast<Device*>(device);
+  }
+}
+
+template <>
+ADNN_DLL_EXPORT Status device_setparam<ParamValue>(void* device,
+                                                   ParamKey key,
+                                                   ParamValue value) {
+  if (!device) {
+    return INVALID_PARAMETER;
+  }
+  return reinterpret_cast<Device*>(device)->SetParam(key, value);
+}
+
+template <>
+ADNN_DLL_EXPORT Status device_getparam<ParamValue>(void* device,
+                                                   ParamKey key,
+                                                   ParamValue* value) {
+  if (!device) {
+    return INVALID_PARAMETER;
+  }
+  return reinterpret_cast<Device*>(device)->GetParam(key, value);
+}
+
+template <>
+ADNN_DLL_EXPORT Status device_setparam<bool>(void* device,
+                                             ParamKey key,
+                                             bool value) {
+  ParamValue v;
+  v.b = value;
+  return device_setparam(device, key, v);
+}
+
+template <>
+ADNN_DLL_EXPORT Status device_setparam<int32_t>(void* device,
+                                                ParamKey key,
+                                                int32_t value) {
+  ParamValue v;
+  v.i32 = value;
+  return device_setparam(device, key, v);
+}
+
+template <>
+ADNN_DLL_EXPORT Status device_setparam<int64_t>(void* device,
+                                                ParamKey key,
+                                                int64_t value) {
+  ParamValue v;
+  v.i64 = value;
+  return device_setparam(device, key, v);
+}
+
+template <>
+ADNN_DLL_EXPORT Status device_setparam<float>(void* device,
+                                              ParamKey key,
+                                              float value) {
+  ParamValue v;
+  v.f32 = value;
+  return device_setparam(device, key, v);
+}
+
+template <>
+ADNN_DLL_EXPORT Status device_setparam<double>(void* device,
+                                               ParamKey key,
+                                               double value) {
+  ParamValue v;
+  v.f64 = value;
+  return device_setparam(device, key, v);
+}
+
+template <>
+ADNN_DLL_EXPORT Status device_setparam<void*>(void* device,
+                                              ParamKey key,
+                                              void* value) {
+  ParamValue v;
+  v.ptr = value;
+  return device_setparam(device, key, v);
+}
+
+template <>
+ADNN_DLL_EXPORT Status device_getparam<bool>(void* device,
+                                             ParamKey key,
+                                             bool* value) {
+  ParamValue v;
+  auto status = device_getparam(device, key, &v);
+  if (status != SUCCESS) return status;
+  *value = v.b;
+  return SUCCESS;
+}
+
+template <>
+ADNN_DLL_EXPORT Status device_getparam<int32_t>(void* device,
+                                                ParamKey key,
+                                                int32_t* value) {
+  ParamValue v;
+  auto status = device_getparam(device, key, &v);
+  if (status != SUCCESS) return status;
+  *value = v.i32;
+  return SUCCESS;
+}
+
+template <>
+ADNN_DLL_EXPORT Status device_getparam<int64_t>(void* device,
+                                                ParamKey key,
+                                                int64_t* value) {
+  ParamValue v;
+  auto status = device_getparam(device, key, &v);
+  if (status != SUCCESS) return status;
+  *value = v.i64;
+  return SUCCESS;
+}
+
+template <>
+ADNN_DLL_EXPORT Status device_getparam<float>(void* device,
+                                              ParamKey key,
+                                              float* value) {
+  ParamValue v;
+  auto status = device_getparam(device, key, &v);
+  if (status != SUCCESS) return status;
+  *value = v.f32;
+  return SUCCESS;
+}
+
+template <>
+ADNN_DLL_EXPORT Status device_getparam<double>(void* device,
+                                               ParamKey key,
+                                               double* value) {
+  ParamValue v;
+  auto status = device_getparam(device, key, &v);
+  if (status != SUCCESS) return status;
+  *value = v.f64;
+  return SUCCESS;
+}
+
+template <>
+ADNN_DLL_EXPORT Status device_getparam<void*>(void* device,
+                                              ParamKey key,
+                                              void** value) {
+  ParamValue v;
+  auto status = device_getparam(device, key, &v);
+  if (status != SUCCESS) return status;
+  *value = v.ptr;
+  return SUCCESS;
+}
+
 }  // namespace adnn

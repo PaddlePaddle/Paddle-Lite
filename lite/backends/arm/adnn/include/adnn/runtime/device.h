@@ -14,32 +14,15 @@
 
 #pragma once
 
-#include <unordered_map>
 #include "adnn/core/types.h"
-#include "utilities/logging.h"
 
 namespace adnn {
 
-class Device {
- public:
-  explicit Device(const Callback* callback);
-  ~Device();
-  Status SetParam(ParamKey key, ParamValue value);
-  Status GetParam(ParamKey key, ParamValue* value);
-  const Callback* GetCallback() {
-    ADNN_CHECK(callback_);
-    return callback_;
-  }
-  void* GetDevice() { return device_; }
-  // Helper functions for querying the parameters.
-  int32_t GetMaxThreadNum();
-
- private:
-  const Callback* callback_{nullptr};
-  void* device_{nullptr};
-  std::unordered_map<int, ParamValue> params_;
-  Device(const Device&) = delete;
-  Device& operator=(const Device&) = delete;
-};
+void* device_open(const Callback* callback = nullptr);
+void device_close(void* device);
+template <typename T>
+Status device_setparam(void* device, ParamKey key, T value);
+template <typename T>
+Status device_getparam(void* device, ParamKey key, T* value);
 
 }  // namespace adnn

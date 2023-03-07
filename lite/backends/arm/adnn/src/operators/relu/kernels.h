@@ -21,19 +21,18 @@
 #include "utilities/thread_pool.h"
 
 namespace adnn {
-namespace operators {
 namespace kernels {
 
 // Reference implementation
 template <typename T>
-Status relu(runtime::Context* context,
+Status relu(Context* context,
             const T* input_data,
             T* output_data,
             size_t size) {
   assert(input_data != NULL);
   assert(output_data != NULL);
   assert(size != 0);
-  int thread_num = context->GetThreadNum();
+  int thread_num = context->GetWorkThreadNum();
   int size_per_thread = size / thread_num;
   int remain = size - thread_num * size_per_thread;
   ADNN_THREAD_POOL_SIMPLE_TASK_BEGIN(i, tid, thread_num) {
@@ -58,15 +57,14 @@ Status relu(runtime::Context* context,
 }
 
 // Architecture-dependent implementation
-Status relu_fp32_aarch32_neon_x8(runtime::Context* context,
+Status relu_fp32_aarch32_neon_x8(Context* context,
                                  const float* input_data,
                                  float* output_data,
                                  size_t size);
-Status relu_fp32_aarch64_neon_x16(runtime::Context* context,
+Status relu_fp32_aarch64_neon_x16(Context* context,
                                   const float* input_data,
                                   float* output_data,
                                   size_t size);
 
 }  // namespace kernels
-}  // namespace operators
 }  // namespace adnn

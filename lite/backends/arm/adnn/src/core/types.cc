@@ -14,26 +14,7 @@
 
 #pragma once
 
-#include <assert.h>
-#include <vector>
 #include "adnn/core/types.h"
-#include "runtime/context.h"
-#include "utilities/thread_pool.h"
+#include <vector>
 
-namespace adnn {
-namespace kernels {
-
-// Reference implementation
-template <typename T>
-Status concat(Context* context,
-              const std::vector<const T*>& x_datas,
-              const std::vector<std::vector<int64_t>>& x_shapes,
-              T* y_data,
-              int64_t axis) {
-  return FEATURE_NOT_SUPPORTED;
-}
-
-// Architecture-dependent implementation
-
-}  // namespace kernels
-}  // namespace adnn
+namespace adnn {}  // namespace adnn

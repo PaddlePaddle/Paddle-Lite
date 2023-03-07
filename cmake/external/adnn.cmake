@@ -32,6 +32,7 @@ INCLUDE_DIRECTORIES(${ADNN_SOURCE_DIR}/include)
 ExternalProject_Add(
   ${ADNN_PROJECT}
   SOURCE_DIR        ${ADNN_SOURCE_DIR}
+  BUILD_ALWAYS      1
   PREFIX            ${ADNN_INSTALL_DIR}
   CMAKE_ARGS        ${CROSS_COMPILE_CMAKE_ARGS}
                     -DADNN_LIBRARY_TYPE=static

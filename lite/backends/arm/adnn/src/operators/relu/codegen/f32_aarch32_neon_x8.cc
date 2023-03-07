@@ -23,17 +23,16 @@
 #include "utilities/thread_pool.h"
 
 namespace adnn {
-namespace operators {
 namespace kernels {
 
-Status relu_fp32_aarch32_neon_x8(runtime::Context* context,
+Status relu_fp32_aarch32_neon_x8(Context* context,
                                  const float* input_data,
                                  float* output_data,
                                  size_t size) {
   assert(input_data != NULL);
   assert(output_data != NULL);
   assert(size != 0);
-  int thread_num = context->GetThreadNum();
+  int thread_num = context->GetWorkThreadNum();
   int size_per_thread = size / thread_num;
   int remain = size - thread_num * size_per_thread;
   int loop_per_thread = size_per_thread / 8;
@@ -83,5 +82,4 @@ Status relu_fp32_aarch32_neon_x8(runtime::Context* context,
 }
 
 }  // namespace kernels
-}  // namespace operators
 }  // namespace adnn

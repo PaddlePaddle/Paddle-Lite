@@ -17,9 +17,12 @@
 #include "adnn/core/types.h"
 
 namespace adnn {
-namespace operators {
 
-// Utility functions
+void* context_create(void* device);
+void context_destroy(void* context);
+template <typename T>
+Status context_setparam(void* context, ParamKey key, T value);
+template <typename T>
+Status context_getparam(void* context, ParamKey key, T* value);
 
-}  // namespace operators
 }  // namespace adnn

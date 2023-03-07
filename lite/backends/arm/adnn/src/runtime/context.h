@@ -14,29 +14,33 @@
 
 #pragma once
 
+#include <unordered_map>
 #include "adnn/core/types.h"
 #include "runtime/device.h"
 
 namespace adnn {
-namespace runtime {
 
 class Context {
  public:
-  explicit Context(Device* device, int thread_num);
+  explicit Context(Device* device);
   ~Context();
-  void* Alloc(size_t size);
-  void Free(void* ptr);
-  void* AlignedAlloc(size_t alignment, size_t size);
-  void AlignedFree(void* ptr);
-  int GetThreadNum() { return thread_num_; }
+  Status SetParam(ParamKey key, ParamValue value);
+  Status GetParam(ParamKey key, ParamValue* value);
+  void* MemoryAlloc(size_t size);
+  void MemoryFree(void* ptr);
+  void* MemoryAlignedAlloc(size_t alignment, size_t size);
+  void MemoryAlignedFree(void* ptr);
+  Device* GetDevice() { return device_; }
+  void* GetContext() { return context_; }
+  // Helper functions for querying the parameters.
+  int32_t GetWorkThreadNum();
 
  private:
   Device* device_{nullptr};
   void* context_{nullptr};
-  int thread_num_{1};
+  std::unordered_map<int, ParamValue> params_;
   Context(const Context&) = delete;
   Context& operator=(const Context&) = delete;
 };
 
-}  // namespace runtime
 }  // namespace adnn

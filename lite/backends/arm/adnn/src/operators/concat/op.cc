@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "operators/concat/operator.h"
+#include "operators/concat/op.h"
+#include <vector>
 #include "adnn/core/types.h"
-#include "adnn/operators/operators.h"
+#include "adnn/operators/array_ops.h"
 #include "operators/concat/kernels.h"
 #include "runtime/context.h"
 #include "utilities/dll_export.h"
@@ -22,17 +23,16 @@
 #include "utilities/platform.h"
 
 namespace adnn {
-namespace operators {
 
 template <>
 ADNN_DLL_EXPORT Status
-concat<float>(Context* context,
+concat<float>(void* context,
               const std::vector<const float*>& x_datas,
               const std::vector<std::vector<int64_t>>& x_shapes,
               float* y_data,
               int64_t axis) {
   Status status = SUCCESS;
-  auto ctx = reinterpret_cast<runtime::Context*>(context);
+  auto ctx = reinterpret_cast<Context*>(context);
   ADNN_CHECK(ctx);
   ADNN_VLOG(5)
       << "concat<float>() is not accelerated on the current architecture!";
@@ -41,7 +41,7 @@ concat<float>(Context* context,
 }
 
 ADNN_DLL_EXPORT Status
-concat_qs8(Context* context,
+concat_qs8(void* context,
            const std::vector<const int8_t*>& x_datas,
            const std::vector<std::vector<int64_t>>& x_shapes,
            const std::vector<std::vector<float>>& x_scales,
@@ -49,7 +49,7 @@ concat_qs8(Context* context,
            float y_scale,
            int64_t axis) {
   Status status = SUCCESS;
-  auto ctx = reinterpret_cast<runtime::Context*>(context);
+  auto ctx = reinterpret_cast<Context*>(context);
   ADNN_CHECK(ctx);
   ADNN_VLOG(5)
       << "concat_qs8() is not accelerated on the current architecture!";
@@ -57,5 +57,4 @@ concat_qs8(Context* context,
   return status;
 }
 
-}  // namespace operators
 }  // namespace adnn

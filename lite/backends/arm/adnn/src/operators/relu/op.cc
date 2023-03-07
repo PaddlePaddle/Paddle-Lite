@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "operators/relu/operator.h"
+#include "operators/relu/op.h"
 #include "adnn/core/types.h"
-#include "adnn/operators/operators.h"
+#include "adnn/operators/nn_ops.h"
 #include "operators/relu/kernels.h"
 #include "runtime/context.h"
 #include "utilities/dll_export.h"
@@ -22,13 +22,12 @@
 #include "utilities/platform.h"
 
 namespace adnn {
-namespace operators {
 
 template <>
 ADNN_DLL_EXPORT Status
-relu<float>(Context* context, const float* x_data, float* y_data, size_t size) {
+relu<float>(void* context, const float* x_data, float* y_data, size_t size) {
   Status status = SUCCESS;
-  auto ctx = reinterpret_cast<runtime::Context*>(context);
+  auto ctx = reinterpret_cast<Context*>(context);
   ADNN_CHECK(ctx);
 #if ADNN_ARCH_ARM64
   status = kernels::relu_fp32_aarch64_neon_x16(ctx, x_data, y_data, size);
@@ -42,14 +41,14 @@ relu<float>(Context* context, const float* x_data, float* y_data, size_t size) {
   return status;
 }
 
-ADNN_DLL_EXPORT Status relu_qs8(Context* context,
+ADNN_DLL_EXPORT Status relu_qs8(void* context,
                                 const int8_t* x_data,
                                 float x_scale,
                                 int8_t* y_data,
                                 float y_scale,
                                 size_t size) {
   Status status = SUCCESS;
-  auto ctx = reinterpret_cast<runtime::Context*>(context);
+  auto ctx = reinterpret_cast<Context*>(context);
   ADNN_CHECK(ctx);
   ADNN_CHECK_EQ(x_scale, y_scale);
   ADNN_VLOG(5) << "relu_qs8() is not accelerated on the architecture!";
@@ -57,5 +56,4 @@ ADNN_DLL_EXPORT Status relu_qs8(Context* context,
   return status;
 }
 
-}  // namespace operators
 }  // namespace adnn

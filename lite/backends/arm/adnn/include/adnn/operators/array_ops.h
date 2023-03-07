@@ -14,12 +14,23 @@
 
 #pragma once
 
+#include <vector>
 #include "adnn/core/types.h"
 
 namespace adnn {
-namespace operators {
 
-// Utility functions
+template <typename T>
+Status concat(void* context,
+              const std::vector<const T*>& x_datas,
+              const std::vector<std::vector<int64_t>>& x_shapes,
+              T* y_data,
+              int64_t axis);
+Status concat_qs8(void* context,
+                  const std::vector<const int8_t*>& x_datas,
+                  const std::vector<std::vector<int64_t>>& x_shapes,
+                  const std::vector<std::vector<float>>& x_scales,
+                  int8_t* y_data,
+                  float y_scale,
+                  int64_t axis);
 
-}  // namespace operators
 }  // namespace adnn

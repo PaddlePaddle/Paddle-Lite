@@ -87,9 +87,9 @@ ENDIF()
 include_directories(include)
 include_directories(src)
 
-SET(OPERATOR_SRCS 
-  src/operators/relu/operator.cc
-  src/operators/concat/operator.cc)
+SET(OP_SRCS 
+  src/operators/relu/op.cc
+  src/operators/concat/op.cc)
 
 SET(KERNEL_SRCS
   src/operators/relu/kernels.cc
@@ -190,8 +190,7 @@ SET(ALL_SRCS
   src/runtime/device.cc
   src/runtime/context.cc
   ${KERNEL_SRCS}
-  ${OPERATOR_SRCS}
-  src/adnn.cc)
+  ${OP_SRCS})
 IF(ADNN_LIBRARY_TYPE STREQUAL "default")
   ADD_LIBRARY(adnn ${ALL_SRCS})
 ELSEIF(ADNN_LIBRARY_TYPE STREQUAL "shared")
