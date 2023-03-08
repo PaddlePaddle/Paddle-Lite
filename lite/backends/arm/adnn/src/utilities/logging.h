@@ -45,7 +45,7 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
 #include <sstream>
 #include <string>
 
-#if defined(ANDROID) || defined(__ANDROID__)
+#if ADNN_OS_ANDROID
 #include <android/log.h>
 // Android log macors
 #define ANDROID_LOG_TAG "ADNN"

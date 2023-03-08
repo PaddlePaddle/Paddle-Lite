@@ -31,7 +31,7 @@ typedef enum {
 } Status;
 
 /**
- * Result code.
+ * Power mode.
  */
 typedef enum {
   /**
@@ -64,6 +64,49 @@ typedef enum {
    */
   RAND_LOW
 } PowerMode;
+
+/**
+ * CPU arch.
+ */
+typedef enum {
+  UNKOWN = -1,
+  /* ARM Cortex-35. */
+  CORTEX_A35,
+  /* ARM Cortex-53. */
+  CORTEX_A53,
+  /* ARM Cortex-55. */
+  CORTEX_A55,
+  /* ARM Cortex-57. */
+  CORTEX_A57,
+  /* ARM Cortex-72. */
+  CORTEX_A72,
+  /* ARM Cortex-73. */
+  CORTEX_A73,
+  /* ARM Cortex-75. */
+  CORTEX_A75,
+  /* ARM Cortex-76. */
+  CORTEX_A76,
+  /* ARM Cortex-77. */
+  CORTEX_A77,
+  /* ARM Cortex-78. */
+  CORTEX_A78,
+  /* ARM Cortex-X1. */
+  CORTEX_X1,
+  /* ARM Cortex-X2. */
+  CORTEX_X2,
+  /* ARM Cortex-A510. */
+  CORTEX_A510,
+  /* ARM Cortex-A710. */
+  CORTEX_A710,
+  /* Intel Goldmont. */
+  GOLDMONT,
+  /* Intel Goldmont Plus. */
+  GOLDMONT_PLUS,
+  /* Intel Silvermont Plus. */
+  SILVERMONT,
+  /* Apple A-series processors. */
+  APPLE,
+} CPUArch;
 
 /**
  * The key-value pair in device_setparam(...) and context_setparam(...) is used

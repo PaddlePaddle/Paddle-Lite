@@ -13,5 +13,6 @@
 // limitations under the License.
 
 #include "utilities/cpu_info.h"
+#include "utilities/platform.h"
 
 namespace adnn {}  // namespace adnn

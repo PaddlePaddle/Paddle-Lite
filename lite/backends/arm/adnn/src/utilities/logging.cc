@@ -61,7 +61,7 @@ ADNN_DLL_EXPORT LogMessage::LogMessage(const char* file,
 
 ADNN_DLL_EXPORT LogMessage::~LogMessage() {
   log_stream_ << '\n';
-#if defined(ANDROID) || defined(__ANDROID__)
+#if ADNN_OS_ANDROID
   if (level_ == "I") {
     ANDROID_LOG_I(log_stream_.str().c_str());
   } else if (level_ == "W") {
@@ -78,7 +78,7 @@ ADNN_DLL_EXPORT LogMessage::~LogMessage() {
 
 ADNN_DLL_EXPORT LogMessageFatal::~LogMessageFatal() noexcept(false) {
   log_stream_ << '\n';
-#if defined(ANDROID) || defined(__ANDROID__)
+#if ADNN_OS_ANDROID
   ANDROID_LOG_F(log_stream_.str().c_str());
 #endif
   fprintf(stderr, "%s", log_stream_.str().c_str());
@@ -105,7 +105,7 @@ ADNN_DLL_EXPORT VLogMessage::~VLogMessage() {
     return;
   }
   log_stream_ << '\n';
-#if defined(ANDROID) || defined(__ANDROID__)
+#if ADNN_OS_ANDROID
   ANDROID_LOG_I(log_stream_.str().c_str());
 #endif
   fprintf(stderr, "%s", log_stream_.str().c_str());

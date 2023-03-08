@@ -14,6 +14,10 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+#include "adnn/core/types.h"
+
 #if defined(__APPLE__)
 #include <TargetConditionals.h>
 #endif
@@ -108,26 +112,27 @@
 
 namespace adnn {
 
-typedef enum {
-  kAPPLE = 0,
-  kX1 = 1,
-  kX2 = 2,
-  kA35 = 35,
-  kA53 = 53,
-  kA55 = 55,
-  kA57 = 57,
-  kA510 = 60,
-  kA72 = 72,
-  kA73 = 73,
-  kA75 = 75,
-  kA76 = 76,
-  kA77 = 77,
-  kA78 = 78,
-  kGold = 79,
-  kGold_Prime = 80,
-  kSilver = 81,
-  kA710 = 82,
-  kARMArch_UNKOWN = -1
-} ARMArch;
+// Get the CPU info.
+int get_cpu_num();
+std::string get_cpu_name();
+size_t get_mem_size();
+void get_cpu_arch(std::vector<CPUArch>* cpu_archs, const int cpu_num);
+int get_min_freq_khz(int cpu_id);
+int get_max_freq_khz(int cpu_id);
+void sort_cpuid_by_max_freq(const std::vector<int>& max_freqs,
+                            std::vector<int>* cpu_ids,
+                            std::vector<int>* cluster_ids);
+void get_cpu_cache_size(int cpu_id,
+                        int* l1_cache_size,
+                        int* l2_cache_size,
+                        int* l3_cache_size);
+bool check_cpu_online(const std::vector<int>& cpu_ids);
+bool set_sched_affinity(const std::vector<int>& cpu_ids);
+bool bind_threads(const std::vector<int> cpu_ids);
+
+// Check the CPU features.
+bool support_arm_sve2();
+bool support_arm_sve2_i8mm();
+bool support_arm_sve2_f32mm();
 
 }  // namespace adnn
