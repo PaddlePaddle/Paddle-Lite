@@ -144,6 +144,7 @@ function build() {
                         cd Paddle-Lite
                         git config --global --add safe.directory /work/Paddle-Lite
                         rm -rf third-party
+                        export NDK_ROOT=/opt/android-ndk-r17c
                         ./lite/tools/build_android.sh --toolchain=clang --with_extra=ON --with_profile=ON full_publish
                         mv build.lite.android.armv8.clang build.lite.android.armv8.clang.profile.fp32
                         cd build.lite.android.armv8.clang.profile.fp32/inference_lite_lib.android.armv8/demo/cxx/mobile_light/
@@ -256,12 +257,11 @@ function print_help_info() {
     echo -e "|     --run_low_precision: (true|false), controls whether to use low precision, default is true,                                       |"
     echo -e "|     --results_dir: The directory where the result files is stored, default is ${pwd}/results_profile                                 |"
     echo -e "|     --lite_dir: The directory where the lite repo is stored, default is ${pwd}                                                       |"
-    echo -e "|     --models_dir: The directory where the models is stored, default is ${pwd}/test                                                   |"
     echo -e "|     --nb_models_dir: The directory where the optimized models is stored , default is ${pwd}/nb_models                                |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  default directory tree should like this, all in same level dir                                                                      |"
     echo -e "|     |── profile.sh                                                                                                                   |"
-    echo -e "|     ├── models_dir	                                                                                                                |"
+    echo -e "|     ├── test	                                                                                                                        |"
     echo -e "|           └── model_name                                                                                                             |"
     echo -e "|                 └── inference.pdmodel                                                                                                |"
     echo -e "|                 └── inference.pdiparams                                                                                              |"
@@ -275,8 +275,8 @@ function print_help_info() {
     echo -e "|          eg. AlexNet;images:1,3,224,224                                                                                              |"
     echo -e "|              inception_v1;X:1,224,224,3                                                                                              |"
     echo -e "|                                                                                                                                      |"
-    echo -e "|  arguments of profile shell script:(option dev_id and models_dir must be set )                                                       |"
-    echo -e "|     ./profile.sh --dev_id=<> --models_dir=<path_to_model> android_build                                                              |"
+    echo -e "|  arguments of profile shell script:(option dev_id must be set )                                                       |"
+    echo -e "|     ./profile.sh --dev_id=<> android_build                                                              |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  TODO: Now only support armv8 fp32&& fp16 profile!                                                                                   |"
     echo "----------------------------------------------------------------------------------------------------------------------------------------"
@@ -298,10 +298,6 @@ function main() {
             ;;
         --abi_list=*)
             ABI_LIST="${i#*=}"
-            shift
-            ;;
-        --models_dir=*)
-            MODELS_DIR="${i#*=}"
             shift
             ;;
         --nb_models_dir=*)
