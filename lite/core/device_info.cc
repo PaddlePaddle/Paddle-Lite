@@ -46,6 +46,7 @@
  */
 
 #ifdef LITE_WITH_LINUX
+#include <fstream>
 
 #ifdef LITE_WITH_QNX
 #include <sys/neutrino.h>
@@ -80,6 +81,7 @@
 
 #include <algorithm>
 #include <limits>
+
 #include "lite/core/device_info.h"
 #include "lite/utils/macros.h"
 
@@ -491,27 +493,61 @@ void get_cpu_cache_size(int cpu_id,
   }
 }
 
+std::vector<int> read_cpu_range(std::string path) {
+  std::ifstream cpus_range_stream{path};
+  std::vector<int> cpus;
+  std::string cpu_range;
+
+  while (std::getline(cpus_range_stream, cpu_range, ',')) {
+    std::size_t rangeop = cpu_range.find('-');
+    if (rangeop == std::string::npos) {
+      cpus.push_back(std::stoi(cpu_range));
+    } else {
+      int start = std::stoi(cpu_range.substr(0, rangeop));
+      int end = std::stoi(cpu_range.substr(rangeop + 1));
+      for (int i = start; i <= end; i++) cpus.push_back(i);
+    }
+  }
+  return cpus;
+}
+
 bool check_cpu_online(const std::vector<int>& cpu_ids) {
   if (cpu_ids.size() == 0) {
     return false;
   }
-  char path[256];
   bool all_online = true;
-  for (int i = 0; i < cpu_ids.size(); ++i) {
-    snprintf(
-        path, sizeof(path), "/sys/devices/system/cpu/cpu%d/online", cpu_ids[i]);
-    FILE* fp = fopen(path, "rb");
-    int is_online = 0;
-    if (fp) {
-      fscanf(fp, "%d", &is_online);
-      fclose(fp);
-    } else {
-      LOG(ERROR) << "Failed to query the online statue of CPU id:"
-                 << cpu_ids[i];
+  FILE* fp = fopen("/sys/devices/system/cpu/online", "rb");
+  if (fp) {
+    std::vector<int> cpus = read_cpu_range("/sys/devices/system/cpu/online");
+    for (int i = 0; i < cpu_ids.size(); ++i) {
+      if (std::find(cpus.begin(), cpus.end(), cpu_ids[i]) == cpus.end()) {
+        all_online = false;
+        LOG(ERROR) << "CPU id:" << cpu_ids[i] << " is offine";
+      }
     }
-    if (is_online == 0) {
-      all_online = false;
-      LOG(ERROR) << "CPU id:" << cpu_ids[i] << " is offine";
+    fclose(fp);
+  } else {
+    LOG(WARNING)
+        << "Get all cpus online info failed. Try to get single cpu online info";
+    char path[256];
+    for (int i = 0; i < cpu_ids.size(); ++i) {
+      snprintf(path,
+               sizeof(path),
+               "/sys/devices/system/cpu/cpu%d/online",
+               cpu_ids[i]);
+      FILE* fp = fopen(path, "rb");
+      int is_online = 0;
+      if (fp) {
+        fscanf(fp, "%d", &is_online);
+        fclose(fp);
+      } else {
+        LOG(ERROR) << "Failed to query the online statue of CPU id:"
+                   << cpu_ids[i];
+      }
+      if (is_online == 0) {
+        all_online = false;
+        LOG(ERROR) << "CPU id:" << cpu_ids[i] << " is offine";
+      }
     }
   }
   return all_online;
