@@ -186,6 +186,7 @@ ENDIF()
 SET(ALL_SRCS 
   src/utilities/logging.cc
   src/utilities/platform.cc
+  src/utilities/cpu_info.cc
   src/utilities/thread_pool.cc
   src/runtime/device.cc
   src/runtime/context.cc
