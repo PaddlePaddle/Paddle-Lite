@@ -528,7 +528,7 @@ bool check_cpu_online(const std::vector<int>& cpu_ids) {
     fclose(fp);
   } else {
     LOG(WARNING)
-        << "Get all cpus online info failed. Try to get single cpu online info";
+        << "Failed to query all cpus online status list failed. Try to query single cpu online status";
     char path[256];
     for (int i = 0; i < cpu_ids.size(); ++i) {
       snprintf(path,
@@ -541,7 +541,7 @@ bool check_cpu_online(const std::vector<int>& cpu_ids) {
         fscanf(fp, "%d", &is_online);
         fclose(fp);
       } else {
-        LOG(ERROR) << "Failed to query the online statue of CPU id:"
+        LOG(ERROR) << "Failed to query the online status of CPU id:"
                    << cpu_ids[i];
       }
       if (is_online == 0) {
