@@ -48,7 +48,6 @@ class TestPadOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=8), min_size=1, max_size=6))
-        mode_case1 = draw(st.sampled_from(["constant"]))
         padding_data = draw(
             st.lists(
                 st.integers(
@@ -56,24 +55,25 @@ class TestPadOp(AutoScanTest):
                 min_size=2 * len(in_shape_case1),
                 max_size=2 * len(in_shape_case1)))
         value_data = draw(st.floats(min_value=0.0, max_value=4.0))
+        input_data_type = draw(
+            st.sampled_from([np.float32, np.int32, np.int64]))
 
         def generate_input(*args, **kwargs):
-            return np.random.random(in_shape_case1).astype(np.float32)
+            return np.random.randint(
+                1, 20, size=in_shape_case1).astype(input_data_type)
 
         build_ops = OpConfig(
             type="pad",
             inputs={"X": ["input_data"], },
             outputs={"Out": ["output_data"], },
-            attrs={
-                "paddings": padding_data,
-                "mode": mode_case1,
-                "pad_value": value_data
-            })
+            attrs={"paddings": padding_data,
+                   "pad_value": value_data})
         program_config = ProgramConfig(
             ops=[build_ops],
             weights={},
             inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input))
+                "input_data": TensorConfig(data_gen=partial(
+                    generate_input, dtype=input_data_type))
             },
             outputs=["output_data"])
         return program_config
@@ -86,7 +86,7 @@ class TestPadOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=200)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

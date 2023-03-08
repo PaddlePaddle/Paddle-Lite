@@ -21,6 +21,7 @@ namespace lite {
 namespace kernels {
 namespace host {
 
+template <typename Dtype>
 class PadCompute
     : public KernelLite<TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny)> {
  public:

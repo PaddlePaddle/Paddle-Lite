@@ -362,7 +362,8 @@ void pad_compute_constant(const lite::Tensor& input,
   }
 }
 
-void PadCompute::Run() {
+template <typename Dtype>
+void PadCompute<Dtype>::Run() {
   auto& param = Param<operators::PadParam>();
   auto x_dims = param.X->dims();
   int x_dims_size = x_dims.size();
@@ -372,10 +373,10 @@ void PadCompute::Run() {
       out_dims[i] =
           x_dims[i] + param.paddings[i * 2] + param.paddings[i * 2 + 1];
     param.Out->Resize(out_dims);
-    param.Out->mutable_data<float>();
-    float* workspace = reinterpret_cast<float*>(
-        TargetMalloc(TARGET(kHost), sizeof(float) * param.Out->numel()));
-    pad_compute_constant<float>(
+    param.Out->template mutable_data<Dtype>();
+    Dtype* workspace = reinterpret_cast<Dtype*>(
+        TargetMalloc(TARGET(kHost), sizeof(Dtype) * param.Out->numel()));
+    pad_compute_constant<Dtype>(
         *(param.X), param.paddings, param.Out, param.pad_value, workspace);
     TargetFree(TARGET(kHost), workspace);
   }
@@ -386,7 +387,7 @@ void PadCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-using pad_fp32_compute = paddle::lite::kernels::host::PadCompute;
+using pad_fp32_compute = paddle::lite::kernels::host::PadCompute<float>;
 REGISTER_LITE_KERNEL(pad, kHost, kFloat, kAny, pad_fp32_compute, def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kHost),
@@ -395,5 +396,29 @@ REGISTER_LITE_KERNEL(pad, kHost, kFloat, kAny, pad_fp32_compute, def)
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost),
                                        PRECISION(kFloat),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+using pad_int32_compute = paddle::lite::kernels::host::PadCompute<int>;
+REGISTER_LITE_KERNEL(pad, kHost, kFloat, kAny, pad_int32_compute, int32)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
+
+using pad_int64_compute = paddle::lite::kernels::host::PadCompute<int64_t>;
+REGISTER_LITE_KERNEL(pad, kHost, kFloat, kAny, pad_int64_compute, int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost),
+                                       PRECISION(kInt64),
                                        DATALAYOUT(kAny))})
     .Finalize();
