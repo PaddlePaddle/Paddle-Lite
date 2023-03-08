@@ -376,6 +376,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
       for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
         lite::arm::math::gemm_s8(x_transpose,
                                  y_transpose,
+                                 false,
                                  m_,
                                  n_,
                                  k_,
@@ -394,6 +395,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
       for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
         lite::arm::math::gemm_s8(x_transpose,
                                  y_transpose,
+                                 false,
                                  m_,
                                  n_,
                                  k_,
@@ -412,6 +414,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
       for (size_t i = 0; i < y_dims.count(0, y_dims.size() - 2); ++i) {
         lite::arm::math::gemm_s8(x_transpose,
                                  y_transpose,
+                                 false,
                                  m_,
                                  n_,
                                  k_,
@@ -432,6 +435,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
     // x: [M, K], y: [K, N], out: [M, N]
     lite::arm::math::gemm_s8(x_transpose,
                              y_transpose,
+                             false,
                              m_,
                              n_,
                              k_,
@@ -448,6 +452,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   } else if (x_dims.size() >= 2 && y_dims.size() == 1) {
     // x: [B, M, K], y: [K], out: [B, M]
     lite::arm::math::gemm_s8(x_transpose,
+                             false,
                              false,
                              m_,
                              n_,
@@ -471,6 +476,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
       }
     } else if (x_transpose == true && y_transpose == true) {
       lite::arm::math::gemm_s8(false,
+                               false,
                                false,
                                m_,
                                n_,

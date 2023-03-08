@@ -151,6 +151,8 @@ void Run(const std::string& model_file,
 
       if ((i < input_types.size()) && (input_types[i] == "int64")) {
         setInputValue<int64_t>(input_tensor, input_shapes[i], path);
+      } else if ((i < input_types.size()) && (input_types[i] == "int32")) {
+        setInputValue<int32_t>(input_tensor, input_shapes[i], path);
       } else {  // default input_type float32
         setInputValue<float>(input_tensor, input_shapes[i], path);
       }

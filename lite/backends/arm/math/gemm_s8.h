@@ -27,6 +27,7 @@ namespace math {
 template <typename Dtype>
 void gemm_s8(bool is_transA,
              bool is_transB,
+             bool packed_b,
              int M,
              int N,
              int K,

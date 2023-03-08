@@ -184,6 +184,7 @@ void MulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
     }
     lite::arm::math::gemm_s8(is_tranposed_y,
                              false,
+                             false,
                              m_,
                              n_,
                              k_,

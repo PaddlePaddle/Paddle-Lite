@@ -4563,6 +4563,7 @@ void gemm_prepack_oth_int8(const int8_t* A_packed,
                            GemmBiasDirection bias_direction,
                            int flag_act,
                            bool is_transB,
+                           bool packed_b,
                            const float* scale,
                            const float* alpha,
                            ARMContext* ctx) {
@@ -4585,8 +4586,6 @@ void gemm_prepack_oth_int8(const int8_t* A_packed,
   }
   int n_rem = N & (NBLOCK_INT8_OTH - 1);
 
-  auto* b_tmp = static_cast<int8_t*>(workspace);
-
   auto* zerobuf =
       static_cast<int8_t*>(malloc(x_block * (sizeof(int8_t) + sizeof(Dtype))));
   memset(zerobuf, 0, x_block * sizeof(int8_t));
@@ -4603,14 +4602,18 @@ void gemm_prepack_oth_int8(const int8_t* A_packed,
       flag_rem = n_rem > 0;
     }
     int bblocks = (xmax - x0 + NBLOCK_INT8_OTH - 1) / NBLOCK_INT8_OTH;
-    //! load bpanel
-    int8_t* b_pannel = b_tmp;
-    if (is_transB) {
-      packb_trans_int8(b_pannel, B, K, 0, K, x0, xmax, zerobuf);
+    int8_t* b_pannel = nullptr;
+    if (packed_b && !is_transB) {
+      b_pannel = const_cast<int8_t*>(B) + x0 * KUP;
     } else {
-      packb_int8(b_pannel, B, N, 0, K, x0, xmax, zerobuf);
+      //! load bpanel
+      b_pannel = static_cast<int8_t*>(workspace);
+      if (is_transB) {
+        packb_trans_int8(b_pannel, B, K, 0, K, x0, xmax, zerobuf);
+      } else {
+        packb_int8(b_pannel, B, N, 0, K, x0, xmax, zerobuf);
+      }
     }
-
     LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK_INT8_OTH) {
       Dtype out0[NBLOCK_INT8_OTH] = {0};
       Dtype out1[NBLOCK_INT8_OTH] = {0};
@@ -5840,6 +5843,7 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
                             GemmBiasDirection bias_direction,
                             int is_relu,
                             bool is_transB,
+                            bool packed_b,
                             const float* scale,
                             const float* alpha,
                             ARMContext* ctx) {
@@ -5877,14 +5881,20 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
     if (remain > 0) {
       flag_p_remain = true;
     }
-    //! load bpanel
-    auto b_pannel = static_cast<int8_t*>(workspace);
-    if (!is_transB) {
-      // K * N
-      packb_sdot_int8_n12_n8_n4(b_pannel, B, N, 0, K, x0, xmax);
+
+    int8_t* b_pannel = nullptr;
+    if (packed_b && !is_transB) {
+      b_pannel = const_cast<int8_t*>(B) + x0 * kup;
     } else {
-      // N X K
-      packb_sdot_int8_n12_n8_n4_trans(b_pannel, B, K, 0, K, x0, xmax);
+      //! load bpanel
+      b_pannel = static_cast<int8_t*>(workspace);
+      if (!is_transB) {
+        // K * N
+        packb_sdot_int8_n12_n8_n4(b_pannel, B, N, 0, K, x0, xmax);
+      } else {
+        // N X K
+        packb_sdot_int8_n12_n8_n4_trans(b_pannel, B, K, 0, K, x0, xmax);
+      }
     }
 
     LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK_INT8_DOT) {
@@ -7750,11 +7760,13 @@ void packb_dot_int8(int8_t* out,
       *out0++ = *inptr2++;
       *out0++ = *inptr3++;
     }
-    for (int i = 0; i < 8 - remain; i++) {
-      *out0++ = 0;
-      *out0++ = 0;
-      *out0++ = 0;
-      *out0++ = 0;
+    if (remain != 0) {
+      for (int i = 0; i < 8 - remain; i++) {
+        *out0++ = 0;
+        *out0++ = 0;
+        *out0++ = 0;
+        *out0++ = 0;
+      }
     }
   }
   LITE_PARALLEL_COMMON_END();
@@ -7898,6 +7910,7 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
                              GemmBiasDirection bias_direction,
                              int is_relu,
                              bool is_transB,
+                             bool packed_b,
                              const float* scale,
                              const float* alpha,
                              ARMContext* ctx) {
@@ -7931,14 +7944,20 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
       flag_p_remain = true;
     }
     //! load bpanel
-    auto b_pannel = static_cast<int8_t*>(workspace);
-    if (!is_transB) {
-      // K * N
-      packb_dot_int8(b_pannel, B, N, 0, K, x0, xmax);
+    int8_t* b_pannel = nullptr;
+    if (packed_b && !is_transB) {
+      b_pannel = const_cast<int8_t*>(B) + x0 * kup;
     } else {
-      // N X K
-      packb_dot_trans_int8(b_pannel, B, K, 0, K, x0, xmax);
+      b_pannel = static_cast<int8_t*>(workspace);
+      if (!is_transB) {
+        // K * N
+        packb_dot_int8(b_pannel, B, N, 0, K, x0, xmax);
+      } else {
+        // N X K
+        packb_dot_trans_int8(b_pannel, B, K, 0, K, x0, xmax);
+      }
     }
+
     LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK_INT8_DOT) {
       unsigned int ymax = y + MBLOCK_INT8_DOT;
       if (ymax > M) {
@@ -8087,6 +8106,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
                        bool is_bias,
                        GemmBiasDirection bias_direction,
                        bool is_transB,
+                       bool packed_b,
                        const float* scale,
                        const operators::ActivationParam act_param,
                        ARMContext* ctx) {
@@ -8123,7 +8143,8 @@ void gemm_prepack_int8(const int8_t* A_packed,
 
 #define IN_PARAMS                                                              \
   A_packed, B, bias, C, M, N, K, is_bias, bias_direction, flag_act, is_transB, \
-      scale, alpha, ctx
+      packed_b, scale, alpha, ctx
+
 #ifdef __aarch64__
   if (ctx->has_dot()) {
 #ifdef WITH_ARM_DOTPROD
@@ -8155,6 +8176,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
       bool is_bias,                               \
       GemmBiasDirection bias_direction,           \
       bool is_transB,                             \
+      bool packed_b,                              \
       const float* scale,                         \
       const operators::ActivationParam act_param, \
       ARMContext* ctx);

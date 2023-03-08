@@ -340,6 +340,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                                   false,
                                                   lite::arm::math::GemmNoBias,
                                                   false,
+                                                  false,
                                                   scale_group,
                                                   act_param,
                                                   &ctx);
@@ -440,6 +441,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                                   k,
                                                   false,
                                                   lite::arm::math::GemmNoBias,
+                                                  false,
                                                   false,
                                                   scale_group,
                                                   act_param,

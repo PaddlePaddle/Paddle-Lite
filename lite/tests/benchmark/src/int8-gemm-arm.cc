@@ -100,6 +100,7 @@ static void test_gemm_s8(const benchmark::State &state_in,
   for (auto _ : state) {
     paddle::lite::arm::math::gemm_s8(istranA,
                                      isTransB,
+                                     false,
                                      m,
                                      n,
                                      k,

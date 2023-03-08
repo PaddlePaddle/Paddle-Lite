@@ -494,6 +494,7 @@ struct GRUUnitFunctor {
       std::unique_ptr<float[]> out_data(new float[batch_size * frame_size * 2]);
       lite::arm::math::gemm_s8(false,
                                false,
+                               false,
                                batch_size,
                                frame_size * 2,
                                frame_size,
@@ -542,6 +543,7 @@ struct GRUUnitFunctor {
 
       std::unique_ptr<float[]> out_data(new float[batch_size * frame_size]);
       lite::arm::math::gemm_s8(false,
+                               false,
                                false,
                                batch_size,
                                frame_size,
