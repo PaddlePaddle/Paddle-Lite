@@ -19,9 +19,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
-#ifdef LITE_WITH_ARM
-#include <arm_neon.h>
-#endif
 
 class Timer {
  public:
