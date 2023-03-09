@@ -54,7 +54,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
  private:
   void Init() {
 #ifdef LITE_WITH_XPU
-    // clear kernel pick info
+    // clear kernel pick info to avoid crash when init two models respectively
     xpu_input_type_.clear();
     xpu_output_type_.clear();
     xpu_special_op_.clear();
