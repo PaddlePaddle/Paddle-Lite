@@ -18,6 +18,7 @@
 
 #include "lite/core/context.h"
 #include "lite/core/device_info.h"
+#include "lite/core/op_registry.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 
@@ -38,6 +39,10 @@
 
 namespace paddle {
 namespace lite_api {
+
+std::vector<std::string> GetAllOps() {
+  return paddle::lite::OpLiteFactory::Global().GetAllOps();
+}
 
 bool IsOpenCLBackendValid(bool check_fp16_valid) {
 #ifdef LITE_WITH_LOG

@@ -30,10 +30,6 @@
 namespace paddle {
 namespace lite {
 
-std::vector<std::string> GetAllOps() {
-  return OpLiteFactory::Global().GetAllOps();
-}
-
 bool IsQuantizedMode(const std::shared_ptr<cpp::ProgramDesc> &program_desc) {
   const std::vector<std::string> quant_dequant_op = {
       "fake_quantize_abs_max",

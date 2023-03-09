@@ -43,6 +43,9 @@ enum class L3CacheSetMethod {
   // kAutoGrow = 3,   // Not supported yet, least memory consumption.
 };
 
+// Return all supported operators
+LITE_API std::vector<std::string> GetAllOps();
+
 // return true if current device supports OpenCL model
 LITE_API bool IsOpenCLBackendValid(bool check_fp16_valid = false);
 
