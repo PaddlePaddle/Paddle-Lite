@@ -20,8 +20,6 @@
 namespace paddle {
 namespace lite {
 
-const char* API_L3_SIZE_RES_CHAR = std::getenv("API_L3_SIZE_RES");
-
 XPUL3CacheBlock* TargetWrapperXPU::CreateL3CacheBlock() {
   if (xpu_runtime_ptr == nullptr) {
     return nullptr;
@@ -67,10 +65,7 @@ void TargetWrapperXPU::ScatterL3Cache(
   }
   CHECK(xpu_runtime_ptr->xpu_l3_planner);
   size_t total_block_l3_size = 0, xdnn_ctx_l3_size = 0;
-  xpu_runtime_ptr->api_l3_reserve =
-      (API_L3_SIZE_RES_CHAR && atoi(API_L3_SIZE_RES_CHAR) > 0)
-          ? atoi(API_L3_SIZE_RES_CHAR)
-          : 0;
+  xpu_runtime_ptr->api_l3_reserve = GetIntFromEnv("API_L3_SIZE_RES");
 
   // When set "API_L3_SIZE_RES", be careful that it should not be greater than
   // l3_size.
@@ -177,10 +172,7 @@ void TargetWrapperXPU::FreeL3Cache() {
           nullptr, 0));
     }
     if (xpu_runtime_ptr->xpu_local_l3_autotune) {
-      xpu_runtime_ptr->api_l3_reserve =
-          (API_L3_SIZE_RES_CHAR && atoi(API_L3_SIZE_RES_CHAR) > 0)
-              ? atoi(API_L3_SIZE_RES_CHAR)
-              : 0;
+      xpu_runtime_ptr->api_l3_reserve = GetIntFromEnv("API_L3_SIZE_RES");
       CHECK_GT(xpu_runtime_ptr->xpu_local_l3_size,
                xpu_runtime_ptr->api_l3_reserve);
       if (xpu_runtime_ptr->api_l3_reserve) {
