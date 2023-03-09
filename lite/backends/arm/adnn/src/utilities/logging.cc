@@ -14,7 +14,6 @@
 
 #include "utilities/logging.h"
 #include <iomanip>
-#include "utilities/dll_export.h"
 
 namespace adnn {
 

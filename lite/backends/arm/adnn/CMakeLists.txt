@@ -80,8 +80,22 @@ IF(ADNN_ARM_WITH_SVE2)
   add_definitions(-DADNN_ARM_WITH_SVE2)
 ENDIF()
 
+# Check OS, toolchain and etc.
 IF(CMAKE_SYSTEM_NAME MATCHES "Android")
   SET(CMAKE_CXX_FLAGS "-llog ${CMAKE_CXX_FLAGS}")
+  IF(ADNN_ARM_WITH_FP16)
+    IF(ADNN_TARGET_PROCESSOR STREQUAL "arm")
+      IF(ANDROID_NDK_MAJOR AND ANDROID_NDK_MAJOR LESS 22)
+        # Suggested to use ndk r22 or newer version to be compatible with armv7 fp16 intrinsic func compilation
+        message(FATAL_ERROR "Arm v7+fp16 is only supported by ndk r22 or later, but receive ndk r${ANDROID_NDK_MAJOR} .")
+      ENDIF()
+    ENDIF()
+    IF(ADNN_TARGET_PROCESSOR MATCHES "^arm64")
+      IF(ANDROID_NDK_MAJOR AND ANDROID_NDK_MAJOR LESS 18)
+        message(FATAL_ERROR "Arm v8+fp16 is only supported by ndk r18 or later, but receive ndk r${ANDROID_NDK_MAJOR} .")
+      ENDIF()
+    ENDIF()
+  ENDIF()
 ENDIF()
 
 include_directories(include)
@@ -96,16 +110,18 @@ SET(KERNEL_SRCS
   src/operators/concat/kernels.cc)
 
 SET(ARMV7A_NEON_KERNEL_SRCS
-  src/operators/relu/codegen/f32_aarch32_neon_x8.cc)
+  src/operators/relu/codegen/fp32_aarch32_neon_x8.cc)
 
 SET(ARMV7A_NEON_VFPV4_KERNEL_SRCS)
 
-SET(ARMV7A_NEON_FP16_KERNEL_SRCS)
+SET(ARMV7A_NEON_FP16_KERNEL_SRCS
+  src/operators/relu/fp16_neon_x32.cc)
 
 SET(ARMV8A_NEON_KERNEL_SRCS
-  src/operators/relu/codegen/f32_aarch64_neon_x16.cc)
+  src/operators/relu/codegen/fp32_aarch64_neon_x16.cc)
 
-SET(ARMV82A_FP16_NEON_KERNEL_SRCS)
+SET(ARMV82A_FP16_NEON_KERNEL_SRCS
+  src/operators/relu/fp16_neon_x32.cc)
 
 SET(ARMV82A_BF16_NEON_KERNEL_SRCS)
 
@@ -175,6 +191,7 @@ IF(ADNN_TARGET_PROCESSOR STREQUAL "arm")
     SET_PROPERTY(SOURCE ${ARMV82A_FP16_DOTPROD_NEON_KERNEL_SRCS} APPEND_STRING PROPERTY COMPILE_FLAGS " -mfp16-format=ieee ")
   ENDIF()
 ENDIF()
+
 IF(ADNN_TARGET_PROCESSOR MATCHES "^arm64" AND NOT MSVC)
   SET_PROPERTY(SOURCE ${ARMV82A_FP16_NEON_KERNEL_SRCS} APPEND_STRING PROPERTY COMPILE_FLAGS " -march=armv8.2-a+fp16 ")
   SET_PROPERTY(SOURCE ${ARMV82A_BF16_NEON_KERNEL_SRCS} APPEND_STRING PROPERTY COMPILE_FLAGS " -march=armv8.2-a+bf16 ")

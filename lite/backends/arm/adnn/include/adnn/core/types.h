@@ -17,6 +17,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/cdefs.h>
+#include "adnn/core/bfloat16.h"
+#include "adnn/core/float16.h"
+#include "adnn/core/macros.h"
 
 namespace adnn {
 
@@ -125,17 +128,22 @@ typedef enum {
    * Does support Arm float16 instruction set on the current platform, dtype of
    * value is bool.
    */
-  DEVICE_HAS_ARM_FP16,
+  DEVICE_SUPPORT_ARM_FP16,
+  /**
+ * Does support Arm bfloat16 instruction set on the current platform, dtype of
+ * value is bool.
+ */
+  DEVICE_SUPPORT_ARM_BF16,
   /**
    * Does Support Arm dotprod instruction set on the current platform, dtype of
    * value is bool.
    */
-  DEVICE_HAS_ARM_DOTPROD,
+  DEVICE_SUPPORT_ARM_DOTPROD,
   /**
    * Does support Arm sve2 instruction set on on the current platform, dtype of
    * value is bool.
    */
-  DEVICE_HAS_ARM_SVE2,
+  DEVICE_SUPPORT_ARM_SVE2,
   /**
    * The number of threads used in the current context, dtype of value is
    * int32_t.
@@ -145,6 +153,10 @@ typedef enum {
    * Enable/disable using Arm float16 instruction set, dtype of value is bool.
    */
   CONTEXT_ENABLE_ARM_FP16,
+  /**
+   * Enable/disable using Arm bfloat16 instruction set, dtype of value is bool.
+   */
+  CONTEXT_ENABLE_ARM_BF16,
   /**
    * Enable/disable using Arm dotprod instruction set, dtype of value is bool.
    */

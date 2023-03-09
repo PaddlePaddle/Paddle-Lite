@@ -15,7 +15,6 @@
 #include "runtime/device.h"
 #include <stdlib.h>
 #include "adnn/runtime/device.h"
-#include "utilities/dll_export.h"
 #include "utilities/logging.h"
 
 namespace adnn {
@@ -93,9 +92,31 @@ Device::Device(const Callback* callback) : callback_(callback) {
   }
   ADNN_CHECK(callback_->device_open);
   device_ = callback_->device_open();
+  // Initialize device params from CPUInfo
+  ParamValue value;
+  // value.b = CPUInfo::SupportArmFP16();
+  SetParam(DEVICE_SUPPORT_ARM_FP16, value);
+  // value.b = CPUInfo::SupportArmBF16();
+  SetParam(DEVICE_SUPPORT_ARM_BF16, value);
+  // value.b = CPUInfo::SupportArmDotProd();
+  SetParam(DEVICE_SUPPORT_ARM_DOTPROD, value);
+  // value.b = CPUInfo::SupportArmSVE2();
+  SetParam(DEVICE_SUPPORT_ARM_SVE2, value);
 }
 
 Status Device::SetParam(ParamKey key, ParamValue value) {
+  switch (key) {
+    case DEVICE_SUPPORT_ARM_FP16:
+    case DEVICE_SUPPORT_ARM_BF16:
+    case DEVICE_SUPPORT_ARM_DOTPROD:
+    case DEVICE_SUPPORT_ARM_SVE2:
+      ADNN_LOG(ERROR)
+          << "Unsupported key(" << static_cast<int32_t>(key)
+          << ") for device_setparam() beacause the param is readonly!";
+      return INVALID_PARAMETER;
+    default:
+      break;
+  }
   params_[key] = value;
   ADNN_CHECK(callback_);
   ADNN_CHECK(callback_->device_setparam);
@@ -112,6 +133,14 @@ Status Device::GetParam(ParamKey key, ParamValue* value) {
   return callback_->device_getparam(device_, key, value);
 }
 
+Device::~Device() {
+  ADNN_CHECK(callback_);
+  ADNN_CHECK(callback_->device_close);
+  callback_->device_close(device_);
+  callback_ = nullptr;
+  device_ = nullptr;
+}
+
 int32_t Device::GetMaxThreadNum() {
   if (!params_.count(DEVICE_MAX_THREAD_NUM)) {
     return 1;
@@ -119,12 +148,32 @@ int32_t Device::GetMaxThreadNum() {
   return params_[DEVICE_MAX_THREAD_NUM].i32;
 }
 
-Device::~Device() {
-  ADNN_CHECK(callback_);
-  ADNN_CHECK(callback_->device_close);
-  callback_->device_close(device_);
-  callback_ = nullptr;
-  device_ = nullptr;
+bool Device::GetSupportArmFP16() {
+  if (!params_.count(DEVICE_SUPPORT_ARM_FP16)) {
+    return false;
+  }
+  return params_[DEVICE_SUPPORT_ARM_FP16].b;
+}
+
+bool Device::GetSupportArmBF16() {
+  if (!params_.count(DEVICE_SUPPORT_ARM_BF16)) {
+    return false;
+  }
+  return params_[DEVICE_SUPPORT_ARM_BF16].b;
+}
+
+bool Device::GetSupportArmDotProd() {
+  if (!params_.count(DEVICE_SUPPORT_ARM_DOTPROD)) {
+    return false;
+  }
+  return params_[DEVICE_SUPPORT_ARM_DOTPROD].b;
+}
+
+bool Device::GetSupportArmSVE2() {
+  if (!params_.count(DEVICE_SUPPORT_ARM_SVE2)) {
+    return false;
+  }
+  return params_[DEVICE_SUPPORT_ARM_SVE2].b;
 }
 
 ADNN_DLL_EXPORT void* device_open(const Callback* callback) {

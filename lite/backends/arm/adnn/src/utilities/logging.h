@@ -21,10 +21,8 @@
 
 #include <assert.h>
 #include <time.h>
-#if !defined(_WIN32)
-#include <sys/time.h>
-#include <sys/types.h>
-#else
+#include "adnn/core/macros.h"
+#if ADNN_OS_WINDOWS
 #define NOMINMAX  // msvc max/min macro conflict with std::min/max
 #include <windows.h>
 #undef min
@@ -38,6 +36,9 @@ static int gettimeofday(struct timeval* tp, void* tzp) {
   tp->tv_usec = (now.QuadPart % freq.QuadPart) * 1000000 / freq.QuadPart;
   return (0);
 }
+#else
+#include <sys/time.h>
+#include <sys/types.h>
 #endif
 
 #include <cstdlib>

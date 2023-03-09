@@ -14,8 +14,8 @@
 
 // This file was automatically generated, Do not edit it!
 // Template file: src/operators/relu/fp32_neon.cc.in
-// Output file: src/operators/relu/codegen/f32_aarch64_neon_x16.cc
-// Command args:  -D BATCH_TILE=16 -D ARCH=aarch64
+// Output file: src/operators/relu/codegen/fp32_aarch32_neon_x8.cc
+// Command args:  -D BATCH_TILE=8 -D ARCH=aarch32
 #include <arm_neon.h>
 #include <assert.h>
 #include "adnn/core/types.h"
@@ -25,47 +25,44 @@
 namespace adnn {
 namespace kernels {
 
-Status relu_fp32_aarch64_neon_x16(Context* context,
-                                  const float* input_data,
-                                  float* output_data,
-                                  size_t size) {
+Status relu_fp32_aarch32_neon_x8(Context* context,
+                                 const float* input_data,
+                                 float* output_data,
+                                 size_t size) {
   assert(input_data != NULL);
   assert(output_data != NULL);
   assert(size != 0);
   int thread_num = context->GetWorkThreadNum();
   int size_per_thread = size / thread_num;
   int remain = size - thread_num * size_per_thread;
-  int loop_per_thread = size_per_thread / 16;
-  int remain_per_thread = size_per_thread - (loop_per_thread * 16);
+  int loop_per_thread = size_per_thread / 8;
+  int remain_per_thread = size_per_thread - (loop_per_thread * 8);
 
   const float32x4_t vzero = vmovq_n_f32(0.0f);
   ADNN_THREAD_POOL_SIMPLE_TASK_BEGIN(i, tid, thread_num) {
     const float* input_ptr_in_thread = input_data + i * size_per_thread;
     float* output_ptr_in_thread = output_data + i * size_per_thread;
-    for (int j = 0; j < loop_per_thread; j++) {
-      float32x4_t vacc0 = vld1q_f32(input_ptr_in_thread);
-      input_ptr_in_thread += 4;
-      float32x4_t vacc1 = vld1q_f32(input_ptr_in_thread);
-      input_ptr_in_thread += 4;
-      float32x4_t vacc2 = vld1q_f32(input_ptr_in_thread);
-      input_ptr_in_thread += 4;
-      float32x4_t vacc3 = vld1q_f32(input_ptr_in_thread);
-      input_ptr_in_thread += 4;
+    int loop_in_thread = loop_per_thread;
+    asm volatile(
+        "1: \n"
+        "vld1.32  {d0-d3}, [%[din]]! \n"
+        "vld1.32  {d4-d7}, [%[din]]! \n"
 
-      vacc0 = vmaxq_f32(vacc0, vzero);
-      vacc1 = vmaxq_f32(vacc1, vzero);
-      vacc2 = vmaxq_f32(vacc2, vzero);
-      vacc3 = vmaxq_f32(vacc3, vzero);
+        "vmax.f32 q8, q0, %q[vzero] \n"
+        "vmax.f32 q9, q1, %q[vzero] \n"
+        "vmax.f32 q10, q2, %q[vzero] \n"
+        "vmax.f32 q11, q3, %q[vzero] \n"
 
-      vst1q_f32(output_ptr_in_thread, vacc0);
-      output_ptr_in_thread += 4;
-      vst1q_f32(output_ptr_in_thread, vacc1);
-      output_ptr_in_thread += 4;
-      vst1q_f32(output_ptr_in_thread, vacc2);
-      output_ptr_in_thread += 4;
-      vst1q_f32(output_ptr_in_thread, vacc3);
-      output_ptr_in_thread += 4;
-    }
+        "vst1.32  {d16-d19}, [%[dout]]! \n"
+        "vst1.32  {d20-d23}, [%[dout]]! \n"
+
+        "subs %[cnt], #1 \n"
+        "bne    1b \n"
+        : [dout] "+r"(output_ptr_in_thread),
+          [din] "+r"(input_ptr_in_thread),
+          [cnt] "+r"(loop_per_thread)
+        : [vzero] "w"(vzero)
+        : "cc", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "memory");
     for (int j = 0; j < remain_per_thread; j++) {
       *output_ptr_in_thread =
           *input_ptr_in_thread > 0.f ? *input_ptr_in_thread : 0.f;

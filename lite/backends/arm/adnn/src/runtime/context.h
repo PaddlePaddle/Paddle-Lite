@@ -34,6 +34,10 @@ class Context {
   void* GetContext() { return context_; }
   // Helper functions for querying the parameters.
   int32_t GetWorkThreadNum();
+  bool GetEnableArmFP16();
+  bool GetEnableArmBF16();
+  bool GetEnableArmDotProd();
+  bool GetEnableArmSVE2();
 
  private:
   Device* device_{nullptr};

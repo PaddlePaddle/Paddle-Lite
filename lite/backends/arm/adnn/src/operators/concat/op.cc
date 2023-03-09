@@ -18,7 +18,6 @@
 #include "adnn/operators/array_ops.h"
 #include "operators/concat/kernels.h"
 #include "runtime/context.h"
-#include "utilities/dll_export.h"
 #include "utilities/logging.h"
 #include "utilities/platform.h"
 

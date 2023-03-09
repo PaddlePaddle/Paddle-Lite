@@ -33,6 +33,10 @@ class Device {
   void* GetDevice() { return device_; }
   // Helper functions for querying the parameters.
   int32_t GetMaxThreadNum();
+  bool GetSupportArmFP16();
+  bool GetSupportArmBF16();
+  bool GetSupportArmDotProd();
+  bool GetSupportArmSVE2();
 
  private:
   const Callback* callback_{nullptr};

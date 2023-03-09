@@ -14,7 +14,6 @@
 
 #include "adnn/runtime/context.h"
 #include "runtime/context.h"
-#include "utilities/dll_export.h"
 #include "utilities/logging.h"
 
 namespace adnn {
@@ -39,13 +38,6 @@ Status Context::GetParam(ParamKey key, ParamValue* value) {
   ADNN_CHECK(device_);
   ADNN_CHECK(device_->GetCallback()->context_getparam);
   return device_->GetCallback()->context_getparam(context_, key, value);
-}
-
-int32_t Context::GetWorkThreadNum() {
-  if (!params_.count(CONTEXT_WORK_THREAD_NUM)) {
-    return 1;
-  }
-  return params_[CONTEXT_WORK_THREAD_NUM].i32;
 }
 
 void* Context::MemoryAlloc(size_t size) {
@@ -79,6 +71,41 @@ Context::~Context() {
   device_->GetCallback()->context_destroy(context_);
   device_ = nullptr;
   context_ = nullptr;
+}
+
+int32_t Context::GetWorkThreadNum() {
+  if (!params_.count(CONTEXT_WORK_THREAD_NUM)) {
+    return 1;
+  }
+  return params_[CONTEXT_WORK_THREAD_NUM].i32;
+}
+
+bool Context::GetEnableArmFP16() {
+  if (!params_.count(CONTEXT_ENABLE_ARM_FP16)) {
+    return false;
+  }
+  return params_[CONTEXT_ENABLE_ARM_FP16].b;
+}
+
+bool Context::GetEnableArmBF16() {
+  if (!params_.count(CONTEXT_ENABLE_ARM_BF16)) {
+    return false;
+  }
+  return params_[CONTEXT_ENABLE_ARM_BF16].b;
+}
+
+bool Context::GetEnableArmDotProd() {
+  if (!params_.count(CONTEXT_ENABLE_ARM_DOTPROD)) {
+    return false;
+  }
+  return params_[CONTEXT_ENABLE_ARM_DOTPROD].b;
+}
+
+bool Context::GetEnableArmSVE2() {
+  if (!params_.count(CONTEXT_ENABLE_ARM_SVE2)) {
+    return false;
+  }
+  return params_[CONTEXT_ENABLE_ARM_SVE2].b;
 }
 
 ADNN_DLL_EXPORT void* context_create(void* device) {

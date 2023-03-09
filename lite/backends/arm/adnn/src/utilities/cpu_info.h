@@ -14,4 +14,18 @@
 
 #pragma once
 
-namespace adnn {}  // namespace adnn
+namespace adnn {
+
+class CPUInfo {
+ public:
+  static CPUInfo& Global() {
+    static auto* x = new CPUInfo;
+    return *x;
+  }
+  CPUInfo() {}
+  ~CPUInfo() {}
+  CPUInfo(const CPUInfo&) = delete;
+  CPUInfo& operator=(const CPUInfo&) = delete;
+};
+
+}  // namespace adnn

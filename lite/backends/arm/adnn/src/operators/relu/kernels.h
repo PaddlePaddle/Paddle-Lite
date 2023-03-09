@@ -65,6 +65,10 @@ Status relu_fp32_aarch64_neon_x16(Context* context,
                                   const float* input_data,
                                   float* output_data,
                                   size_t size);
+Status relu_fp16_neon_x32(Context* context,
+                          const float16* input_data,
+                          float16* output_data,
+                          size_t size);
 
 }  // namespace kernels
 }  // namespace adnn

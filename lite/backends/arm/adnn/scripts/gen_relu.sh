@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-tools/codegen.py src/operators/relu/fp32_neon.cc.in src/operators/relu/codegen/f32_aarch64_neon_x16.cc -D BATCH_TILE=16 -D ARCH=aarch64 &
-tools/codegen.py src/operators/relu/fp32_neon.cc.in src/operators/relu/codegen/f32_aarch32_neon_x8.cc -D BATCH_TILE=8 -D ARCH=aarch32 &
+tools/codegen.py src/operators/relu/fp32_neon.cc.in src/operators/relu/codegen/fp32_aarch64_neon_x16.cc -D BATCH_TILE=16 -D ARCH=aarch64 &
+tools/codegen.py src/operators/relu/fp32_neon.cc.in src/operators/relu/codegen/fp32_aarch32_neon_x8.cc -D BATCH_TILE=8 -D ARCH=aarch32 &
 
 wait
