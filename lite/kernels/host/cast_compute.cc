@@ -153,11 +153,10 @@ void CastCompute::Run() {
     const float* in_data = param.X->data<float>();
     float16_t* out_data = param.Out->mutable_data<float16_t>();
     lite::arm::math::fp16::fp32_to_fp16(in_data, out_data, param.X->numel());
-  } else if (param.in_dtype == 4 &&
-             param.out_dtype == 2) {  // float16 -> int32
+  } else if (param.in_dtype == 4 && param.out_dtype == 2) {  // float16 -> int32
     const float16_t* in_data = param.X->data<float16_t>();
     int* out_data = param.Out->mutable_data<int>();
-    for(int i = 0; i < param.X->numel(); i++) {
+    for (int i = 0; i < param.X->numel(); i++) {
       out_data[i] = static_cast<int>(in_data[i]);
     }
 #endif
