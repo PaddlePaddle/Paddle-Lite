@@ -26,11 +26,6 @@ void EmptyCompute::Run() {
   if (param.dtype == static_cast<int32_t>(lite::core::FluidType::BOOL)) {
     output->set_precision(PRECISION(kBool));
     output->template mutable_data<bool>();
-  } else if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP16)) {
-#ifdef ENABLE_ARM_FP16
-    output->set_precision(PRECISION(kFP16));
-    output->template mutable_data<float16_t>();
-#endif
   } else if (param.dtype == static_cast<int32_t>(lite::core::FluidType::FP32)) {
     output->set_precision(PRECISION(kFloat));
     output->template mutable_data<float>();
