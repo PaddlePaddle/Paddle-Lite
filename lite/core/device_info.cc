@@ -527,8 +527,8 @@ bool check_cpu_online(const std::vector<int>& cpu_ids) {
     }
     fclose(fp);
   } else {
-    LOG(WARNING)
-        << "Failed to query all cpus online status list failed. Try to query single cpu online status";
+    LOG(WARNING) << "Failed to query all cpus online status list failed. Try "
+                    "to query single cpu online status";
     char path[256];
     for (int i = 0; i < cpu_ids.size(); ++i) {
       snprintf(path,
