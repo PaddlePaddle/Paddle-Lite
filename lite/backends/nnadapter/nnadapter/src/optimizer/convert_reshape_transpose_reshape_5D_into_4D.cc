@@ -136,8 +136,6 @@ bool ReshapeTransposeReshape5DInto4DConverter::HandleMatchedResults(
   transpose_out_shape_data[3] = first_reshape_shape_data[3];
   // Modify last-reshape
   auto last_reshape_output_operand = nodes.at("last_reshape_output")->operand;
-  auto last_reshape_output_shape_data =
-      last_reshape_output_operand->type.dimensions.data;
   auto last_reshape_output_count = 4;
   last_reshape_output_operand->type.dimensions.count =
       last_reshape_output_count;
