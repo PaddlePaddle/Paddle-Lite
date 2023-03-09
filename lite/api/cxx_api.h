@@ -38,6 +38,23 @@ static const char TAILORD_KERNELS_LIST_NAME[] = ".tailored_kernels_list";
 
 std::vector<std::string> GetAllOps();
 
+#ifdef LITE_WITH_XPU
+class LoadPredictorConfig {
+ public:
+  LoadPredictorConfig(const LoadPredictorConfig&) = delete;
+  LoadPredictorConfig& operator=(const LoadPredictorConfig&) = delete;
+  explicit LoadPredictorConfig(lite::XPURunTimeOption* xpu_target_config) {
+    if (lite::TargetWrapperXPU::xpu_runtime_ptr != xpu_target_config) {
+      lite::TargetWrapperXPU::xpu_runtime_ptr = xpu_target_config;
+      // As rumtime context is thread_local,so we should set device when
+      // using different predictor in the same thread.
+      XPU_CALL(
+          xpu_set_device(lite::TargetWrapperXPU::xpu_runtime_ptr->xpu_dev_num));
+    }
+  }
+  ~LoadPredictorConfig() { lite::TargetWrapperXPU::xpu_runtime_ptr = nullptr; }
+};
+#endif
 /*
  * Predictor for inference, input a model, it will optimize and execute it.
  */
@@ -164,6 +181,9 @@ class LITE_API Predictor {
     CheckInputValid();
 
 #ifdef LITE_WITH_XPU
+    class LoadPredictorConfig load_xpu_config_guard(
+        reinterpret_cast<lite::XPURunTimeOption*>(
+            target_configs_.at(TARGET(kXPU)).get()));
     std::vector<std::vector<int64_t>> query_shape;
     for (size_t i = 0; i < input_names_.size(); i++) {
       query_shape.push_back(std::vector<int64_t>(GetInput(i)->dims().data()));
@@ -237,6 +257,31 @@ class LITE_API Predictor {
   void CheckPaddleOpVersions(
       const std::shared_ptr<cpp::ProgramDesc>& program_desc);
 
+  void SetTargetConfigs(
+      const std::map<TargetType, std::shared_ptr<void>>& target_configs) {
+#ifdef LITE_WITH_XPU
+    std::shared_ptr<void> runtime_option =
+        std::shared_ptr<lite::XPURunTimeOption>(new lite::XPURunTimeOption);
+    target_configs_.emplace(TARGET(kXPU), std::move(runtime_option));
+    if (target_configs.at(TARGET(kXPU)).get()) {
+      reinterpret_cast<lite::XPURunTimeOption*>(
+          target_configs_[TARGET(kXPU)].get())
+          ->Set(reinterpret_cast<const lite::XPURunTimeOption*>(
+              target_configs.at(TARGET(kXPU)).get()));
+    }
+#endif
+  }
+
+  void SetStream(TargetType target, void* stream) {
+    if (target == TARGET(kXPU)) {
+#ifdef LITE_WITH_XPU
+      reinterpret_cast<lite::XPURunTimeOption*>(
+          target_configs_[TARGET(kXPU)].get())
+          ->xpu_stream.SetXPUStream(stream);
+#endif
+    }
+  }
+
   // #ifdef LITE_WITH_TRAIN
   //   void Run(const std::vector<framework::Tensor>& tensors) {
   //     FeedVars(tensors);
@@ -257,6 +302,8 @@ class LITE_API Predictor {
 #endif
 
  private:
+  std::map<TargetType, std::shared_ptr<void>> target_configs_;
+
   std::shared_ptr<cpp::ProgramDesc> program_desc_;
   std::shared_ptr<Scope> scope_;
   Scope* exec_scope_;
@@ -323,6 +370,8 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
       const std::string& model_dir,
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
       bool record_info = false) override;
+
+  void SetStream(TargetType target, void* stream) override;
 
  private:
   std::shared_ptr<Predictor> raw_predictor_;

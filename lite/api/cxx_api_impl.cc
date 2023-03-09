@@ -44,6 +44,13 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
   mode_ = config.power_mode();
   threads_ = config.threads();
+  raw_predictor_->SetTargetConfigs(config.target_configs());
+#ifdef LITE_WITH_XPU
+  CHECK(config.target_configs().at(TARGET(kXPU)).get()) << "no xpu config set";
+  class LoadPredictorConfig load_xpu_config_guard(
+      reinterpret_cast<paddle::lite::XPURunTimeOption *>(
+          config.target_configs().at(TARGET(kXPU)).get()));
+#endif
 #ifdef LITE_USE_THREAD_POOL
   int thread_num = ThreadPool::Init(threads_);
   if (thread_num > 1) {
@@ -276,6 +283,10 @@ void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
 
 bool CxxPaddleApiImpl::TryShrinkMemory() {
   return raw_predictor_->TryShrinkMemory();
+}
+
+void CxxPaddleApiImpl::SetStream(TargetType target, void *stream) {
+  raw_predictor_->SetStream(target, stream);
 }
 
 }  // namespace lite

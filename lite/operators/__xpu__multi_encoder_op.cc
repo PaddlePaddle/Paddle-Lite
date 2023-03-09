@@ -20,13 +20,17 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool XPUMultiEncoderOp::CheckShape() const {
-  CHECK_EQ(param_.input->dims().size(), 3UL);
-  return true;
-}
+bool XPUMultiEncoderOp::CheckShape() const { return true; }
 
 bool XPUMultiEncoderOp::InferShapeImpl() const {
   auto input_shape = param_.input->dims();
+  if (input_shape.size() == 2) {
+    // need to insert an sequence_unpad op to enable some vsl pass
+    // the output shape of sequence_unpad is 2dims
+    param_.input->Resize({1ULL, input_shape[0], input_shape[1]});
+  }
+  input_shape = param_.input->dims();
+  CHECK_EQ(input_shape.size(), 3);
   auto batch_size = input_shape[0];
   auto seq_len = input_shape[1];
   auto head_num = input_shape[2];

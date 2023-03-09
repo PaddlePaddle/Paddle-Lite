@@ -182,6 +182,11 @@ void Predictor::SaveOpKernelInfo(const std::string &model_dir) {
 
 #if !defined(LITE_WITH_METAL)
 lite::Tensor *Predictor::GetInput(size_t offset) {
+#ifdef LITE_WITH_XPU
+  XPU_CALL(xpu_set_device(reinterpret_cast<lite::XPURunTimeOption *>(
+                              target_configs_[TARGET(kXPU)].get())
+                              ->xpu_dev_num));
+#endif
   CHECK(input_names_.size() > offset)
       << "The network has " << input_names_.size() << " inputs"
       << ", the offset should be less than this.";

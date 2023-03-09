@@ -14,6 +14,8 @@
 #pragma once
 
 #include "lite/api/paddle_place.h"
+#include "lite/backends/xpu/xpu_header_sitter.h"
+#include "lite/backends/xpu/xpu_scratch.h"
 #include "lite/core/memory.h"
 #include "lite/utils/log/cp_logging.h"
 #include "lite/utils/log/logging.h"
@@ -34,11 +36,17 @@ class XPUBuffer : public Buffer {
     CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
     if (global_mem_space_ < size) {
       if (global_mem_space_ > 0) {
-        lite::TargetWrapperXPU::Free(global_mem_data_);
+        void* xpu_stream = TargetWrapperXPU::get_xpu_stream();
+        XPU_CALL(xpu_wait(xpu_stream));
+        XPU_CALL(xpu_free(global_mem_data_));
+        global_mem_data_ = nullptr;
       }
+
+      XPU_CALL(xpu_current_device(&devid_));
       global_mem_data_ = lite::TargetWrapperXPU::Malloc(size);
       global_mem_space_ = size;
     }
+
     if (xpu_l3_cache_block_ != nullptr) {
       xpu_l3_cache_block_->record(size);
       if (size <= xpu_l3_cache_block_->size()) {
@@ -48,6 +56,9 @@ class XPUBuffer : public Buffer {
         data_ = global_mem_data_;
         space_ = global_mem_space_;
       }
+    } else {
+      data_ = global_mem_data_;
+      space_ = global_mem_space_;
     }
   }
 
@@ -57,8 +68,11 @@ class XPUBuffer : public Buffer {
 
   void Free() {
     if (global_mem_space_ > 0) {
-      lite::TargetWrapperXPU::Free(global_mem_data_);
+      XPU_CALL(xpu_set_device(devid_));
+      XPU_CALL(xpu_wait(xpu_stream_));
+      XPU_CALL(xpu_free(global_mem_data_));
     }
+
     global_mem_data_ = nullptr;
     global_mem_space_ = 0;
     data_ = nullptr;
@@ -69,6 +83,8 @@ class XPUBuffer : public Buffer {
   ~XPUBuffer() { this->Free(); }
 
  private:
+  int devid_{-1};
+  void* xpu_stream_{nullptr};
   XPUL3CacheBlock* xpu_l3_cache_block_{nullptr};
   size_t global_mem_space_{0};
   void* global_mem_data_{nullptr};
