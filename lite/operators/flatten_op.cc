@@ -80,7 +80,7 @@ bool FlattenOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
 
 bool Flatten2Op::CheckShape() const {
   FlattenOp::CheckShape();
-  CHECK(param_.xshape);
+  if (has_xshape_) CHECK(param_.xshape);
   return true;
 }
 
@@ -88,13 +88,18 @@ bool Flatten2Op::InferShapeImpl() const {
   FlattenOp::InferShapeImpl();
   auto x_shape = param_.x->dims().Vectorize();
   x_shape.insert(x_shape.begin(), 0);
-  param_.xshape->Resize(x_shape);
+  if (has_xshape_) param_.xshape->Resize(x_shape);
   return true;
 }
 
 bool Flatten2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   FlattenOp::AttachImpl(opdesc, scope);
-  param_.xshape = scope->FindMutableTensor(opdesc.Output("XShape").front());
+  if (opdesc.HasOutput("XShape")) {
+    param_.xshape = scope->FindMutableTensor(opdesc.Output("XShape").front());
+    has_xshape_ = true;
+  } else {
+    has_xshape_ = false;
+  }
   return true;
 }
 
@@ -105,6 +110,9 @@ bool FlattenContiguousRangeOp::AttachImpl(const cpp::OpDesc &opdesc,
 
   if (opdesc.HasOutput("XShape")) {
     param_.xshape = scope->FindMutableTensor(opdesc.Output("XShape").front());
+    has_xshape_ = true;
+  } else {
+    has_xshape_ = false;
   }
   param_.start_axis = opdesc.GetAttr<int>("start_axis");
   param_.stop_axis = opdesc.GetAttr<int>("stop_axis");
@@ -114,7 +122,7 @@ bool FlattenContiguousRangeOp::AttachImpl(const cpp::OpDesc &opdesc,
 bool FlattenContiguousRangeOp::CheckShape() const {
   CHECK(param_.x);
   CHECK(param_.out);
-  CHECK(param_.xshape);
+  if (has_xshape_) CHECK(param_.xshape);
   return true;
 }
 
@@ -136,8 +144,10 @@ bool FlattenContiguousRangeOp::InferShapeImpl() const {
 
   auto x_shape = x_dims.Vectorize();
   x_shape.insert(x_shape.begin(), 0);
-  param_.xshape->Resize(x_shape);
-  param_.xshape->set_lod(param_.x->lod());
+  if (has_xshape_) {
+    param_.xshape->Resize(x_shape);
+    param_.xshape->set_lod(param_.x->lod());
+  }
   return true;
 }
 

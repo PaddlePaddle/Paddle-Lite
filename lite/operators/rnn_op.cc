@@ -79,10 +79,11 @@ bool RnnOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.hidden_size = opdesc.GetAttr<int>("hidden_size");
   param_.num_layers = opdesc.GetAttr<int>("num_layers");
   param_.mode = opdesc.GetAttr<std::string>("mode");
-  param_.seed = opdesc.GetAttr<int>("seed");
+  param_.is_test = true;
   if (opdesc.HasAttr("is_test")) {
     param_.is_test = opdesc.GetAttr<bool>("is_test");
   }
+  param_.seed = opdesc.GetAttr<int>("seed");
 
   return true;
 }
