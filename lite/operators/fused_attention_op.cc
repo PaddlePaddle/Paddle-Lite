@@ -20,12 +20,12 @@ namespace lite {
 namespace operators {
 
 bool FusedAttentionOpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.input0);
-  CHECK_OR_FALSE(param_.input1);
+  CHECK_OR_FALSE(param_.input);
+  CHECK_OR_FALSE(param_.residual);
   CHECK_OR_FALSE(param_.output);
   CHECK_OR_FALSE(param_.fc_w);
 
-  const auto input_dims = param_.input0->dims();
+  const auto input_dims = param_.input->dims();
   const auto w_dims = param_.fc_w->dims();
   CHECK_EQ_OR_FALSE(w_dims.size(), 2UL);
   int64_t w_dims_1 = param_.padding_weights ? w_dims[1] - 4 : w_dims[1];
@@ -58,9 +58,28 @@ static bool CheckPositive(const DDim &dims) {
   }
   return true;
 }
+
 bool FusedAttentionOpLite::InferShape() {
-  lite::DDim x_dims = param_.input0->dims();
-  const DDim::value_type input_size = x_dims.production();
+  lite::DDim x_dims = param_.input->dims();
+
+  // infer fc
+  int in_num_col_dims = param_.in_num_col_dims;
+  std::string op_type = param_.op_type;
+  const auto &w_dims = param_.fc_w->dims();
+  int64_t w_dims_1 = w_dims[1] / 3;
+
+  if (op_type == "matmul" || op_type == "matmul_v2") {
+    in_num_col_dims = x_dims.size() - 1;
+  }
+  DDim::value_type fc_output_size = 1;
+  std::vector<DDim::value_type> fc_output_dims(in_num_col_dims + 1);
+  for (int i = 0; i < in_num_col_dims; ++i) {
+    fc_output_dims[i] = x_dims[i];
+    fc_output_size *= fc_output_dims[i];
+  }
+  fc_output_dims[in_num_col_dims] = w_dims_1;
+  fc_output_size *= fc_output_dims[in_num_col_dims];
+
   std::vector<int> shape = param_.reshape_shape;
   std::vector<DDim::value_type> reshape_output_dims(shape.size());
   DDim::value_type capacity = 1;
@@ -73,7 +92,7 @@ bool FusedAttentionOpLite::InferShape() {
           << "Only one input dimension of Attr(shape) can be unknown.";
       unk_dim_idx = i;
     } else if (shape[i] == copy_dim_val) {
-      CHECK_LT(i, x_dims.size())
+      CHECK_LT(i, fc_output_dims.size())
           << "The index of dimension to copy from input shape must be less "
              "than the size of input shape.";
     } else {
@@ -82,24 +101,24 @@ bool FusedAttentionOpLite::InferShape() {
     }
 
     DDim::value_type output_dim_i =
-        shape[i] ? static_cast<DDim::value_type>(shape[i]) : x_dims[i];
+        shape[i] ? static_cast<DDim::value_type>(shape[i]) : fc_output_dims[i];
     reshape_output_dims[i] = output_dim_i;
     capacity *= output_dim_i;
   }
   if (unk_dim_idx != -1) {
-    if (CheckPositive(x_dims)) {
+    if (CheckPositive(lite::DDim(fc_output_dims))) {
       // input_size < 0 and is un-determinate in compile time, skip the check,
       // for example, input_dims = [-1, 8, 1, 1], shape = [-1, 3, 8],
       // capacity = -24, input_size = -8, output_shape[0] = 0
       // the following check will fail.
-      reshape_output_dims[unk_dim_idx] = -input_size / capacity;
-      CHECK_EQ(reshape_output_dims[unk_dim_idx] * capacity, -input_size)
+      reshape_output_dims[unk_dim_idx] = -fc_output_size / capacity;
+      CHECK_EQ(reshape_output_dims[unk_dim_idx] * capacity, -fc_output_size)
           << "Invalid shape is given.";
     } else {
       reshape_output_dims[unk_dim_idx] = -1;
     }
   } else {
-    CHECK_EQ(capacity, input_size) << "Invalid shape is given.";
+    CHECK_EQ(capacity, fc_output_size) << "Invalid shape is given.";
   }
   lite::DDim out_dims = lite::DDim({reshape_output_dims[0],
                                     reshape_output_dims[2],
@@ -108,19 +127,19 @@ bool FusedAttentionOpLite::InferShape() {
   param_.output->Resize(out_dims);
 
   // share LoD
-  param_.output->set_lod(param_.input0->lod());
+  param_.output->set_lod(param_.input->lod());
   return true;
 }
 
 bool FusedAttentionOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                       lite::Scope *scope) {
-  auto input0 = op_desc.Input("Input0").front();
-  auto input1 = op_desc.Input("Input1").front();
+  auto input = op_desc.Input("Input").front();
+  auto residual = op_desc.Input("Residual").front();
   auto fc_w = op_desc.Input("W").front();
   auto output = op_desc.Output("Out").front();
 
-  param_.input0 = scope->FindVar(input0)->GetMutable<lite::Tensor>();
-  param_.input1 = scope->FindVar(input1)->GetMutable<lite::Tensor>();
+  param_.input = scope->FindVar(input)->GetMutable<lite::Tensor>();
+  param_.residual = scope->FindVar(residual)->GetMutable<lite::Tensor>();
   param_.fc_w = scope->FindVar(fc_w)->GetMutable<lite::Tensor>();
   param_.output = scope->FindVar(output)->GetMutable<lite::Tensor>();
 
@@ -135,6 +154,7 @@ bool FusedAttentionOpLite::AttachImpl(const cpp::OpDesc &op_desc,
       }
     }
   }
+  param_.in_num_col_dims = op_desc.GetAttr<int>("in_num_col_dims");
   param_.reshape_shape = op_desc.GetAttr<std::vector<int>>("reshape_shape");
   param_.softmax_axis = op_desc.GetAttr<int>("softmax_axis");
 

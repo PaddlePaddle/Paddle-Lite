@@ -118,8 +118,8 @@ struct FcParam : ParamBase {
 };
 
 struct FusedAttentionParam : ParamBase {
-  lite::Tensor* input0{nullptr};
-  lite::Tensor* input1{nullptr};
+  lite::Tensor* input{nullptr};
+  lite::Tensor* residual{nullptr};
   lite::Tensor* fc_w{nullptr};
   lite::Tensor* fc_bias{nullptr};
   lite::Tensor* output{nullptr};
