@@ -41,7 +41,7 @@ namespace operation {
   }                                                                         \
   /* Starts */                                                              \
   auto starts_operand = input_operands[2];                                  \
-  int32_t* starts;                                                          \
+  int32_t* starts = nullptr;                                                \
   if (IsConstantOperand(starts_operand)) {                                  \
     auto starts_count = starts_operand->length / sizeof(int32_t);           \
     starts = reinterpret_cast<int32_t*>(starts_operand->buffer);            \
@@ -53,7 +53,7 @@ namespace operation {
   }                                                                         \
   /* Ends */                                                                \
   auto ends_operand = input_operands[3];                                    \
-  int32_t* ends;                                                            \
+  int32_t* ends = nullptr;                                                  \
   if (IsConstantOperand(ends_operand)) {                                    \
     auto ends_count = ends_operand->length / sizeof(int32_t);               \
     ends = reinterpret_cast<int32_t*>(ends_operand->buffer);                \
@@ -65,7 +65,7 @@ namespace operation {
   }                                                                         \
   /* Steps */                                                               \
   auto steps_operand = input_operands[4];                                   \
-  int32_t* steps;                                                           \
+  int32_t* steps = nullptr;                                                 \
   if (IsConstantOperand(steps_operand)) {                                   \
     auto steps_count = steps_operand->length / sizeof(int32_t);             \
     steps = reinterpret_cast<int32_t*>(steps_operand->buffer);              \
