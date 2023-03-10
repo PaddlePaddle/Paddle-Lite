@@ -146,6 +146,14 @@ void viterbi_decode(
   auto input_ptr = input.data<float>();
   auto length_ptr = length.data<int64_t>();
   max_seq_len = *std::max_element(length_ptr, length_ptr + length.numel());
+
+  if (max_seq_len == 0) {
+    path->Resize({batch, 1});
+    auto path_ptr = path->mutable_data<int64_t>();
+    scores->Resize({batch});
+    auto scores_ptr = scores->mutable_data<float>();
+    return;
+  }
   path->Resize({batch, max_seq_len});
   auto path_ptr = path->mutable_data<int64_t>();
   scores->Resize({batch});
