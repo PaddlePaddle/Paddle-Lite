@@ -248,6 +248,7 @@ void RestrictInputOutputQuantParams(core::Model* model) {
               model, operation, input_operands[i], output_operands[0], false);
         }
         break;
+      case NNADAPTER_CHANNEL_SHUFFLE:
       case NNADAPTER_FLATTEN:
       case NNADAPTER_RELU:
       case NNADAPTER_RESHAPE:
@@ -273,6 +274,8 @@ void RestrictInputOutputQuantParams(core::Model* model) {
       case NNADAPTER_MAX_POOL_2D:
       case NNADAPTER_MUL:
       case NNADAPTER_RELU6:
+      case NNADAPTER_RESIZE_LINEAR:
+      case NNADAPTER_RESIZE_NEAREST:
       case NNADAPTER_SIGMOID:
       case NNADAPTER_SOFTMAX:
       case NNADAPTER_SUB:
