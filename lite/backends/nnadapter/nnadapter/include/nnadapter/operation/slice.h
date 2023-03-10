@@ -41,12 +41,11 @@ namespace operation {
   }                                                                         \
   /* Starts */                                                              \
   auto starts_operand = input_operands[2];                                  \
-  std::vector<int32_t> starts;                                              \
+  int32_t* starts;                                                          \
   if (IsConstantOperand(starts_operand)) {                                  \
     auto starts_count = starts_operand->length / sizeof(int32_t);           \
-    auto starts_data = reinterpret_cast<int32_t*>(starts_operand->buffer);  \
-    starts = std::vector<int32_t>(starts_data, starts_data + starts_count); \
-    for (size_t i = 0; i < starts.size(); i++) {                            \
+    starts = reinterpret_cast<int32_t*>(starts_operand->buffer);            \
+    for (size_t i = 0; i < starts_count; i++) {                             \
       NNADAPTER_VLOG(5) << "starts[" << i << "]: " << starts[i];            \
     }                                                                       \
   } else {                                                                  \
@@ -54,12 +53,11 @@ namespace operation {
   }                                                                         \
   /* Ends */                                                                \
   auto ends_operand = input_operands[3];                                    \
-  std::vector<int32_t> ends;                                                \
+  int32_t* ends;                                                            \
   if (IsConstantOperand(ends_operand)) {                                    \
     auto ends_count = ends_operand->length / sizeof(int32_t);               \
-    auto ends_data = reinterpret_cast<int32_t*>(ends_operand->buffer);      \
-    ends = std::vector<int32_t>(ends_data, ends_data + ends_count);         \
-    for (size_t i = 0; i < ends.size(); i++) {                              \
+    ends = reinterpret_cast<int32_t*>(ends_operand->buffer);                \
+    for (size_t i = 0; i < ends_count; i++) {                               \
       NNADAPTER_VLOG(5) << "ends[" << i << "]: " << ends[i];                \
     }                                                                       \
   } else {                                                                  \
@@ -67,12 +65,11 @@ namespace operation {
   }                                                                         \
   /* Steps */                                                               \
   auto steps_operand = input_operands[4];                                   \
-  std::vector<int32_t> steps;                                               \
+  int32_t* steps;                                                           \
   if (IsConstantOperand(steps_operand)) {                                   \
     auto steps_count = steps_operand->length / sizeof(int32_t);             \
-    auto steps_data = reinterpret_cast<int32_t*>(steps_operand->buffer);    \
-    steps = std::vector<int32_t>(steps_data, steps_data + steps_count);     \
-    for (size_t i = 0; i < steps.size(); i++) {                             \
+    steps = reinterpret_cast<int32_t*>(steps_operand->buffer);              \
+    for (size_t i = 0; i < steps_count; i++) {                              \
       NNADAPTER_VLOG(5) << "steps[" << i << "]: " << steps[i];              \
     }                                                                       \
   } else {                                                                  \

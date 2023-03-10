@@ -31,9 +31,12 @@ int ConvertSlice(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto start_idx_tensor = converter->AddConstantTensor(starts);
-  auto end_idx_tensor = converter->AddConstantTensor(ends);
-  auto strides_idx_tensor = converter->AddConstantTensor(steps);
+  auto start_idx_tensor = converter->AddConstantTensor(
+      std::vector<int32_t>(starts, starts + starts_count));
+  auto end_idx_tensor = converter->AddConstantTensor(
+      std::vector<int32_t>(ends, ends + ends_count));
+  auto strides_idx_tensor = converter->AddConstantTensor(
+      std::vector<int32_t>(steps, steps + steps_count));
 
   // The following process is:
   // Given:
