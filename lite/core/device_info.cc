@@ -46,7 +46,6 @@
  */
 
 #ifdef LITE_WITH_LINUX
-#include <fstream>
 
 #ifdef LITE_WITH_QNX
 #include <sys/neutrino.h>
@@ -493,32 +492,30 @@ void get_cpu_cache_size(int cpu_id,
   }
 }
 
-std::vector<int> read_cpu_range(std::string path) {
-  std::ifstream cpus_range_stream{path};
-  std::vector<int> cpus;
-  std::string cpu_range;
-
-  while (std::getline(cpus_range_stream, cpu_range, ',')) {
-    std::size_t rangeop = cpu_range.find('-');
-    if (rangeop == std::string::npos) {
-      cpus.push_back(std::stoi(cpu_range));
-    } else {
-      int start = std::stoi(cpu_range.substr(0, rangeop));
-      int end = std::stoi(cpu_range.substr(rangeop + 1));
-      for (int i = start; i <= end; i++) cpus.push_back(i);
-    }
-  }
-  return cpus;
-}
-
 bool check_cpu_online(const std::vector<int>& cpu_ids) {
   if (cpu_ids.size() == 0) {
     return false;
   }
   bool all_online = true;
-  FILE* fp = fopen("/sys/devices/system/cpu/online", "rb");
+  FILE* fp = fopen("/sys/devices/system/cpu/online", "r");
   if (fp) {
-    std::vector<int> cpus = read_cpu_range("/sys/devices/system/cpu/online");
+    std::vector<int> cpus;
+    int n, cpu;
+    char sep;
+    int prev = -1;
+    for (;;) {
+      n = fscanf(fp, "%u%c", &cpu, &sep);
+      if (n <= 0) break;
+      if (prev >= 0) {
+        while (++prev < cpu) cpus.push_back(prev);
+      }
+      cpus.push_back(cpu);
+      if (n == 2 && sep == '-')
+        prev = cpu;
+      else
+        prev = -1;
+      if (n == 1 || sep == '\n') break;
+    }
     for (int i = 0; i < cpu_ids.size(); ++i) {
       if (std::find(cpus.begin(), cpus.end(), cpu_ids[i]) == cpus.end()) {
         all_online = false;
