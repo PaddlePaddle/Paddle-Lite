@@ -106,8 +106,9 @@ class Buffer {
   void host_pinned_register() {
     if (!pinned_ && target_ == TargetType::kHost) {
       pinned_ = true;
-      CHECK_EQ(xpu_host_register(data_, space_, 0), 0)
-          << "xpu_host_register failed";
+      if (int ret = xpu_host_register(data_, space_, 0) != 0) {
+        LOG(WARNING) << "xpu_host_register failed, errocode " << ret;
+      }
     }
   }
 #endif
@@ -202,8 +203,9 @@ class Buffer {
 #ifdef LITE_WITH_XPU
         if (pinned_ && target_ == TargetType::kHost) {
           pinned_ = false;
-          CHECK_EQ(xpu_host_unregister(data_), 0)
-              << "xpu_host_unregister failed";
+          if (int ret = xpu_host_unregister(data_) != 0) {
+            LOG(WARNING) << "xpu_host_unregister failed, errocode = " << ret;
+          }
         }
 #endif
         TargetFree(target_, data_);

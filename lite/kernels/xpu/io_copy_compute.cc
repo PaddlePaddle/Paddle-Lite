@@ -21,7 +21,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-// xpu runtime support pinned memory from 4.0.20 in xpu2
+// xpu runtime support pinned memory from 4.0.23 in xpu2
 // if buffersize > 1MB, we use pinned mem to improve DMA performace,
 #define PINNED_MEM_SIZE (1024 * 1024)
 
