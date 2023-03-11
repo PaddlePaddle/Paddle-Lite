@@ -61,9 +61,6 @@ NNADAPTER_EXPORT int PrepareReshape(core::Operation* operation) {
                                 uint32_t input_dimensions_count,
                                 int32_t* output_dimensions_data) {
     for (uint32_t i = 0; i < shape_count; i++) {
-      if (IsDynamicShapeOperandType(input_type) && shape_data[i] == -1) {
-        shape_data[i] = NNADAPTER_UNKNOWN;
-      }
       output_dimensions_data[i] =
           shape_data[i] == 0 ? input_dimensions_data[i] : shape_data[i];
     }
