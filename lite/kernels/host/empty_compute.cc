@@ -41,7 +41,7 @@ void EmptyCompute::Run() {
     output->set_precision(PRECISION(kInt32));
     output->template mutable_data<int32_t>();
   }
-  
+
   return;
 }
 
