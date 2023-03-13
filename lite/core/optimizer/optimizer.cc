@@ -187,11 +187,11 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "lite_elementwise_activation_fuse_pass",
        "lite_conv_scale_fuse_pass",
        "lite_conv_elementwise_tree_fuse_pass",
+       "transformer_attention_fuse_pass",
        "lite_greater_than_cast_fuse_pass",
        "identity_dropout_eliminate_pass",
        "sparse_conv_detect_pass",
        //  "keepdims_convert_pass",
-       "transformer_attention_fuse_pass",
        "__xpu__max_pooling_pad_zero_detect_fuse_pass",
        "__xpu__graph_dedup_pass",
        "__xpu__resnet_fuse_pass",
@@ -223,6 +223,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__dynamic_lstm_fuse_pass",
        "__xpu__multi_softmax_fuse_pass",
        "__xpu__conv2d_transpose_fuse_pass",
+       "__xpu__spatial_transformer_resblock_fuse_pass",
        // pick original kernel from graph (exclude xpu)
        "static_kernel_pick_pass",
        // xpu pick original kernel from graph

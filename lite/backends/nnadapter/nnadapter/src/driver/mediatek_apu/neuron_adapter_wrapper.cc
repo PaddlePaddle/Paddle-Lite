@@ -36,14 +36,21 @@ NeuronAdapterWrapper::NeuronAdapterWrapper() {
 bool NeuronAdapterWrapper::Initialize() {
   const std::vector<std::string> candidate_paths = {
     "libneuron_adapter.so",
+    "libneuron_adapter_mgvi.so",
 #if defined(__aarch64__)
     "/vendor/lib64/libneuron_adapter.so",
     "/system/lib64/libneuron_adapter.so",
     "/system/vendor/lib64/libneuron_adapter.so",
+    "/vendor/lib64/libneuron_adapter_mgvi.so",
+    "/system/lib64/libneuron_adapter_mgvi.so",
+    "/system/vendor/lib64/libneuron_adapter_mgvi.so",
 #else
     "/vendor/lib/libneuron_adapter.so",
     "/system/lib/libneuron_adapter.so",
     "/system/vendor/lib/libneuron_adapter.so",
+    "/vendor/lib/libneuron_adapter_mgvi.so",
+    "/system/lib/libneuron_adapter_mgvi.so",
+    "/system/vendor/lib/libneuron_adapter_mgvi.so",
 #endif
   };
   std::string found_path = "Unknown";

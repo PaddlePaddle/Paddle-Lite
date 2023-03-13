@@ -176,6 +176,7 @@ struct XPURunTimeOption {
   XPUStream xpu_stream;
   std::unique_ptr<XDNNContext> xpu_tls_raw_ctx{nullptr};
   XPUQuantizer quantizer;
+  size_t api_l3_reserve{0};
 };
 
 }  // namespace lite

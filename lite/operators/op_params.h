@@ -118,8 +118,8 @@ struct FcParam : ParamBase {
 };
 
 struct FusedAttentionParam : ParamBase {
-  lite::Tensor* input0{nullptr};
-  lite::Tensor* input1{nullptr};
+  lite::Tensor* input{nullptr};
+  lite::Tensor* residual{nullptr};
   lite::Tensor* fc_w{nullptr};
   lite::Tensor* fc_bias{nullptr};
   lite::Tensor* output{nullptr};
@@ -1797,6 +1797,29 @@ struct XPUMultiEncoderParam : ParamBase {
   bool already_qkv_fusion{false};  // qkv is already fusion in graph
 };
 
+struct XPUSpatialTransformerResBlockParam : ParamBase {
+  const lite::Tensor* input1{};
+  const lite::Tensor* input2{};
+  std::vector<lite::Tensor*> fc_weight;
+  std::vector<lite::Tensor*> fc_bias;
+  std::vector<lite::Tensor*> conv_filter;
+  std::vector<lite::Tensor*> conv_bias;
+  std::vector<lite::Tensor*> gn_scale;
+  std::vector<lite::Tensor*> gn_bias;
+  std::vector<lite::Tensor*> input_max;
+  lite::Tensor* output{nullptr};
+  std::vector<lite::Tensor*> weight_max{};
+  std::vector<lite::Tensor*> filter_max{};
+  std::vector<int> groups{};
+  std::vector<std::vector<int>> strides{};
+  std::vector<std::vector<int>> paddings{};
+  std::vector<std::vector<int>> dilations{};
+  std::vector<std::vector<int>> filter_dims{};
+  std::vector<int> gn_groups{};
+  std::vector<float> gn_eps{};
+  bool conv_fix{};
+};
+
 struct XPUSpatialTransformerParam : ParamBase {
   const lite::Tensor* input{};
   const lite::Tensor* embedding{};
@@ -2440,6 +2463,14 @@ struct RollParam : ParamBase {
   lite::Tensor* Out{};
   std::vector<int64_t> shifts{};
   std::vector<int64_t> axis{};
+};
+
+struct BitwiseParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* Y{nullptr};
+  lite::Tensor* Out{nullptr};
+  std::string bitwise_type_;
+  int axis_{-1};
 };
 
 struct SetValueParam : ParamBase {

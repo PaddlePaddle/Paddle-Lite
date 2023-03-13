@@ -23,6 +23,9 @@ namespace mediatek_apu {
 
 int NeuronOperandDataTypeLength(int data_type);
 
+// Relax computation float32 to float16
+#define MEDIATEK_APU_RELAX_FP32_TO_FP16 "MEDIATEK_APU_RELAX_FP32_TO_FP16"
+
 // Convert NNAdapter types to Neuron types
 int ConvertToNeuronPrecision(NNAdapterOperandPrecisionCode precision_code);
 int ConvertToNeuronDataLayout(NNAdapterOperandLayoutCode layout_code);

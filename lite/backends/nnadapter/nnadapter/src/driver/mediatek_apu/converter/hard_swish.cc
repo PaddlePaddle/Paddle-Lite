@@ -12,41 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "operation/unary_activations.h"
+#include <cmath>
 #include "driver/mediatek_apu/converter/converter.h"
+#include "operation/hard_sigmoid_swish.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace mediatek_apu {
 
-int ConvertUnaryActivations(Converter* converter, core::Operation* operation) {
-  UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertHardSwish(Converter* converter, core::Operation* operation) {
+  HARD_SIGMOID_SWISH_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to Neuron operands and operations
+  if ((fabs(alpha - 0.166666f) >= 1e-5f) || (fabs(beta - 0.5f) >= 1e-5f)) {
+    NNADAPTER_LOG(FATAL) << "Factors for HardSwish Op should be: "
+                            "6.0(threshold), 6.0(scale), 3.0(offset)";
+  }
   auto input_index = converter->GetMappedIndex(input_operand);
   if (input_index == INVALID_INDEX) {
     input_index = converter->ConvertOperand(input_operand);
   }
   auto output_index = converter->ConvertOperand(output_operand);
-  NeuronOperationType op_type;
-  if (operation->type == NNADAPTER_SIGMOID) {
-    op_type = NEURON_LOGISTIC;
-  } else if (operation->type == NNADAPTER_RELU) {
-    op_type = NEURON_RELU;
-  } else if (operation->type == NNADAPTER_RELU6) {
-    op_type = NEURON_RELU6;
-  } else if (operation->type == NNADAPTER_TANH) {
-    op_type = NEURON_TANH;
-  } else if (operation->type == NNADAPTER_SIGMOID) {
-    op_type = NEURON_LOGISTIC;
-  } else {
-    NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
-                         << OperationTypeToString(operation->type)
-                         << " is found.";
-  }
   NNADAPTER_CHECK_EQ(
-      converter->AddOperation(op_type, {input_index}, {output_index}),
+      converter->AddOperation(NEURON_HARD_SWISH, {input_index}, {output_index}),
       NEURON_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }

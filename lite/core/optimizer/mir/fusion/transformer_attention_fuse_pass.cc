@@ -25,17 +25,28 @@ namespace mir {
 
 void TransformerAttentionFusePass::Apply(
     const std::unique_ptr<SSAGraph>& graph) {
-  fusion::TransformerAttentionFuser fuser;
   bool has_int8 = false;
   for (auto& place : graph->valid_places()) {
     if (place.precision == PRECISION(kInt8)) {
       has_int8 = true;
     }
   }
-  if ((has_int8)) {
-    fuser(graph.get());
-  } else {
-    return;
+  std::vector<bool> reshape_has_xshapes = {false, true};
+  std::vector<bool> transpose_has_xshapes = {false, true};
+  std::vector<bool> dropout_masks = {false, true};
+  std::vector<std::string> mul_types = {"matmul", "matmul_v2"};
+  for (auto reshape_has_xshape : reshape_has_xshapes) {
+    for (auto transpose_has_xshape : transpose_has_xshapes) {
+      for (auto dropout_mask : dropout_masks) {
+        for (auto mul_type : mul_types) {
+          fusion::TransformerAttentionFuser fuser(
+              reshape_has_xshape, transpose_has_xshape, dropout_mask, mul_type);
+          if ((has_int8)) {
+            fuser(graph.get());
+          }
+        }
+      }
+    }
   }
 }
 
