@@ -15,6 +15,7 @@
 #include "lite/kernels/x86/calib_compute.h"
 
 #include <vector>
+#include "lite/backends/x86/fluid/float16.h"
 #include "lite/backends/x86/math/calib.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
@@ -40,7 +41,7 @@ void CalibComputeFp32ToFp16<Ptype, DLType>::Run() {
   const auto* din = param.input->template data<float>();
   auto* dout = param.output->template mutable_data<float16>();
   for (auto i = 0; i < param.input->numel(); ++i) {
-    dout[i] = static_cast<float16>(din[i]);
+    dout[i] = lite::fluid::float16(din[i]).x;
   }
 }
 
@@ -50,7 +51,7 @@ void CalibComputeFp16ToFp32<Ptype, DLType>::Run() {
   const auto* din = param.input->template data<float16>();
   auto* dout = param.output->template mutable_data<float>();
   for (auto i = 0; i < param.input->numel(); ++i) {
-    dout[i] = static_cast<float>(din[i]);
+    dout[i] = static_cast<float>(lite::fluid::raw_uint16_to_float16(din[i]));
   }
 }
 
@@ -110,7 +111,7 @@ void CalibComputeInt32ToFp16<Ptype, DLType>::Run() {
   const auto* din = param.input->template data<int32_t>();
   auto* dout = param.output->template mutable_data<float16>();
   for (auto i = 0; i < param.input->numel(); ++i) {
-    dout[i] = static_cast<float16>(din[i]);
+    dout[i] = lite::fluid::float16(din[i]).x;
   }
 }
 
@@ -120,7 +121,7 @@ void CalibComputeFp16ToInt32<Ptype, DLType>::Run() {
   const auto* din = param.input->template data<float16>();
   auto* dout = param.output->template mutable_data<int32_t>();
   for (auto i = 0; i < param.input->numel(); ++i) {
-    dout[i] = static_cast<int32_t>(din[i]);
+    dout[i] = static_cast<int32_t>(lite::fluid::raw_uint16_to_float16(din[i]));
   }
 }
 
