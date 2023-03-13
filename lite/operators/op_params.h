@@ -2633,6 +2633,15 @@ struct TemporalShiftParam : ParamBase {
   std::string data_format{"NCHW"};
 };
 
+struct ViterbiDecodeParam : ParamBase {
+  const lite::Tensor* input{};
+  const lite::Tensor* length{};
+  const lite::Tensor* transition{};
+  lite::Tensor* path{};
+  lite::Tensor* scores{};
+  bool include_bos_eos_tag{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
