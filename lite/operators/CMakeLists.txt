@@ -74,6 +74,7 @@ add_operator(group_norm_op extra SRCS group_norm_op.cc)
 add_operator(norm_op extra SRCS norm_op.cc)
 
 # 3.extra ops
+add_operator(bitwise_ops extra SRCS bitwise_ops.cc)
 add_operator(reverse_op extra SRCS reverse_op.cc)
 add_operator(inverse_op extra SRCS inverse_op.cc)
 add_operator(sparse_conv_op extra SRCS sparse_conv_op.cc)
