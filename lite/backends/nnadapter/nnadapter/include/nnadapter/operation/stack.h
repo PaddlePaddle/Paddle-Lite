@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include "utility/modeling.h"
+
 namespace nnadapter {
 namespace operation {
 
