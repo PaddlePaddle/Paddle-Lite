@@ -41,9 +41,7 @@ void EmptyCompute::Run() {
     output->set_precision(PRECISION(kInt32));
     output->template mutable_data<int32_t>();
   }
-#ifdef LITE_WITH_PROFILE
-  kernel_func_name_ = "empty_func";
-#endif
+  
   return;
 }
 
