@@ -708,31 +708,17 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
     std::string op_type = op_info.Type();
     if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
         quant_op_types_.end()) {
-      if (op_type == "conv2d_transpose") {
-        bool enable_int8_convt = false;
-        for (auto inlink_node : quantized_node->inlinks) {
-          // all input need dequantize_linear
-          if (inlink_node->IsArg() && inlink_node->inlinks.size() > 0) {
-            enable_int8_convt = true;
-            for (auto inlink_node_inlink : inlink_node->inlinks) {
-              if (inlink_node_inlink->IsStmt() &&
-                  inlink_node_inlink->stmt()->op_info()->Type() !=
-                      "dequantize_linear") {
-                enable_int8_convt = false;
-                break;
-              }
-            }
-            if (!enable_int8_convt)
-              break;  // input has inlink but it isn't dequantize_linear
-          } else {    // input doesn't have inlink
-            enable_int8_convt = false;
-            break;
-          }
+      bool enable_int8_cond = false;
+      for (auto& inlink_node : quantized_node->inlinks) {
+        enable_int8_cond = true;
+        // no op before weight
+        if (inlink_node->IsArg() && inlink_node->arg()->is_weight &&
+            inlink_node->inlinks.size() == 0) {
+          enable_int8_cond = false;
+          break;
         }
-        if (enable_int8_convt) op_info.SetAttr("enable_int8", true);
-      } else {
-        op_info.SetAttr("enable_int8", true);
       }
+      if (enable_int8_cond) op_info.SetAttr("enable_int8", true);
     }
     op_info.SetInputScale(input_var_name, scales);
     for (auto op_out_var_node : quantized_node->outlinks) {
