@@ -45,7 +45,7 @@ class TestCeilOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=8), min_size=1, max_size=4))
-        
+
         ceil_op = OpConfig(
             type="ceil",
             inputs={"X": ["input_data"]},
