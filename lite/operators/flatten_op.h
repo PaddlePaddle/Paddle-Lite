@@ -56,7 +56,7 @@ class Flatten2Op : public FlattenOp {
 
   bool InferType() override {
     param_.output->set_precision(param_.x->precision());
-    if (has_xshape_) param_.xshape->set_precision(PRECISION(kInt64));
+    if (param_.xshape) param_.xshape->set_precision(PRECISION(kInt64));
     return true;
   }
 
@@ -66,9 +66,6 @@ class Flatten2Op : public FlattenOp {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
   std::string DebugString() const override { return "flatten2"; }
-
- private:
-  bool has_xshape_{false};
 };
 
 class FlattenContiguousRangeOp : public OpLite {
@@ -81,7 +78,7 @@ class FlattenContiguousRangeOp : public OpLite {
 #ifndef LITE_ON_TINY_PUBLISH
   bool InferType() override {
     param_.out->set_precision(param_.x->precision());
-    if (has_xshape_) param_.xshape->set_precision(PRECISION(kInt64));
+    if (param_.xshape) param_.xshape->set_precision(PRECISION(kInt64));
     return true;
   }
 #endif
@@ -97,9 +94,6 @@ class FlattenContiguousRangeOp : public OpLite {
 
  protected:
   mutable FlattenContiguousRangeParam param_;
-
- private:
-  bool has_xshape_{false};
 };
 
 }  // namespace operators
