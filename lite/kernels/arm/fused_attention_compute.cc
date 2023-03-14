@@ -235,7 +235,6 @@ void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
   auto* b_data = param.fc_bias ? param.fc_bias->data<float>() : nullptr;
   lite::arm::math::gemm_s8<int8_t>(false,
                                    false,
-                                   true,
                                    fc_m_,
                                    fc_n_,
                                    fc_k_,
@@ -247,7 +246,8 @@ void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
                                    lite::arm::math::GemmNBias,
                                    param.fc0_scale.data(),
                                    act_param_,
-                                   &ctx);
+                                   &ctx,
+                                   true);
   // transpose2 fuse reshape2
   DDim trans_dims = DDim(std::vector<int64_t>{
       input_dims[0], reshape_shape_[1], fc_m_, reshape_shape_[3] * 3});
@@ -273,7 +273,6 @@ void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
   for (size_t i = 0; i < transpose_out_dim_[1]; ++i) {
     lite::arm::math::gemm_s8(false,
                              true,
-                             false,
                              fc1_m_,
                              fc1_n_,
                              fc1_k_,
@@ -285,7 +284,8 @@ void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
                              lite::arm::math::GemmNBias,
                              fc1_scale_.data(),
                              act_param_,
-                             &ctx);
+                             &ctx,
+                             false);
   }
 
   // softmax
@@ -327,7 +327,6 @@ void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
   for (size_t i = 0; i < out_dims[1]; ++i) {
     lite::arm::math::gemm_s8<float>(false,
                                     false,
-                                    false,
                                     fc2_m_,
                                     fc2_n_,
                                     fc2_k_,
@@ -339,7 +338,8 @@ void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
                                     lite::arm::math::GemmNBias,
                                     fc2_scale_.data(),
                                     act_param_,
-                                    &ctx);
+                                    &ctx,
+                                    false);
   }
 }
 

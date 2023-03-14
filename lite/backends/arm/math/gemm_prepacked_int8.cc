@@ -4563,10 +4563,10 @@ void gemm_prepack_oth_int8(const int8_t* A_packed,
                            GemmBiasDirection bias_direction,
                            int flag_act,
                            bool is_transB,
-                           bool packed_b,
                            const float* scale,
                            const float* alpha,
-                           ARMContext* ctx) {
+                           ARMContext* ctx,
+                           bool packed_b) {
   const int KUP = ROUNDUP(K, KBLOCK_INT8);
   size_t llc_size = ctx->llc_size() / 4;
   auto workspace = ctx->workspace_data<int8_t>();
@@ -5843,10 +5843,10 @@ void gemm_prepack_sdot_int8(const int8_t* A_packed,
                             GemmBiasDirection bias_direction,
                             int is_relu,
                             bool is_transB,
-                            bool packed_b,
                             const float* scale,
                             const float* alpha,
-                            ARMContext* ctx) {
+                            ARMContext* ctx,
+                            bool packed_b) {
   size_t llc_size = ctx->llc_size() / 4;
   auto workspace = ctx->workspace_data<int8_t>();
   //! MBLOCK_INT8_DOT * x (result) + MBLOCK_INT8_DOT * k (A) + x * k (B) = l2
@@ -7910,10 +7910,10 @@ void gemm_prepack_vsdot_int8(const int8_t* A_packed,
                              GemmBiasDirection bias_direction,
                              int is_relu,
                              bool is_transB,
-                             bool packed_b,
                              const float* scale,
                              const float* alpha,
-                             ARMContext* ctx) {
+                             ARMContext* ctx,
+                             bool packed_b) {
   size_t llc_size = ctx->llc_size() / 4;
   auto workspace = ctx->workspace_data<int8_t>();
   int x_block = (llc_size - (MBLOCK_INT8_DOT * K)) /
@@ -8106,10 +8106,10 @@ void gemm_prepack_int8(const int8_t* A_packed,
                        bool is_bias,
                        GemmBiasDirection bias_direction,
                        bool is_transB,
-                       bool packed_b,
                        const float* scale,
                        const operators::ActivationParam act_param,
-                       ARMContext* ctx) {
+                       ARMContext* ctx,
+                       bool packed_b) {
   auto act_type = act_param.active_type;
   float alpha[12] = {
       0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
@@ -8143,7 +8143,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
 
 #define IN_PARAMS                                                              \
   A_packed, B, bias, C, M, N, K, is_bias, bias_direction, flag_act, is_transB, \
-      packed_b, scale, alpha, ctx
+      scale, alpha, ctx, packed_b
 
 #ifdef __aarch64__
   if (ctx->has_dot()) {
@@ -8176,10 +8176,10 @@ void gemm_prepack_int8(const int8_t* A_packed,
       bool is_bias,                               \
       GemmBiasDirection bias_direction,           \
       bool is_transB,                             \
-      bool packed_b,                              \
       const float* scale,                         \
       const operators::ActivationParam act_param, \
-      ARMContext* ctx);
+      ARMContext* ctx,                            \
+      bool packed_b);
 GEMM_PREPACK_INT8(int8_t);
 GEMM_PREPACK_INT8(float_t);
 GEMM_PREPACK_INT8(int32_t);

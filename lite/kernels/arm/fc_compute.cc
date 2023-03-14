@@ -357,7 +357,6 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   if (flag_gemm_) {
     lite::arm::math::gemm_s8(false,
                              false,
-                             true,
                              m_,
                              n_,
                              k_,
@@ -369,7 +368,8 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              lite::arm::math::GemmNBias,
                              scale_.data(),
                              act_param,
-                             &ctx);
+                             &ctx,
+                             true);
   } else {
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;
@@ -415,7 +415,6 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   if (flag_gemm_) {
     lite::arm::math::gemm_s8(false,
                              false,
-                             true,
                              m_,
                              n_,
                              k_,
@@ -427,7 +426,8 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                              lite::arm::math::GemmNBias,
                              scale_.data(),
                              act_param,
-                             &ctx);
+                             &ctx,
+                             true);
   } else {
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;

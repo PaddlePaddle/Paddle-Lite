@@ -225,10 +225,10 @@ bool test_gemm_int8(bool tra,
         has_bias,
         paddle::lite::arm::math::GemmMBias,
         trb,
-        false,
         scale_merge_fp32.data(),
         act_param,
-        &ctx);
+        &ctx,
+        false);
   }
   /// int8 output compute
   Tensor tbias_int8;
@@ -267,7 +267,8 @@ bool test_gemm_int8(bool tra,
         trb,
         scale_merge_fp32.data(),
         act_param,
-        &ctx);
+        &ctx,
+        false);
     t1.Stop();
   }
 
@@ -294,7 +295,8 @@ bool test_gemm_int8(bool tra,
         trb,
         scale_merge_int8.data(),
         act_param,
-        &ctx);
+        &ctx,
+        false);
     t1.Stop();
   }
   LOG(INFO) << "sve int8_int8 M: " << m << ", N: " << n << ", K: " << k
@@ -320,10 +322,10 @@ bool test_gemm_int8(bool tra,
         has_bias,
         paddle::lite::arm::math::GemmMBias,
         trb,
-        false,
         scale_merge_int8.data(),
         act_param,
-        &ctx);
+        &ctx,
+        false);
     t0.Stop();
   }
   LOG(INFO) << "gemm_int8_int8 output: M: " << m << ", N: " << n << ", K: " << k
@@ -350,10 +352,10 @@ bool test_gemm_int8(bool tra,
         has_bias,
         paddle::lite::arm::math::GemmMBias,
         trb,
-        false,
         scale_merge_fp32.data(),
         act_param,
-        &ctx);
+        &ctx,
+        false);
     t0.Stop();
   }
   LOG(INFO) << "gemm_int8_fp32 output: M: " << m << ", N: " << n << ", K: " << k

@@ -135,10 +135,10 @@ void gemm_prepack_int8(const int8_t* A_packed,
                        bool is_bias,
                        GemmBiasDirection bias_direction,
                        bool is_transB,
-                       bool packed_b,
                        const float* scale,
                        const operators::ActivationParam act_param,
-                       ARMContext* ctx);
+                       ARMContext* ctx,
+                       bool packed_b = false);
 
 #if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
 template <typename dtype>

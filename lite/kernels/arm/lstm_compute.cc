@@ -162,7 +162,6 @@ void LSTMComputeRun(const operators::LstmParam& param,
         std::unique_ptr<float[]> o_data(new float[M * N]);
         lite::arm::math::gemm_s8(false,
                                  false,
-                                 false,
                                  M,
                                  N,
                                  K,
@@ -174,7 +173,8 @@ void LSTMComputeRun(const operators::LstmParam& param,
                                  lite::arm::math::GemmNoBias,
                                  scales.data(),
                                  act_param,
-                                 ctx);
+                                 ctx,
+                                 false);
 
         for (int i = 0; i < M * N; i++) {
           gate_t[i] += o_data[i];

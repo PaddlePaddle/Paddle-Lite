@@ -494,7 +494,6 @@ struct GRUUnitFunctor {
       std::unique_ptr<float[]> out_data(new float[batch_size * frame_size * 2]);
       lite::arm::math::gemm_s8(false,
                                false,
-                               false,
                                batch_size,
                                frame_size * 2,
                                frame_size,
@@ -506,7 +505,8 @@ struct GRUUnitFunctor {
                                lite::arm::math::GemmNoBias,
                                scales.data(),
                                act_param,
-                               ctx);
+                               ctx,
+                               false);
 
       for (int i = 0; i < batch_size; i++) {
         float* dest = value.gate_value + i * frame_size * 3;
@@ -544,7 +544,6 @@ struct GRUUnitFunctor {
       std::unique_ptr<float[]> out_data(new float[batch_size * frame_size]);
       lite::arm::math::gemm_s8(false,
                                false,
-                               false,
                                batch_size,
                                frame_size,
                                frame_size,
@@ -556,7 +555,8 @@ struct GRUUnitFunctor {
                                lite::arm::math::GemmNoBias,
                                scales.data(),
                                act_param,
-                               ctx);
+                               ctx,
+                               false);
 
       for (int i = 0; i < batch_size; i++) {
         float* dest = value.gate_value + frame_size * 2 + i * frame_size * 3;

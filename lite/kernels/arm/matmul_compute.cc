@@ -376,7 +376,6 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
       for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
         lite::arm::math::gemm_s8(x_transpose,
                                  y_transpose,
-                                 false,
                                  m_,
                                  n_,
                                  k_,
@@ -388,14 +387,14 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  lite::arm::math::GemmNoBias,
                                  scale_one.data(),
                                  act_param,
-                                 &ctx);
+                                 &ctx,
+                                 false);
         matmul_add_n_scale_bias(o_data + i * out_inner, scale_.data(), m_, n_);
       }
     } else if (x_dims.size() > 2 && y_dims.size() == 2) {
       for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
         lite::arm::math::gemm_s8(x_transpose,
                                  y_transpose,
-                                 false,
                                  m_,
                                  n_,
                                  k_,
@@ -407,14 +406,14 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  lite::arm::math::GemmNoBias,
                                  scale_one.data(),
                                  act_param,
-                                 &ctx);
+                                 &ctx,
+                                 false);
         matmul_add_n_scale_bias(o_data + i * out_inner, scale_.data(), m_, n_);
       }
     } else if (x_dims.size() == 2 && y_dims.size() > 2) {
       for (size_t i = 0; i < y_dims.count(0, y_dims.size() - 2); ++i) {
         lite::arm::math::gemm_s8(x_transpose,
                                  y_transpose,
-                                 false,
                                  m_,
                                  n_,
                                  k_,
@@ -426,7 +425,8 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  lite::arm::math::GemmNoBias,
                                  scale_one.data(),
                                  act_param,
-                                 &ctx);
+                                 &ctx,
+                                 false);
         matmul_add_n_scale_bias(o_data + i * out_inner, scale_.data(), m_, n_);
       }
     }
@@ -435,7 +435,6 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
     // x: [M, K], y: [K, N], out: [M, N]
     lite::arm::math::gemm_s8(x_transpose,
                              y_transpose,
-                             false,
                              m_,
                              n_,
                              k_,
@@ -447,13 +446,13 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              lite::arm::math::GemmNoBias,
                              scale_one.data(),
                              act_param,
-                             &ctx);
+                             &ctx,
+                             false);
     matmul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
   } else if (x_dims.size() >= 2 && y_dims.size() == 1) {
     // x: [B, M, K], y: [K], out: [B, M]
     lite::arm::math::gemm_s8(x_transpose,
                              false,
-                             false,
                              m_,
                              n_,
                              k_,
@@ -465,7 +464,8 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              lite::arm::math::GemmNoBias,
                              scale_one.data(),
                              act_param,
-                             &ctx);
+                             &ctx,
+                             false);
     matmul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
   } else if (x_dims.size() == 1 && y_dims.size() == 1) {
     // x: [K], y: [K], out: [1]
@@ -476,7 +476,6 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
       }
     } else if (x_transpose == true && y_transpose == true) {
       lite::arm::math::gemm_s8(false,
-                               false,
                                false,
                                m_,
                                n_,
@@ -489,7 +488,8 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                lite::arm::math::GemmNoBias,
                                scale_one.data(),
                                act_param,
-                               &ctx);
+                               &ctx,
+                               false);
     } else {
       LOG(FATAL) << "not supported x_dims.(" << x_dims << ") and y_dims("
                  << y_dims << ")"
