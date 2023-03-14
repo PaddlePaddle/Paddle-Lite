@@ -42,17 +42,21 @@ int ConvertSlice(Converter* converter, OpInfo* op, Scope* scope) {
     starts_operand = converter->AddInputOperand(scope, name);
   } else if (HasInput(op, scope, "StartsTensorList")) {
     auto names = op->Input("StartsTensorList");
-    std::vector<NNAdapterOperand*> concat_input_operands;
-    for (auto name : names) {
-      auto sub_start_operand = converter->AddInputOperand(scope, name);
-      concat_input_operands.push_back(sub_start_operand);
+    if (names.size() == 1) {
+      starts_operand = converter->AddInputOperand(scope, names[0]);
+    } else {
+      std::vector<NNAdapterOperand*> concat_input_operands;
+      for (auto name : names) {
+        auto sub_start_operand = converter->AddInputOperand(scope, name);
+        concat_input_operands.push_back(sub_start_operand);
+      }
+      NNAdapterOperand* concat_axis_operand =
+          converter->AddConstantOperand<int>(0);
+      concat_input_operands.push_back(concat_axis_operand);
+      starts_operand = converter->AddOutputOperand();
+      converter->AddOperation(
+          NNADAPTER_CONCAT, concat_input_operands, {starts_operand});
     }
-    NNAdapterOperand* concat_axis_operand =
-        converter->AddConstantOperand<int>(0);
-    concat_input_operands.push_back(concat_axis_operand);
-    starts_operand = converter->AddOutputOperand();
-    converter->AddOperation(
-        NNADAPTER_CONCAT, concat_input_operands, {starts_operand});
   } else {
     CHECK(op->HasAttr("starts")) << "One of 'StartsTensor', "
                                     "'StartsTensorList', 'starts'(attr) must "
@@ -67,17 +71,21 @@ int ConvertSlice(Converter* converter, OpInfo* op, Scope* scope) {
     ends_operand = converter->AddInputOperand(scope, name);
   } else if (HasInput(op, scope, "EndsTensorList")) {
     auto names = op->Input("EndsTensorList");
-    std::vector<NNAdapterOperand*> concat_input_operands;
-    for (auto name : names) {
-      auto sub_end_operand = converter->AddInputOperand(scope, name);
-      concat_input_operands.push_back(sub_end_operand);
+    if (names.size() == 1) {
+      ends_operand = converter->AddInputOperand(scope, names[0]);
+    } else {
+      std::vector<NNAdapterOperand*> concat_input_operands;
+      for (auto name : names) {
+        auto sub_end_operand = converter->AddInputOperand(scope, name);
+        concat_input_operands.push_back(sub_end_operand);
+      }
+      NNAdapterOperand* concat_axis_operand =
+          converter->AddConstantOperand<int>(0);
+      concat_input_operands.push_back(concat_axis_operand);
+      ends_operand = converter->AddOutputOperand();
+      converter->AddOperation(
+          NNADAPTER_CONCAT, concat_input_operands, {ends_operand});
     }
-    NNAdapterOperand* concat_axis_operand =
-        converter->AddConstantOperand<int>(0);
-    concat_input_operands.push_back(concat_axis_operand);
-    ends_operand = converter->AddOutputOperand();
-    converter->AddOperation(
-        NNADAPTER_CONCAT, concat_input_operands, {ends_operand});
   } else {
     CHECK(op->HasAttr("ends"))
         << "One of 'EndsTensor', 'EndsTensorList', 'ends'(attr) must be exist.";

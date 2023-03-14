@@ -50,9 +50,11 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
     pool2d_op->set_attr_pads(ge::Operator::OpListInt(
         {pad_height_top, pad_height_bottom, pad_width_left, pad_width_right}));
     pool2d_op->set_attr_global_pooling(global_pooling);
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_LESS_THAN(6, 0, 0)
     if (IsDynamicShapeOperandType(input_operand->type)) {
       pool2d_op->set_attr_global_pooling(false);
     }
+#endif
     pool2d_op->set_attr_ceil_mode(ceil_mode);
     if (flag) {
       pool2d_op->set_attr_exclusive(0);
@@ -90,9 +92,11 @@ int ConvertPool2D(Converter* converter, core::Operation* operation) {
                                                         pad_width_right}));
     }
     pool2d_op->set_attr_global_pooling(global_pooling);
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_LESS_THAN(6, 0, 0)
     if (IsDynamicShapeOperandType(input_operand->type)) {
       pool2d_op->set_attr_global_pooling(false);
     }
+#endif
 #else
     auto pool2d_op = converter->AddOperator<ge::op::Pooling>(output_operand);
     pool2d_op->set_attr_mode(0);

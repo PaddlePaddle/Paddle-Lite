@@ -33,39 +33,92 @@ int ConvertStridedSlice(Converter* converter, OpInfo* op, Scope* scope) {
   auto input_type = converter->GetOperandType(input_operand);
   // Axes
   auto axes = op->GetAttr<std::vector<int>>("axes");
-  auto axes_size = static_cast<int>(axes.size());
+  auto axes_operand = converter->AddConstantOperand(axes);
   // Starts
-  std::vector<int> starts;
-  if (HasInput(op, scope, "StartsTensorList")) {
-    LOG(FATAL) << "Not support StartsTensorList for stride_slice now.";
-  } else if (HasInput(op, scope, "StartsTensor")) {
-    LOG(FATAL) << "Not support StartsTensor for stride_slice now.";
+  NNAdapterOperand* starts_operand = nullptr;
+  if (HasInput(op, scope, "StartsTensor")) {
+    auto name = op->Input("StartsTensor").front();
+    starts_operand = converter->AddInputOperand(scope, name);
+  } else if (HasInput(op, scope, "StartsTensorList")) {
+    auto names = op->Input("StartsTensorList");
+    if (names.size() == 1) {
+      starts_operand = converter->AddInputOperand(scope, names[0]);
+    } else {
+      std::vector<NNAdapterOperand*> concat_input_operands;
+      for (auto name : names) {
+        auto sub_start_operand = converter->AddInputOperand(scope, name);
+        concat_input_operands.push_back(sub_start_operand);
+      }
+      NNAdapterOperand* concat_axis_operand =
+          converter->AddConstantOperand<int>(0);
+      concat_input_operands.push_back(concat_axis_operand);
+      starts_operand = converter->AddOutputOperand();
+      converter->AddOperation(
+          NNADAPTER_CONCAT, concat_input_operands, {starts_operand});
+    }
   } else {
-    starts = op->GetAttr<std::vector<int>>("starts");
+    CHECK(op->HasAttr("starts")) << "One of 'StartsTensor', "
+                                    "'StartsTensorList', 'starts'(attr) must "
+                                    "be exist.";
+    auto starts = op->GetAttr<std::vector<int>>("starts");
+    starts_operand = converter->AddConstantOperand(starts);
   }
   // Ends
-  std::vector<int> ends_ori;
-  if (HasInput(op, scope, "EndsTensorList")) {
-    LOG(FATAL) << "Not support EndsTensorList for stride_slice now.";
-  } else if (HasInput(op, scope, "EndsTensor")) {
-    LOG(FATAL) << "Not support EndsTensor for stride_slice now.";
+  NNAdapterOperand* ends_operand = nullptr;
+  if (HasInput(op, scope, "EndsTensor")) {
+    auto name = op->Input("EndsTensor").front();
+    ends_operand = converter->AddInputOperand(scope, name);
+  } else if (HasInput(op, scope, "EndsTensorList")) {
+    auto names = op->Input("EndsTensorList");
+    if (names.size() == 1) {
+      ends_operand = converter->AddInputOperand(scope, names[0]);
+    } else {
+      std::vector<NNAdapterOperand*> concat_input_operands;
+      for (auto name : names) {
+        auto sub_end_operand = converter->AddInputOperand(scope, name);
+        concat_input_operands.push_back(sub_end_operand);
+      }
+      NNAdapterOperand* concat_axis_operand =
+          converter->AddConstantOperand<int>(0);
+      concat_input_operands.push_back(concat_axis_operand);
+      ends_operand = converter->AddOutputOperand();
+      converter->AddOperation(
+          NNADAPTER_CONCAT, concat_input_operands, {ends_operand});
+    }
   } else {
-    ends_ori = op->GetAttr<std::vector<int>>("ends");
-  }
-  std::vector<int> ends(axes_size, 0);
-  for (int i = 0; i < axes_size; i++) {
-    auto dim = input_type->dimensions.data[axes[i]];
-    CHECK(dim != NNADAPTER_UNKNOWN);
-    ends[i] = ends_ori[i] > dim ? dim : ends_ori[i];
+    CHECK(op->HasAttr("ends"))
+        << "One of 'EndsTensor', 'EndsTensorList', 'ends'(attr) must be exist.";
+    auto ends = op->GetAttr<std::vector<int>>("ends");
+    ends_operand = converter->AddConstantOperand(ends);
   }
   // Steps
-  std::vector<int> steps;
-  if (HasInput(op, scope, "StridesTensorList")) {
-    LOG(FATAL) << "Not support StridesTensorList for stride_slice now.";
-  } else if (HasInput(op, scope, "StridesTensor")) {
-    LOG(FATAL) << "Not support StridesTensor for stride_slice now.";
+  NNAdapterOperand* steps_operand = nullptr;
+  if (HasInput(op, scope, "StridesTensor")) {
+    auto name = op->Input("StridesTensor").front();
+    steps_operand = converter->AddInputOperand(scope, name);
+  } else if (HasInput(op, scope, "StridesTensorList")) {
+    auto names = op->Input("StridesTensorList");
+    if (names.size() == 1) {
+      steps_operand = converter->AddInputOperand(scope, names[0]);
+    } else {
+      std::vector<NNAdapterOperand*> concat_input_operands;
+      for (auto name : names) {
+        auto sub_end_operand = converter->AddInputOperand(scope, name);
+        concat_input_operands.push_back(sub_end_operand);
+      }
+      NNAdapterOperand* concat_axis_operand =
+          converter->AddConstantOperand<int>(0);
+      concat_input_operands.push_back(concat_axis_operand);
+      steps_operand = converter->AddOutputOperand();
+      converter->AddOperation(
+          NNADAPTER_CONCAT, concat_input_operands, {steps_operand});
+    }
   } else {
-    steps = op->GetAttr<std::vector<int>>("strides");
+    CHECK(op->HasAttr("strides")) << "One of 'StridesTensor', "
+                                     "'StridesTensorList', 'strides'(attr) "
+                                     "must be exist.";
+    auto steps = op->GetAttr<std::vector<int>>("strides");
+    steps_operand = converter->AddConstantOperand(steps);
   }
   // Decrease axis
   std::vector<int> decrease_axis;
@@ -74,14 +127,32 @@ int ConvertStridedSlice(Converter* converter, OpInfo* op, Scope* scope) {
   }
   // Output
   auto out_name = op->Output("Out").front();
+  auto out_scale_name = "Out0_scale";
+  std::vector<float> out_scales;
+  if (op->HasOutputScale(out_scale_name, true)) {
+    out_scales = op->GetOutputScale(out_scale_name, true);
+  }
+  auto output_operand = converter->AddOutputOperand(out_name, out_scales);
 
   // Slice operation
-  auto slice_operand = converter->AddSliceOperation(
-      input_operand, axes, starts, ends, steps, out_name);
+  converter->AddOperation(NNADAPTER_SLICE,
+                          {input_operand,
+                           axes_operand,
+                           starts_operand,
+                           ends_operand,
+                           steps_operand},
+                          {output_operand});
   // Use squeeze to process decrease_axis(attr)
-  if (!decrease_axis.empty()) {
+  if (!decrease_axis.empty() &&
+      decrease_axis.size() != input_type->dimensions.count) {
     // Squeeze operation
-    converter->AddSqueezeOperation(slice_operand, decrease_axis, out_name);
+    converter->AddSqueezeOperation(
+        output_operand, decrease_axis, out_name, out_scales);
+  }
+  if (decrease_axis.size() == input_type->dimensions.count &&
+      decrease_axis.size() > 1) {
+    std::vector<int> shape = {1};
+    converter->AddReshapeOperation(output_operand, shape, out_name, out_scales);
   }
   return NO_ERROR;
 }
