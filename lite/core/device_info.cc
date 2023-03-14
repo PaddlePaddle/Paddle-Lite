@@ -80,6 +80,7 @@
 
 #include <algorithm>
 #include <limits>
+
 #include "lite/core/device_info.h"
 #include "lite/utils/macros.h"
 
@@ -495,23 +496,55 @@ bool check_cpu_online(const std::vector<int>& cpu_ids) {
   if (cpu_ids.size() == 0) {
     return false;
   }
-  char path[256];
   bool all_online = true;
-  for (int i = 0; i < cpu_ids.size(); ++i) {
-    snprintf(
-        path, sizeof(path), "/sys/devices/system/cpu/cpu%d/online", cpu_ids[i]);
-    FILE* fp = fopen(path, "rb");
-    int is_online = 0;
-    if (fp) {
-      fscanf(fp, "%d", &is_online);
-      fclose(fp);
-    } else {
-      LOG(ERROR) << "Failed to query the online statue of CPU id:"
-                 << cpu_ids[i];
+  FILE* fp = fopen("/sys/devices/system/cpu/online", "r");
+  if (fp) {
+    std::vector<int> cpus;
+    int n, cpu;
+    char sep;
+    int prev = -1;
+    for (;;) {
+      n = fscanf(fp, "%u%c", &cpu, &sep);
+      if (n <= 0) break;
+      if (prev >= 0) {
+        while (++prev < cpu) cpus.push_back(prev);
+      }
+      cpus.push_back(cpu);
+      if (n == 2 && sep == '-')
+        prev = cpu;
+      else
+        prev = -1;
+      if (n == 1 || sep == '\n') break;
     }
-    if (is_online == 0) {
-      all_online = false;
-      LOG(ERROR) << "CPU id:" << cpu_ids[i] << " is offine";
+    for (int i = 0; i < cpu_ids.size(); ++i) {
+      if (std::find(cpus.begin(), cpus.end(), cpu_ids[i]) == cpus.end()) {
+        all_online = false;
+        LOG(ERROR) << "CPU id:" << cpu_ids[i] << " is offine";
+      }
+    }
+    fclose(fp);
+  } else {
+    LOG(WARNING) << "Failed to query all cpus online status list failed. Try "
+                    "to query single cpu online status";
+    char path[256];
+    for (int i = 0; i < cpu_ids.size(); ++i) {
+      snprintf(path,
+               sizeof(path),
+               "/sys/devices/system/cpu/cpu%d/online",
+               cpu_ids[i]);
+      FILE* fp = fopen(path, "rb");
+      int is_online = 0;
+      if (fp) {
+        fscanf(fp, "%d", &is_online);
+        fclose(fp);
+      } else {
+        LOG(ERROR) << "Failed to query the online status of CPU id:"
+                   << cpu_ids[i];
+      }
+      if (is_online == 0) {
+        all_online = false;
+        LOG(ERROR) << "CPU id:" << cpu_ids[i] << " is offine";
+      }
     }
   }
   return all_online;
