@@ -2640,7 +2640,7 @@ struct EmptyParam : ParamBase {
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
   lite::Tensor* Out{};
 };
-  
+
 struct ViterbiDecodeParam : ParamBase {
   const lite::Tensor* input{};
   const lite::Tensor* length{};
