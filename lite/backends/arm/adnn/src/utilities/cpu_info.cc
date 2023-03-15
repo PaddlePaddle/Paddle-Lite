@@ -96,67 +96,67 @@ void set_cpu_attrs(std::vector<CPUAttr>* cpu_attrs,
   for (size_t i = 0; i < argc; i++) {
     int attr_index = va_arg(arg_ptr, int32_t);
     switch (attr_index) {
-      case 0: {  // arch
+      case CPU_ATTR_ARCH: {
         CPUArch attr_value = static_cast<CPUArch>(va_arg(arg_ptr, int32_t));
         for (size_t j = from_cpu_id; j < to_cpu_id; j++) {
           cpu_attrs->at(j).arch = attr_value;
         }
       } break;
-      case 1: {  // cluster_id
+      case CPU_ATTR_CLUSTER_ID: {
         int32_t attr_value = va_arg(arg_ptr, int32_t);
         for (size_t j = from_cpu_id; j < to_cpu_id; j++) {
           cpu_attrs->at(j).cluster_id = attr_value;
         }
       } break;
-      case 2: {  // l1_cache_size
-        size_t attr_value = va_arg(arg_ptr, size_t);
+      case CPU_ATTR_L1_CACHE_SIZE: {
+        int32_t attr_value = va_arg(arg_ptr, int32_t);
         for (size_t j = from_cpu_id; j < to_cpu_id; j++) {
           cpu_attrs->at(j).l1_cache_size = attr_value;
         }
       } break;
-      case 3: {  // l2_cache_size
-        size_t attr_value = va_arg(arg_ptr, size_t);
+      case CPU_ATTR_L2_CACHE_SIZE: {
+        int32_t attr_value = va_arg(arg_ptr, int32_t);
         for (size_t j = from_cpu_id; j < to_cpu_id; j++) {
           cpu_attrs->at(j).l2_cache_size = attr_value;
         }
       } break;
-      case 4: {  // l3_cache_size
-        size_t attr_value = va_arg(arg_ptr, size_t);
+      case CPU_ATTR_L3_CACHE_SIZE: {
+        int32_t attr_value = va_arg(arg_ptr, int32_t);
         for (size_t j = from_cpu_id; j < to_cpu_id; j++) {
           cpu_attrs->at(j).l3_cache_size = attr_value;
         }
       } break;
-      case 5: {  // support_arm_fp16
+      case CPU_ATTR_SUPPORT_ARM_FP16: {
         bool attr_value = va_arg(arg_ptr, int32_t) != 0;
         for (size_t j = from_cpu_id; j < to_cpu_id; j++) {
           cpu_attrs->at(j).support_arm_fp16 = attr_value;
         }
       } break;
-      case 6: {  // support_arm_bf16
+      case CPU_ATTR_SUPPORT_ARM_BF16: {
         bool attr_value = va_arg(arg_ptr, int32_t) != 0;
         for (size_t j = from_cpu_id; j < to_cpu_id; j++) {
           cpu_attrs->at(j).support_arm_bf16 = attr_value;
         }
       } break;
-      case 7: {  // support_arm_dotprod
+      case CPU_ATTR_SUPPORT_ARM_DOTPROD: {
         bool attr_value = va_arg(arg_ptr, int32_t) != 0;
         for (size_t j = from_cpu_id; j < to_cpu_id; j++) {
           cpu_attrs->at(j).support_arm_dotprod = attr_value;
         }
       } break;
-      case 8: {  // support_arm_sve2
+      case CPU_ATTR_SUPPORT_ARM_SVE2: {
         bool attr_value = va_arg(arg_ptr, int32_t) != 0;
         for (size_t j = from_cpu_id; j < to_cpu_id; j++) {
           cpu_attrs->at(j).support_arm_sve2 = attr_value;
         }
       } break;
-      case 9: {  // support_arm_sve2_i8mm
+      case CPU_ATTR_SUPPORT_ARM_SVE2_I8MM: {
         bool attr_value = va_arg(arg_ptr, int32_t) != 0;
         for (size_t j = from_cpu_id; j < to_cpu_id; j++) {
           cpu_attrs->at(j).support_arm_sve2_i8mm = attr_value;
         }
       } break;
-      case 10: {  // support_arm_sve2_f32mm
+      case CPU_ATTR_SUPPORT_ARM_SVE2_F32MM: {
         bool attr_value = va_arg(arg_ptr, int32_t) != 0;
         for (size_t j = from_cpu_id; j < to_cpu_id; j++) {
           cpu_attrs->at(j).support_arm_sve2_f32mm = attr_value;
@@ -184,7 +184,7 @@ bool get_cluster_ids_by_cpu_max_freqs(const std::vector<int>& cpu_max_freqs,
     }
     it->second.push_back(i);
   }
-  // Min/LITTLE
+  // LITTLE
   auto cluster_count = cluster_freqs.size();
   ADNN_CHECK_GT(cluster_count, 0);
   cluster_ids->resize(cpu_num);
@@ -192,19 +192,19 @@ bool get_cluster_ids_by_cpu_max_freqs(const std::vector<int>& cpu_max_freqs,
     cluster_ids->at(i) = 0;
   }
   if (cluster_count > 1) {
-    // Med
+    // Middle
     for (size_t i = 0; i < cpu_num; i++) {
       cluster_ids->at(i) = 1;
     }
-    // Min/LITTLE
+    // LITTLE
     auto cpu_ids = cluster_freqs.begin()->second;
     for (size_t i = 0; i < cpu_ids.size(); i++) {
       cluster_ids->at(cpu_ids[i]) = 0;
     }
-    // Max/big
+    // big
     cpu_ids = cluster_freqs.rbegin()->second;
     for (size_t i = 0; i < cpu_ids.size(); i++) {
-      cluster_ids->at(cpu_ids[i]) = cluster_count == 2 ? 1 : 2;
+      cluster_ids->at(cpu_ids[i]) = 2;
     }
   }
   return true;
@@ -516,115 +516,642 @@ bool detect_from_cpu_name(std::vector<CPUAttr>* cpu_attrs) {
   const std::string& cpu_name = get_cpu_name();
   ADNN_LOG(INFO) << cpu_name;
   if (cpu_name.length() == 0) return false;
-  if (cpu_name.find("SM8350") != std::string::npos) {
+  if (cpu_name.find("SM8350") != std::string::npos) {  // 888
     cpu_attrs->resize(8);
     set_cpu_attrs(cpu_attrs,
                   0 /* from_cpu_id */,
                   4 /* to_cpu_id */,
                   4 /* attrs count */,
-                  0 /* arch */,
+                  CPU_ATTR_ARCH /* arch */,
                   CPUArch::CORTEX_A55,
-                  1 /* cluster_id */,
-                  0 /* Min */,
-                  2 /* l1_cache_size */,
+                  CPU_ATTR_CLUSTER_ID /* cluster_id */,
+                  0 /* LITTLE */,
+                  CPU_ATTR_L1_CACHE_SIZE /* l1_cache_size */,
                   256 * 1024,
-                  3 /* l2_cache_size */,
+                  CPU_ATTR_L2_CACHE_SIZE /* l2_cache_size */,
                   128 * 1024);
     set_cpu_attrs(cpu_attrs,
                   4,
                   7,
                   4,
-                  0,
+                  CPU_ATTR_ARCH,
                   CPUArch::CORTEX_A78,
-                  1,
-                  1 /* Med */,
-                  2,
+                  CPU_ATTR_CLUSTER_ID,
+                  1 /* Middle */,
+                  CPU_ATTR_L1_CACHE_SIZE,
                   192 * 1024,
-                  3,
+                  CPU_ATTR_L2_CACHE_SIZE,
                   512 * 1024);
     set_cpu_attrs(cpu_attrs,
                   7,
                   8,
                   4,
-                  0,
+                  CPU_ATTR_ARCH,
                   CPUArch::CORTEX_X1,
-                  1,
-                  2 /* Max */,
-                  2,
+                  CPU_ATTR_CLUSTER_ID,
+                  2 /* big */,
+                  CPU_ATTR_L1_CACHE_SIZE,
                   512 * 1024,
-                  3,
+                  CPU_ATTR_L2_CACHE_SIZE,
                   1024 * 1024);
-    set_cpu_attrs(cpu_attrs, 0, 8, 1, 4 /* l3_cache_size */, 4 * 1024 * 1024);
-    set_cpu_attrs(cpu_attrs, 0, 8, 1, 5 /* support_arm_fp16 */, 1);
-    set_cpu_attrs(cpu_attrs, 0, 8, 1, 6 /* support_arm_bf16 */, 0);
-    set_cpu_attrs(cpu_attrs, 0, 8, 1, 7 /* support_arm_dotprod */, 1);
-    set_cpu_attrs(cpu_attrs, 0, 8, 1, 8 /* support_arm_sve2 */, 0);
-    set_cpu_attrs(cpu_attrs, 0, 8, 1, 9 /* support_arm_sve2_i8mm */, 0);
-    set_cpu_attrs(cpu_attrs, 0, 8, 1, 10 /* support_arm_sve2_f32mm */, 0);
-    return true;
-  } else if (cpu_name.find("SA8155") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("SA8155") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("SA8195") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("KONA") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("SM8150") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("SDM845") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("SDM710") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("MSM8998") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("MSM8996") != std::string::npos) {
-    return true;
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  3,
+                  CPU_ATTR_L3_CACHE_SIZE /* l3_cache_size */,
+                  4 * 1024 * 1024,
+                  CPU_ATTR_SUPPORT_ARM_FP16 /* support_arm_fp16 */,
+                  CPU_ATTR_SUPPORT_ARM_DOTPROD /* support_arm_dotprod */,
+                  1);
+  } else if (cpu_name.find("SA8155") != std::string::npos) {  // SA8155
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  4,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::KRYO_485_SILVER,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  128 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  128 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  4,
+                  7,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::KRYO_485_GOLD,
+                  CPU_ATTR_CLUSTER_ID,
+                  1,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  256 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  256 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  7,
+                  8,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::KRYO_485_GOLD_PRIME,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  512 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  512 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  3,
+                  CPU_ATTR_L3_CACHE_SIZE,
+                  2 * 1024 * 1024,
+                  CPU_ATTR_SUPPORT_ARM_FP16,
+                  1,
+                  CPU_ATTR_SUPPORT_ARM_DOTPROD,
+                  1);
+  } else if (cpu_name.find("SA8195") != std::string::npos) {  // SA8195
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  4,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::KRYO_485_SILVER,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  128 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  128 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  4,
+                  8,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::KRYO_485_GOLD_PRIME,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  512 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  512 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  3,
+                  CPU_ATTR_L3_CACHE_SIZE,
+                  4 * 1024 * 1024,
+                  CPU_ATTR_SUPPORT_ARM_FP16,
+                  1,
+                  CPU_ATTR_SUPPORT_ARM_DOTPROD,
+                  1);
+  } else if (cpu_name.find("KONA") != std::string::npos) {  // 865
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  4,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A55,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  256 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  512 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  4,
+                  8,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A77,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  192 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  768 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  3,
+                  CPU_ATTR_L3_CACHE_SIZE,
+                  4 * 1024 * 1024,
+                  CPU_ATTR_SUPPORT_ARM_FP16,
+                  1,
+                  CPU_ATTR_SUPPORT_ARM_DOTPROD,
+                  1);
+  } else if (cpu_name.find("SM8150") != std::string::npos) {  // 855
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  4,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A55,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  32 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  128 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  4,
+                  8,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A76,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  64 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  256 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  3,
+                  CPU_ATTR_L3_CACHE_SIZE,
+                  2 * 1024 * 1024,
+                  CPU_ATTR_SUPPORT_ARM_FP16,
+                  1,
+                  CPU_ATTR_SUPPORT_ARM_DOTPROD,
+                  1);
+  } else if (cpu_name.find("SDM845") != std::string::npos) {  // 845
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  4,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A55,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  32 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  128 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  4,
+                  8,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A75,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  64 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  256 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  2,
+                  CPU_ATTR_L3_CACHE_SIZE,
+                  2 * 1024 * 1024,
+                  CPU_ATTR_SUPPORT_ARM_FP16,
+                  1);
+  } else if (cpu_name.find("SDM710") != std::string::npos) {  // 710
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  6,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A55,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  32 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  128 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  6,
+                  8,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A75,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  64 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  256 * 1024);
+    set_cpu_attrs(cpu_attrs, 0, 8, 1, CPU_ATTR_L3_CACHE_SIZE, 1024 * 1024);
+  } else if (cpu_name.find("MSM8998") != std::string::npos) {  // 835
+    cpu_attrs->resize(8);
+    set_cpu_attrs(
+        cpu_attrs,
+        0,
+        4,
+        4,
+        CPU_ATTR_ARCH,
+        CPUArch::CORTEX_A53,
+        CPU_ATTR_CLUSTER_ID,
+        0,
+        CPU_ATTR_L1_CACHE_SIZE,
+        32 * 1024,
+        CPU_ATTR_L2_CACHE_SIZE,
+        /* Real cache size is 2MB, while that will get bad performace on
+           conv3x3s1 or gemm, set to 1MB or 512KB */
+        1024 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  4,
+                  8,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A73,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  64 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  1024 * 1024);
+  } else if (cpu_name.find("MSM8996") != std::string::npos) {  // 820
+    cpu_attrs->resize(4);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  4,
+                  2,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A72,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  24 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  2,
+                  2,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  512 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  2,
+                  4,
+                  2,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  1024 * 1024);
   } else if (cpu_name.find("SDM660") != std::string::npos ||
-             cpu_name.find("SDM636") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("MSM8976") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("MSM8953") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("MSM8939") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("MT6891") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("MT6797") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("MT6799") != std::string::npos) {
-    return true;
+             cpu_name.find("SDM636") != std::string::npos) {  // 660, 636
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  2,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A73,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  1024 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  4,
+                  2,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  32 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  4,
+                  8,
+                  2,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  64 * 1024);
+  } else if (cpu_name.find("MSM8976") != std::string::npos) {  // 652,653
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  4,
+                  3,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A53,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  512 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  4,
+                  8,
+                  3,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A73,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  1024 * 1024);
+    set_cpu_attrs(cpu_attrs, 0, 8, 1, CPU_ATTR_L1_CACHE_SIZE, 32 * 1024);
+  } else if (cpu_name.find("MSM8953") != std::string::npos) {  // 625
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A53,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  32 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  1024 * 1024);
+  } else if (cpu_name.find("MSM8939") != std::string::npos) {  // 615
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  2,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A53,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  32 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  4,
+                  2,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  256 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  4,
+                  8,
+                  2,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  512 * 1024);
+  } else if (cpu_name.find("MT6891") != std::string::npos) {  // Dimensity 1100
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  4,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A55,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  64 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  128 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  4,
+                  8,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A78,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  64 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  512 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  3,
+                  CPU_ATTR_L3_CACHE_SIZE,
+                  4 * 1024 * 1024,
+                  CPU_ATTR_SUPPORT_ARM_FP16,
+                  1,
+                  CPU_ATTR_SUPPORT_ARM_DOTPROD,
+                  1);
+  } else if (cpu_name.find("MT6797") != std::string::npos) {  // X20/X23/X25/X27
+    cpu_attrs->resize(10);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  3,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A53,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  512 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  8,
+                  10,
+                  3,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A72,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  1024 * 1024);
+    set_cpu_attrs(cpu_attrs, 0, 8, 1, CPU_ATTR_L1_CACHE_SIZE, 32 * 1024);
+  } else if (cpu_name.find("MT6799") != std::string::npos) {  // X30
+    cpu_attrs->resize(10);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  2,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A53,
+                  CPU_ATTR_CLUSTER_ID,
+                  0);
+    set_cpu_attrs(cpu_attrs,
+                  8,
+                  10,
+                  2,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A73,
+                  CPU_ATTR_CLUSTER_ID,
+                  2);
   } else if (cpu_name.find("MT6795") != std::string::npos ||
              cpu_name.find("MT6762") != std::string::npos ||
              cpu_name.find("MT6755T") != std::string::npos ||
              cpu_name.find("MT6755S") != std::string::npos ||
              cpu_name.find("MT6753") != std::string::npos ||
              cpu_name.find("MT6752") != std::string::npos ||
-             cpu_name.find("MT6750") != std::string::npos) {
-    return true;
+             cpu_name.find("MT6750") !=
+                 std::string::npos) {  // X10, P22, P15/P18, MT6753,
+                                       // MT6752/MT6752M, MT6750
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  2,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A53,
+                  CPU_ATTR_CLUSTER_ID,
+                  0);
   } else if (cpu_name.find("MT6758") != std::string::npos ||
              cpu_name.find("MT6757") != std::string::npos ||
              cpu_name.find("MT6763") != std::string::npos ||
              cpu_name.find("MT6755M") != std::string::npos ||
-             cpu_name.find("MT6755") != std::string::npos) {
-    return true;
-  } else if (cpu_name.find("MT6771") != std::string::npos) {
-    return true;
+             cpu_name.find("MT6755") !=
+                 std::string::npos) {  // P30, P20/P25, P23, P10
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs, 0, 8, 1, CPU_ATTR_ARCH, CPUArch::CORTEX_A53);
+    set_cpu_attrs(cpu_attrs, 0, 4, 1, CPU_ATTR_CLUSTER_ID, 0);
+    set_cpu_attrs(cpu_attrs, 4, 8, 1, CPU_ATTR_CLUSTER_ID, 2);
+  } else if (cpu_name.find("MT6771") != std::string::npos) {  // P60
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  4,
+                  2,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A53,
+                  CPU_ATTR_CLUSTER_ID,
+                  0);
+    set_cpu_attrs(cpu_attrs,
+                  4,
+                  8,
+                  2,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A73,
+                  CPU_ATTR_CLUSTER_ID,
+                  2);
   } else if (cpu_name.find("MT6765") != std::string::npos ||
              cpu_name.find("MT6739") != std::string::npos ||
              cpu_name.find("MT6738") != std::string::npos ||
-             cpu_name.find("MT6737") != std::string::npos) {
-    return true;
+             cpu_name.find("MT6737") !=
+                 std::string::npos) {  // A22, MT6739, MT6738, MT6767
+    cpu_attrs->resize(4);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  4,
+                  2,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A53,
+                  CPU_ATTR_CLUSTER_ID,
+                  0);
   } else if (cpu_name.find("KIRIN980") != std::string::npos ||
-             cpu_name.find("KIRIN990") != std::string::npos) {
-    return true;
+             cpu_name.find("KIRIN990") !=
+                 std::string::npos) {  // Kirin 980, Kirin 990
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  4,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A55,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  32 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  128 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  4,
+                  8,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A76,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  64 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  512 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  3,
+                  CPU_ATTR_L3_CACHE_SIZE,
+                  4 * 1024 * 1024,
+                  CPU_ATTR_SUPPORT_ARM_FP16,
+                  1,
+                  CPU_ATTR_SUPPORT_ARM_DOTPROD,
+                  1);
   } else if (cpu_name.find("KIRIN810") != std::string::npos) {
-    return true;
+    cpu_attrs->resize(8);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  4,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A55,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  32 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  128 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  4,
+                  8,
+                  4,
+                  CPU_ATTR_ARCH,
+                  CPUArch::CORTEX_A76,
+                  CPU_ATTR_CLUSTER_ID,
+                  2,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  64 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  512 * 1024);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  8,
+                  2,
+                  CPU_ATTR_SUPPORT_ARM_FP16,
+                  1,
+                  CPU_ATTR_SUPPORT_ARM_DOTPROD,
+                  1);
   } else if (cpu_name.find("FT2000PLUS") != std::string::npos) {
-    return true;
+    cpu_attrs->resize(64);
+    set_cpu_attrs(cpu_attrs,
+                  0,
+                  64,
+                  4,
+                  CPU_ATTR_CLUSTER_ID,
+                  0,
+                  CPU_ATTR_L1_CACHE_SIZE,
+                  64 * 1024,
+                  CPU_ATTR_L2_CACHE_SIZE,
+                  32 * 1024 * 1024,
+                  CPU_ATTR_L3_CACHE_SIZE,
+                  128 * 1024 * 1024);
+  } else {
+    return false;
   }
-  return false;
+  return true;
 }
 
 CPUInfo::CPUInfo() {
@@ -637,27 +1164,27 @@ CPUInfo::CPUInfo() {
                     0,
                     1,
                     11,
-                    0,
+                    CPU_ATTR_ARCH,
                     CPUArch::UNKOWN,
-                    1,
+                    CPU_ATTR_CLUSTER_ID,
                     0,
-                    2,
+                    CPU_ATTR_L1_CACHE_SIZE,
                     DEFAULT_L1_CACHE_SIZE,
-                    3,
+                    CPU_ATTR_L2_CACHE_SIZE,
                     DEFAULT_L2_CACHE_SIZE,
-                    4,
+                    CPU_ATTR_L3_CACHE_SIZE,
                     DEFAULT_L3_CACHE_SIZE,
-                    5,
+                    CPU_ATTR_SUPPORT_ARM_FP16,
                     0,
-                    6,
+                    CPU_ATTR_SUPPORT_ARM_BF16,
                     0,
-                    7,
+                    CPU_ATTR_SUPPORT_ARM_DOTPROD,
                     0,
-                    8,
+                    CPU_ATTR_SUPPORT_ARM_SVE2,
                     0,
-                    9,
+                    CPU_ATTR_SUPPORT_ARM_SVE2_I8MM,
                     0,
-                    10,
+                    CPU_ATTR_SUPPORT_ARM_SVE2_F32MM,
                     0);
     }
   }
@@ -681,27 +1208,27 @@ CPUInfo::CPUInfo() {
                 0,
                 cpu_num,
                 11,
+                CPU_ATTR_ARCH,
+                CPUArch::APPLE,
+                CPU_ATTR_CLUSTER_ID,
                 0,
-                CPUArch::UNKOWN,
-                1,
-                0,
-                2,
+                CPU_ATTR_L1_CACHE_SIZE,
                 DEFAULT_L1_CACHE_SIZE,
-                3,
+                CPU_ATTR_L2_CACHE_SIZE,
                 DEFAULT_L2_CACHE_SIZE,
-                4,
+                CPU_ATTR_L3_CACHE_SIZE,
                 DEFAULT_L3_CACHE_SIZE,
-                5,
+                CPU_ATTR_SUPPORT_ARM_FP16,
                 0,
-                6,
+                CPU_ATTR_SUPPORT_ARM_BF16,
                 0,
-                7,
+                CPU_ATTR_SUPPORT_ARM_DOTPROD,
                 0,
-                8,
+                CPU_ATTR_SUPPORT_ARM_SVE2,
                 0,
-                9,
+                CPU_ATTR_SUPPORT_ARM_SVE2_I8MM,
                 0,
-                10,
+                CPU_ATTR_SUPPORT_ARM_SVE2_F32MM,
                 0);
 }
 // Initialize CPUInfo on QNX
@@ -714,27 +1241,27 @@ CPUInfo::CPUInfo() {
                 0,
                 cpu_num,
                 11,
-                0,
+                CPU_ATTR_ARCH,
                 CPUArch::UNKOWN,
-                1,
+                CPU_ATTR_CLUSTER_ID,
                 0,
-                2,
+                CPU_ATTR_L1_CACHE_SIZE,
                 DEFAULT_L1_CACHE_SIZE,
-                3,
+                CPU_ATTR_L2_CACHE_SIZE,
                 DEFAULT_L2_CACHE_SIZE,
-                4,
+                CPU_ATTR_L3_CACHE_SIZE,
                 DEFAULT_L3_CACHE_SIZE,
-                5,
+                CPU_ATTR_SUPPORT_ARM_FP16,
                 0,
-                6,
+                CPU_ATTR_SUPPORT_ARM_BF16,
                 0,
-                7,
+                CPU_ATTR_SUPPORT_ARM_DOTPROD,
                 0,
-                8,
+                CPU_ATTR_SUPPORT_ARM_SVE2,
                 0,
-                9,
+                CPU_ATTR_SUPPORT_ARM_SVE2_I8MM,
                 0,
-                10,
+                CPU_ATTR_SUPPORT_ARM_SVE2_F32MM,
                 0);
 }
 #endif  // ADNN_OS_LINUX
@@ -749,7 +1276,10 @@ void CPUInfo::dump() {
     const auto& cpu_attr = cpu_info.cpu_attrs_[i];
     ADNN_LOG(INFO) << "CPU[" << i << "]";
     ADNN_LOG(INFO) << " Arch: " << cpu_arch_to_string(cpu_attr.arch);
-    ADNN_LOG(INFO) << " Cluster Id: " << cpu_attr.cluster_id;
+    ADNN_LOG(INFO) << " Cluster Id: "
+                   << (cpu_attr.cluster_id == 0
+                           ? "LITTLE"
+                           : (cpu_attr.cluster_id == 2 ? "big" : "Middle"));
     ADNN_LOG(INFO) << " L1 cache: " << cpu_attr.l1_cache_size / 1024.0f
                    << " KB";
     ADNN_LOG(INFO) << " L2 cache: " << cpu_attr.l2_cache_size / 1024.0f

@@ -34,12 +34,23 @@ const int DEFAULT_L3_CACHE_SIZE = 0;
 
 namespace adnn {
 
+#define CPU_ATTR_ARCH 0
+#define CPU_ATTR_CLUSTER_ID 1
+#define CPU_ATTR_L1_CACHE_SIZE 2
+#define CPU_ATTR_L2_CACHE_SIZE 3
+#define CPU_ATTR_L3_CACHE_SIZE 4
+#define CPU_ATTR_SUPPORT_ARM_FP16 5
+#define CPU_ATTR_SUPPORT_ARM_BF16 6
+#define CPU_ATTR_SUPPORT_ARM_DOTPROD 7
+#define CPU_ATTR_SUPPORT_ARM_SVE2 8
+#define CPU_ATTR_SUPPORT_ARM_SVE2_I8MM 9
+#define CPU_ATTR_SUPPORT_ARM_SVE2_F32MM 10
+
 typedef struct {
   // [0] CPU arch
   CPUArch arch{CPUArch::UNKOWN};
   // [1] CPU cluster
-  // 0 = LITTLE, 1 = big
-  // 0 = Min, 1 = Med, 2 = Max
+  // 0 = LITTLE, 1 = Middle, 2 = big
   int32_t cluster_id{0};
   // [2] L1 cache size
   size_t l1_cache_size{DEFAULT_L1_CACHE_SIZE};

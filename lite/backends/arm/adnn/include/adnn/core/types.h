@@ -102,12 +102,12 @@ typedef enum {
   CORTEX_A510,
   /* ARM Cortex-A710. */
   CORTEX_A710,
-  /* Intel Goldmont. */
-  GOLDMONT,
-  /* Intel Goldmont Plus. */
-  GOLDMONT_PLUS,
-  /* Intel Silvermont Plus. */
-  SILVERMONT,
+  /* Qualcomm Kryo 485 Gold Prime. */
+  KRYO_485_GOLD_PRIME,
+  /* Qualcomm Kryo 485 Gold. */
+  KRYO_485_GOLD,
+  /* Qualcomm Kryo 485 Silver. */
+  KRYO_485_SILVER,
   /* Apple A-series processors. */
   APPLE,
 } CPUArch;
