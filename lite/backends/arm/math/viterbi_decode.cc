@@ -359,7 +359,7 @@ void viterbi_decode(
              batch_path_ptr + (actual_len - last_ids_index) * batch,
              batch);
   arange(batch_offset_ptr, batch, n_labels);
-  for (int sl = 0; sl < max_seq_len - 1; sl++) {
+  for (int sl = max_seq_len - 2; sl >= 0; sl--) {
     ++last_ids_index;
     vector_add(1, left_length_ptr, left_length_ptr, batch);
     vector_add(batch_offset_ptr, last_ids_ptr, gather_idx_ptr, batch);
