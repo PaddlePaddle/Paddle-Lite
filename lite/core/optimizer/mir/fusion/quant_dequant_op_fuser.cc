@@ -711,7 +711,15 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
       bool enable_int8_cond = false;
       for (auto& inlink_node : quantized_node->inlinks) {
         enable_int8_cond = true;
-        // no op before weight
+        /*    run int8 kernel          run fp32 kernel
+                            data                    data
+                             /                      /
+              weight    quant_op                quant_op
+                \         /                       /
+           dequant_op  dequant_op       weight dequant_op
+                  \    /                   \   /
+                   conv                    conv
+        */
         if (inlink_node->IsArg() && inlink_node->arg()->is_weight &&
             inlink_node->inlinks.size() == 0) {
           enable_int8_cond = false;
