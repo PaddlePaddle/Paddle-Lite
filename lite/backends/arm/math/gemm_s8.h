@@ -38,7 +38,8 @@ void gemm_s8(bool is_transA,
              GemmBiasDirection bias_direction,
              const float* scale,
              const operators::ActivationParam act_param,
-             ARMContext* ctx);
+             ARMContext* ctx,
+             bool packed_b = false);
 
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
 template <typename Dtype>
@@ -55,7 +56,8 @@ void gemm_sve(bool is_transA,
               GemmBiasDirection bias_direction,
               const float* scale,
               const operators::ActivationParam act_param,
-              ARMContext* ctx);
+              ARMContext* ctx,
+              bool packed_b = false);
 #endif
 }  // namespace math
 }  // namespace arm

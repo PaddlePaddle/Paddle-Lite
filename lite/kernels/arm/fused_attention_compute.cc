@@ -66,12 +66,97 @@ void TransposeCompute_1to3(int8_t* input,
 template <>
 void FusedAttentionCompute<PRECISION(kInt8)>::PrepareForRun() {
   ReInitWhenNeeded();
+  auto& param = this->template Param<param_t>();
+  // prepack weight
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto* w_data = param.fc_w->template data<int8_t>();
+  size_t llc_size = ctx.llc_size() / 4;
+  if (ctx.has_dot()) {
+#ifdef WITH_ARM_DOTPROD
+    int x_block = (llc_size - (lite::arm::math::MBLOCK_INT8_DOT * fc_k_)) /
+                  (sizeof(int8_t) * (fc_k_ + lite::arm::math::MBLOCK_INT8_DOT));
+    x_block /= lite::arm::math::NBLOCK_INT8_DOT;
+    x_block *= lite::arm::math::NBLOCK_INT8_DOT;
+
+    int x_num = (fc_n_ + (x_block - 1)) / x_block;
+    x_block = (fc_n_ + x_num - 1) / x_num;
+    x_block = (x_block + lite::arm::math::NBLOCK_INT8_DOT - 1) /
+              lite::arm::math::NBLOCK_INT8_DOT;
+    x_block *= lite::arm::math::NBLOCK_INT8_DOT;
+    x_block = x_block < lite::arm::math::NBLOCK_INT8_DOT
+                  ? lite::arm::math::NBLOCK_INT8_DOT
+                  : x_block;
+    int kup = ROUNDUP(fc_k_, lite::arm::math::KBLOCK_INT8);
+    DDim prepack_w_dim =
+        DDim(std::vector<int64_t>{kup, ROUNDUP(fc_n_, x_block)});
+    Tensor prepack_w;
+    prepack_w.Resize(prepack_w_dim);
+    int8_t* prepack_w_data = prepack_w.mutable_data<int8_t>();
+
+    for (unsigned int x0 = 0; x0 < fc_n_; x0 += x_block) {
+      unsigned int xmax = x0 + x_block;
+      xmax = (xmax > fc_n_) ? fc_n_ : xmax;
+#ifdef __aarch64__
+      lite::arm::math::packb_sdot_int8_n12_n8_n4(
+          prepack_w_data + x0 * kup, w_data, fc_n_, 0, fc_k_, x0, xmax);
+#else
+      lite::arm::math::packb_dot_int8(
+          prepack_w_data + x0 * kup, w_data, fc_n_, 0, fc_k_, x0, xmax);
+#endif
+    }
+    DDim w_origin_dim = param.fc_w->dims();
+    param.fc_w->CopyDataFrom(prepack_w);
+    param.fc_w->Resize(w_origin_dim);
+#endif
+  } else {
+    const int kup = ROUNDUP(fc_k_, lite::arm::math::KBLOCK_INT8);
+    int x_block =
+        llc_size / (sizeof(int8_t) * (kup + lite::arm::math::MBLOCK_INT8_OTH));
+    x_block /= lite::arm::math::NBLOCK_INT8_OTH;
+    x_block *= lite::arm::math::NBLOCK_INT8_OTH;
+    int x_num = (fc_n_ + (x_block - 1)) / x_block;
+    x_block = (fc_n_ + x_num - 1) / x_num;
+    x_block = (x_block + lite::arm::math::NBLOCK_INT8_OTH - 1) /
+              lite::arm::math::NBLOCK_INT8_OTH;
+    x_block *= lite::arm::math::NBLOCK_INT8_OTH;
+
+    DDim prepack_w_dim =
+        DDim(std::vector<int64_t>{kup, ROUNDUP(fc_n_, x_block)});
+    Tensor prepack_w;
+    prepack_w.Resize(prepack_w_dim);
+    int8_t* prepack_w_data = prepack_w.mutable_data<int8_t>();
+
+    auto* zerobuf = static_cast<int8_t*>(malloc(x_block * (sizeof(int8_t))));
+    memset(zerobuf, 0, x_block * sizeof(int8_t));
+    for (unsigned int x0 = 0; x0 < fc_n_; x0 += x_block) {
+      unsigned int xmax = x0 + x_block;
+      if (xmax >= fc_n_) {
+        xmax = fc_n_;
+      }
+      lite::arm::math::packb_int8(prepack_w_data + x0 * kup,
+                                  w_data,
+                                  fc_n_,
+                                  0,
+                                  fc_k_,
+                                  x0,
+                                  xmax,
+                                  zerobuf);
+    }
+    DDim w_origin_dim = param.fc_w->dims();
+    param.fc_w->CopyDataFrom(prepack_w);
+    param.fc_w->Resize(w_origin_dim);
+    free(zerobuf);
+  }
 }
+
 template <PrecisionType PType>
 void FusedAttentionCompute<PType>::ReInitWhenNeeded() {
   auto& param = this->template Param<param_t>();
   auto input_dims = param.input->dims();
-
+  if (last_shape_ == input_dims) {
+    return;
+  }
+  last_shape_ = input_dims;
   // fc
   act_param_.has_active = false;
   if (param.activation_type == "relu") {
@@ -161,7 +246,8 @@ void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
                                    lite::arm::math::GemmNBias,
                                    param.fc0_scale.data(),
                                    act_param_,
-                                   &ctx);
+                                   &ctx,
+                                   true);
   // transpose2 fuse reshape2
   DDim trans_dims = DDim(std::vector<int64_t>{
       input_dims[0], reshape_shape_[1], fc_m_, reshape_shape_[3] * 3});
@@ -198,7 +284,8 @@ void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
                              lite::arm::math::GemmNBias,
                              fc1_scale_.data(),
                              act_param_,
-                             &ctx);
+                             &ctx,
+                             false);
   }
 
   // softmax
@@ -251,7 +338,8 @@ void FusedAttentionCompute<PRECISION(kInt8)>::Run() {
                                     lite::arm::math::GemmNBias,
                                     fc2_scale_.data(),
                                     act_param_,
-                                    &ctx);
+                                    &ctx,
+                                    false);
   }
 }
 

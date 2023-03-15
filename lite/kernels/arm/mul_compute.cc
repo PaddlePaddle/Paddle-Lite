@@ -195,7 +195,8 @@ void MulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              lite::arm::math::GemmNoBias,
                              scale_one.data(),
                              act_param,
-                             &ctx);
+                             &ctx,
+                             false);
   }
   mul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
 }

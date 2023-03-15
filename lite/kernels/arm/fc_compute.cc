@@ -123,6 +123,85 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   ReInitWhenNeeded();
 }
 
+template <typename Dtype>
+void PrepackWeight(ARMContext* ctx, lite::Tensor* w, int m_, int n_, int k_);
+
+template <>
+void PrepackWeight<int8_t>(
+    ARMContext* ctx, lite::Tensor* w, int m_, int n_, int k_) {
+  auto* w_data = w->template data<int8_t>();
+  size_t llc_size = ctx->llc_size() / 4;
+  if (ctx->has_dot()) {
+#ifdef WITH_ARM_DOTPROD
+    // prepack weight
+    int x_block = (llc_size - (lite::arm::math::MBLOCK_INT8_DOT * k_)) /
+                  (sizeof(int8_t) * (k_ + lite::arm::math::MBLOCK_INT8_DOT));
+    x_block /= lite::arm::math::NBLOCK_INT8_DOT;
+    x_block *= lite::arm::math::NBLOCK_INT8_DOT;
+
+    int x_num = (n_ + (x_block - 1)) / x_block;
+    x_block = (n_ + x_num - 1) / x_num;
+    x_block = (x_block + lite::arm::math::NBLOCK_INT8_DOT - 1) /
+              lite::arm::math::NBLOCK_INT8_DOT;
+    x_block *= lite::arm::math::NBLOCK_INT8_DOT;
+    x_block = x_block < lite::arm::math::NBLOCK_INT8_DOT
+                  ? lite::arm::math::NBLOCK_INT8_DOT
+                  : x_block;
+    int kup = ROUNDUP(k_, lite::arm::math::KBLOCK_INT8);
+    DDim prepack_w_dim = DDim(std::vector<int64_t>{kup, ROUNDUP(n_, x_block)});
+    Tensor prepack_w;
+    prepack_w.Resize(prepack_w_dim);
+    auto* prepack_w_data = prepack_w.mutable_data<int8_t>();
+
+    for (unsigned int x0 = 0; x0 < n_; x0 += x_block) {
+      unsigned int xmax = x0 + x_block;
+      xmax = (xmax > n_) ? n_ : xmax;
+#ifdef __aarch64__
+      lite::arm::math::packb_sdot_int8_n12_n8_n4(
+          prepack_w_data + x0 * kup, w_data, n_, 0, k_, x0, xmax);
+#else
+      lite::arm::math::packb_dot_int8(
+          prepack_w_data + x0 * kup, w_data, n_, 0, k_, x0, xmax);
+#endif
+    }
+    DDim w_origin_dim = w->dims();
+    w->CopyDataFrom(prepack_w);
+    w->Resize(w_origin_dim);
+#endif
+  } else {
+    const int kup = ROUNDUP(k_, lite::arm::math::KBLOCK_INT8);
+    int x_block =
+        llc_size / (sizeof(int8_t) * (kup + lite::arm::math::MBLOCK_INT8_OTH));
+    x_block /= lite::arm::math::NBLOCK_INT8_OTH;
+    x_block *= lite::arm::math::NBLOCK_INT8_OTH;
+    int x_num = (n_ + (x_block - 1)) / x_block;
+    x_block = (n_ + x_num - 1) / x_num;
+    x_block = (x_block + lite::arm::math::NBLOCK_INT8_OTH - 1) /
+              lite::arm::math::NBLOCK_INT8_OTH;
+    x_block *= lite::arm::math::NBLOCK_INT8_OTH;
+
+    DDim prepack_w_dim = DDim(std::vector<int64_t>{kup, ROUNDUP(n_, x_block)});
+    Tensor prepack_w;
+    prepack_w.Resize(prepack_w_dim);
+    int8_t* prepack_w_data = prepack_w.mutable_data<int8_t>();
+
+    auto* zerobuf = static_cast<int8_t*>(malloc(x_block * sizeof(int8_t)));
+    memset(zerobuf, 0, x_block * sizeof(int8_t));
+    for (unsigned int x0 = 0; x0 < n_; x0 += x_block) {
+      unsigned int xmax = x0 + x_block;
+      if (xmax >= n_) {
+        xmax = n_;
+      }
+      lite::arm::math::packb_int8(
+          prepack_w_data + x0 * kup, w_data, n_, 0, k_, x0, xmax, zerobuf);
+    }
+    DDim w_origin_dim = w->dims();
+    w->CopyDataFrom(prepack_w);
+    w->Resize(w_origin_dim);
+    free(zerobuf);
+  }
+}
+
 /// for int8 kernel with fp32 output
 template <>
 void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
@@ -139,9 +218,13 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
       scale_[i] = param.weight_scale[i] * input_scale;
     }
   }
+  if (!flag_trans_weights_ && flag_gemm_) {
+    auto& ctx = this->ctx_->template As<ARMContext>();
+    PrepackWeight<int8_t>(&ctx, param.w, m_, n_, k_);
+  }
 }
 
-/// for int8 kernel with int8 output
+// for int8 kernel with int8 output
 template <>
 void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   ReInitWhenNeeded();
@@ -169,6 +252,10 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
       ptr[i] = ptr_in[i] / out_scale;
     }
     flag_trans_bias_ = true;
+  }
+  if (!flag_trans_weights_ && flag_gemm_) {
+    auto& ctx = this->ctx_->template As<ARMContext>();
+    PrepackWeight<int8_t>(&ctx, param.w, m_, n_, k_);
   }
 }
 
@@ -281,7 +368,8 @@ void FcCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              lite::arm::math::GemmNBias,
                              scale_.data(),
                              act_param,
-                             &ctx);
+                             &ctx,
+                             true);
   } else {
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;
@@ -338,7 +426,8 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                              lite::arm::math::GemmNBias,
                              scale_.data(),
                              act_param,
-                             &ctx);
+                             &ctx,
+                             true);
   } else {
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;

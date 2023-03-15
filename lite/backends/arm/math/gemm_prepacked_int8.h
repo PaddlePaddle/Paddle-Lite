@@ -38,6 +38,23 @@ typedef enum {
   GemmMNScale = 3,
 } GemmScaleDirection;
 
+void packb_int8(int8_t* out,
+                const int8_t* in,
+                int ldin,
+                int k0,
+                int kmax,
+                int n0,
+                int nmax,
+                const int8_t* zerobuf);
+
+void packb_dot_int8(int8_t* out,
+                    const int8_t* in,
+                    const int ldin,
+                    const int k0,
+                    const int kmax,
+                    const int n0,
+                    const int nmax);
+
 #ifdef __aarch64__
 // for int7/int8 gemm
 // const int HBLOCK = 4;
@@ -47,6 +64,14 @@ const int NBLOCK_INT8_OTH = 16;
 
 const int MBLOCK_INT8_DOT = 8;
 const int NBLOCK_INT8_DOT = 12;
+
+void packb_sdot_int8_n12_n8_n4(int8_t* out,
+                               const int8_t* in,
+                               const int ldin,
+                               const int k0,
+                               const int kmax,
+                               const int n0,
+                               const int nmax);
 
 inline int get_hblock_int8(ARMContext* ctx) {
 #ifdef WITH_ARM_DOTPROD
@@ -112,7 +137,8 @@ void gemm_prepack_int8(const int8_t* A_packed,
                        bool is_transB,
                        const float* scale,
                        const operators::ActivationParam act_param,
-                       ARMContext* ctx);
+                       ARMContext* ctx,
+                       bool packed_b = false);
 
 #if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
 template <typename dtype>

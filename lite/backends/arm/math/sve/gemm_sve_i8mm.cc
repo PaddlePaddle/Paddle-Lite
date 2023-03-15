@@ -2536,7 +2536,8 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
                            bool is_transB,
                            const float* scale,
                            const operators::ActivationParam act_param,
-                           ARMContext* ctx) {
+                           ARMContext* ctx,
+                           bool packed_b) {
   // l2_size compute
   size_t llc_size = ctx->llc_size() / 4;
   auto workspace = ctx->workspace_data<int8_t>();
@@ -2808,7 +2809,8 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
       bool is_transB,                             \
       const float* scale,                         \
       const operators::ActivationParam act_param, \
-      ARMContext* ctx);
+      ARMContext* ctx,                            \
+      bool packed_b);
 GEMM_PREPACK_INT8_SVE(int8_t);
 GEMM_PREPACK_INT8_SVE(float);
 
