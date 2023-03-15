@@ -17,4 +17,95 @@
 #include "adnn/core/types.h"
 #include <vector>
 
-namespace adnn {}  // namespace adnn
+namespace adnn {
+
+#define ADNN_TYPE_TO_STRING(type) \
+  case type:                      \
+    name = #type;                 \
+    break;
+
+ADNN_DLL_EXPORT std::string status_to_string(Status type) {
+  std::string name;
+  switch (type) {
+    ADNN_TYPE_TO_STRING(SUCCESS);
+    ADNN_TYPE_TO_STRING(OUT_OF_MEMORY);
+    ADNN_TYPE_TO_STRING(INVALID_PARAMETER);
+    ADNN_TYPE_TO_STRING(FEATURE_NOT_SUPPORTED);
+    default:
+      name = "UNKNOWN";
+      break;
+  }
+  return name;
+}
+
+ADNN_DLL_EXPORT std::string power_mode_to_string(PowerMode type) {
+  std::string name;
+  switch (type) {
+    ADNN_TYPE_TO_STRING(HIGH);
+    ADNN_TYPE_TO_STRING(LOW);
+    ADNN_TYPE_TO_STRING(FULL);
+    ADNN_TYPE_TO_STRING(NO_BIND);
+    ADNN_TYPE_TO_STRING(RAND_HIGH);
+    ADNN_TYPE_TO_STRING(RAND_LOW);
+    default:
+      name = "UNKNOWN";
+      break;
+  }
+  return name;
+}
+
+ADNN_DLL_EXPORT std::string cpu_arch_to_string(CPUArch type) {
+  std::string name;
+  switch (type) {
+    ADNN_TYPE_TO_STRING(CORTEX_A35);
+    ADNN_TYPE_TO_STRING(CORTEX_A53);
+    ADNN_TYPE_TO_STRING(CORTEX_A55);
+    ADNN_TYPE_TO_STRING(CORTEX_A57);
+    ADNN_TYPE_TO_STRING(CORTEX_A72);
+    ADNN_TYPE_TO_STRING(CORTEX_A73);
+    ADNN_TYPE_TO_STRING(CORTEX_A75);
+    ADNN_TYPE_TO_STRING(CORTEX_A76);
+    ADNN_TYPE_TO_STRING(CORTEX_A77);
+    ADNN_TYPE_TO_STRING(CORTEX_A78);
+    ADNN_TYPE_TO_STRING(CORTEX_X1);
+    ADNN_TYPE_TO_STRING(CORTEX_X2);
+    ADNN_TYPE_TO_STRING(CORTEX_A510);
+    ADNN_TYPE_TO_STRING(CORTEX_A710);
+    ADNN_TYPE_TO_STRING(GOLDMONT);
+    ADNN_TYPE_TO_STRING(GOLDMONT_PLUS);
+    ADNN_TYPE_TO_STRING(SILVERMONT);
+    ADNN_TYPE_TO_STRING(APPLE);
+    default:
+      name = "UNKNOWN";
+      break;
+  }
+  return name;
+}
+
+ADNN_DLL_EXPORT std::string param_key_to_string(ParamKey type) {
+  std::string name;
+  switch (type) {
+    ADNN_TYPE_TO_STRING(DEVICE_MAX_THREAD_NUM);
+    ADNN_TYPE_TO_STRING(DEVICE_POWER_MODE);
+    ADNN_TYPE_TO_STRING(DEVICE_ARCH);
+    ADNN_TYPE_TO_STRING(DEVICE_SUPPORT_ARM_FP16);
+    ADNN_TYPE_TO_STRING(DEVICE_SUPPORT_ARM_BF16);
+    ADNN_TYPE_TO_STRING(DEVICE_SUPPORT_ARM_DOTPROD);
+    ADNN_TYPE_TO_STRING(DEVICE_SUPPORT_ARM_SVE2);
+    ADNN_TYPE_TO_STRING(DEVICE_SUPPORT_ARM_SVE2_I8MM);
+    ADNN_TYPE_TO_STRING(DEVICE_SUPPORT_ARM_SVE2_F32MM);
+    ADNN_TYPE_TO_STRING(CONTEXT_WORK_THREAD_NUM);
+    ADNN_TYPE_TO_STRING(CONTEXT_ENABLE_ARM_FP16);
+    ADNN_TYPE_TO_STRING(CONTEXT_ENABLE_ARM_BF16);
+    ADNN_TYPE_TO_STRING(CONTEXT_ENABLE_ARM_DOTPROD);
+    ADNN_TYPE_TO_STRING(CONTEXT_ENABLE_ARM_SVE2);
+    ADNN_TYPE_TO_STRING(CONTEXT_ENABLE_ARM_SVE2_I8MM);
+    ADNN_TYPE_TO_STRING(CONTEXT_ENABLE_ARM_SVE2_F32MM);
+    default:
+      name = "UNKNOWN";
+      break;
+  }
+  return name;
+}
+
+}  // namespace adnn

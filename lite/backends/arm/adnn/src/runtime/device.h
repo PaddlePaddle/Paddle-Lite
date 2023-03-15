@@ -16,6 +16,7 @@
 
 #include <unordered_map>
 #include "adnn/core/types.h"
+#include "utilities/cpu_info.h"
 #include "utilities/logging.h"
 
 namespace adnn {
@@ -24,19 +25,23 @@ class Device {
  public:
   explicit Device(const Callback* callback);
   ~Device();
-  Status SetParam(ParamKey key, ParamValue value);
+  Status SetParam(ParamKey key, ParamValue value, bool force = false);
   Status GetParam(ParamKey key, ParamValue* value);
-  const Callback* GetCallback() {
+  const Callback* callback() {
     ADNN_CHECK(callback_);
     return callback_;
   }
-  void* GetDevice() { return device_; }
+  void* device() { return device_; }
   // Helper functions for querying the parameters.
-  int32_t GetMaxThreadNum();
-  bool GetSupportArmFP16();
-  bool GetSupportArmBF16();
-  bool GetSupportArmDotProd();
-  bool GetSupportArmSVE2();
+  int32_t max_thread_num();
+  PowerMode power_mode();
+  CPUArch arch();
+  bool support_arm_fp16();
+  bool support_arm_bf16();
+  bool support_arm_dotprod();
+  bool support_arm_sve2();
+  bool support_arm_sve2_i8mm();
+  bool support_arm_sve2_f32mm();
 
  private:
   const Callback* callback_{nullptr};

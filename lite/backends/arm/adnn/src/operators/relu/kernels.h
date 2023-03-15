@@ -32,15 +32,16 @@ Status relu(Context* context,
   assert(input_data != NULL);
   assert(output_data != NULL);
   assert(size != 0);
-  int thread_num = context->GetWorkThreadNum();
+  int thread_num = context->work_thread_num();
   int size_per_thread = size / thread_num;
   int remain = size - thread_num * size_per_thread;
+  T zero = static_cast<T>(0.0);
   ADNN_THREAD_POOL_SIMPLE_TASK_BEGIN(i, tid, thread_num) {
     const T* input_ptr_in_thread = input_data + i * size_per_thread;
     T* output_ptr_in_thread = output_data + i * size_per_thread;
     for (int j = 0; j < size_per_thread; j++) {
       *output_ptr_in_thread =
-          *input_ptr_in_thread > 0.f ? *input_ptr_in_thread : 0.f;
+          *input_ptr_in_thread > zero ? *input_ptr_in_thread : zero;
       input_ptr_in_thread++;
       output_ptr_in_thread++;
     }
@@ -49,7 +50,7 @@ Status relu(Context* context,
   T* output_ptr = output_data + thread_num * size_per_thread;
   const T* input_ptr = input_data + thread_num * size_per_thread;
   for (int j = 0; j < remain; j++) {
-    *output_ptr = *input_ptr > 0.f ? *input_ptr : 0.f;
+    *output_ptr = *input_ptr > zero ? *input_ptr : zero;
     input_ptr++;
     output_ptr++;
   }

@@ -32,7 +32,7 @@ Status relu_fp32_aarch32_neon_x8(Context* context,
   assert(input_data != NULL);
   assert(output_data != NULL);
   assert(size != 0);
-  int thread_num = context->GetWorkThreadNum();
+  int thread_num = context->work_thread_num();
   int size_per_thread = size / thread_num;
   int remain = size - thread_num * size_per_thread;
   int loop_per_thread = size_per_thread / 8;

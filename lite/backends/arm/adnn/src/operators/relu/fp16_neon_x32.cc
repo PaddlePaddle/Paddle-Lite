@@ -28,7 +28,7 @@ Status relu_fp16_neon_x32(Context* context,
   assert(input_data != NULL);
   assert(output_data != NULL);
   assert(size != 0);
-  int thread_num = context->GetWorkThreadNum();
+  int thread_num = context->work_thread_num();
   int size_per_thread = size / thread_num;
   int remain = size - thread_num * size_per_thread;
   int loop_32_per_thread = size_per_thread >> 5;

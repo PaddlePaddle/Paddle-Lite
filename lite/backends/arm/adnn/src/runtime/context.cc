@@ -20,92 +20,120 @@ namespace adnn {
 
 Context::Context(Device* device) : device_(device) {
   ADNN_CHECK(device_);
-  ADNN_CHECK(device_->GetCallback()->context_create);
-  context_ = device_->GetCallback()->context_create(device_->GetDevice());
+  ADNN_CHECK(device_->callback()->context_create);
+  context_ = device_->callback()->context_create(device_->device());
+  // Initialize context params from Device
+  ParamValue value;
+  value.b = device_->support_arm_fp16();
+  SetParam(CONTEXT_ENABLE_ARM_FP16, value);
+  value.b = device_->support_arm_bf16();
+  SetParam(CONTEXT_ENABLE_ARM_BF16, value);
+  value.b = device_->support_arm_dotprod();
+  SetParam(CONTEXT_ENABLE_ARM_DOTPROD, value);
+  value.b = device_->support_arm_sve2();
+  SetParam(CONTEXT_ENABLE_ARM_SVE2, value);
+  value.b = device_->support_arm_sve2_i8mm();
+  SetParam(CONTEXT_ENABLE_ARM_SVE2_I8MM, value);
+  value.b = device_->support_arm_sve2_f32mm();
+  SetParam(CONTEXT_ENABLE_ARM_SVE2_F32MM, value);
 }
 
-Status Context::SetParam(ParamKey key, ParamValue value) {
+Status Context::SetParam(ParamKey key, ParamValue value, bool force) {
   params_[key] = value;
   ADNN_CHECK(device_);
-  ADNN_CHECK(device_->GetCallback()->context_setparam);
-  return device_->GetCallback()->context_setparam(context_, key, value);
+  ADNN_CHECK(device_->callback()->context_setparam);
+  return device_->callback()->context_setparam(context_, key, value);
 }
 
 Status Context::GetParam(ParamKey key, ParamValue* value) {
   if (!params_.count(key)) {
+    memset(value, 0, sizeof(ParamValue));
     return INVALID_PARAMETER;
   }
   ADNN_CHECK(device_);
-  ADNN_CHECK(device_->GetCallback()->context_getparam);
-  return device_->GetCallback()->context_getparam(context_, key, value);
+  ADNN_CHECK(device_->callback()->context_getparam);
+  return device_->callback()->context_getparam(context_, key, value);
 }
 
 void* Context::MemoryAlloc(size_t size) {
   ADNN_CHECK(device_);
-  ADNN_CHECK(device_->GetCallback()->memory_alloc);
-  return device_->GetCallback()->memory_alloc(context_, size);
+  ADNN_CHECK(device_->callback()->memory_alloc);
+  return device_->callback()->memory_alloc(context_, size);
 }
 
 void Context::MemoryFree(void* ptr) {
   ADNN_CHECK(device_);
-  ADNN_CHECK(device_->GetCallback()->memory_free);
-  return device_->GetCallback()->memory_free(context_, ptr);
+  ADNN_CHECK(device_->callback()->memory_free);
+  return device_->callback()->memory_free(context_, ptr);
 }
 
 void* Context::MemoryAlignedAlloc(size_t alignment, size_t size) {
   ADNN_CHECK(device_);
-  ADNN_CHECK(device_->GetCallback()->memory_aligned_alloc);
-  return device_->GetCallback()->memory_aligned_alloc(
-      context_, alignment, size);
+  ADNN_CHECK(device_->callback()->memory_aligned_alloc);
+  return device_->callback()->memory_aligned_alloc(context_, alignment, size);
 }
 
 void Context::MemoryAlignedFree(void* ptr) {
   ADNN_CHECK(device_);
-  ADNN_CHECK(device_->GetCallback()->memory_aligned_free);
-  return device_->GetCallback()->memory_aligned_free(context_, ptr);
+  ADNN_CHECK(device_->callback()->memory_aligned_free);
+  return device_->callback()->memory_aligned_free(context_, ptr);
 }
 
 Context::~Context() {
   ADNN_CHECK(device_);
-  ADNN_CHECK(device_->GetCallback()->context_destroy);
-  device_->GetCallback()->context_destroy(context_);
+  ADNN_CHECK(device_->callback()->context_destroy);
+  device_->callback()->context_destroy(context_);
   device_ = nullptr;
   context_ = nullptr;
 }
 
-int32_t Context::GetWorkThreadNum() {
+int32_t Context::work_thread_num() {
   if (!params_.count(CONTEXT_WORK_THREAD_NUM)) {
     return 1;
   }
   return params_[CONTEXT_WORK_THREAD_NUM].i32;
 }
 
-bool Context::GetEnableArmFP16() {
+bool Context::enable_arm_fp16() {
   if (!params_.count(CONTEXT_ENABLE_ARM_FP16)) {
     return false;
   }
   return params_[CONTEXT_ENABLE_ARM_FP16].b;
 }
 
-bool Context::GetEnableArmBF16() {
+bool Context::enable_arm_bf16() {
   if (!params_.count(CONTEXT_ENABLE_ARM_BF16)) {
     return false;
   }
   return params_[CONTEXT_ENABLE_ARM_BF16].b;
 }
 
-bool Context::GetEnableArmDotProd() {
+bool Context::enable_arm_dotprod() {
   if (!params_.count(CONTEXT_ENABLE_ARM_DOTPROD)) {
     return false;
   }
   return params_[CONTEXT_ENABLE_ARM_DOTPROD].b;
 }
 
-bool Context::GetEnableArmSVE2() {
+bool Context::enable_arm_sve2() {
   if (!params_.count(CONTEXT_ENABLE_ARM_SVE2)) {
     return false;
   }
   return params_[CONTEXT_ENABLE_ARM_SVE2].b;
+}
+
+bool Context::enable_arm_sve2_i8mm() {
+  if (!params_.count(CONTEXT_ENABLE_ARM_SVE2_I8MM)) {
+    return false;
+  }
+  return params_[CONTEXT_ENABLE_ARM_SVE2_I8MM].b;
+}
+
+bool Context::enable_arm_sve2_f32mm() {
+  if (!params_.count(CONTEXT_ENABLE_ARM_SVE2_F32MM)) {
+    return false;
+  }
+  return params_[CONTEXT_ENABLE_ARM_SVE2_F32MM].b;
 }
 
 ADNN_DLL_EXPORT void* context_create(void* device) {

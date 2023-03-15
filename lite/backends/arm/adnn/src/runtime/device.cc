@@ -93,29 +93,41 @@ Device::Device(const Callback* callback) : callback_(callback) {
   ADNN_CHECK(callback_->device_open);
   device_ = callback_->device_open();
   // Initialize device params from CPUInfo
+  CPUInfo::dump();
   ParamValue value;
-  // value.b = CPUInfo::SupportArmFP16();
-  SetParam(DEVICE_SUPPORT_ARM_FP16, value);
-  // value.b = CPUInfo::SupportArmBF16();
-  SetParam(DEVICE_SUPPORT_ARM_BF16, value);
-  // value.b = CPUInfo::SupportArmDotProd();
-  SetParam(DEVICE_SUPPORT_ARM_DOTPROD, value);
-  // value.b = CPUInfo::SupportArmSVE2();
-  SetParam(DEVICE_SUPPORT_ARM_SVE2, value);
+  value.i32 = CPUInfo::at(0).arch;
+  SetParam(DEVICE_ARCH, value, true);
+  value.b = CPUInfo::at(0).support_arm_fp16;
+  SetParam(DEVICE_SUPPORT_ARM_FP16, value, true);
+  value.b = CPUInfo::at(0).support_arm_bf16;
+  SetParam(DEVICE_SUPPORT_ARM_BF16, value, true);
+  value.b = CPUInfo::at(0).support_arm_dotprod;
+  SetParam(DEVICE_SUPPORT_ARM_DOTPROD, value, true);
+  value.b = CPUInfo::at(0).support_arm_sve2;
+  SetParam(DEVICE_SUPPORT_ARM_SVE2, value, true);
+  value.b = CPUInfo::at(0).support_arm_sve2_i8mm;
+  SetParam(DEVICE_SUPPORT_ARM_SVE2_I8MM, value, true);
+  value.b = CPUInfo::at(0).support_arm_sve2_f32mm;
+  SetParam(DEVICE_SUPPORT_ARM_SVE2_F32MM, value, true);
 }
 
-Status Device::SetParam(ParamKey key, ParamValue value) {
-  switch (key) {
-    case DEVICE_SUPPORT_ARM_FP16:
-    case DEVICE_SUPPORT_ARM_BF16:
-    case DEVICE_SUPPORT_ARM_DOTPROD:
-    case DEVICE_SUPPORT_ARM_SVE2:
-      ADNN_LOG(ERROR)
-          << "Unsupported key(" << static_cast<int32_t>(key)
-          << ") for device_setparam() beacause the param is readonly!";
-      return INVALID_PARAMETER;
-    default:
-      break;
+Status Device::SetParam(ParamKey key, ParamValue value, bool force) {
+  if (!force) {
+    switch (key) {
+      case DEVICE_ARCH:
+      case DEVICE_SUPPORT_ARM_FP16:
+      case DEVICE_SUPPORT_ARM_BF16:
+      case DEVICE_SUPPORT_ARM_DOTPROD:
+      case DEVICE_SUPPORT_ARM_SVE2:
+      case DEVICE_SUPPORT_ARM_SVE2_I8MM:
+      case DEVICE_SUPPORT_ARM_SVE2_F32MM:
+        ADNN_LOG(ERROR)
+            << "Unsupported key(" << static_cast<int32_t>(key)
+            << ") for device_setparam() beacause the param is readonly!";
+        return INVALID_PARAMETER;
+      default:
+        break;
+    }
   }
   params_[key] = value;
   ADNN_CHECK(callback_);
@@ -125,6 +137,7 @@ Status Device::SetParam(ParamKey key, ParamValue value) {
 
 Status Device::GetParam(ParamKey key, ParamValue* value) {
   if (!params_.count(key)) {
+    memset(value, 0, sizeof(ParamValue));
     return INVALID_PARAMETER;
   }
   *value = params_[key];
@@ -141,39 +154,67 @@ Device::~Device() {
   device_ = nullptr;
 }
 
-int32_t Device::GetMaxThreadNum() {
+int32_t Device::max_thread_num() {
   if (!params_.count(DEVICE_MAX_THREAD_NUM)) {
     return 1;
   }
   return params_[DEVICE_MAX_THREAD_NUM].i32;
 }
 
-bool Device::GetSupportArmFP16() {
+PowerMode Device::power_mode() {
+  if (!params_.count(DEVICE_POWER_MODE)) {
+    return PowerMode::NO_BIND;
+  }
+  return static_cast<PowerMode>(params_[DEVICE_POWER_MODE].i32);
+}
+
+CPUArch Device::arch() {
+  if (!params_.count(DEVICE_ARCH)) {
+    return CPUArch::UNKOWN;
+  }
+  return static_cast<CPUArch>(params_[DEVICE_ARCH].i32);
+}
+
+bool Device::support_arm_fp16() {
   if (!params_.count(DEVICE_SUPPORT_ARM_FP16)) {
     return false;
   }
   return params_[DEVICE_SUPPORT_ARM_FP16].b;
 }
 
-bool Device::GetSupportArmBF16() {
+bool Device::support_arm_bf16() {
   if (!params_.count(DEVICE_SUPPORT_ARM_BF16)) {
     return false;
   }
   return params_[DEVICE_SUPPORT_ARM_BF16].b;
 }
 
-bool Device::GetSupportArmDotProd() {
+bool Device::support_arm_dotprod() {
   if (!params_.count(DEVICE_SUPPORT_ARM_DOTPROD)) {
     return false;
   }
   return params_[DEVICE_SUPPORT_ARM_DOTPROD].b;
 }
 
-bool Device::GetSupportArmSVE2() {
+bool Device::support_arm_sve2() {
   if (!params_.count(DEVICE_SUPPORT_ARM_SVE2)) {
     return false;
   }
   return params_[DEVICE_SUPPORT_ARM_SVE2].b;
+}
+
+bool Device::support_arm_sve2_i8mm() {
+  if (!params_.count(DEVICE_SUPPORT_ARM_SVE2_I8MM)) {
+    return false;
+  }
+  return params_[DEVICE_SUPPORT_ARM_SVE2_I8MM].b;
+}
+
+bool Device::support_arm_sve2_f32mm() {
+  if (!params_.count(DEVICE_SUPPORT_ARM_SVE2_F32MM)) {
+    return false;
+  }
+  return params_[DEVICE_SUPPORT_ARM_SVE2_F32MM].b;
 }
 
 ADNN_DLL_EXPORT void* device_open(const Callback* callback) {

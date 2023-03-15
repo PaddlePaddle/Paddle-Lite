@@ -201,8 +201,8 @@ IF(ADNN_TARGET_PROCESSOR MATCHES "^arm64" AND NOT MSVC)
 ENDIF()
 
 SET(ALL_SRCS 
+  src/core/types.cc
   src/utilities/logging.cc
-  src/utilities/platform.cc
   src/utilities/cpu_info.cc
   src/utilities/thread_pool.cc
   src/runtime/device.cc

@@ -17,8 +17,8 @@
 #include "adnn/operators/nn_ops.h"
 #include "operators/relu/kernels.h"
 #include "runtime/context.h"
+#include "utilities/cpu_info.h"
 #include "utilities/logging.h"
-#include "utilities/platform.h"
 
 namespace adnn {
 
@@ -35,7 +35,7 @@ relu<float>(void* context, const float* x_data, float* y_data, size_t size) {
 #else
   ADNN_VLOG(5) << "relu<float>() is not accelerated on the current "
                   "architecture! Only accelerated on ARM and ARM64 !";
-  status = kernels::relu<float>(context, x_data, y_data, size);
+  status = kernels::relu<float>(ctx, x_data, y_data, size);
 #endif
   return status;
 }
@@ -45,17 +45,15 @@ ADNN_DLL_EXPORT Status relu<float16>(void* context,
                                      const float16* x_data,
                                      float16* y_data,
                                      size_t size) {
-  Status status = SUCCESS;
   auto ctx = reinterpret_cast<Context*>(context);
   ADNN_CHECK(ctx);
 #if ADNN_ARM_WITH_FP16
-  status = kernels::relu_fp16_neon_x32(ctx, x_data, y_data, size);
-#else
+  if (ctx->enable_arm_fp16())
+    return kernels::relu_fp16_neon_x32(ctx, x_data, y_data, size);
+#endif
   ADNN_VLOG(5) << "relu<float16>() is not accelerated on the current "
                   "architecture! Only accelerated on ARM and ARM64 !";
-  status = kernels::relu<float16>(context, x_data, y_data, size);
-#endif
-  return status;
+  return kernels::relu<float16>(ctx, x_data, y_data, size);
 }
 
 ADNN_DLL_EXPORT Status relu_qs8(void* context,

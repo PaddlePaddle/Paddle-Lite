@@ -24,20 +24,22 @@ class Context {
  public:
   explicit Context(Device* device);
   ~Context();
-  Status SetParam(ParamKey key, ParamValue value);
+  Status SetParam(ParamKey key, ParamValue value, bool force = false);
   Status GetParam(ParamKey key, ParamValue* value);
   void* MemoryAlloc(size_t size);
   void MemoryFree(void* ptr);
   void* MemoryAlignedAlloc(size_t alignment, size_t size);
   void MemoryAlignedFree(void* ptr);
-  Device* GetDevice() { return device_; }
-  void* GetContext() { return context_; }
+  Device* device() { return device_; }
+  void* context() { return context_; }
   // Helper functions for querying the parameters.
-  int32_t GetWorkThreadNum();
-  bool GetEnableArmFP16();
-  bool GetEnableArmBF16();
-  bool GetEnableArmDotProd();
-  bool GetEnableArmSVE2();
+  int32_t work_thread_num();
+  bool enable_arm_fp16();
+  bool enable_arm_bf16();
+  bool enable_arm_dotprod();
+  bool enable_arm_sve2();
+  bool enable_arm_sve2_i8mm();
+  bool enable_arm_sve2_f32mm();
 
  private:
   Device* device_{nullptr};

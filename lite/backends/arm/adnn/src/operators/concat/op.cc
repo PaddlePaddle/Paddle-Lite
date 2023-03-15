@@ -18,8 +18,8 @@
 #include "adnn/operators/array_ops.h"
 #include "operators/concat/kernels.h"
 #include "runtime/context.h"
+#include "utilities/cpu_info.h"
 #include "utilities/logging.h"
-#include "utilities/platform.h"
 
 namespace adnn {
 

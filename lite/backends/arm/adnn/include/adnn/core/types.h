@@ -17,6 +17,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/cdefs.h>
+#include <string>
 #include "adnn/core/bfloat16.h"
 #include "adnn/core/float16.h"
 #include "adnn/core/macros.h"
@@ -125,25 +126,41 @@ typedef enum {
    */
   DEVICE_POWER_MODE,
   /**
+   * The cpu uarch, dtype of value is int32_t.
+   */
+  DEVICE_ARCH,
+  /**
    * Does support Arm float16 instruction set on the current platform, dtype of
-   * value is bool.
+   * value is bool, readonly.
    */
   DEVICE_SUPPORT_ARM_FP16,
   /**
  * Does support Arm bfloat16 instruction set on the current platform, dtype of
- * value is bool.
+ * value is bool, readonly.
  */
   DEVICE_SUPPORT_ARM_BF16,
   /**
    * Does Support Arm dotprod instruction set on the current platform, dtype of
-   * value is bool.
+   * value is bool, readonly.
    */
   DEVICE_SUPPORT_ARM_DOTPROD,
   /**
    * Does support Arm sve2 instruction set on on the current platform, dtype of
-   * value is bool.
+   * value is bool, readonly.
    */
   DEVICE_SUPPORT_ARM_SVE2,
+  /**
+   * Does support Arm sve2+i8mm instruction set on on the current platform,
+   * dtype of
+   * value is bool, readonly.
+   */
+  DEVICE_SUPPORT_ARM_SVE2_I8MM,
+  /**
+ * Does support Arm sve2+f32mm instruction set on on the current platform, dtype
+ * of
+ * value is bool, readonly.
+ */
+  DEVICE_SUPPORT_ARM_SVE2_F32MM,
   /**
    * The number of threads used in the current context, dtype of value is
    * int32_t.
@@ -165,6 +182,15 @@ typedef enum {
    * Enable/disable using Arm sve2 instruction set, dtype of value is bool.
    */
   CONTEXT_ENABLE_ARM_SVE2,
+  /**
+   * Enable/disable using Arm sve2+i8mm instruction set, dtype of value is bool.
+   */
+  CONTEXT_ENABLE_ARM_SVE2_I8MM,
+  /**
+   * Enable/disable using Arm sve2+f32mm instruction set, dtype of value is
+   * bool.
+   */
+  CONTEXT_ENABLE_ARM_SVE2_F32MM,
 } ParamKey;
 
 typedef union {
@@ -203,5 +229,11 @@ typedef struct Device Device;
  * An opaque type for Context.
  */
 typedef struct Context Context;
+
+/* Convert types to readable string */
+std::string status_to_string(Status type);
+std::string power_mode_to_string(PowerMode type);
+std::string cpu_arch_to_string(CPUArch type);
+std::string param_key_to_string(ParamKey type);
 
 }  // namespace adnn
