@@ -708,7 +708,25 @@ void QuantDequantLinearOpFuser::InsertNewNode(SSAGraph* graph,
     std::string op_type = op_info.Type();
     if (std::find(quant_op_types_.begin(), quant_op_types_.end(), op_type) !=
         quant_op_types_.end()) {
-      op_info.SetAttr("enable_int8", true);
+      bool enable_int8_cond = false;
+      for (auto& inlink_node : quantized_node->inlinks) {
+        enable_int8_cond = true;
+        /*    run int8 kernel          run fp32 kernel
+                            data                    data
+                             /                      /
+              weight    quant_op                quant_op
+                \         /                       /
+           dequant_op  dequant_op       weight dequant_op
+                  \    /                   \   /
+                   conv                    conv
+        */
+        if (inlink_node->IsArg() && inlink_node->arg()->is_weight &&
+            inlink_node->inlinks.size() == 0) {
+          enable_int8_cond = false;
+          break;
+        }
+      }
+      if (enable_int8_cond) op_info.SetAttr("enable_int8", true);
     }
     op_info.SetInputScale(input_var_name, scales);
     for (auto op_out_var_node : quantized_node->outlinks) {
