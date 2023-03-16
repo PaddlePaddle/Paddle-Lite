@@ -82,7 +82,6 @@
 #include <limits>
 
 #include "lite/core/device_info.h"
-#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
