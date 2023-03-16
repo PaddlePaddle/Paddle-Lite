@@ -93,21 +93,20 @@ Device::Device(const Callback* callback) : callback_(callback) {
   ADNN_CHECK(callback_->device_open);
   device_ = callback_->device_open();
   // Initialize device params from CPUInfo
-  CPUInfo::dump();
   ParamValue value;
-  value.i32 = CPUInfo::at(0).arch;
+  value.i32 = CPUInfo::Singleton().arch();
   SetParam(DEVICE_ARCH, value, true);
-  value.b = CPUInfo::at(0).support_arm_fp16;
+  value.b = CPUInfo::Singleton().support_arm_fp16();
   SetParam(DEVICE_SUPPORT_ARM_FP16, value, true);
-  value.b = CPUInfo::at(0).support_arm_bf16;
+  value.b = CPUInfo::Singleton().support_arm_bf16();
   SetParam(DEVICE_SUPPORT_ARM_BF16, value, true);
-  value.b = CPUInfo::at(0).support_arm_dotprod;
+  value.b = CPUInfo::Singleton().support_arm_dotprod();
   SetParam(DEVICE_SUPPORT_ARM_DOTPROD, value, true);
-  value.b = CPUInfo::at(0).support_arm_sve2;
+  value.b = CPUInfo::Singleton().support_arm_sve2();
   SetParam(DEVICE_SUPPORT_ARM_SVE2, value, true);
-  value.b = CPUInfo::at(0).support_arm_sve2_i8mm;
+  value.b = CPUInfo::Singleton().support_arm_sve2_i8mm();
   SetParam(DEVICE_SUPPORT_ARM_SVE2_I8MM, value, true);
-  value.b = CPUInfo::at(0).support_arm_sve2_f32mm;
+  value.b = CPUInfo::Singleton().support_arm_sve2_f32mm();
   SetParam(DEVICE_SUPPORT_ARM_SVE2_F32MM, value, true);
 }
 

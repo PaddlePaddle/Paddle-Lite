@@ -379,6 +379,123 @@ int get_cpu_max_freq_khz(int cpu_idx) {
   return max_freq_khz;
 }
 
+bool get_cpu_online(const std::vector<int>& cpu_idxs) {
+  auto cpu_num = cpu_idxs.size();
+  if (cpu_num == 0) {
+    return false;
+  }
+  bool all_online = true;
+  FILE* fp = fopen("/sys/devices/system/cpu/online", "r");
+  if (fp) {
+    std::vector<int> online_idxs;
+    int cnt, idx;
+    char sep;
+    int prev = -1;
+    for (;;) {
+      cnt = fscanf(fp, "%u%c", &idx, &sep);
+      if (cnt <= 0) break;
+      if (prev >= 0) {
+        while (++prev < idx) online_idxs.push_back(prev);
+      }
+      online_idxs.push_back(idx);
+      if (cnt == 2 && sep == '-')
+        prev = idx;
+      else
+        prev = -1;
+      if (cnt == 1 || sep == '\n') break;
+    }
+    for (size_t i = 0; i < cpu_num; i++) {
+      if (std::find(online_idxs.begin(), online_idxs.end(), cpu_idxs[i]) ==
+          online_idxs.end()) {
+        all_online = false;
+        ADNN_LOG(WARNING) << "CPU idx: " << cpu_idxs[i] << " is offine";
+      }
+    }
+    fclose(fp);
+  } else {
+    ADNN_LOG(WARNING) << "Failed to query all cpus online status list. Try to "
+                         "query single cpu online status.";
+    char path[256];
+    for (int i = 0; i < cpu_idxs.size(); i++) {
+      snprintf(path,
+               sizeof(path),
+               "/sys/devices/system/cpu/cpu%d/online",
+               cpu_idxs[i]);
+      FILE* fp = fopen(path, "rb");
+      int is_online = 0;
+      if (fp) {
+        fscanf(fp, "%d", &is_online);
+        fclose(fp);
+      } else {
+        ADNN_LOG(ERROR) << "Failed to query the online status of CPU idx: "
+                        << cpu_idxs[i];
+      }
+      if (is_online == 0) {
+        all_online = false;
+        ADNN_LOG(WARNING) << "CPU idx: " << cpu_idxs[i] << " is offine.";
+      }
+    }
+  }
+  return all_online;
+}
+
+bool set_cpu_sched_affinity(const std::vector<int>& cpu_idxs) {
+#define PD_CPU_SETSIZE 1024
+#define PD__NCPUBITS (8 * sizeof(unsigned long))  // NOLINT
+  typedef struct {
+    unsigned long __bits[PD_CPU_SETSIZE / PD__NCPUBITS];  // NOLINT
+  } cpu_set_t;
+#define PD_CPU_SET(cpu, cpusetp) \
+  ((cpusetp)->__bits[(cpu) / PD__NCPUBITS] |= (1UL << ((cpu) % PD__NCPUBITS)))
+#define PD_CPU_ZERO(cpusetp) memset((cpusetp), 0, sizeof(cpu_set_t))
+
+#ifdef __GLIBC__
+  pid_t pid = syscall(SYS_gettid);
+#else
+  pid_t pid = gettid();
+#endif  // __GLIBC__
+  cpu_set_t mask;
+  PD_CPU_ZERO(&mask);
+  unsigned int RUNMASK = 0;
+  for (int i = 0; i < cpu_idxs.size(); ++i) {
+    PD_CPU_SET(cpu_idxs[i], &mask);
+  }
+  int syscallret = syscall(__NR_sched_setaffinity, pid, sizeof(mask), &mask);
+  return syscallret != 0;
+}
+
+bool bind_threads_to_cpus(const std::vector<int> cpu_idxs) {
+  if (!get_cpu_online(cpu_idxs)) {
+    ADNN_LOG(WARNING)
+        << "Failed to bind threads to CPUs, because some cores are offline.";
+    return false;
+  }
+#ifdef ADNN_WITH_OMP
+  int thread_num = cpu_idxs.size();
+  omp_set_num_threads(thread_num);
+  std::vector<int> ssarets(thread_num, 0);
+#pragma omp parallel for
+  for (int i = 0; i < thread_num; i++) {
+    ssarets[i] = set_cpu_sched_affinity(cpu_idxs);
+  }
+  for (int i = 0; i < thread_num; i++) {
+    if (ssarets[i] != 0) {
+      ADNN_LOG(WARNING) << "Set cpu affinity failed, core idx: " << cpu_idxs[i];
+      return false;
+    }
+  }
+#else   // ADNN_WITH_OMP
+  std::vector<int> first_cpu_idx;
+  first_cpu_idx.push_back(cpu_idxs[0]);
+  int ssaret = set_cpu_sched_affinity(first_cpu_idx);
+  if (ssaret != 0) {
+    ADNN_LOG(WARNING) << "Set cpu affinity failed, core idx: " << cpu_idxs[0];
+    return false;
+  }
+#endif  // ADNN_WITH_OMP
+  return true;
+}
+
 bool detect_from_cpu_info(std::vector<CPUAttr>* cpu_attrs) {
   cpu_attrs->clear();
   FILE* fp = fopen("/proc/cpuinfo", "rb");
@@ -1154,7 +1271,7 @@ bool detect_from_cpu_name(std::vector<CPUAttr>* cpu_attrs) {
   return true;
 }
 
-CPUInfo::CPUInfo() {
+bool CPUInfo::Initialize() {
   bool status = detect_from_cpu_name(&cpu_attrs_);
   if (!status) {
     status = detect_from_cpu_info(&cpu_attrs_);
@@ -1186,8 +1303,10 @@ CPUInfo::CPUInfo() {
                     0,
                     CPU_ATTR_SUPPORT_ARM_SVE2_F32MM,
                     0);
+      return false;
     }
   }
+  return true;
 }
 // Initialize CPUInfo on iOS or macOS
 #elif ADNN_OS_IOS || ADNN_OS_MAC
@@ -1201,7 +1320,7 @@ int get_cpu_num() {
   return cpu_num;
 }
 
-CPUInfo::CPUInfo() {
+bool CPUInfo::Initialize() {
   auto cpu_num = get_cpu_num();
   cpu_attrs_.resize(cpu_num);
   set_cpu_attrs(&cpu_attrs_,
@@ -1211,7 +1330,7 @@ CPUInfo::CPUInfo() {
                 CPU_ATTR_ARCH,
                 CPUArch::APPLE,
                 CPU_ATTR_CLUSTER_ID,
-                0,
+                2,
                 CPU_ATTR_L1_CACHE_SIZE,
                 DEFAULT_L1_CACHE_SIZE,
                 CPU_ATTR_L2_CACHE_SIZE,
@@ -1230,12 +1349,15 @@ CPUInfo::CPUInfo() {
                 0,
                 CPU_ATTR_SUPPORT_ARM_SVE2_F32MM,
                 0);
+  return false;
 }
 // Initialize CPUInfo on QNX
 // #elif ADNN_OS_QNX
 #else
-CPUInfo::CPUInfo() {
-  size_t cpu_num = 1;  // Only support 1 cpu core by default.
+bool CPUInfo::Initialize() {
+  size_t cpu_num = 1;  // Only support 1 cpu by default.
+  ADNN_LOG(WARNING) << "The number of CPUs is forced to 1 because we cannot "
+                       "detect the number of CPUs on the current platform.";
   cpu_attrs_.resize(cpu_num);
   set_cpu_attrs(&cpu_attrs_,
                 0,
@@ -1244,7 +1366,7 @@ CPUInfo::CPUInfo() {
                 CPU_ATTR_ARCH,
                 CPUArch::UNKOWN,
                 CPU_ATTR_CLUSTER_ID,
-                0,
+                2,
                 CPU_ATTR_L1_CACHE_SIZE,
                 DEFAULT_L1_CACHE_SIZE,
                 CPU_ATTR_L2_CACHE_SIZE,
@@ -1263,17 +1385,30 @@ CPUInfo::CPUInfo() {
                 0,
                 CPU_ATTR_SUPPORT_ARM_SVE2_F32MM,
                 0);
+  return false;
 }
 #endif  // ADNN_OS_LINUX
 
+CPUInfo::CPUInfo() {
+  Initialize();
+  // Only use single thread with NO_BIND mode.
+  SetRunMode(PowerMode::HIGH, 100);
+  // Print all CPU details.
+  PrintAll();
+}
+
 CPUInfo::~CPUInfo() {}
 
-void CPUInfo::dump() {
-  auto& cpu_info = Singleton();
-  auto cpu_num = cpu_info.cpu_attrs_.size();
+CPUInfo& CPUInfo::Singleton() {
+  static auto* cpu_info = new CPUInfo;
+  return *cpu_info;
+}
+
+void CPUInfo::PrintAll() {
+  auto cpu_num = cpu_attrs_.size();
   ADNN_LOG(INFO) << "Found: " << cpu_num << " CPUs.";
   for (size_t i = 0; i < cpu_num; i++) {
-    const auto& cpu_attr = cpu_info.cpu_attrs_[i];
+    const auto& cpu_attr = cpu_attrs_[i];
     ADNN_LOG(INFO) << "CPU[" << i << "]";
     ADNN_LOG(INFO) << " Arch: " << cpu_arch_to_string(cpu_attr.arch);
     ADNN_LOG(INFO) << " Cluster Id: "
@@ -1295,31 +1430,145 @@ void CPUInfo::dump() {
   }
 }
 
-size_t CPUInfo::count() {
-  auto& cpu_info = Singleton();
-  return cpu_info.cpu_attrs_.size();
-}
-
 const CPUAttr& CPUInfo::at(int index) {
-  auto& cpu_info = Singleton();
   ADNN_CHECK_GE(index, 0);
-  ADNN_CHECK_LT(index, cpu_info.cpu_attrs_.size());
-  return cpu_info.cpu_attrs_[index];
+  ADNN_CHECK_LT(index, cpu_attrs_.size());
+  return cpu_attrs_[index];
 }
 
-PowerMode CPUInfo::power_mode() {
-  auto& cpu_info = Singleton();
-  return cpu_info.power_mode_;
-}
-
-bool CPUInfo::SetPowerMode(PowerMode power_mode, size_t thread_num) {
-  auto& cpu_info = Singleton();
-  return false;
-}
-
-CPUInfo& CPUInfo::Singleton() {
-  static auto* cpu_info = new CPUInfo;
-  return *cpu_info;
+bool CPUInfo::SetRunMode(PowerMode power_mode, size_t thread_num) {
+  auto cpu_num = cpu_attrs_.size();
+  ADNN_CHECK_GE(cpu_num, 1);
+  ADNN_CHECK_GE(thread_num, 1);
+#if defined(ADNN_WITH_OMP) || defined(ADNN_WITH_THREAD_POOL)
+  if (thread_num > cpu_num) {
+    ADNN_LOG(WARNING) << "Apply for " << thread_num << " threads with "
+                      << power_mode_to_string(power_mode) << " mode, but only "
+                      << cpu_num << " CPUs found, so shrink to " << cpu_num
+                      << " threads.";
+    thread_num = std::min(thread_num, cpu_num);
+  }
+#else
+  if (thread_num > 1) {
+    ADNN_LOG(WARNING) << "Apply for " << thread_num << " threads with "
+                      << power_mode_to_string(power_mode)
+                      << " mode, but OpenMP or ThreadPool is disabled, so "
+                         "shrink to single thread.";
+  }
+  thread_num = 1;  // Force thread_num to 1 if OpenMP or ThreadPool is disabled.
+#endif
+  // Detect Little, big cores from cluster_id.
+  std::vector<int> big_idxs, little_idxs;
+  for (size_t i = 0; i < cpu_num; i++) {
+    if (cpu_attrs_[i].cluster_id == 0) little_idxs.push_back(i);
+    if (cpu_attrs_[i].cluster_id == 1) big_idxs.push_back(i);
+  }
+  for (size_t i = 0; i < cpu_num; i++) {
+    if (cpu_attrs_[i].cluster_id == 2) big_idxs.push_back(i);
+  }
+  auto big_num = big_idxs.size();
+  auto little_num = little_idxs.size();
+  ADNN_CHECK_EQ(cpu_num, big_num + little_num);
+  active_idxs_.clear();
+  bool reset_to_no_bind = true;
+#if ADNN_OS_LINUX
+  power_mode_ = power_mode;
+  if (power_mode_ == PowerMode::HIGH) {
+    if (big_num > 0) {
+      if (thread_num > big_num) {
+        active_idxs_ = big_idxs;
+        ADNN_LOG(WARNING) << "Apply for " << thread_num << " threads with "
+                          << power_mode_to_string(power_mode)
+                          << " mode, but exceed the number of the big cores "
+                          << big_num << ", so shrink to " << big_num
+                          << " threads.";
+      } else {
+        for (size_t i = 0; i < thread_num; i++) {
+          active_idxs_.push_back(big_idxs[big_num - 1 - i]);
+        }
+      }
+    } else {
+      power_mode_ = PowerMode::LOW;
+      ADNN_LOG(WARNING) << "There is no big cores, so switch HIGH to LOW mode.";
+      if (thread_num > little_num) {
+        active_idxs_ = little_idxs;
+        ADNN_LOG(WARNING) << "Apply for " << thread_num
+                          << " threads with LOW mode, but exceed the number of "
+                             "the LITTLE cores "
+                          << little_num << ", so shrink to " << little_num
+                          << " threads.";
+      } else {
+        for (size_t i = 0; i < thread_num; i++) {
+          active_idxs_.push_back(little_idxs[i]);
+        }
+      }
+    }
+  } else if (power_mode_ == PowerMode::LOW) {
+    if (little_num > 0) {
+      if (thread_num > little_num) {
+        ADNN_LOG(WARNING) << "Apply for " << thread_num << " threads with "
+                          << power_mode_to_string(power_mode)
+                          << " mode, but exceed the number of the LITTLE cores "
+                          << little_num << ", so shrink to " << little_num
+                          << " threads.";
+        active_idxs_ = little_idxs;
+      } else {
+        for (size_t i = 0; i < thread_num; i++) {
+          active_idxs_.push_back(little_idxs[i]);
+        }
+      }
+    } else {
+      power_mode_ = PowerMode::HIGH;
+      ADNN_LOG(WARNING)
+          << "There is no LITTLE cores, so switch LOW to HIGH mode.";
+      if (thread_num > big_num) {
+        active_idxs_ = big_idxs;
+        ADNN_LOG(WARNING) << "Apply for " << thread_num
+                          << " threads with HIGH mode, but exceed the number "
+                             "of the big cores "
+                          << big_num << ", so shrink to " << big_num
+                          << " threads.";
+      } else {
+        for (size_t i = 0; i < thread_num; i++) {
+          active_idxs_.push_back(big_idxs[i]);
+        }
+      }
+    }
+  } else if (power_mode_ == PowerMode::FULL ||
+             power_mode_ == PowerMode::NO_BIND) {
+    for (size_t i = 0; i < thread_num; i++) {
+      if (i < big_num) {
+        active_idxs_.push_back(big_idxs[i]);
+      } else {
+        active_idxs_.push_back(little_idxs[i - big_num]);
+      }
+    }
+  } else {
+    ADNN_LOG(FATAL) << "Unsupported power mode "
+                    << static_cast<int>(power_mode_) << ".";
+  }
+  if (power_mode_ == PowerMode::NO_BIND || bind_threads_to_cpus(active_idxs_)) {
+    reset_to_no_bind = false;
+  }
+#endif
+  if (reset_to_no_bind) {
+    active_idxs_.clear();
+    power_mode_ = PowerMode::NO_BIND;
+    for (size_t i = 0; i < thread_num; i++) {
+      if (i < big_num) {
+        active_idxs_.push_back(big_idxs[i]);
+      } else {
+        active_idxs_.push_back(little_idxs[i - big_num]);
+      }
+    }
+    ADNN_LOG(WARNING) << "Force to NO_BIND mode, use " << active_idxs_.size()
+                      << " threads.";
+  }
+  ADNN_CHECK_GE(active_idxs_.size(), 1);
+#ifdef ARM_WITH_OMP
+  omp_set_num_threads(active_idxs_.size());
+#endif
+  return true;
 }
 
 }  // namespace adnn

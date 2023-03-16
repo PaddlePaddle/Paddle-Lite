@@ -78,17 +78,42 @@ class CPUInfo {
   ~CPUInfo();
   CPUInfo(const CPUInfo&) = delete;
   CPUInfo& operator=(const CPUInfo&) = delete;
-  static size_t count();
-  static const CPUAttr& at(int index);
-  static void dump();
-  static PowerMode power_mode();
-  static bool SetPowerMode(PowerMode power_mode, size_t thread_num);
+  size_t count() { return cpu_attrs_.size(); }
+  const CPUAttr& at(int index);
+  PowerMode power_mode() { return power_mode_; }
+  size_t thread_num() { return active_idxs_.size(); }
+  CPUArch arch() { return cpu_attrs_[active_idxs_[0]].arch; }
+  int32_t cluster_id() { return cpu_attrs_[active_idxs_[0]].cluster_id; }
+  size_t l1_cache_size() { return cpu_attrs_[active_idxs_[0]].l1_cache_size; }
+  size_t l2_cache_size() { return cpu_attrs_[active_idxs_[0]].l2_cache_size; }
+  size_t l3_cache_size() { return cpu_attrs_[active_idxs_[0]].l3_cache_size; }
+  bool support_arm_fp16() {
+    return cpu_attrs_[active_idxs_[0]].support_arm_fp16;
+  }
+  bool support_arm_bf16() {
+    return cpu_attrs_[active_idxs_[0]].support_arm_bf16;
+  }
+  bool support_arm_dotprod() {
+    return cpu_attrs_[active_idxs_[0]].support_arm_dotprod;
+  }
+  bool support_arm_sve2() {
+    return cpu_attrs_[active_idxs_[0]].support_arm_sve2;
+  }
+  bool support_arm_sve2_i8mm() {
+    return cpu_attrs_[active_idxs_[0]].support_arm_sve2_i8mm;
+  }
+  bool support_arm_sve2_f32mm() {
+    return cpu_attrs_[active_idxs_[0]].support_arm_sve2_f32mm;
+  }
+  static CPUInfo& Singleton();
+  bool Initialize();
+  void PrintAll();
+  bool SetRunMode(PowerMode power_mode, size_t thread_num);
 
  private:
-  static CPUInfo& Singleton();
   std::vector<CPUAttr> cpu_attrs_;
-  PowerMode power_mode_;
-  std::vector<int> active_ids_;
+  std::vector<int> active_idxs_{0};
+  PowerMode power_mode_{PowerMode::NO_BIND};
 };
 
 }  // namespace adnn

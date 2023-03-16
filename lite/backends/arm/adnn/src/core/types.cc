@@ -45,8 +45,6 @@ ADNN_DLL_EXPORT std::string power_mode_to_string(PowerMode type) {
     ADNN_TYPE_TO_STRING(LOW);
     ADNN_TYPE_TO_STRING(FULL);
     ADNN_TYPE_TO_STRING(NO_BIND);
-    ADNN_TYPE_TO_STRING(RAND_HIGH);
-    ADNN_TYPE_TO_STRING(RAND_LOW);
     default:
       name = "UNKNOWN";
       break;

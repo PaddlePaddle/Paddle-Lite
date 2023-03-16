@@ -54,6 +54,7 @@ ELSEIF(NOT CMAKE_SYSTEM_NAME MATCHES "^(Android|Darwin|iOS|Linux|Windows|CYGWIN|
   MESSAGE(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME value \"${CMAKE_SYSTEM_NAME}\"")
 ENDIF()
 
+OPTION(ADNN_WITH_THREAD_POOL "Build ADNN with ThreadPool to support multi-threads." ON)
 OPTION(ADNN_WITH_ARM "Build ADNN with Arm CPU" ON)
 OPTION(ADNN_ARM_WITH_FP16 "Build ADNN with Arm FP16 kernels" ON)
 OPTION(ADNN_ARM_WITH_BF16 "Build ADNN with Arm BF16 kernels" ON)
@@ -61,6 +62,9 @@ OPTION(ADNN_ARM_WITH_DOTPROD "Build ADNN with Arm DotProd (integer dot product) 
 OPTION(ADNN_ARM_WITH_SVE "Build ADNN with Arm SVE kernels" ON)
 OPTION(ADNN_ARM_WITH_SVE2 "Build ADNN with Arm SVE2 kernels" ON)
 
+IF(ADNN_WITH_THREAD_POOL)
+  add_definitions(-DADNN_WITH_THREAD_POOL)
+ENDIF()
 IF(ADNN_WITH_ARM)
   add_definitions(-DADNN_WITH_ARM)
 ENDIF()

@@ -56,17 +56,7 @@ typedef enum {
   /**
    * No bind depends on the scheduling policy of the system.
    */
-  NO_BIND,
-  /**
-   * Bind the worker threads to the big clusters in turn. Switch binding to the
-   * next core after every 10 calls.
-   */
-  RAND_HIGH,
-  /**
-   * Bind the worker threads to the little clusters in turn. Switch binding to
-   * the next core after every 10 calls.
-   */
-  RAND_LOW
+  NO_BIND
 } PowerMode;
 
 /**
