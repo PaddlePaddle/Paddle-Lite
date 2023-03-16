@@ -158,6 +158,16 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     auto conv_weight_d = conv_weight_t->mutable_data<int8_t>();
     // compute new conv_weight for int8
     auto weight_scale = conv_op_desc->GetInputScale(weight_name);
+    std::vector<float> weight_scale_dup(alpha_tensor.numel(), 0);
+    if (weight_scale.size() == 1) {
+      for (int i = 0; i < weight_scale_dup.size(); i++) {
+        weight_scale_dup[i] = weight_scale[0];
+      }
+    } else {
+      for (int i = 0; i < weight_scale_dup.size(); i++) {
+        weight_scale_dup[i] = weight_scale[i];
+      }
+    }
     if (conv_type_ == "conv2d_transpose") {
       int cout = conv_weight_t->dims()[1] * groups;
       int cin_group = conv_weight_t->dims()[0] / groups;
@@ -165,7 +175,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       int hw = conv_weight_t->dims()[2] * conv_weight_t->dims()[3];
       for (int k = 0; k < cin_group; ++k) {
         for (int i = 0; i < cout; ++i) {
-          weight_scale[i] *= fabsf(alpha_data[i]);
+          weight_scale_dup[i] *= fabsf(alpha_data[i]);
           if (alpha_data[i] < 0.f) {
             auto ptr_row = conv_weight_d + k * c_size + i * hw;
             for (int j = 0; j < hw; ++j) {
@@ -176,7 +186,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       }
     } else {
       for (int i = 0; i < h; ++i) {
-        weight_scale[i] *= fabsf(alpha_data[i]);
+        weight_scale_dup[i] *= fabsf(alpha_data[i]);
         if (alpha_data[i] < 0.f) {
           auto ptr_row = conv_weight_d + i * w;
           for (int j = 0; j < w; ++j) {
@@ -185,7 +195,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
         }
       }
     }
-    conv_op_desc->SetInputScale(weight_name, weight_scale);
+    conv_op_desc->SetInputScale(weight_name, weight_scale_dup);
   } else if (is_weight_quantization) {
     std::string scale_name = conv_weight_name + "_quant_scale";
     if (conv_op_desc->HasAttr(scale_name)) {
