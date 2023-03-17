@@ -21,7 +21,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class ClipCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <typename InType, PrecisionType PType>
+class ClipCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::ClipParam;
 

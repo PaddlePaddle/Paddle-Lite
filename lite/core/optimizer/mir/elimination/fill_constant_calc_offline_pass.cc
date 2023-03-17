@@ -147,4 +147,4 @@ void FillConstantCalcOfflinePass::RemoveFillConstantPattern(
 
 REGISTER_MIR_PASS(fill_constant_calc_offline_pass,
                   paddle::lite::mir::FillConstantCalcOfflinePass)
-    .BindTargets({TARGET(kNNAdapter)});
+    .BindTargets({TARGET(kNNAdapter), TARGET(kXPU)});

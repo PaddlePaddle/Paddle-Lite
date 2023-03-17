@@ -172,6 +172,7 @@ struct InterpolateParam : ParamBase {
   bool version_2{false};
   std::string interp_method{"Nearest"};
   DataLayoutType data_layout{DATALAYOUT(kNCHW)};
+  WITH_INT8_CONFIG
 };
 
 // For Mul Op
@@ -1247,6 +1248,8 @@ struct ReduceParam : ParamBase {
   std::vector<int> dim{0};
   bool keep_dim{false};
   bool reduce_all{false};
+  // for int8
+  WITH_INT8_CONFIG
 };
 
 struct VarConv2DParam : ParamBase {
@@ -1760,6 +1763,7 @@ struct XPUBlockFuseParam : ParamBase {
   float quant_w_max{0.f};
   float quant_output_max{0.f};
   float quant_branch_max{0.f};
+  bool per_channel{false};
 };
 
 struct XPUMultiEncoderParam : ParamBase {
@@ -2199,6 +2203,8 @@ struct ClipParam : ParamBase {
   Tensor* out{};
   float min{};
   float max{};
+  // for int8
+  WITH_INT8_CONFIG
 };
 
 struct PrintParam : ParamBase {

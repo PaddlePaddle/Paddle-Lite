@@ -20,10 +20,10 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
-
-void ShapeCompute::Run() {
-  auto& param = Param<operators::ShapeParam>();
-  int* output_data = param.Out->mutable_data<int>();
+template <PrecisionType PType>
+void ShapeCompute<PType>::Run() {
+  auto& param = this->template Param<operators::ShapeParam>();
+  int* output_data = param.Out->template mutable_data<int>();
   auto in_dims = param.X->dims();
   for (size_t i = 0; i < in_dims.size(); ++i) {
     output_data[i] = in_dims[i];
@@ -39,8 +39,22 @@ REGISTER_LITE_KERNEL(shape,
                      kXPU,
                      kAny,
                      kAny,
-                     paddle::lite::kernels::xpu::ShapeCompute,
+                     paddle::lite::kernels::xpu::ShapeCompute<PRECISION(kAny)>,
                      xpu_shape)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(
+                   TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(shape,
+                     kXPU,
+                     kInt8,
+                     kAny,
+                     paddle::lite::kernels::xpu::ShapeCompute<PRECISION(kInt8)>,
+                     xpu_shape_int8)
     .BindInput("Input",
                {LiteType::GetTensorTy(
                    TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny), -1)})

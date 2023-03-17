@@ -102,6 +102,8 @@ using concati32 =
     paddle::lite::kernels::xpu::ConcatCompute<int, PRECISION(kFloat)>;
 using concati64 =
     paddle::lite::kernels::xpu::ConcatCompute<int64_t, PRECISION(kFloat)>;
+using concati8 =
+    paddle::lite::kernels::xpu::ConcatCompute<int8_t, PRECISION(kInt8)>;
 
 REGISTER_LITE_KERNEL(concat, kXPU, kFloat, kNCHW, concatfp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
@@ -137,4 +139,11 @@ REGISTER_LITE_KERNEL(concat, kXPU, kFloat, kNCHW, concati64, concat_INT64)
     .BindInput("AxisTensor",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(concat, kXPU, kInt8, kNCHW, concati8, concat_INT8)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
+    .BindInput("AxisTensor",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
     .Finalize();
