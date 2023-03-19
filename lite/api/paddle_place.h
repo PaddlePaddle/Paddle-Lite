@@ -144,6 +144,7 @@ enum class ActivationType : int {
   kSoftPlus = 21,
   kMish = 22,
   kSilu = 23,
+  kLog1p = 24,
   NUM = 24,
 };
 

@@ -103,6 +103,15 @@ class LogCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
   virtual ~LogCompute() = default;
 };
 
+class Log1pCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~Log1pCompute() = default;
+};
+
 class ExpCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;

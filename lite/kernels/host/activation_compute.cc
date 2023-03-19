@@ -151,6 +151,17 @@ void LogCompute::Run() {
   }
 }
 
+void Log1pCompute::Run() {
+  auto& param = this->Param<param_t>();
+  CHECK(param.X);
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
+  for (int i = 0; i < x_dims.production(); i++) {
+    output_data[i] = std::log(x_data[i] + 1);
+  }
+}
+
 void ExpCompute::Run() {
   auto& param = this->Param<param_t>();
   CHECK(param.X);
@@ -364,6 +375,11 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 REGISTER_LITE_KERNEL(
     log, kHost, kFloat, kNCHW, paddle::lite::kernels::host::LogCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+REGISTER_LITE_KERNpEL(
+    log1p, kHost, kFloat, kNCHW, paddle::lite::kernels::host::Log1pCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
