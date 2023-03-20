@@ -121,6 +121,15 @@ class FloorCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
   virtual ~FloorCompute() = default;
 };
 
+class CeilCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override;
+
+  virtual ~CeilCompute() = default;
+};
+
 class HardSigmoidCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;
