@@ -90,7 +90,11 @@ void FillConstantCalcOfflinePass::RemoveFillConstantPattern(
     }
     // Get fill_constant's attr
     auto dtype = op_desc->GetAttr<int>("dtype");
-    auto str_value = op_desc->GetAttr<std::string>("str_value");
+    std::string str_value{};
+    if (op_desc->HasAttr("str_value")) {
+      str_value = op_desc->GetAttr<std::string>("str_value");
+    }
+
     float value;
     if (str_value.empty()) {
       value = op_desc->GetAttr<float>("value");
