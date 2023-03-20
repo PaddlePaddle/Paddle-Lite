@@ -144,17 +144,16 @@ class XPUFcFuser : public FuseBase {
         per_channel = false;
         VLOG(3) << "xpu fc per tensor";
         weight_max.push_back(
-            op_info->GetAttr<std::vector<float>>("Y0_scale")[0] * 127);
+            op_info->GetAttr<std::vector<float>>("Y0_scale")[0]);
       } else {
         per_channel = true;
         VLOG(3) << "xpu fc per channel, first channel max:"
-                << op_info->GetAttr<std::vector<float>>("Y0_scale")[0] * 127
+                << op_info->GetAttr<std::vector<float>>("Y0_scale")[0]
                 << ", last channel max: "
                 << op_info->GetAttr<std::vector<float>>(
-                       "Y0_scale")[weight_scale_size - 1] *
-                       127;
+                       "Y0_scale")[weight_scale_size - 1];
         for (auto wm : op_info->GetAttr<std::vector<float>>("Y0_scale")) {
-          weight_max.push_back(wm * 127);
+          weight_max.push_back(wm);
         }
       }
       VLOG(3) << "weight_max size:" << weight_max.size();
@@ -163,16 +162,36 @@ class XPUFcFuser : public FuseBase {
 
       op_desc.SetAttr<std::vector<float>>(
           "Input0_scale",
-          {127 *
-           matched.at("mul")->stmt()->op_info()->GetInputScale(
-               matched.at("x")->arg()->name)[0]});
-      // don't need * 127
-      op_desc.SetAttr<std::vector<float>>(
-          "Output0_scale",
-          {matched.at("mul")->stmt()->op_info()->GetAttr<float>(
-              "out_threshold")});
+          {matched.at("mul")->stmt()->op_info()->GetInputScale(
+              matched.at("x")->arg()->name)[0]});
+
+      std::string out_op_name{};
+      if (act_type_ != "linear") {
+        out_op_name = "act";
+      } else if (with_bias_) {
+        out_op_name = "add";
+      } else {
+        out_op_name = "mul";
+      }
+
+      float out_scale = 0;
+      if (matched.at(out_op_name)
+              ->stmt()
+              ->op_info()
+              ->HasOutputScale(output_name)) {
+        out_scale = matched.at(out_op_name)
+                        ->stmt()
+                        ->op_info()
+                        ->GetOutputScale(output_name)[0];
+      } else {
+        VLOG(1) << "We default set out_scale=0,thanks to there is not out "
+                   "scale value in this op.";
+      }
+
+      op_desc.SetAttr<std::vector<float>>("Output0_scale", {out_scale});
     }
 
+    // TODO(quwei): refactor in order to Conform to the new format.
     // conv2d int16
     if (matched.at("mul")->stmt()->op_info()->HasAttr("enable_int16") &&
         matched.at("mul")->stmt()->op_info()->GetAttr<bool>("enable_int16")) {

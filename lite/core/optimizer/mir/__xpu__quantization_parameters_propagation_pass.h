@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,26 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/optimizer/mir/fusion/sigmoid_elementmul_fuse_pass.h"
+#pragma once
+
 #include <memory>
-#include <vector>
-#include "lite/core/optimizer/mir/fusion/sigmoid_elementmul_fuser.h"
-#include "lite/core/optimizer/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/pass.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 
-void SigmoidElementmulFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  fusion::SigmoidElementmulFuser fuser;
-  fuser(graph.get());
-}
+class XPUQuantizationParametersPropagationPass : public mir::StmtPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+  void ResetScale(const std::unique_ptr<SSAGraph>& graph);
+};
 
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
-
-REGISTER_MIR_PASS(lite_sigmoid_elementmul_fuse_pass,
-                  paddle::lite::mir::SigmoidElementmulFusePass)
-    .BindTargets({TARGET(kARM), TARGET(kHost), TARGET(kXPU)})
-    .BindKernel("swish");
