@@ -75,13 +75,13 @@ void Atan2Compute<T>::Run() {
 
   const auto* x1_data = param.X1->template data<T>();
   const auto* x2_data = param.X2->template data<T>();
-  auto* out_data = param.Out->template mutable_data<typename Atan2Out<T>::type>();
+  auto* out_data =
+      param.Out->template mutable_data<typename Atan2Out<T>::type>();
   auto x1_numel = param.X1->numel();
   auto x2_numel = param.X2->numel();
 
-  CHECK_LT(x1_numel, x2_numel)               
-        << "The count of elements of X1 shall not "
-        << "greater than count of elements of X2.";   
+  CHECK_LT(x1_numel, x2_numel) << "The count of elements of X1 shall not "
+                               << "greater than count of elements of X2.";
   Atan2Functor<T> functor(x1_data, x2_data, out_data, x1_numel);
   for (int64_t i = 0; i < x1_numel; ++i) {
     functor(i);
@@ -102,5 +102,6 @@ using atan2_float = paddle::lite::kernels::host::Atan2Compute<float>;
 REGISTER_LITE_KERNEL(atan2, kHost, kAny, kNCHW, atan2_float, def)
     .BindInput("X1", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindInput("X2", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .Finalize();

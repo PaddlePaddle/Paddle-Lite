@@ -29,7 +29,7 @@ class Atan2Compute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
   using param_t = operators::Atan2Param;
 
   void Run() override;
-  
+
   virtual ~Atan2Compute() = default;
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(

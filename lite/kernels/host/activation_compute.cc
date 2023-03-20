@@ -378,7 +378,7 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
-REGISTER_LITE_KERNpEL(
+REGISTER_LITE_KERNEL(
     log1p, kHost, kFloat, kNCHW, paddle::lite::kernels::host::Log1pCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
