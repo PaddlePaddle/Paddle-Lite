@@ -173,6 +173,17 @@ void FloorCompute::Run() {
   }
 }
 
+void CeilCompute::Run() {
+  auto& param = this->Param<param_t>();
+  CHECK(param.X);
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
+  for (int i = 0; i < x_dims.production(); i++) {
+    output_data[i] = std::ceil(x_data[i]);
+  }
+}
+
 void HardSigmoidCompute::Run() {
   auto& param = this->Param<param_t>();
   CHECK(param.X);
@@ -374,6 +385,11 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 REGISTER_LITE_KERNEL(
     floor, kHost, kFloat, kNCHW, paddle::lite::kernels::host::FloorCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
+    ceil, kHost, kFloat, kNCHW, paddle::lite::kernels::host::CeilCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

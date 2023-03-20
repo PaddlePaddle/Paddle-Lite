@@ -121,6 +121,7 @@ REGISTER_LITE_OP(log, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(exp, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(abs, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(floor, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(ceil, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(hard_sigmoid, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(sqrt, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(rsqrt, paddle::lite::operators::ActivationOp);
