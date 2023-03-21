@@ -31,7 +31,7 @@ namespace kernels {
 namespace opencl {
 
 class FcCompute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::FcParam;
 
@@ -39,14 +39,29 @@ class FcCompute
     fc_param_ = param_.get_mutable<param_t>();
     auto w_t = fc_param_->w;
     auto bias_t = fc_param_->bias;
+    const bool enable_fp16 =
+        CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
 
-    if (fc_param_->activation_type == "prelu") {
+    auto device_name = CLRuntime::Global()->device().getInfo<CL_DEVICE_NAME>();
+    if (device_name.find("Adreno") != std::string::npos) {
+      is_adreno_ = true;
+    }
+    // TODO(sprouteer): optimize mali later
+    is_adreno_ = true;
+
+    if (fc_param_->activation_type == "relu") {
+      build_options_ += " -DRELU";
+    } else if (fc_param_->activation_type == "relu6") {
+      build_options_ += " -DRELU6";
+    } else if (fc_param_->activation_type == "prelu") {
       std::string prelu_mode = fc_param_->Prelu_mode;
       build_options_ += " -DPRELU";
-      if (prelu_mode == "all") {
-        build_options_ += " -DPRELU_ONE";
+      if (prelu_mode == "channel") {
+        build_options_ += " -DPRELU_CH";
+      } else if (prelu_mode == "element") {
+        build_options_ += " -DPRELU_ELE";
       } else {
-        build_options_ += " -DPRELU_MORE";
+        build_options_ += " -DPRELU_ALL";
       }
       auto alpha_t = fc_param_->Prelu_alpha;
       alpha_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
@@ -58,18 +73,63 @@ class FcCompute
                                   IoDirection::HtoD);
     }
     w_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
-    auto w_gpu_data =
-        w_gpu_t_->mutable_data(TARGET(kOpenCL), w_t->memory_size());
-    TargetWrapperCL::MemcpySync(
-        w_gpu_data, w_t->raw_data(), w_t->memory_size(), IoDirection::HtoD);
+    if (is_adreno_) {
+      auto w_cpu_tensor = std::unique_ptr<Tensor>(new Tensor);
+      CLImageConverterFolder w_converter;
+      const DDim& w_image_dims =
+          w_converter.InitImageDimInfoWith(fc_param_->w->dims());
+      w_cpu_tensor->Resize({1, w_image_dims[0], w_image_dims[1], 4});
+      auto* w_image_data = MUTABLE_DATA_CPU(w_cpu_tensor);
+      auto* w_cpu = fc_param_->w->mutable_data<float>();
+      w_converter.NCHWToImage(w_cpu, w_image_data, fc_param_->w->dims());
+      MUTABLE_DATA_GPU(
+          w_gpu_t_, w_image_dims[0], w_image_dims[1], w_image_data);
+    } else {
+      if (enable_fp16) {
+        auto* w_cpu = w_t->data<float>();
+        auto w_cpu_t = std::unique_ptr<Tensor>(new Tensor);
+        w_cpu_t->Resize(w_t->dims());
+        auto* w_buffer_data = MUTABLE_DATA_CPU(w_cpu_t.get());
+        FloatArray2HalfArray(const_cast<float*>(w_cpu),
+                             static_cast<half_t*>(w_buffer_data),
+                             w_t->dims().production());
+        auto w_gpu_data =
+            w_gpu_t_->mutable_data(TARGET(kOpenCL), w_t->memory_size());
+        TargetWrapperCL::MemcpySync(w_gpu_data,
+                                    w_cpu_t->raw_data(),
+                                    w_cpu_t->memory_size(),
+                                    IoDirection::HtoD);
+      } else {
+        auto w_gpu_data =
+            w_gpu_t_->mutable_data(TARGET(kOpenCL), w_t->memory_size());
+        TargetWrapperCL::MemcpySync(
+            w_gpu_data, w_t->raw_data(), w_t->memory_size(), IoDirection::HtoD);
+      }
+    }
 
     bias_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
-    auto b_gpu_data =
-        bias_gpu_t_->mutable_data(TARGET(kOpenCL), bias_t->memory_size());
-    TargetWrapperCL::MemcpySync(b_gpu_data,
-                                bias_t->raw_data(),
-                                bias_t->memory_size(),
-                                IoDirection::HtoD);
+    if (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16) {
+      auto* bias_cpu = bias_t->data<float>();
+      auto bias_cpu_t = std::unique_ptr<Tensor>(new Tensor);
+      bias_cpu_t->Resize(bias_t->dims());
+      auto* bias_buffer_data = MUTABLE_DATA_CPU(bias_cpu_t.get());
+      FloatArray2HalfArray(const_cast<float*>(bias_cpu),
+                           static_cast<half_t*>(bias_buffer_data),
+                           bias_t->dims().production());
+      auto b_gpu_data =
+          bias_gpu_t_->mutable_data(TARGET(kOpenCL), bias_t->memory_size());
+      TargetWrapperCL::MemcpySync(b_gpu_data,
+                                  bias_cpu_t->raw_data(),
+                                  bias_cpu_t->memory_size(),
+                                  IoDirection::HtoD);
+    } else {
+      auto b_gpu_data =
+          bias_gpu_t_->mutable_data(TARGET(kOpenCL), bias_t->memory_size());
+      TargetWrapperCL::MemcpySync(b_gpu_data,
+                                  bias_t->raw_data(),
+                                  bias_t->memory_size(),
+                                  IoDirection::HtoD);
+    }
   }
 
   void ReInitWhenNeeded() override {
@@ -83,10 +143,14 @@ class FcCompute
       const auto w_dims = fc_param_->w->dims();
       CHECK_GE(x_dims.size(), 2UL);
       CHECK_GE(w_dims.size(), 2UL);
-      CHECK_EQ(fc_param_->output->dims().size(), 2UL);
 
-      m_ = x_dims.Slice(0, fc_param_->in_num_col_dims).production();
-      k_ = x_dims.Slice(fc_param_->in_num_col_dims, x_dims.size()).production();
+      int in_num_col_dims = fc_param_->in_num_col_dims;
+      std::string op_type = fc_param_->op_type;
+      if (op_type == "matmul" || op_type == "matmul_v2") {
+        in_num_col_dims = x_dims.size() - 1;
+      }
+      m_ = x_dims.Slice(0, in_num_col_dims).production();
+      k_ = x_dims.Slice(in_num_col_dims, x_dims.size()).production();
       n_ = w_dims[1];
       CHECK_EQ(k_, static_cast<int>(w_dims[0]));
 
@@ -99,10 +163,11 @@ class FcCompute
 #endif
 
       // choose kernel
-      if (m_ == 1) {  // gemv
-        kernel_func_name_ = "fc_gemv_1x4";
-      } else {  // gemm
-        kernel_func_name_ = "fc_gemm_4x4";
+      // TODO(sprouteer): support mali later
+      if (m_ == 1) {
+        kernel_func_name_ = "adreno_gemv_1x4";
+      } else {
+        kernel_func_name_ = "adreno_gemm_4x4";
       }
 #ifdef LITE_WITH_LOG
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
@@ -127,31 +192,37 @@ class FcCompute
   }
 
   void GetGlobalWorkSize() {
-    if (kernel_func_name_ == "fc_gemv_1x4") {  // gemv
+    if (m_ == 1) {  // gemv
       global_work_size_ = cl::NDRange{static_cast<size_t>((n_ + 3) / 4)};
     } else {  // gemm
+      local_work_size_ = cl::NDRange(32, 32);
       global_work_size_ = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
                                       static_cast<size_t>((n_ + 3) / 4)};
     }
   }
 
   void Run() override {
-    auto* x_buf = fc_param_->input->data<float, cl::Buffer>();
-    auto* w_buf = w_gpu_t_->data<float, cl::Buffer>();
-    auto* bias_buf = bias_gpu_t_->data<float, cl::Buffer>();
+    auto* x_buf = GET_BUFFER_GPU(fc_param_->input);
+    auto* bias_buf = GET_BUFFER_GPU(bias_gpu_t_);
     const cl::Buffer* alpha_buf = nullptr;
     if (fc_param_->activation_type == "prelu") {
       alpha_buf = alpha_gpu_t_->data<float, cl::Buffer>();
     }
-    auto* out_buf =
-        fc_param_->output->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+    auto* out_buf = MUTABLE_BUFFER_GPU(fc_param_->output);
 
     auto kernel = kernel_;
     cl_int status;
     status = kernel.setArg(0, *x_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *w_buf);
-    CL_CHECK_FATAL(status);
+    if (is_adreno_) {
+      auto* w_img = GET_DATA_GPU(w_gpu_t_);
+      status = kernel.setArg(1, *w_img);
+      CL_CHECK_FATAL(status);
+    } else {
+      auto* w_buf = GET_BUFFER_GPU(w_gpu_t_);
+      status = kernel.setArg(1, *w_buf);
+      CL_CHECK_FATAL(status);
+    }
     status = kernel.setArg(2, *bias_buf);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(3, *out_buf);
@@ -172,7 +243,7 @@ class FcCompute
                                   kernel,
                                   cl::NullRange,
                                   global_work_size_,
-                                  cl::NullRange,
+                                  local_work_size_,
                                   nullptr,
                                   event_);
     CL_CHECK_FATAL(status);
@@ -190,16 +261,17 @@ class FcCompute
   int m_, n_, k_;
   param_t* fc_param_{nullptr};
   std::string kernel_func_name_{};
-  std::string build_options_{"-DCL_DTYPE_half "};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
-
+  bool is_adreno_{false};
   std::unique_ptr<Tensor> w_gpu_t_{nullptr};
   std::unique_ptr<Tensor> bias_gpu_t_{nullptr};
   std::unique_ptr<Tensor> alpha_gpu_t_{nullptr};
 
   cl::NDRange global_work_size_;
+  cl::NDRange local_work_size_;
   cl::Kernel kernel_;
 };
 
@@ -209,7 +281,7 @@ class FcCompute
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    fc, kOpenCL, kFloat, kNCHW, paddle::lite::kernels::opencl::FcCompute, def)
+    fc, kOpenCL, kFP16, kNCHW, paddle::lite::kernels::opencl::FcCompute, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -218,7 +290,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    fc, kOpenCL, kFloat, kNCHW, paddle::lite::kernels::opencl::FcCompute, pc)
+    fc, kOpenCL, kFP16, kNCHW, paddle::lite::kernels::opencl::FcCompute, pc)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kOpenCL))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kHost))})

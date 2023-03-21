@@ -249,7 +249,8 @@ const std::string PrintUsage() {
 
 void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
   if (FLAGS_backend == "opencl,arm" || FLAGS_backend == "opencl" ||
-      FLAGS_backend == "opencl,x86" || FLAGS_backend == "x86_opencl") {
+      FLAGS_backend == "opencl,x86" || FLAGS_backend == "x86_opencl" ||
+      FLAGS_backend == "opencl_buffer") {
 // Set opencl kernel binary.
 // Large addtitional prepare time is cost due to algorithm selecting and
 // building kernel from source code.
