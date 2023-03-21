@@ -140,7 +140,7 @@ class XPUFcFuser : public FuseBase {
           << ", mul_y_shape:" << mul_y_shape;
       CHECK_GE(weight_scale_size, 1) << weight_scale_size;
       std::vector<float> weight_max;
-      if (is_per_tensor(op_info->GetAttr<std::vector<float>>("Y0_scale"))) {
+      if (IsPerTensorQuant(op_info->GetAttr<std::vector<float>>("Y0_scale"))) {
         per_channel = false;
         VLOG(3) << "xpu fc per tensor";
         weight_max.push_back(
@@ -277,7 +277,7 @@ class XPUFcFuser : public FuseBase {
   bool with_bias_;
   std::string act_type_;
   std::string mul_type_;
-  bool is_per_tensor(const std::vector<float>& weight_max) {
+  bool IsPerTensorQuant(const std::vector<float>& weight_max) {
     bool per_tensor = true;
     CHECK_GT(weight_max.size(), 0) << "fc channel size: " << weight_max.size();
     auto first = weight_max[0];

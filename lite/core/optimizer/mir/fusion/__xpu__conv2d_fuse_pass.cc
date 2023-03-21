@@ -553,7 +553,7 @@ class XPUConv2dFuser : public FuseBase {
       auto max_weight_vector =
           matched.at("conv")->stmt()->op_info()->GetInputScale(filter_name);
 
-      if (is_per_tensor(max_weight_vector)) {
+      if (IsPerTensorQuant(max_weight_vector)) {
         per_channel = false;
         VLOG(4) << "xpu conv quant weight only use one  max value. ";
         weight_max.push_back(max_weight_vector[0]);
@@ -651,7 +651,7 @@ class XPUConv2dFuser : public FuseBase {
   }
 
  private:
-  bool is_per_tensor(const std::vector<float>& weight_max) {
+  bool IsPerTensorQuant(const std::vector<float>& weight_max) {
     bool per_tensor = true;
     CHECK_GT(weight_max.size(), 0) << "conv2d channel size: "
                                    << weight_max.size();

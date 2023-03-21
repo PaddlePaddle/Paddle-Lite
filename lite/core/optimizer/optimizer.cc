@@ -14,9 +14,7 @@
 
 #include "lite/core/optimizer/optimizer.h"
 #include <fstream>
-#ifdef LITE_WITH_XPU
 #include "lite/core/optimizer/mir/__xpu__static_kernel_pick_pass.h"
-#endif
 #include "lite/core/optimizer/mir/static_kernel_pick_pass.h"
 #include "lite/core/optimizer/mir/type_target_cast_pass.h"
 #include "lite/model_parser/model_parser.h"
@@ -64,17 +62,18 @@ std::unique_ptr<RuntimeProgram> Optimizer::Run(Program&& program) {
 }
 
 void Optimizer::SpecifyKernelPickTactic(core::KernelPickFactor factor) {
-  std::string static_pick_name{};
+  std::string static_pick_name = "static_kernel_pick_pass";
 #ifdef LITE_WITH_XPU
   static_pick_name = "__xpu__static_kernel_pick_pass";
-  auto* pass = mir::PassManager::Global().LookUp<mir::XPUStaticKernelPickPass>(
-      static_pick_name);
-  pass->InitKernelPickInfo();
-#else
-  static_pick_name = "static_kernel_pick_pass";
+#endif
   auto* pass = mir::PassManager::Global().LookUp<mir::StaticKernelPickPass>(
       static_pick_name);
-#endif
+  if (pass->name() == "__xpu__static_kernel_pick_pass") {
+    auto* static_pass = static_cast<mir::XPUStaticKernelPickPass*>(
+        reinterpret_cast<void*>(pass));
+    static_pass->InitKernelPickInfo();
+  }
+
   CHECK(pass);
 
   *pass->mutable_kernel_pick_factors() = factor;
@@ -103,19 +102,9 @@ void Optimizer::ApplyPasses(
   for (auto& pass : passes_) {
     LOG(INFO) << "== Running pass: " << pass->name();
     std::set<TargetType> targets;
-    bool int8_model_ = false;
     for (const auto& place : valid_places_) {
       targets.insert(place.target);
-      if (place.precision == PrecisionType::kInt8) {
-        int8_model_ = true;
-      }
     }
-
-    if (pass->name() == "__xpu__squeeze_excitation_fuse_pass" && int8_model_) {
-      LOG(INFO) << "XPU int8 model Skip " << pass->name();
-      continue;
-    }
-
     bool matched =
         PassMatchesTarget(*pass, targets) && PassMatchesKernels(*pass);
     if (!matched) {

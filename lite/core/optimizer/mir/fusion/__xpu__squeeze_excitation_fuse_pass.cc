@@ -642,6 +642,14 @@ class XPUSqueezeExcitationFuser : public FuseBase {
 class XPUSqueezeExcitationFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
+    for (const auto& place : graph->valid_places()) {
+      if (place.precision == PrecisionType::kInt8) {
+        LOG(INFO)
+            << "XPU int8 model skip pass: __xpu__squeeze_excitation_fuse_pass";
+        return;
+      }
+    }
+
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     /* DEPERCATED */
     // TODO(weihaoji): remove XPUSqueezeExcitationFuser_DEPREC after xpu_fc
