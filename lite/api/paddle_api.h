@@ -465,8 +465,8 @@ class LITE_API CxxConfig : public ConfigBase {
   void set_xpu_sdnn_num(const int num);
   void set_xpu_local_quant(bool local_quant = false);
   void set_xpu_compute_precision(const std::string& precision = "int16");
-  void set_xpu_dump_tensor_path(const std::string dump_tensor_path = "");
-  void set_xpu_dump_log_path(const std::string dump_log_path = "");
+  void set_xpu_dump_tensor_path(const std::string& dump_tensor_path = "");
+  void set_xpu_dump_log_path(const std::string& dump_log_path = "");
 
   // set input tensor for warmup.
   // It is optional. If you set prefered_inputs, model wil run immediately when
