@@ -42,8 +42,6 @@ bool Atan2Op::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   param_.X1 = scope->FindVar(X1_name)->GetMutable<lite::Tensor>();
   param_.X2 = scope->FindVar(X2_name)->GetMutable<lite::Tensor>();
 
-  VLOG(4) << "opdesc.Type():" << opdesc.Type();
-
   param_.Out = scope->FindVar(Out_name)->GetMutable<lite::Tensor>();
   return true;
 }

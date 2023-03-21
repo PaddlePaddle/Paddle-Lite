@@ -67,7 +67,6 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     param_.active_type = lite_api::ActivationType::kExp;
   } else if (opdesc.Type() == "log") {
     param_.active_type = lite_api::ActivationType::kLog;
-  } else if (opdesc.Type() == "abs") {
   } else if (opdesc.Type() == "log1p") {
     param_.active_type = lite_api::ActivationType::kLog1p;
   } else if (opdesc.Type() == "abs") {

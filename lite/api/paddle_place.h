@@ -145,7 +145,7 @@ enum class ActivationType : int {
   kMish = 22,
   kSilu = 23,
   kLog1p = 24,
-  NUM = 24,
+  NUM = 25,
 };
 
 static size_t PrecisionTypeLength(PrecisionType type) {
