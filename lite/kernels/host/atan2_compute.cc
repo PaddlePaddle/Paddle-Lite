@@ -1,17 +1,3 @@
-// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include "lite/kernels/host/atan2_compute.h"
 #include <cmath>
 
@@ -23,16 +9,6 @@ namespace host {
 template <typename T>
 struct Atan2Out {
   using type = T;
-};
-
-template <>
-struct Atan2Out<int32_t> {
-  using type = double;
-};
-
-template <>
-struct Atan2Out<int64_t> {
-  using type = double;
 };
 
 template <typename T>
@@ -51,21 +27,6 @@ struct Atan2Functor {
   const T* x1_;
   const T* x2_;
   typename Atan2Out<T>::type* out_;
-  int64_t numel_;
-};
-
-template <>
-struct Atan2Functor<double> {
-  Atan2Functor(const double* x1, const double* x2, double* out, int64_t numel)
-      : x1_(x1), x2_(x2), out_(out), numel_(numel) {}
-
-  void operator()(int64_t idx) const {
-    out_[idx] = ::atan2(x1_[idx], x2_[idx]);
-  }
-
-  const double* x1_;
-  const double* x2_;
-  double* out_;
   int64_t numel_;
 };
 
@@ -105,3 +66,4 @@ REGISTER_LITE_KERNEL(atan2, kHost, kAny, kNCHW, atan2_float, def)
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .Finalize();
+
