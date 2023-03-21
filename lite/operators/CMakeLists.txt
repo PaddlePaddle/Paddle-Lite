@@ -211,6 +211,7 @@ add_operator(where_op extra SRCS where_op.cc)
 add_operator(unique_with_counts_op extra SRCS unique_with_counts_op.cc)
 add_operator(unique_op extra SRCS unique_op.cc)
 add_operator(viterbi_decode extra SRCS viterbi_decode_op.cc)
+add_operator(atan2 extra SRCS atan2_op.cc)
 
 # for content-dnn specific
 add_operator(search_aligned_mat_mul_op extra SRCS search_aligned_mat_mul_op.cc)
