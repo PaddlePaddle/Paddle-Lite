@@ -25,7 +25,7 @@ class Device {
  public:
   explicit Device(const Callback* callback);
   ~Device();
-  Status SetParam(ParamKey key, ParamValue value, bool force = false);
+  Status SetParam(ParamKey key, ParamValue value);
   Status GetParam(ParamKey key, ParamValue* value);
   const Callback* callback() {
     ADNN_CHECK(callback_);

@@ -19,39 +19,39 @@
 
 namespace adnn {
 
-void* DeviceOpen() { return nullptr; }
+void* DefaultDeviceOpen() { return nullptr; }
 
-void DeviceClose(void* device) {}
+void DefaultDeviceClose(void* device) {}
 
-Status DeviceSetParam(void* device, ParamKey key, ParamValue value) {
+Status DefaultDeviceSetParam(void* device, ParamKey key, ParamValue value) {
   return SUCCESS;
 }
 
-Status DeviceGetParam(void* device, ParamKey key, ParamValue* value) {
+Status DefaultDeviceGetParam(void* device, ParamKey key, ParamValue* value) {
   return SUCCESS;
 }
 
-void* ContextCreate(void* device) { return nullptr; }
+void* DefaultContextCreate(void* device) { return nullptr; }
 
-void ContextDestroy(void* context) {}
+void DefaultContextDestroy(void* context) {}
 
-Status ContextSetParam(void* context, ParamKey key, ParamValue value) {
+Status DefaultContextSetParam(void* context, ParamKey key, ParamValue value) {
   return SUCCESS;
 }
 
-Status ContextGetParam(void* context, ParamKey key, ParamValue* value) {
+Status DefaultContextGetParam(void* context, ParamKey key, ParamValue* value) {
   return SUCCESS;
 }
 
-void* MemoryAlloc(void* context, size_t size) { return malloc(size); }
+void* DefaultMemoryAlloc(void* context, size_t size) { return malloc(size); }
 
-void MemoryFree(void* context, void* ptr) {
+void DefaultMemoryFree(void* context, void* ptr) {
   if (ptr) {
     free(ptr);
   }
 }
 
-void* MemoryAlignedAlloc(void* context, size_t alignment, size_t size) {
+void* DefaultMemoryAlignedAlloc(void* context, size_t size, size_t alignment) {
   size_t offset = sizeof(void*) + alignment - 1;
   char* p = static_cast<char*>(malloc(offset + size));
   // Byte alignment
@@ -61,7 +61,7 @@ void* MemoryAlignedAlloc(void* context, size_t alignment, size_t size) {
   return r;
 }
 
-void MemoryAlignedFree(void* context, void* ptr) {
+void DefaultMemoryAlignedFree(void* context, void* ptr) {
   if (ptr) {
     free(static_cast<void**>(ptr)[-1]);
   }
@@ -70,18 +70,18 @@ void MemoryAlignedFree(void* context, void* ptr) {
 }  // namespace adnn
 
 adnn::Callback g_DefaultCallback = {
-    .device_open = adnn::DeviceOpen,
-    .device_close = adnn::DeviceClose,
-    .device_setparam = adnn::DeviceSetParam,
-    .device_getparam = adnn::DeviceGetParam,
-    .context_create = adnn::ContextCreate,
-    .context_destroy = adnn::ContextDestroy,
-    .context_setparam = adnn::ContextSetParam,
-    .context_getparam = adnn::ContextGetParam,
-    .memory_alloc = adnn::MemoryAlloc,
-    .memory_free = adnn::MemoryFree,
-    .memory_aligned_alloc = adnn::MemoryAlignedAlloc,
-    .memory_aligned_free = adnn::MemoryAlignedFree,
+    .device_open = adnn::DefaultDeviceOpen,
+    .device_close = adnn::DefaultDeviceClose,
+    .device_setparam = adnn::DefaultDeviceSetParam,
+    .device_getparam = adnn::DefaultDeviceGetParam,
+    .context_create = adnn::DefaultContextCreate,
+    .context_destroy = adnn::DefaultContextDestroy,
+    .context_setparam = adnn::DefaultContextSetParam,
+    .context_getparam = adnn::DefaultContextGetParam,
+    .memory_alloc = adnn::DefaultMemoryAlloc,
+    .memory_free = adnn::DefaultMemoryFree,
+    .memory_aligned_alloc = adnn::DefaultMemoryAlignedAlloc,
+    .memory_aligned_free = adnn::DefaultMemoryAlignedFree,
 };
 
 namespace adnn {
@@ -92,41 +92,25 @@ Device::Device(const Callback* callback) : callback_(callback) {
   }
   ADNN_CHECK(callback_->device_open);
   device_ = callback_->device_open();
-  // Initialize device params from CPUInfo
-  ParamValue value;
-  value.i32 = CPUInfo::Singleton().arch();
-  SetParam(DEVICE_ARCH, value, true);
-  value.b = CPUInfo::Singleton().support_arm_fp16();
-  SetParam(DEVICE_SUPPORT_ARM_FP16, value, true);
-  value.b = CPUInfo::Singleton().support_arm_bf16();
-  SetParam(DEVICE_SUPPORT_ARM_BF16, value, true);
-  value.b = CPUInfo::Singleton().support_arm_dotprod();
-  SetParam(DEVICE_SUPPORT_ARM_DOTPROD, value, true);
-  value.b = CPUInfo::Singleton().support_arm_sve2();
-  SetParam(DEVICE_SUPPORT_ARM_SVE2, value, true);
-  value.b = CPUInfo::Singleton().support_arm_sve2_i8mm();
-  SetParam(DEVICE_SUPPORT_ARM_SVE2_I8MM, value, true);
-  value.b = CPUInfo::Singleton().support_arm_sve2_f32mm();
-  SetParam(DEVICE_SUPPORT_ARM_SVE2_F32MM, value, true);
+  // Initialize device and dump CPUInfo.
+  CPUInfo::Singleton().DumpAllInfo();
 }
 
-Status Device::SetParam(ParamKey key, ParamValue value, bool force) {
-  if (!force) {
-    switch (key) {
-      case DEVICE_ARCH:
-      case DEVICE_SUPPORT_ARM_FP16:
-      case DEVICE_SUPPORT_ARM_BF16:
-      case DEVICE_SUPPORT_ARM_DOTPROD:
-      case DEVICE_SUPPORT_ARM_SVE2:
-      case DEVICE_SUPPORT_ARM_SVE2_I8MM:
-      case DEVICE_SUPPORT_ARM_SVE2_F32MM:
-        ADNN_LOG(ERROR)
-            << "Unsupported key(" << static_cast<int32_t>(key)
-            << ") for device_setparam() beacause the param is readonly!";
-        return INVALID_PARAMETER;
-      default:
-        break;
-    }
+Status Device::SetParam(ParamKey key, ParamValue value) {
+  switch (key) {
+    case DEVICE_ARCH:
+    case DEVICE_SUPPORT_ARM_FP16:
+    case DEVICE_SUPPORT_ARM_BF16:
+    case DEVICE_SUPPORT_ARM_DOTPROD:
+    case DEVICE_SUPPORT_ARM_SVE2:
+    case DEVICE_SUPPORT_ARM_SVE2_I8MM:
+    case DEVICE_SUPPORT_ARM_SVE2_F32MM:
+      ADNN_LOG(ERROR)
+          << "Unsupported key(" << static_cast<int32_t>(key)
+          << ") for device_setparam() beacause the param is readonly!";
+      return INVALID_PARAMETER;
+    default:
+      break;
   }
   params_[key] = value;
   ADNN_CHECK(callback_);
@@ -135,6 +119,31 @@ Status Device::SetParam(ParamKey key, ParamValue value, bool force) {
 }
 
 Status Device::GetParam(ParamKey key, ParamValue* value) {
+  switch (key) {
+    case DEVICE_ARCH:
+      value->i32 = arch();
+      return SUCCESS;
+    case DEVICE_SUPPORT_ARM_FP16:
+      value->b = support_arm_fp16();
+      return SUCCESS;
+    case DEVICE_SUPPORT_ARM_BF16:
+      value->b = support_arm_bf16();
+      return SUCCESS;
+    case DEVICE_SUPPORT_ARM_DOTPROD:
+      value->b = support_arm_dotprod();
+      return SUCCESS;
+    case DEVICE_SUPPORT_ARM_SVE2:
+      value->b = support_arm_sve2();
+      return SUCCESS;
+    case DEVICE_SUPPORT_ARM_SVE2_I8MM:
+      value->b = support_arm_sve2_i8mm();
+      return SUCCESS;
+    case DEVICE_SUPPORT_ARM_SVE2_F32MM:
+      value->b = support_arm_sve2_f32mm();
+      return SUCCESS;
+    default:
+      break;
+  }
   if (!params_.count(key)) {
     memset(value, 0, sizeof(ParamValue));
     return INVALID_PARAMETER;
@@ -167,53 +176,30 @@ PowerMode Device::power_mode() {
   return static_cast<PowerMode>(params_[DEVICE_POWER_MODE].i32);
 }
 
-CPUArch Device::arch() {
-  if (!params_.count(DEVICE_ARCH)) {
-    return CPUArch::UNKOWN;
-  }
-  return static_cast<CPUArch>(params_[DEVICE_ARCH].i32);
-}
+CPUArch Device::arch() { return CPUInfo::Singleton().arch(); }
 
 bool Device::support_arm_fp16() {
-  if (!params_.count(DEVICE_SUPPORT_ARM_FP16)) {
-    return false;
-  }
-  return params_[DEVICE_SUPPORT_ARM_FP16].b;
+  return CPUInfo::Singleton().support_arm_fp16();
 }
 
 bool Device::support_arm_bf16() {
-  if (!params_.count(DEVICE_SUPPORT_ARM_BF16)) {
-    return false;
-  }
-  return params_[DEVICE_SUPPORT_ARM_BF16].b;
+  return CPUInfo::Singleton().support_arm_bf16();
 }
 
 bool Device::support_arm_dotprod() {
-  if (!params_.count(DEVICE_SUPPORT_ARM_DOTPROD)) {
-    return false;
-  }
-  return params_[DEVICE_SUPPORT_ARM_DOTPROD].b;
+  return CPUInfo::Singleton().support_arm_dotprod();
 }
 
 bool Device::support_arm_sve2() {
-  if (!params_.count(DEVICE_SUPPORT_ARM_SVE2)) {
-    return false;
-  }
-  return params_[DEVICE_SUPPORT_ARM_SVE2].b;
+  return CPUInfo::Singleton().support_arm_sve2();
 }
 
 bool Device::support_arm_sve2_i8mm() {
-  if (!params_.count(DEVICE_SUPPORT_ARM_SVE2_I8MM)) {
-    return false;
-  }
-  return params_[DEVICE_SUPPORT_ARM_SVE2_I8MM].b;
+  return CPUInfo::Singleton().support_arm_sve2_i8mm();
 }
 
 bool Device::support_arm_sve2_f32mm() {
-  if (!params_.count(DEVICE_SUPPORT_ARM_SVE2_F32MM)) {
-    return false;
-  }
-  return params_[DEVICE_SUPPORT_ARM_SVE2_F32MM].b;
+  return CPUInfo::Singleton().support_arm_sve2_f32mm();
 }
 
 ADNN_DLL_EXPORT void* device_open(const Callback* callback) {

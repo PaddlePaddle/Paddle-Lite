@@ -28,7 +28,7 @@ class Context {
   Status GetParam(ParamKey key, ParamValue* value);
   void* MemoryAlloc(size_t size);
   void MemoryFree(void* ptr);
-  void* MemoryAlignedAlloc(size_t alignment, size_t size);
+  void* MemoryAlignedAlloc(size_t size, size_t alignment = 64);
   void MemoryAlignedFree(void* ptr);
   Device* device() { return device_; }
   void* context() { return context_; }
@@ -40,11 +40,16 @@ class Context {
   bool enable_arm_sve2();
   bool enable_arm_sve2_i8mm();
   bool enable_arm_sve2_f32mm();
+  void* workspace_data();
+  size_t workspace_size();
+  void* SetWorkspaceSize(size_t size);
 
  private:
   Device* device_{nullptr};
   void* context_{nullptr};
   std::unordered_map<int, ParamValue> params_;
+  static ADNN_THREAD_LOCAL void* workspace_data_;
+  static ADNN_THREAD_LOCAL size_t workspace_size_;
   Context(const Context&) = delete;
   Context& operator=(const Context&) = delete;
 };

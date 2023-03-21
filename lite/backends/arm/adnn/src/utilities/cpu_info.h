@@ -107,13 +107,13 @@ class CPUInfo {
   }
   static CPUInfo& Singleton();
   bool Initialize();
-  void PrintAll();
   bool SetRunMode(PowerMode power_mode, size_t thread_num);
+  void DumpAllInfo();
 
  private:
   std::vector<CPUAttr> cpu_attrs_;
-  std::vector<int> active_idxs_{0};
-  PowerMode power_mode_{PowerMode::NO_BIND};
+  static ADNN_THREAD_LOCAL PowerMode power_mode_;
+  static ADNN_THREAD_LOCAL std::vector<int> active_idxs_;
 };
 
 }  // namespace adnn

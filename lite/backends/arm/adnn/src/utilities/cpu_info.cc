@@ -79,6 +79,9 @@
 
 namespace adnn {
 
+ADNN_THREAD_LOCAL PowerMode CPUInfo::power_mode_ = PowerMode::NO_BIND;
+ADNN_THREAD_LOCAL std::vector<int> CPUInfo::active_idxs_ = {0};
+
 void set_cpu_attrs(std::vector<CPUAttr>* cpu_attrs,
                    int from_cpu_id,
                    int to_cpu_id,
@@ -1392,9 +1395,7 @@ bool CPUInfo::Initialize() {
 CPUInfo::CPUInfo() {
   Initialize();
   // Only use single thread with NO_BIND mode.
-  SetRunMode(PowerMode::HIGH, 100);
-  // Print all CPU details.
-  PrintAll();
+  SetRunMode(PowerMode::NO_BIND, 1);
 }
 
 CPUInfo::~CPUInfo() {}
@@ -1402,32 +1403,6 @@ CPUInfo::~CPUInfo() {}
 CPUInfo& CPUInfo::Singleton() {
   static auto* cpu_info = new CPUInfo;
   return *cpu_info;
-}
-
-void CPUInfo::PrintAll() {
-  auto cpu_num = cpu_attrs_.size();
-  ADNN_LOG(INFO) << "Found: " << cpu_num << " CPUs.";
-  for (size_t i = 0; i < cpu_num; i++) {
-    const auto& cpu_attr = cpu_attrs_[i];
-    ADNN_LOG(INFO) << "CPU[" << i << "]";
-    ADNN_LOG(INFO) << " Arch: " << cpu_arch_to_string(cpu_attr.arch);
-    ADNN_LOG(INFO) << " Cluster Id: "
-                   << (cpu_attr.cluster_id == 0
-                           ? "LITTLE"
-                           : (cpu_attr.cluster_id == 2 ? "big" : "Middle"));
-    ADNN_LOG(INFO) << " L1 cache: " << cpu_attr.l1_cache_size / 1024.0f
-                   << " KB";
-    ADNN_LOG(INFO) << " L2 cache: " << cpu_attr.l2_cache_size / 1024.0f
-                   << " KB";
-    ADNN_LOG(INFO) << " L3 cache: " << cpu_attr.l3_cache_size / 1024.0f
-                   << " KB";
-    ADNN_LOG(INFO) << " Arm fp16: " << cpu_attr.support_arm_fp16;
-    ADNN_LOG(INFO) << " Arm bf16: " << cpu_attr.support_arm_bf16;
-    ADNN_LOG(INFO) << " Arm dotprod: " << cpu_attr.support_arm_dotprod;
-    ADNN_LOG(INFO) << " Arm sve2: " << cpu_attr.support_arm_sve2;
-    ADNN_LOG(INFO) << " Arm sve2+i8mm: " << cpu_attr.support_arm_sve2_i8mm;
-    ADNN_LOG(INFO) << " Arm sve2+f32mm: " << cpu_attr.support_arm_sve2_f32mm;
-  }
 }
 
 const CPUAttr& CPUInfo::at(int index) {
@@ -1569,6 +1544,32 @@ bool CPUInfo::SetRunMode(PowerMode power_mode, size_t thread_num) {
   omp_set_num_threads(active_idxs_.size());
 #endif
   return true;
+}
+
+void CPUInfo::DumpAllInfo() {
+  auto cpu_num = cpu_attrs_.size();
+  ADNN_LOG(INFO) << "Found: " << cpu_num << " CPUs.";
+  for (size_t i = 0; i < cpu_num; i++) {
+    const auto& cpu_attr = cpu_attrs_[i];
+    ADNN_LOG(INFO) << "CPU[" << i << "]";
+    ADNN_LOG(INFO) << " Arch: " << cpu_arch_to_string(cpu_attr.arch);
+    ADNN_LOG(INFO) << " Cluster Id: "
+                   << (cpu_attr.cluster_id == 0
+                           ? "LITTLE"
+                           : (cpu_attr.cluster_id == 2 ? "big" : "Middle"));
+    ADNN_LOG(INFO) << " L1 cache: " << cpu_attr.l1_cache_size / 1024.0f
+                   << " KB";
+    ADNN_LOG(INFO) << " L2 cache: " << cpu_attr.l2_cache_size / 1024.0f
+                   << " KB";
+    ADNN_LOG(INFO) << " L3 cache: " << cpu_attr.l3_cache_size / 1024.0f
+                   << " KB";
+    ADNN_LOG(INFO) << " Arm fp16: " << cpu_attr.support_arm_fp16;
+    ADNN_LOG(INFO) << " Arm bf16: " << cpu_attr.support_arm_bf16;
+    ADNN_LOG(INFO) << " Arm dotprod: " << cpu_attr.support_arm_dotprod;
+    ADNN_LOG(INFO) << " Arm sve2: " << cpu_attr.support_arm_sve2;
+    ADNN_LOG(INFO) << " Arm sve2+i8mm: " << cpu_attr.support_arm_sve2_i8mm;
+    ADNN_LOG(INFO) << " Arm sve2+f32mm: " << cpu_attr.support_arm_sve2_f32mm;
+  }
 }
 
 }  // namespace adnn

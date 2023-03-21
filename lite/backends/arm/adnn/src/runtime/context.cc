@@ -18,11 +18,14 @@
 
 namespace adnn {
 
+ADNN_THREAD_LOCAL void* Context::workspace_data_ = nullptr;
+ADNN_THREAD_LOCAL size_t Context::workspace_size_ = 0;
+
 Context::Context(Device* device) : device_(device) {
   ADNN_CHECK(device_);
   ADNN_CHECK(device_->callback()->context_create);
   context_ = device_->callback()->context_create(device_->device());
-  // Initialize context params from Device
+  // Initialize context params from device params.
   ParamValue value;
   value.b = device_->support_arm_fp16();
   SetParam(CONTEXT_ENABLE_ARM_FP16, value);
@@ -39,6 +42,19 @@ Context::Context(Device* device) : device_(device) {
 }
 
 Status Context::SetParam(ParamKey key, ParamValue value, bool force) {
+  switch (key) {
+    case CONTEXT_WORK_PACE_DATA:
+      ADNN_LOG(ERROR)
+          << "Unsupported key(" << static_cast<int32_t>(key)
+          << ") for context_setparam() beacause the param is readonly!";
+      return INVALID_PARAMETER;
+    case CONTEXT_WORK_PACE_SIZE:
+      ADNN_CHECK_GT(value.szt, 0);
+      SetWorkspaceSize(value.szt);
+      return SUCCESS;
+    default:
+      break;
+  }
   params_[key] = value;
   ADNN_CHECK(device_);
   ADNN_CHECK(device_->callback()->context_setparam);
@@ -46,6 +62,16 @@ Status Context::SetParam(ParamKey key, ParamValue value, bool force) {
 }
 
 Status Context::GetParam(ParamKey key, ParamValue* value) {
+  switch (key) {
+    case CONTEXT_WORK_PACE_DATA:
+      value->ptr = workspace_data();
+      return SUCCESS;
+    case CONTEXT_WORK_PACE_SIZE:
+      value->szt = workspace_size();
+      return SUCCESS;
+    default:
+      break;
+  }
   if (!params_.count(key)) {
     memset(value, 0, sizeof(ParamValue));
     return INVALID_PARAMETER;
@@ -67,10 +93,10 @@ void Context::MemoryFree(void* ptr) {
   return device_->callback()->memory_free(context_, ptr);
 }
 
-void* Context::MemoryAlignedAlloc(size_t alignment, size_t size) {
+void* Context::MemoryAlignedAlloc(size_t size, size_t alignment) {
   ADNN_CHECK(device_);
   ADNN_CHECK(device_->callback()->memory_aligned_alloc);
-  return device_->callback()->memory_aligned_alloc(context_, alignment, size);
+  return device_->callback()->memory_aligned_alloc(context_, size, alignment);
 }
 
 void Context::MemoryAlignedFree(void* ptr) {
@@ -136,6 +162,21 @@ bool Context::enable_arm_sve2_f32mm() {
   return params_[CONTEXT_ENABLE_ARM_SVE2_F32MM].b;
 }
 
+void* Context::workspace_data() { return workspace_data_; }
+
+size_t Context::workspace_size() { return workspace_size_; }
+
+void* Context::SetWorkspaceSize(size_t size) {
+  if (size > workspace_size_) {
+    if (workspace_data_) {
+      MemoryAlignedFree(workspace_data_);
+    }
+    workspace_data_ = MemoryAlignedAlloc(size);
+    workspace_size_ = size;
+  }
+  return workspace_data_;
+}
+
 ADNN_DLL_EXPORT void* context_create(void* device) {
   if (!device) {
     return nullptr;
@@ -194,6 +235,15 @@ ADNN_DLL_EXPORT Status context_setparam<int64_t>(void* context,
                                                  int64_t value) {
   ParamValue v;
   v.i64 = value;
+  return context_setparam(context, key, v);
+}
+
+template <>
+ADNN_DLL_EXPORT Status context_setparam<size_t>(void* context,
+                                                ParamKey key,
+                                                size_t value) {
+  ParamValue v;
+  v.szt = value;
   return context_setparam(context, key, v);
 }
 
@@ -258,6 +308,17 @@ ADNN_DLL_EXPORT Status context_getparam<int64_t>(void* context,
 }
 
 template <>
+ADNN_DLL_EXPORT Status context_getparam<size_t>(void* context,
+                                                ParamKey key,
+                                                size_t* value) {
+  ParamValue v;
+  auto status = context_getparam(context, key, &v);
+  if (status != SUCCESS) return status;
+  *value = v.szt;
+  return SUCCESS;
+}
+
+template <>
 ADNN_DLL_EXPORT Status context_getparam<float>(void* context,
                                                ParamKey key,
                                                float* value) {
@@ -276,17 +337,6 @@ ADNN_DLL_EXPORT Status context_getparam<double>(void* context,
   auto status = context_getparam(context, key, &v);
   if (status != SUCCESS) return status;
   *value = v.f64;
-  return SUCCESS;
-}
-
-template <>
-ADNN_DLL_EXPORT Status context_getparam<void*>(void* context,
-                                               ParamKey key,
-                                               void** value) {
-  ParamValue v;
-  auto status = context_getparam(context, key, &v);
-  if (status != SUCCESS) return status;
-  *value = v.ptr;
   return SUCCESS;
 }
 

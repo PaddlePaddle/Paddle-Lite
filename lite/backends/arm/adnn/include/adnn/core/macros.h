@@ -124,3 +124,16 @@
 #define ADNN_DLL_IMPORT
 #endif
 #endif
+
+#if (defined __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) && \
+    (__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ < 90000)
+// Thread local storage is not supported by iOS8 or before.
+#define ADNN_THREAD_LOCAL
+#elif defined(__cplusplus) && (__cplusplus >= 201103)
+#define ADNN_THREAD_LOCAL thread_local
+#elif ADNN_OS_WINDOWS
+// thread_local is not supported by MSVC.
+#define ADNN_THREAD_LOCAL thread_local
+#else
+#error "C++11 support is required for thread_local."
+#endif
