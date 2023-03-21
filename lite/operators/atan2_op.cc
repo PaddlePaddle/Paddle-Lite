@@ -30,7 +30,7 @@ bool Atan2Op::InferShapeImpl() const {
   auto x_dim = param_.X1->dims();
 
   // Set output dims
-  param_.Out->Resize(lite::DDim(x_dims));
+  param_.Out->Resize(lite::DDim(x_dim));
   return true;
 }
 
