@@ -30,6 +30,7 @@ class ArgmaxCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual void Run();
 
   virtual ~ArgmaxCompute() = default;
+
  private:
   XPUScratchPadGuard out_int64_xpu_guard_;
 };

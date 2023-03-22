@@ -26,8 +26,8 @@ void ArgmaxCompute::PrepareForRun() {
   auto& param = this->template Param<param_t>();
   if (param.dtype == 2) {
     auto out = param.Out;
-    out_int64_xpu_guard_ = 
-      TargetWrapperXPU::MallocScratchPad(out->numel() * sizeof(int64_t));
+    out_int64_xpu_guard_ =
+        TargetWrapperXPU::MallocScratchPad(out->numel() * sizeof(int64_t));
   }
 }
 
@@ -54,13 +54,10 @@ void ArgmaxCompute::Run() {
     CHECK_EQ(r, 0);
   } else if (param.dtype == 2) {
     // int32
-    int64_t* out_int64_data = reinterpret_cast<int64_t*>(out_int64_xpu_guard_->addr_);
+    int64_t* out_int64_data =
+        reinterpret_cast<int64_t*>(out_int64_xpu_guard_->addr_);
     int r = xdnn::argmax<float, int64_t>(
-        ctx.GetRawContext(),
-        x->data<float>(),
-        out_int64_data,
-        x_dims,
-        axis);
+        ctx.GetRawContext(), x->data<float>(), out_int64_data, x_dims, axis);
     CHECK_EQ(r, 0);
     r = xdnn::cast_v2<int64_t, int>(ctx.GetRawContext(),
                                     out_int64_data,

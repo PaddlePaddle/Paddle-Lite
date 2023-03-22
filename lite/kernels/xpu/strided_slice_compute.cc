@@ -297,7 +297,7 @@ void StridedSliceCompute<T, PType>::Run() {
 
   if (need_reverse) {
     XPUScratchPadGuard tmp_xpu_guard =
-      TargetWrapperXPU::MallocScratchPad(param.Out->numel() * sizeof(T));
+        TargetWrapperXPU::MallocScratchPad(param.Out->numel() * sizeof(T));
     auto tmp_t = reinterpret_cast<T*>(tmp_xpu_guard->addr_);
     int r = xdnn::strided_slice<T>(ctx.GetRawContext(),
                                    in_t,
