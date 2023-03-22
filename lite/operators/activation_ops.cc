@@ -67,6 +67,8 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     param_.active_type = lite_api::ActivationType::kExp;
   } else if (opdesc.Type() == "log") {
     param_.active_type = lite_api::ActivationType::kLog;
+  } else if (opdesc.Type() == "log1p") {
+    param_.active_type = lite_api::ActivationType::kLog1p;
   } else if (opdesc.Type() == "abs") {
     param_.active_type = lite_api::ActivationType::kAbs;
   } else if (opdesc.Type() == "hard_swish") {
@@ -118,6 +120,7 @@ REGISTER_LITE_OP(square, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(relu_clipped, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(swish, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(log, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(log1p, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(exp, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(abs, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(floor, paddle::lite::operators::ActivationOp);
