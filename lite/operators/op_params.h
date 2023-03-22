@@ -2650,6 +2650,12 @@ struct ViterbiDecodeParam : ParamBase {
   bool include_bos_eos_tag{};
 };
 
+struct Atan2Param : ParamBase {
+  const lite::Tensor* X1{};
+  const lite::Tensor* X2{};
+  lite::Tensor* Out{};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
