@@ -329,6 +329,11 @@ class Context<TargetType::kARM> {
     return DeviceInfo::Global().ExtendWorkspace(size);
   }
 
+#ifdef LITE_WITH_ADNN
+  void* device() { return DeviceInfo::Global().device(); }
+  void* context() { return DeviceInfo::Global().context(); }
+#endif
+
   std::string name() const { return "ARMContext"; }
 };
 #endif
