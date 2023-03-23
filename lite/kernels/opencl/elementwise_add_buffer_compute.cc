@@ -23,7 +23,9 @@ namespace lite {
 namespace kernels {
 namespace opencl {
 
-void ElementwiseAddCompute::PrepareForRun() {}
+void ElementwiseAddCompute::PrepareForRun() {
+  ele_param_ = param_.get_mutable<param_t>();
+}
 
 void ElementwiseAddCompute::ReInitWhenNeeded() {
   auto x_dims = ele_param_->X->dims();

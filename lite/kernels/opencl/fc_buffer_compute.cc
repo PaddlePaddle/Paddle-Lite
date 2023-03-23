@@ -195,7 +195,19 @@ class FcCompute
     if (m_ == 1) {  // gemv
       global_work_size_ = cl::NDRange{static_cast<size_t>((n_ + 3) / 4)};
     } else {  // gemm
-      local_work_size_ = cl::NDRange(32, 32);
+      // TODO(sprouteer): Experience value, need add auto tune
+      auto& context = ctx_->As<OpenCLContext>();
+      size_t max_work_group_size = 0;
+      kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
+                                       CL_KERNEL_WORK_GROUP_SIZE,
+                                       &max_work_group_size);
+      if (context.cl_context()->IsAppleM1() ||
+          context.cl_context()->IsArmMali()) {
+        local_work_size_ = cl::NullRange;
+      } else {
+        local_work_size_ = cl::NDRange(32, 32);
+      }
+
       global_work_size_ = cl::NDRange{static_cast<size_t>((m_ + 3) / 4),
                                       static_cast<size_t>((n_ + 3) / 4)};
     }
