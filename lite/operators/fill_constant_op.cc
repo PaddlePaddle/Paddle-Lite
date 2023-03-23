@@ -41,8 +41,9 @@ bool FillConstantOp::InferShapeImpl() const {
   } else if (!param_.shape.empty()) {
     out_shape = param_.shape;
   } else {
-    LOG(FATAL) << "no valid out_shape. Must set one of shape_tensor, or "
-                  "shape_tensor_list, or shape.";
+    param_.shape.push_back(1);
+    out_shape = param_.shape;
+    VLOG(4) << "no valid out_shape. fill_constant op output is 0D-Tensor.";
   }
 
   param_.out->Resize(out_shape);

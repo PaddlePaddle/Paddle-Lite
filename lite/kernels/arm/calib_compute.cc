@@ -107,6 +107,16 @@ void CalibComputeInt64ToFp32<DLType>::Run() {
   }
 }
 
+template <DataLayoutType DLType>
+void CalibComputeBoolToFp32<DLType>::Run() {
+  auto& param = this->template Param<operators::CalibParam>();
+  const auto* din = param.input->template data<bool>();
+  auto* dout = param.output->template mutable_data<float>();
+  for (auto i = 0; i < param.input->numel(); ++i) {
+    dout[i] = static_cast<float>(din[i]);
+  }
+}
+
 #ifdef ENABLE_ARM_FP16
 template <DataLayoutType DLType>
 void CalibComputeFp16ToFp32<DLType>::Run() {
@@ -181,7 +191,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt8,
+    kAny,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeFp32ToInt8<DATALAYOUT(kNCHW)>,
     fp32_to_int8)
@@ -193,7 +203,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt32,
+    kAny,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeInt32ToFp32<DATALAYOUT(kNCHW)>,
     int32_to_fp32)
@@ -205,7 +215,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt32,
+    kAny,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeInt32ToInt64<DATALAYOUT(kNCHW)>,
     int32_to_int64)
@@ -217,7 +227,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt32,
+    kAny,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeFp32ToInt32<DATALAYOUT(kNCHW)>,
     fp32_to_int32)
@@ -229,7 +239,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt64,
+    kAny,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeInt64ToFp32<DATALAYOUT(kNCHW)>,
     int64_to_fp32)
@@ -241,7 +251,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt64,
+    kAny,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeFp32ToInt64<DATALAYOUT(kNCHW)>,
     fp32_to_int64)
@@ -253,7 +263,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt8,
+    kAny,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeInt8ToFp32<DATALAYOUT(kNCHW)>,
     int8_to_fp32)
@@ -264,7 +274,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib,
     kARM,
-    kInt64,
+    kAny,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeInt64ToInt32<DATALAYOUT(kNCHW)>,
     int64_to_int32)
@@ -279,9 +289,26 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
+    calib,
+    kARM,
+    kAny,
+    kNCHW,
+    paddle::lite::kernels::arm::CalibComputeBoolToFp32<DATALAYOUT(kNCHW)>,
+    bool_to_float)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kARM),
+                                      PRECISION(kBool),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kARM),
+                                       PRECISION(kFloat),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
     calib_once,
     kARM,
-    kInt8,
+    kAny,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeFp32ToInt8<DATALAYOUT(kNCHW)>,
     fp32_to_int8)
@@ -293,7 +320,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib_once,
     kARM,
-    kInt8,
+    kAny,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeInt8ToFp32<DATALAYOUT(kNCHW)>,
     int8_to_fp32)
@@ -304,7 +331,7 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(
     calib_once,
     kARM,
-    kInt64,
+    kAny,
     kNCHW,
     paddle::lite::kernels::arm::CalibComputeInt64ToInt32<DATALAYOUT(kNCHW)>,
     int64_to_int32)
