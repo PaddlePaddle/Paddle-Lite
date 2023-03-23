@@ -33,5 +33,5 @@ void SigmoidElementmulFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(lite_sigmoid_elementmul_fuse_pass,
                   paddle::lite::mir::SigmoidElementmulFusePass)
-    .BindTargets({TARGET(kARM), TARGET(kHost)})
+    .BindTargets({TARGET(kARM), TARGET(kHost), TARGET(kXPU)})
     .BindKernel("swish");

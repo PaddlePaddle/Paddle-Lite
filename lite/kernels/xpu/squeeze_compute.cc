@@ -20,8 +20,9 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void SqueezeCompute::Run() {
-  auto& param = Param<operators::SqueezeParam>();
+template <PrecisionType PType>
+void SqueezeCompute<PType>::Run() {
+  auto& param = this->template Param<operators::SqueezeParam>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto x = param.X;
   auto output = param.Out;
@@ -30,9 +31,9 @@ void SqueezeCompute::Run() {
     output->ShareDataWith(*x);
   } else {
     output->set_precision(x->precision());
-    output->mutable_data(TARGET(kXPU), x->memory_size());
+    output->template mutable_data(TARGET(kXPU), x->memory_size());
     int r = xdnn::copy<int8_t>(ctx.GetRawContext(),
-                               x->data<int8_t>(),
+                               x->template data<int8_t>(),
                                static_cast<int8_t*>(output->raw_data()),
                                x->memory_size());
     CHECK_EQ(r, 0);
@@ -46,7 +47,12 @@ void SqueezeCompute::Run() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    squeeze, kXPU, kAny, kAny, paddle::lite::kernels::xpu::SqueezeCompute, def)
+    squeeze,
+    kXPU,
+    kAny,
+    kAny,
+    paddle::lite::kernels::xpu::SqueezeCompute<PRECISION(kAny)>,
+    def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kAny),
@@ -58,7 +64,12 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    squeeze2, kXPU, kAny, kAny, paddle::lite::kernels::xpu::SqueezeCompute, def)
+    squeeze2,
+    kXPU,
+    kAny,
+    kAny,
+    paddle::lite::kernels::xpu::SqueezeCompute<PRECISION(kAny)>,
+    def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kAny),

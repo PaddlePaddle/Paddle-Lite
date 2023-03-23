@@ -58,6 +58,8 @@ using transposeFP32 =
     paddle::lite::kernels::xpu::TransposeCompute<float, PRECISION(kFloat)>;
 using transposeFP16 =
     paddle::lite::kernels::xpu::TransposeCompute<float16, PRECISION(kFP16)>;
+using transposeInt8 =
+    paddle::lite::kernels::xpu::TransposeCompute<int8_t, PRECISION(kInt8)>;
 
 REGISTER_LITE_KERNEL(transpose, kXPU, kFloat, kNCHW, transposeFP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -68,6 +70,10 @@ REGISTER_LITE_KERNEL(transpose, kXPU, kFP16, kNCHW, transposeFP16, fp16)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
+REGISTER_LITE_KERNEL(transpose, kXPU, kInt8, kNCHW, transposeInt8, int8)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
+    .Finalize();
 
 using transpose2FP32 =
     paddle::lite::kernels::xpu::TransposeCompute<float, PRECISION(kFloat)>;
@@ -77,6 +83,8 @@ using transpose2Int64 =
     paddle::lite::kernels::xpu::TransposeCompute<int64_t, PRECISION(kFloat)>;
 using transpose2FP16 =
     paddle::lite::kernels::xpu::TransposeCompute<float16, PRECISION(kFP16)>;
+using transpose2Int8 =
+    paddle::lite::kernels::xpu::TransposeCompute<int8_t, PRECISION(kInt8)>;
 
 REGISTER_LITE_KERNEL(transpose2, kXPU, kFloat, kNCHW, transpose2FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -101,5 +109,11 @@ REGISTER_LITE_KERNEL(
 REGISTER_LITE_KERNEL(transpose2, kXPU, kFP16, kNCHW, transpose2FP16, def_fp16)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(transpose2, kXPU, kInt8, kNCHW, transpose2Int8, def_int8)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
     .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
