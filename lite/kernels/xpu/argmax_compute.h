@@ -25,9 +25,14 @@ class ArgmaxCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::ArgmaxParam;
 
+  void PrepareForRun() override;
+
   virtual void Run();
 
   virtual ~ArgmaxCompute() = default;
+
+ private:
+  XPUScratchPadGuard out_int64_xpu_guard_;
 };
 
 }  // namespace xpu
