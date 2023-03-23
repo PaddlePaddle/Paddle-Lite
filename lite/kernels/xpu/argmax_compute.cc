@@ -54,6 +54,7 @@ void ArgmaxCompute::Run() {
     CHECK_EQ(r, 0);
   } else if (param.dtype == 2) {
     // int32
+    out_int64_xpu_guard_->Reserve(out->numel() * sizeof(int64_t));
     int64_t* out_int64_data =
         reinterpret_cast<int64_t*>(out_int64_xpu_guard_->addr_);
     int r = xdnn::argmax<float, int64_t>(
