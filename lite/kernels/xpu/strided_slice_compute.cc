@@ -296,9 +296,9 @@ void StridedSliceCompute<T, PType>::Run() {
   auto* out_t = param.Out->template mutable_data<T>(TARGET(kXPU));
 
   if (need_reverse) {
-    lite::Tensor* tmp = new lite::Tensor();
-    tmp->Resize(out_dims);
-    auto* tmp_t = tmp->template mutable_data<T>(TARGET(kXPU));
+    XPUScratchPadGuard tmp_xpu_guard =
+        TargetWrapperXPU::MallocScratchPad(param.Out->numel() * sizeof(T));
+    auto tmp_t = reinterpret_cast<T*>(tmp_xpu_guard->addr_);
     int r = xdnn::strided_slice<T>(ctx.GetRawContext(),
                                    in_t,
                                    tmp_t,
