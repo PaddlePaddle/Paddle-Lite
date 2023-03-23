@@ -40,6 +40,8 @@ class XPUConv2dCompute : public KernelLite<TARGET(kXPU), PType> {
   XPUScratchPadGuard input_max_guard_;
   XPUScratchPadGuard output_max_guard_;
   XPUScratchPadGuard branch_max_guard_;
+  XPUScratchPadGuard weight_one_value_guard_;
+  bool per_channel_;
 };
 
 }  // namespace xpu

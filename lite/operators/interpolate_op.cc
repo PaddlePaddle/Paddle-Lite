@@ -133,6 +133,15 @@ bool InterpolateOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   }
   param_.align_corners = op_desc.GetAttr<bool>("align_corners");
   param_.interp_method = op_desc.GetAttr<std::string>("interp_method");
+
+#ifdef LITE_WITH_XPU
+  if (op_desc.HasAttr("enable_int8") && op_desc.GetAttr<bool>("enable_int8")) {
+    param_.enable_int8 = true;
+    param_.output_scale = op_desc.GetAttr<std::vector<float>>("Out0_scale")[0];
+    param_.input_scale = op_desc.GetAttr<std::vector<float>>("X0_scale")[0];
+  }
+#endif
+
   return true;
 }
 

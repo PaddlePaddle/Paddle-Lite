@@ -27,8 +27,15 @@ class ElementwiseCompute : public KernelLite<TARGET(kXPU), PType> {
   using param_t = operators::ElementwiseParam;
 
   virtual void Run();
+  void PrepareForRun() override;
 
   virtual ~ElementwiseCompute() = default;
+
+ private:
+  XPUScratchPadGuard quant_x_max_value_guard_;
+  XPUScratchPadGuard quant_y_max_value_guard_;
+  XPUScratchPadGuard quant_z_max_value_guard_;
+  XPUScratchPadGuard broadcast_y_guard_;
 };
 
 }  // namespace xpu

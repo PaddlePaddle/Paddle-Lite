@@ -43,7 +43,7 @@ void MatMulCompute<TGEMM, TW, DX, DY, PType>::Run() {
   XPUScratchPadGuard input_max_guard_ =
       TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
   if (param.enable_int8) {  // for paddle slim int8 quant
-    std::vector<float> cpu_input_max(max_ptr_size, 127 * param.input_scale);
+    std::vector<float> cpu_input_max(max_ptr_size, param.input_scale);
     lite::TargetWrapperXPU::MemcpySync(input_max_guard_->addr_,
                                        cpu_input_max.data(),
                                        sizeof(float) * max_ptr_size,

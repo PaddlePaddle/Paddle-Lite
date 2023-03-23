@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,28 +14,19 @@
 
 #pragma once
 
-#include "lite/core/kernel.h"
+#include <memory>
+#include "lite/core/optimizer/mir/pass.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
-template <typename InType, PrecisionType PType>
-class Pool2DCompute : public KernelLite<TARGET(kXPU), PType> {
+namespace mir {
+
+class XPUQuantizationParametersPropagationPass : public mir::StmtPass {
  public:
-  using param_t = operators::PoolParam;
-
-  void PrepareForRun() override;
-  virtual void Run();
-
-  virtual ~Pool2DCompute() = default;
-
- private:
-  XPUScratchPadGuard quant_input_max_value_guard_;
-  XPUScratchPadGuard quant_output_max_value_guard_;
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+  void ResetScale(const std::unique_ptr<SSAGraph>& graph);
 };
 
-}  // namespace xpu
-}  // namespace kernels
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

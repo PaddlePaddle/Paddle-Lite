@@ -792,8 +792,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     for (int i = 0; i < quant_mul_ops.size(); ++i) {
       if (op_is_quantized[i]) {
         auto op_info = matched.at(quant_mul_ops[i])->stmt()->op_info();
-        input_max[i * 2] =
-            127 * op_info->GetAttr<std::vector<float>>("X0_scale")[0];
+        input_max[i * 2] = op_info->GetAttr<std::vector<float>>("X0_scale")[0];
         input_max[i * 2 + 1] = matched.at(mul_add_ops[i])
                                    ->stmt()
                                    ->op_info()
@@ -814,7 +813,7 @@ class XPUSingleEncoderFuser : public FuseBase {
           int weight_scale_size = per_tensor ? 1 : weight_scales.size();
           std::vector<float> weight_max;
           for (int j = 0; j < weight_scale_size; j++) {
-            weight_max.push_back(127 * weight_scales[j]);
+            weight_max.push_back(weight_scales[j]);
           }
           // create max tensor
           weight_max_tensor =
@@ -874,15 +873,11 @@ class XPUSingleEncoderFuser : public FuseBase {
         input_max[matmul_offset * 2 + 0] =
             max_qkv_output != 0
                 ? max_qkv_output
-                : 127 *
-                      qk_matmul_op_info->GetAttr<std::vector<float>>(
-                          "X0_scale")[0];
+                : qk_matmul_op_info->GetAttr<std::vector<float>>("X0_scale")[0];
         input_max[matmul_offset * 2 + 1] =
             max_qkv_output != 0
                 ? max_qkv_output
-                : 127 *
-                      qk_matmul_op_info->GetAttr<std::vector<float>>(
-                          "Y0_scale")[0];
+                : qk_matmul_op_info->GetAttr<std::vector<float>>("Y0_scale")[0];
         input_max[matmul_offset * 2 + 2] =
             matched.at("qk_softmax")
                 ->stmt()
@@ -897,14 +892,12 @@ class XPUSingleEncoderFuser : public FuseBase {
       if (op_is_quantized[matmul_offset + 1]) {
         auto qkv_matmul_op_info = matched.at("qkv_matmul")->stmt()->op_info();
         input_max[matmul_offset * 2 + 3] =
-            127 *
             qkv_matmul_op_info->GetAttr<std::vector<float>>("X0_scale")[0];
         input_max[matmul_offset * 2 + 4] =
             max_qkv_output != 0
                 ? max_qkv_output
-                : 127 *
-                      qkv_matmul_op_info->GetAttr<std::vector<float>>(
-                          "Y0_scale")[0];
+                : qkv_matmul_op_info->GetAttr<std::vector<float>>(
+                      "Y0_scale")[0];
         input_max[matmul_offset * 2 + 5] =
             qkv_matmul_op_info->GetAttr<float>("out_threshold");
 
