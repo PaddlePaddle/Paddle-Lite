@@ -36,8 +36,12 @@ static std::vector<int> IntVec2DTo1D(const std::vector<std::vector<int>>& vec) {
 
 class SpatialTransformerResBlockfuser : public FuseBase {
  public:
-  explicit SpatialTransformerResBlockfuser(bool conv_fix, bool input_max)
-      : conv_fix_(conv_fix), input_max_(input_max) {}
+  explicit SpatialTransformerResBlockfuser(bool conv_fix,
+                                           bool input_max,
+                                           bool output_unsqueeze_shape)
+      : conv_fix_(conv_fix),
+        input_max_(input_max),
+        output_unsqueeze_shape_(output_unsqueeze_shape) {}
 
   void BuildPattern() override {
     auto* input_1 = VarNode("input_1")
@@ -79,10 +83,6 @@ class SpatialTransformerResBlockfuser : public FuseBase {
                               ->assert_is_op_output("unsqueeze2", "Out")
                               ->assert_is_op_input("__xpu__conv2d", "Branch")
                               ->AsOutput();
-    auto* unsqueeze_out_shape =
-        VarNode("unsqueeze_out_shape")
-            ->assert_is_op_output("unsqueeze2", "XShape")
-            ->AsIntermediate();
     auto* conv_filter_1 = VarNode("conv_filter_1")
                               ->assert_is_op_input("__xpu__conv2d", "Filter")
                               ->AsInput();
@@ -171,7 +171,13 @@ class SpatialTransformerResBlockfuser : public FuseBase {
     *input_2 >> *silu >> *silu_out;
     fc_input >> *fc >> fc_output;
     *fc_out >> *unsqueeze >> *unsqueeze_out;
-    *unsqueeze >> *unsqueeze_out_shape;
+    if (output_unsqueeze_shape_) {
+      auto* unsqueeze_out_shape =
+          VarNode("unsqueeze_out_shape")
+              ->assert_is_op_output("unsqueeze2", "XShape")
+              ->AsIntermediate();
+      *unsqueeze >> *unsqueeze_out_shape;
+    }
     gn_silu1_input >> *gn_silu_1 >> *gn_silu_out_1;
     conv1_input >> *conv_1 >> conv1_output;
     gn_silu2_input >> *gn_silu_2 >> *gn_silu_out_2;
@@ -324,6 +330,7 @@ class SpatialTransformerResBlockfuser : public FuseBase {
  private:
   bool conv_fix_;
   bool input_max_;
+  bool output_unsqueeze_shape_;
   void UpdateWeight(Scope* scope,
                     const std::vector<std::string>& fc_weight_names,
                     const std::vector<std::string>& fc_weight_max_names,
@@ -383,14 +390,18 @@ class XPUSpatialTransformerResBlockfusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     for (auto conv_fix : {false, true}) {
-      if (conv_fix == true) {
-        for (auto input_max : {false, true}) {
-          fusion::SpatialTransformerResBlockfuser fuser(conv_fix, input_max);
+      for (auto output_unsqueeze_shape : {true, false}) {
+        if (conv_fix == true) {
+          for (auto input_max : {false, true}) {
+            fusion::SpatialTransformerResBlockfuser fuser(
+                conv_fix, input_max, output_unsqueeze_shape);
+            fuser(graph.get());
+          }
+        } else {
+          fusion::SpatialTransformerResBlockfuser fuser(
+              conv_fix, false, output_unsqueeze_shape);
           fuser(graph.get());
         }
-      } else {
-        fusion::SpatialTransformerResBlockfuser fuser(conv_fix, false);
-        fuser(graph.get());
       }
     }
   }
