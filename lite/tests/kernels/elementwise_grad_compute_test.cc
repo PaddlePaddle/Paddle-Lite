@@ -498,4 +498,4 @@ TEST(mul_grad_arm, compute) {
 }  // namespace lite
 }  // namespace paddle
 USE_LITE_KERNEL(elementwise_add_grad, kARM, kFloat, kNCHW, def);
-USE_LITE_KERNEL(elementwise_add, kARM, kAny, kNCHW, def);
+USE_LITE_KERNEL(elementwise_add, kARM, kAny, kNCHW, def_float);
