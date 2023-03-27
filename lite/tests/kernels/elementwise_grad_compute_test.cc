@@ -25,9 +25,9 @@ namespace arm {
 
 using param_t = operators::ElementwiseParam;
 using grad_param_t = operators::ElementwiseGradParam;
-using kernel_add_t = ElementwiseAddCompute<float, PRECISION(kAny)>;
+using kernel_add_t = ElementwiseAddCompute<float, PRECISION(kFloat)>;
 using grad_kernel_add_t = ElementwiseAddGradCompute;
-using kernel_sub_t = ElementwiseSubCompute<float, PRECISION(kAny)>;
+using kernel_sub_t = ElementwiseSubCompute<float, PRECISION(kFloat)>;
 using grad_kernel_sub_t = ElementwiseSubGradCompute;
 
 void elementwise_common(grad_param_t& param,           // NOLINT
@@ -498,4 +498,4 @@ TEST(mul_grad_arm, compute) {
 }  // namespace lite
 }  // namespace paddle
 USE_LITE_KERNEL(elementwise_add_grad, kARM, kFloat, kNCHW, def);
-USE_LITE_KERNEL(elementwise_add, kARM, kAny, kNCHW, def_float);
+USE_LITE_KERNEL(elementwise_add, kARM, kFloat, kNCHW, def);
