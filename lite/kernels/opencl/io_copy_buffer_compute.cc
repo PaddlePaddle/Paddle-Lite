@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "lite/backends/opencl/cl_half.h"
+#include "lite/backends/opencl/cl_utility.h"
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
+#include "lite/kernels/opencl/image_helper.h"
 #include "lite/utils/timer.h"
 
 #undef LITE_WITH_LOG
@@ -78,12 +81,24 @@ float CopyFromDeviceToDeviceSync(void* target,
 class IoCopyHostToOpenCLCompute
     : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
+  using param_t = operators::IoCopyParam;
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = "HostToOpenCL";
     ch->io_duration = h2d_duration_;
   }
 #endif
+  void PrepareForRun() override {
+    auto& param = Param<param_t>();
+    if (fp16_support_ && param.process_type != 2) {
+      VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+      auto& context = ctx_->As<OpenCLContext>();
+      context.cl_context()->AddKernel(kernel_func_name_,
+                                      "buffer/precision_cast_kernel.cl",
+                                      build_options_,
+                                      time_stamp_);
+    }
+  }
 
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
@@ -99,10 +114,51 @@ class IoCopyHostToOpenCLCompute
     VLOG(2) << "param.y->dims().size():" << param.y->dims().size();
     VLOG(2) << "param.y->dims():" << param.y->dims();
 #endif
-    auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
-    CHECK(data);
-    CHECK(param.x->raw_data());
-    h2d_duration_ = CopyFromHostSync(data, param.x->raw_data(), mem_size);
+    if (fp16_support_ && param.x->precision() == PRECISION(kFloat) &&
+        param.process_type != 2) {
+      std::unique_ptr<Tensor> precision_cast_t =
+          std::unique_ptr<Tensor>(new Tensor);
+      precision_cast_t->Resize(param.x->dims());
+      auto* data_fp32 =
+          precision_cast_t->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+      CHECK(param.x->raw_data());
+      mem_size = param.x->dims().production() * sizeof(float);
+      h2d_duration_ =
+          CopyFromHostSync(data_fp32, param.x->raw_data(), mem_size);
+
+      auto& context = ctx_->As<OpenCLContext>();
+      CHECK(context.cl_context() != nullptr);
+      STL::stringstream kernel_key;
+      kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+      auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+      size_t count = param.x->dims().production();
+
+      auto* y_data = MUTABLE_BUFFER_GPU(param.y);
+      int arg_idx = 0;
+      cl_int status;
+      status = kernel.setArg(arg_idx, *data_fp32);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, *y_data);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<int>(count));
+      CL_CHECK_FATAL(status);
+
+      auto global_work_size = cl::NDRange{(count + 7) / 8};
+
+      status = EnqueueNDRangeKernel(context,
+                                    kernel,
+                                    cl::NullRange,
+                                    global_work_size,
+                                    cl::NullRange,
+                                    nullptr,
+                                    event_);
+      CL_CHECK_FATAL(status);
+    } else {
+      auto* data = param.y->mutable_data(TARGET(kOpenCL), mem_size);
+      CHECK(data);
+      CHECK(param.x->raw_data());
+      h2d_duration_ = CopyFromHostSync(data, param.x->raw_data(), mem_size);
+    }
   }
 
   std::unique_ptr<type_infer_handler_t> GetTypeInferHandler() override {
@@ -127,6 +183,10 @@ class IoCopyHostToOpenCLCompute
 
   std::string doc() const override { return "Copy IO from HOST to OpenCL"; }
 
+ private:
+  std::string time_stamp_{GetTimeStamp()};
+  std::string kernel_func_name_{"fp32_fp16_buffer"};
+  std::string build_options_{""};
   float h2d_duration_{0};
 };
 
@@ -136,22 +196,39 @@ class IoCopyHostToOpenCLCompute
 class IoCopykOpenCLToHostCompute
     : public KernelLite<TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
+  using param_t = operators::IoCopyParam;
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = "OpenCLToHost";
     ch->io_duration = d2h_duration_;
   }
 #endif
+  void PrepareForRun() override {
+    auto& param = Param<param_t>();
+    if (fp16_support_ && param.process_type != 2) {
+      VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+      auto& context = ctx_->As<OpenCLContext>();
+      context.cl_context()->AddKernel(kernel_func_name_,
+                                      "buffer/precision_cast_kernel.cl",
+                                      build_options_,
+                                      time_stamp_);
+    }
+  }
 
   void Run() override {
     auto& param = Param<operators::IoCopyParam>();
     CHECK(param.x->target() == TARGET(kOpenCL));
     auto mem_size = param.x->memory_size();
-    auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
     const cl::Buffer* x_ptr;
     if (param.process_type == 1) {
       x_ptr = param.x->data<uint8_t, cl::Buffer>();
       param.y->set_precision(PRECISION(kUInt8));
+    } else if (param.x->precision() == PRECISION(kInt64)) {
+      x_ptr = param.x->data<int64_t, cl::Buffer>();
+      param.y->set_precision(PRECISION(kInt64));
+    } else if (param.x->precision() == PRECISION(kInt32)) {
+      x_ptr = param.x->data<int32_t, cl::Buffer>();
+      param.y->set_precision(PRECISION(kInt32));
     } else {
       x_ptr = param.x->data<float, cl::Buffer>();
       param.y->set_precision(PRECISION(kFloat));
@@ -166,12 +243,58 @@ class IoCopykOpenCLToHostCompute
     VLOG(4) << "param.process_type:" << param.process_type;
     VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
 #endif
+    if (fp16_support_ && param.x->precision() != PRECISION(kInt64) &&
+        param.x->precision() != PRECISION(kInt32) && param.process_type != 2) {
+      mem_size = param.x->dims().production() * sizeof(float);
+      std::unique_ptr<Tensor> precision_cast_t =
+          std::unique_ptr<Tensor>(new Tensor);
+      precision_cast_t->Resize(param.x->dims());
+      auto* x_data = GET_DATA_GPU(param.x);
+      auto* y_data =
+          precision_cast_t->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
 
-    d2h_duration_ = CopyToHostSync(data, param.x->raw_data(), mem_size);
+      auto& context = ctx_->As<OpenCLContext>();
+      CHECK(context.cl_context() != nullptr);
+      STL::stringstream kernel_key;
+      kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+      auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+      size_t count = param.x->dims().production();
+
+      int arg_idx = 0;
+      cl_int status;
+      status = kernel.setArg(arg_idx, *x_data);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, *y_data);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<int>(count));
+      CL_CHECK_FATAL(status);
+
+      auto global_work_size = cl::NDRange{(count + 7) / 8};
+
+      status = EnqueueNDRangeKernel(context,
+                                    kernel,
+                                    cl::NullRange,
+                                    global_work_size,
+                                    cl::NullRange,
+                                    nullptr,
+                                    event_);
+      CL_CHECK_FATAL(status);
+
+      auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
+      d2h_duration_ =
+          CopyToHostSync(data, precision_cast_t->raw_data(), mem_size);
+    } else {
+      auto* data = param.y->mutable_data(TARGET(kHost), mem_size);
+      d2h_duration_ = CopyToHostSync(data, param.x->raw_data(), mem_size);
+    }
   }
 
   std::string doc() const override { return "Copy IO from OpenCL to HOST"; }
 
+ private:
+  std::string time_stamp_{GetTimeStamp()};
+  std::string kernel_func_name_{"fp16_fp32_buffer"};
+  std::string build_options_{""};
   float d2h_duration_{0};
 };
 

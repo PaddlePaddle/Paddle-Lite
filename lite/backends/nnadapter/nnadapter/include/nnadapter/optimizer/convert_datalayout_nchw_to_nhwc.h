@@ -36,29 +36,35 @@ class NCHW2NHWCDataLayoutConverter {
 
  private:
   // Operation converters
+  void ConvertActivation(core::Operation* operation);
   void ConvertAdaptivePool2D(core::Operation* operation);
+  void ConvertArgMinMax(core::Operation* operation);
   void ConvertBatchNormalization(core::Operation* operation);
+  void ConvertBinaryLogicalOp(core::Operation* operation);
   void ConvertCast(core::Operation* operation);
   void ConvertChannelShuffle(core::Operation* operation);
   void ConvertClip(core::Operation* operation);
   void ConvertComparisons(core::Operation* operation);
+  void ConvertConcat(core::Operation* operation);
   void ConvertCumSum(core::Operation* operation);
   void ConvertDequantize(core::Operation* operation);
   void ConvertElementwise(core::Operation* operation);
-  void ConvertPool2D(core::Operation* operation);
-  void ConvertConcat(core::Operation* operation);
   void ConvertFill(core::Operation* operation);
   void ConvertFillLike(core::Operation* operation);
   void ConvertFlatten(core::Operation* operation);
   void ConvertFullyConnected(core::Operation* operation);
   void ConvertGather(core::Operation* operation);
   void ConvertGelu(core::Operation* operation);
+  void ConvertInstanceNormalization(core::Operation* operation);
   void ConvertLayerNormalization(core::Operation* operation);
   void ConvertLeakyRelu(core::Operation* operation);
+  void ConvertLogSoftmax(core::Operation* operation);
   void ConvertLpNormalization(core::Operation* operation);
-  void ConvertActivation(core::Operation* operation);
+  void ConvertMatMul(core::Operation* operation);
   void ConvertPad(core::Operation* operation);
   void ConvertPow(core::Operation* operation);
+  void ConvertPool2D(core::Operation* operation);
+  void ConvertPrelu(core::Operation* operation);
   void ConvertQuantize(core::Operation* operation);
   void ConvertReduce(core::Operation* operation);
   void ConvertReshape(core::Operation* operation);
@@ -67,14 +73,17 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertShape(core::Operation* operation);
   void ConvertSlice(core::Operation* operation);
   void ConvertSoftmax(core::Operation* operation);
+  void ConvertSoftplus(core::Operation* operation);
   void ConvertSplit(core::Operation* operation);
   void ConvertSqueeze(core::Operation* operation);
   void ConvertStack(core::Operation* operation);
+  void ConvertSum(core::Operation* operation);
   void ConvertTile(core::Operation* operation);
   void ConvertTranspose(core::Operation* operation);
-  void ConvertMatMul(core::Operation* operation);
+  void ConvertUnaryLogicalOp(core::Operation* operation);
   void ConvertUnsqueeze(core::Operation* operation);
   void ConvertUnstack(core::Operation* operation);
+  void ConvertWhere(core::Operation* operation);
 
  private:
   core::Model* model_{nullptr};

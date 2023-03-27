@@ -221,7 +221,6 @@ bool NMSFixer::HandleMatchedResults(core::Model* model,
   auto concat0_operand0 = concat0_operation->input_operands[0];
   auto concat0_operand1 = concat0_operation->input_operands[1];
   auto concat0_operand2 = concat0_operation->input_operands[2];
-  auto concat0_operand3 = concat0_operation->input_operands[3];
   auto concat0_operand4 = concat0_operation->input_operands[4];
   concat0_operation->input_operands = {
       concat0_operand0, concat0_operand1, concat0_operand2, concat0_operand4};
@@ -230,14 +229,12 @@ bool NMSFixer::HandleMatchedResults(core::Model* model,
   auto concat1_operand0 = concat1_operation->input_operands[0];
   auto concat1_operand1 = concat1_operation->input_operands[1];
   auto concat1_operand2 = concat1_operation->input_operands[2];
-  auto concat1_operand3 = concat1_operation->input_operands[3];
   auto concat1_operand4 = concat1_operation->input_operands[4];
   concat1_operation->input_operands = {
       concat1_operand0, concat1_operand1, concat1_operand2, concat1_operand4};
 
   auto concat2_operation = nodes.at("concat2")->operation;
   auto concat2_operand0 = concat2_operation->input_operands[0];
-  auto concat2_operand1 = concat2_operation->input_operands[1];
   auto concat2_operand2 = concat2_operation->input_operands[2];
   auto nms_operation = nodes.at("nms")->operation;
   auto nms_index_operand = nms_operation->output_operands[2];

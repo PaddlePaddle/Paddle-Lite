@@ -299,7 +299,7 @@ class ReduceMeanComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("reduce_mean");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
@@ -349,6 +349,11 @@ void test_reduce_mean(Place place,
                   if (last_dim < 1) continue;
                 }
                 if (last_dim > x_dims.size() - 1) continue;
+#ifdef NNADAPTER_WITH_QUALCOMM_QNN
+                if (std::find(dim.begin(), dim.end(), 0) == dim.end() &&
+                    !keep_dim && x_dims.size() == 4)
+                  continue;
+#endif
                 std::unique_ptr<arena::TestCase> tester(
                     new ReduceMeanComputeTester(
                         place, "def", dim, keep_dim, x_dims));
@@ -395,6 +400,8 @@ TEST(ReduceMean, precision) {
   abs_err = 1e-3;
   keep_dim_vec = std::vector<bool>{false};
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  abs_err = 1e-3;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
   abs_err = 1e-3;
 #else
   return;

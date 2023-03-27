@@ -294,7 +294,7 @@ class GRUUnitTester : public arena::TestCase {
                    origin_mode_);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("gru_unit");
     op_desc->SetInput("Input", {input_});
     op_desc->SetInput("HiddenPrev", {hidden_prev_});

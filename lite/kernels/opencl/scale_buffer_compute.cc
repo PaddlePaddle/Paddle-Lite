@@ -59,7 +59,7 @@ class ScaleComputeBuffer
       first_epoch_for_reinit_ = false;
 
       size_t count = x_dims.production();
-      global_work_size_ = cl::NDRange{count};
+      global_work_size_ = cl::NDRange{(count + 7) / 8};
     }
   }
 
@@ -78,8 +78,6 @@ class ScaleComputeBuffer
       bias *= scale;
     }
     const float alpha = scale_param_->alpha;
-    const float scale1 = scale_param_->scale1;
-    const float bias1 = scale_param_->bias1;
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);

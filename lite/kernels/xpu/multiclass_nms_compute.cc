@@ -23,6 +23,13 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+void MulticlassNmsCompute::PrepareForRun() {
+  double n = GetDoubleFromEnv("ResetMulticlassNMSScoreThreshold", 0.0);
+  if (n > 0.0) {
+    custom_config_score_threshod_ = static_cast<float>(n);
+  }
+}
+
 void MulticlassNmsCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
@@ -45,12 +52,14 @@ void MulticlassNmsCompute::Run() {
   float nms_threshold = static_cast<float>(param.nms_threshold);
   float nms_eta = static_cast<float>(param.nms_eta);
   float score_threshold = static_cast<float>(param.score_threshold);
+  if (custom_config_score_threshod_ > 0.0) {
+    score_threshold = custom_config_score_threshod_;
+  }
 
   int n = 0;
   int b = 0;
   int class_num = scores->dims()[1];
   int out_dim = boxes->dims()[2] + 2;
-  CHECK_LE(class_num, 80);
   int boxes_count = 0;
   std::vector<int> rois_num_vec;
   rois_num_vec.clear();
@@ -76,90 +85,32 @@ void MulticlassNmsCompute::Run() {
     b = boxes->dims()[1];
     boxes_count = n * b;
   }
-  std::vector<float> outs_vec(boxes_count * out_dim);
-  std::vector<int> out_index_vec(boxes_count);
+  outs_vec_.resize(boxes_count * out_dim);
+  out_index_vec_.resize(boxes_count);
 
   std::vector<size_t> batch_starts;
 
   int r = 0;
-  if (is_lod) {
-    r = xdnn::multiclass_nms3<float, int>(ctx.GetRawContext(),
-                                          boxes->data<float>(),
-                                          scores->data<float>(),
-                                          rois_num_vec,
-                                          outs_vec,
-                                          out_index_vec,
-                                          batch_starts,
-                                          n,
-                                          b,
-                                          class_num,
-                                          out_dim,
-                                          nms_top_k,
-                                          score_threshold,
-                                          keep_top_k,
-                                          nms_threshold,
-                                          background_label,
-                                          normalized,
-                                          nms_eta,
-                                          return_index,
-                                          is_lod);
-  } else {
-    if (((nms_top_k > 512 || keep_top_k > 100) &&
-         ctx.GetRawContext()->dev().type() == xdnn::kXPU1) ||
-        ((nms_top_k > 6400 || keep_top_k > 120) &&
-         ctx.GetRawContext()->dev().type() == xdnn::kXPU2)) {
-      xdnn::Context ctx_cpu(xdnn::kCPU);
-      std::vector<float> tmp_boxes_cpu(boxes_count * boxes->dims()[2], 0);
-      std::vector<float> tmp_scores_cpu(n * class_num * b, 0);
-      TargetWrapperXPU::MemcpySync(
-          tmp_boxes_cpu.data(),
-          boxes->data<float>(),
-          sizeof(float) * boxes_count * boxes->dims()[2],
-          IoDirection::DtoH);
-      TargetWrapperXPU::MemcpySync(tmp_scores_cpu.data(),
-                                   scores->data<float>(),
-                                   sizeof(float) * n * class_num * b,
-                                   IoDirection::DtoH);
-      r = xdnn::multiclass_nms2<float, int>(&ctx_cpu,
-                                            tmp_boxes_cpu.data(),
-                                            tmp_scores_cpu.data(),
-                                            outs_vec,
-                                            out_index_vec,
-                                            batch_starts,
-                                            n,
-                                            b,
-                                            class_num,
-                                            out_dim,
-                                            nms_top_k,
-                                            score_threshold,
-                                            keep_top_k,
-                                            nms_threshold,
-                                            background_label,
-                                            normalized,
-                                            nms_eta,
-                                            return_index);
-    } else {
-      r = xdnn::multiclass_nms2<float, int>(ctx.GetRawContext(),
-                                            boxes->data<float>(),
-                                            scores->data<float>(),
-                                            outs_vec,
-                                            out_index_vec,
-                                            batch_starts,
-                                            n,
-                                            b,
-                                            class_num,
-                                            out_dim,
-                                            nms_top_k,
-                                            score_threshold,
-                                            keep_top_k,
-                                            nms_threshold,
-                                            background_label,
-                                            normalized,
-                                            nms_eta,
-                                            return_index);
-    }
-  }
-
+  r = xdnn::multiclass_nms<float, int>(ctx.GetRawContext(),
+                                       boxes->data<float>(),
+                                       scores->data<float>(),
+                                       rois_num_vec,
+                                       outs_vec_,
+                                       out_index_vec_,
+                                       batch_starts,
+                                       n,
+                                       b,
+                                       class_num,
+                                       out_dim,
+                                       nms_top_k,
+                                       score_threshold,
+                                       keep_top_k,
+                                       nms_threshold,
+                                       background_label,
+                                       normalized,
+                                       nms_eta,
+                                       return_index,
+                                       is_lod);
   CHECK_EQ(r, 0);
 
   uint64_t num_kept = batch_starts.back();
@@ -176,12 +127,12 @@ void MulticlassNmsCompute::Run() {
   } else {
     outs->Resize({static_cast<int64_t>(num_kept), out_dim});
     float* out_ptr = outs->mutable_data<float>();
-    std::memcpy(out_ptr, outs_vec.data(), num_kept * out_dim * sizeof(float));
+    std::memcpy(out_ptr, outs_vec_.data(), num_kept * out_dim * sizeof(float));
     if (return_index) {
       out_index->Resize({static_cast<int64_t>(num_kept), 1});
       int* out_index_ptr = out_index->mutable_data<int>();
       std::memcpy(
-          out_index_ptr, out_index_vec.data(), num_kept * sizeof(float));
+          out_index_ptr, out_index_vec_.data(), num_kept * sizeof(float));
     }
   }
 
@@ -237,7 +188,7 @@ REGISTER_LITE_KERNEL(multiclass_nms3,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::xpu::MulticlassNmsCompute,
-                     DISABLE_XPU2_MulticlassNms3)
+                     def)
     .BindInput("BBoxes", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("RoisNum",

@@ -36,13 +36,6 @@ int ConvertArgMinMax(Converter* converter, core::Operation* operation) {
     SET_INPUT(arg_max_op, x, input_operator);
     SET_INPUT(arg_max_op, axis, axes_operator);
     MAP_OUTPUT(arg_max_op, y, output_operand);
-  } else if (operation->type == NNADAPTER_ARG_MIN) {
-    auto arg_max_op =
-        converter->AddOperator<hiai::op::ReduceMin>(output_operand);
-    arg_max_op->set_attr_keep_dims(keepdim);
-    SET_INPUT(arg_max_op, x, input_operator);
-    SET_INPUT(arg_max_op, axes, axes_operator);
-    MAP_OUTPUT(arg_max_op, y, output_operand);
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported arg operation type "
                          << OperationTypeToString(operation->type)

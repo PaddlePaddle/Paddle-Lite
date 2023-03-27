@@ -128,7 +128,7 @@ class SplitTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("split");
     op_desc->SetInput("X", {x_});
     if (!axis_tensor_.empty()) {

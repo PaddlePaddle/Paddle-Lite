@@ -476,36 +476,56 @@ template <>
 void act_sigmoid<float>(const float* din, float* dout, int size, int threads) {
   int nums_per_thread = size / threads;
   int remain = size - threads * nums_per_thread;
-  int neon_loop_cnt_dim4 = nums_per_thread >> 2;
-  int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
 
-  float32x4_t vzero = vdupq_n_f32(0.f);
   LITE_PARALLEL_BEGIN(i, tid, threads) {
-    float32x4_t exp_vec = vdupq_n_f32(0.0f);
-    float32x4_t recip = vdupq_n_f32(0.0f);
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
-    for (int k = 0; k < neon_loop_cnt_dim4; ++k) {
-      exp_vec = exp_ps(vnegq_f32(vld1q_f32(ptr_in_thread)));
-      exp_vec = vaddq_f32(exp_vec, vdupq_n_f32(1.0f));
-      recip = vrecpeq_f32(exp_vec);
-      recip = vmulq_f32(vrecpsq_f32(exp_vec, recip), recip);
-      recip = vmulq_f32(vrecpsq_f32(exp_vec, recip), recip);
-      vst1q_f32(ptr_out_thread, recip);
-      ptr_out_thread += 4;
-      ptr_in_thread += 4;
+    float32x4_t vone = vdupq_n_f32(1.f);
+    int i = 0;
+    for (; i + 15 < nums_per_thread; i += 16) {
+      float32x4_t v_p0 = vld1q_f32(ptr_in_thread);
+      float32x4_t v_p1 = vld1q_f32(ptr_in_thread + 4);
+      float32x4_t v_p2 = vld1q_f32(ptr_in_thread + 8);
+      float32x4_t v_p3 = vld1q_f32(ptr_in_thread + 12);
+      v_p0 = div_ps(vone, vaddq_f32(vone, exp_ps(vnegq_f32(v_p0))));
+      v_p1 = div_ps(vone, vaddq_f32(vone, exp_ps(vnegq_f32(v_p1))));
+      v_p2 = div_ps(vone, vaddq_f32(vone, exp_ps(vnegq_f32(v_p2))));
+      v_p3 = div_ps(vone, vaddq_f32(vone, exp_ps(vnegq_f32(v_p3))));
+      vst1q_f32(ptr_out_thread, v_p0);
+      vst1q_f32(ptr_out_thread + 4, v_p1);
+      vst1q_f32(ptr_out_thread + 8, v_p2);
+      vst1q_f32(ptr_out_thread + 12, v_p3);
+      ptr_in_thread += 16;
+      ptr_out_thread += 16;
     }
-    for (int j = 0; j < neon_loop_remain_dim4; ++j) {
-      ptr_out_thread[0] = 1.f / (1 + expf(-ptr_in_thread[0]));
+    for (; i + 7 < nums_per_thread; i += 8) {
+      float32x4_t v_p0 = vld1q_f32(ptr_in_thread);
+      float32x4_t v_p1 = vld1q_f32(ptr_in_thread + 4);
+      v_p0 = div_ps(vone, vaddq_f32(vone, exp_ps(vnegq_f32(v_p0))));
+      v_p1 = div_ps(vone, vaddq_f32(vone, exp_ps(vnegq_f32(v_p1))));
+      vst1q_f32(ptr_out_thread, v_p0);
+      vst1q_f32(ptr_out_thread + 4, v_p1);
+      ptr_in_thread += 8;
+      ptr_out_thread += 8;
+    }
+    for (; i + 3 < nums_per_thread; i += 4) {
+      float32x4_t v_p0 = vld1q_f32(ptr_in_thread);
+      v_p0 = div_ps(vone, vaddq_f32(vone, exp_ps(vnegq_f32(v_p0))));
+      vst1q_f32(ptr_out_thread, v_p0);
+      ptr_in_thread += 4;
+      ptr_out_thread += 4;
+    }
+    for (; i < nums_per_thread; i++) {
+      ptr_out_thread[0] = 1.f / (1.f + expf(-ptr_in_thread[0]));
       ptr_in_thread++;
       ptr_out_thread++;
     }
   }
   LITE_PARALLEL_END();
-  float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
+  float* ptr_out = dout + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
-    ptr_out[0] = 1.f / (1 + expf(-ptr_in[0]));
+    ptr_out[0] = 1.f / (1.f + expf(-ptr_in[0]));
     ptr_in++;
     ptr_out++;
   }
@@ -557,43 +577,71 @@ void act_tanh<float>(const float* din, float* dout, int size, int threads) {
   }
 }
 
-// swish: x /(1 + exp(-(b * x)))
+// swish: x /(1 + exp(-(beta * x)))
 template <>
 void act_swish<float>(
     const float* din, float* dout, int size, float coef, int threads) {
   int nums_per_thread = size / threads;
   int remain = size - threads * nums_per_thread;
-  int neon_loop_cnt_dim4 = nums_per_thread >> 2;
-  int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
   const float beta = coef;
-  float32x4_t vbeta = vdupq_n_f32(beta);
-  float32x4_t vone = vdupq_n_f32(1.f);
   LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
-    for (int k = 0; k < neon_loop_cnt_dim4; ++k) {
-      float32x4_t va = vld1q_f32(ptr_in_thread);             // x
-      float32x4_t vb = vnegq_f32(vld1q_f32(ptr_in_thread));  // -x
-      float32x4_t vsum = vmulq_f32(vb, vbeta);
-      vsum = exp_ps(vsum);
-      float32x4_t vc = vaddq_f32(vone, vsum);
-      float32x4_t vrst = div_ps(va, vc);
-      vst1q_f32(ptr_out_thread, vrst);
-      ptr_out_thread += 4;
-      ptr_in_thread += 4;
+    float32x4_t vbeta = vdupq_n_f32(beta);
+    float32x4_t vone = vdupq_n_f32(1.f);
+    int i = 0;
+    for (; i + 15 < nums_per_thread; i += 16) {
+      float32x4_t v_p0 = vld1q_f32(ptr_in_thread);
+      float32x4_t v_p1 = vld1q_f32(ptr_in_thread + 4);
+      float32x4_t v_p2 = vld1q_f32(ptr_in_thread + 8);
+      float32x4_t v_p3 = vld1q_f32(ptr_in_thread + 12);
+      v_p0 = div_ps(v_p0,
+                    vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p0)))));
+      v_p1 = div_ps(v_p1,
+                    vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p1)))));
+      v_p2 = div_ps(v_p2,
+                    vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p2)))));
+      v_p3 = div_ps(v_p3,
+                    vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p3)))));
+      vst1q_f32(ptr_out_thread, v_p0);
+      vst1q_f32(ptr_out_thread + 4, v_p1);
+      vst1q_f32(ptr_out_thread + 8, v_p2);
+      vst1q_f32(ptr_out_thread + 12, v_p3);
+      ptr_in_thread += 16;
+      ptr_out_thread += 16;
     }
-    for (int j = 0; j < neon_loop_remain_dim4; ++j) {
+    for (; i + 7 < nums_per_thread; i += 8) {
+      float32x4_t v_p0 = vld1q_f32(ptr_in_thread);
+      float32x4_t v_p1 = vld1q_f32(ptr_in_thread + 4);
+      v_p0 = div_ps(v_p0,
+                    vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p0)))));
+      v_p1 = div_ps(v_p1,
+                    vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p1)))));
+      vst1q_f32(ptr_out_thread, v_p0);
+      vst1q_f32(ptr_out_thread + 4, v_p1);
+      ptr_in_thread += 8;
+      ptr_out_thread += 8;
+    }
+    for (; i + 3 < nums_per_thread; i += 4) {
+      float32x4_t v_p0 = vld1q_f32(ptr_in_thread);
+      v_p0 = div_ps(v_p0,
+                    vaddq_f32(vone, exp_ps(vnegq_f32(vmulq_f32(vbeta, v_p0)))));
+      vst1q_f32(ptr_out_thread, v_p0);
+      ptr_in_thread += 4;
+      ptr_out_thread += 4;
+    }
+    for (; i < nums_per_thread; i++) {
       ptr_out_thread[0] =
-          ptr_in_thread[0] / (1.0 + expf(-ptr_in_thread[0] * beta));
+          ptr_in_thread[0] / (1.f + expf(-ptr_in_thread[0] * beta));
       ptr_in_thread++;
       ptr_out_thread++;
     }
   }
   LITE_PARALLEL_END();
-  float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
+  float* ptr_out = dout + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
-    ptr_out[0] = ptr_in[0] / (1.0 + expf(-ptr_in[0] * beta));
+    ptr_out[0] = ptr_in[0] / (1.f + expf(-ptr_in[0] * beta));
     ptr_in++;
     ptr_out++;
   }
@@ -986,6 +1034,191 @@ void act_elu<float>(
   }
 }
 
+static const float tansig_table[201] = {
+    0.000000f, 0.039979f, 0.079830f, 0.119427f, 0.158649f, 0.197375f, 0.235496f,
+    0.272905f, 0.309507f, 0.345214f, 0.379949f, 0.413644f, 0.446244f, 0.477700f,
+    0.507977f, 0.537050f, 0.564900f, 0.591519f, 0.616909f, 0.641077f, 0.664037f,
+    0.685809f, 0.706419f, 0.725897f, 0.744277f, 0.761594f, 0.777888f, 0.793199f,
+    0.807569f, 0.821040f, 0.833655f, 0.845456f, 0.856485f, 0.866784f, 0.876393f,
+    0.885352f, 0.893698f, 0.901468f, 0.908698f, 0.915420f, 0.921669f, 0.927473f,
+    0.932862f, 0.937863f, 0.942503f, 0.946806f, 0.950795f, 0.954492f, 0.957917f,
+    0.961090f, 0.964028f, 0.966747f, 0.969265f, 0.971594f, 0.973749f, 0.975743f,
+    0.977587f, 0.979293f, 0.980869f, 0.982327f, 0.983675f, 0.984921f, 0.986072f,
+    0.987136f, 0.988119f, 0.989027f, 0.989867f, 0.990642f, 0.991359f, 0.992020f,
+    0.992631f, 0.993196f, 0.993718f, 0.994199f, 0.994644f, 0.995055f, 0.995434f,
+    0.995784f, 0.996108f, 0.996407f, 0.996682f, 0.996937f, 0.997172f, 0.997389f,
+    0.997590f, 0.997775f, 0.997946f, 0.998104f, 0.998249f, 0.998384f, 0.998508f,
+    0.998623f, 0.998728f, 0.998826f, 0.998916f, 0.999000f, 0.999076f, 0.999147f,
+    0.999213f, 0.999273f, 0.999329f, 0.999381f, 0.999428f, 0.999472f, 0.999513f,
+    0.999550f, 0.999585f, 0.999617f, 0.999646f, 0.999673f, 0.999699f, 0.999722f,
+    0.999743f, 0.999763f, 0.999781f, 0.999798f, 0.999813f, 0.999828f, 0.999841f,
+    0.999853f, 0.999865f, 0.999875f, 0.999885f, 0.999893f, 0.999902f, 0.999909f,
+    0.999916f, 0.999923f, 0.999929f, 0.999934f, 0.999939f, 0.999944f, 0.999948f,
+    0.999952f, 0.999956f, 0.999959f, 0.999962f, 0.999965f, 0.999968f, 0.999970f,
+    0.999973f, 0.999975f, 0.999977f, 0.999978f, 0.999980f, 0.999982f, 0.999983f,
+    0.999984f, 0.999986f, 0.999987f, 0.999988f, 0.999989f, 0.999990f, 0.999990f,
+    0.999991f, 0.999992f, 0.999992f, 0.999993f, 0.999994f, 0.999994f, 0.999994f,
+    0.999995f, 0.999995f, 0.999996f, 0.999996f, 0.999996f, 0.999997f, 0.999997f,
+    0.999997f, 0.999997f, 0.999997f, 0.999998f, 0.999998f, 0.999998f, 0.999998f,
+    0.999998f, 0.999998f, 0.999999f, 0.999999f, 0.999999f, 0.999999f, 0.999999f,
+    0.999999f, 0.999999f, 0.999999f, 0.999999f, 0.999999f, 0.999999f, 0.999999f,
+    0.999999f, 1.000000f, 1.000000f, 1.000000f, 1.000000f, 1.000000f, 1.000000f,
+    1.000000f, 1.000000f, 1.000000f, 1.000000f, 1.000000f,
+};
+
+inline float tansig_approx(float x) {
+  if (x >= 8) return 1;
+  if (x <= -8) return -1;
+
+  float sign = x < 0 ? -1 : 1;
+  x = x * sign;
+  int i = static_cast<int>(floor(0.5f + 25 * x));
+  x -= 0.04f * i;
+  float y = tansig_table[i];
+  float dy = 1 - y * y;
+  y = y + x * dy * (1 - y * x);
+  return sign * y;
+}
+
+inline float32x4_t tansig_approx_v4(float32x4_t x) {
+  float32x4_t v_8 = vdupq_n_f32(8.f);
+  float32x4_t v_8_ = vdupq_n_f32(-8.f);
+  float32x4_t v_1_ = vdupq_n_f32(-1.f);
+  float32x4_t vzero = vdupq_n_f32(0.f);
+  float32x4_t vones = vdupq_n_f32(1.f);
+
+  uint32x4_t v_comge8 = vcgeq_f32(x, v_8);
+  uint32x4_t v_comle8_ = vcleq_f32(x, v_8_);
+  uint32x4_t v_comlt0 = vcltq_f32(x, vzero);
+
+  float32x4_t vsign = vbslq_f32(v_comlt0, v_1_, vones);
+  x = vmulq_f32(x, vsign);
+  float32x4_t v_x_25 = vmlaq_f32(vdupq_n_f32(0.5f), x, vdupq_n_f32(25.f));
+
+  int32x4_t tab_i_v = vcvtq_s32_f32(v_x_25);
+  int tab_i_0 = vgetq_lane_s32(tab_i_v, 0);
+  int tab_i_1 = vgetq_lane_s32(tab_i_v, 1);
+  int tab_i_2 = vgetq_lane_s32(tab_i_v, 2);
+  int tab_i_3 = vgetq_lane_s32(tab_i_v, 3);
+
+  float32x4_t tab_data_v;
+  tab_data_v = vsetq_lane_f32(tansig_table[tab_i_0], tab_data_v, 0);
+  tab_data_v = vsetq_lane_f32(tansig_table[tab_i_1], tab_data_v, 1);
+  tab_data_v = vsetq_lane_f32(tansig_table[tab_i_2], tab_data_v, 2);
+  tab_data_v = vsetq_lane_f32(tansig_table[tab_i_3], tab_data_v, 3);
+
+  float32x4_t tab_i_f = vcvtq_f32_s32(tab_i_v);
+  x = vmlsq_f32(x, vdupq_n_f32(0.04), tab_i_f);
+
+  float32x4_t v_dy = vmlsq_f32(vones, tab_data_v, tab_data_v);  // dy
+  float32x4_t v_res = vmlsq_f32(vones, tab_data_v, x);
+  v_res = vmulq_f32(v_dy, v_res);
+  v_res = vmlaq_f32(tab_data_v, x, v_res);
+  v_res = vmulq_f32(vsign, v_res);
+
+  v_res = vbslq_f32(v_comge8, vones, v_res);
+  v_res = vbslq_f32(v_comle8_, v_1_, v_res);
+  return v_res;
+}
+
+inline float erff_approx(float a) {
+  float r, s, t, u;
+
+  t = fabsf(a);
+  s = a * a;
+  if (t > 0.927734375f) {  // 475/512
+    // maximum error 0.99527 ulp
+    r = fmaf(
+        -1.72853470e-5f, t, 3.83197126e-4f);  // -0x1.220000p-16,0x1.91cfb2p-12
+    u = fmaf(
+        -3.88396438e-3f, t, 2.42546219e-2f);  // -0x1.fd1438p-9, 0x1.8d6342p-6
+    r = fmaf(r, s, u);
+    r = fmaf(r, t, -1.06777877e-1f);  // -0x1.b55cb8p-4
+    r = fmaf(r, t, -6.34846687e-1f);  // -0x1.450aa0p-1
+    r = fmaf(r, t, -1.28717512e-1f);  // -0x1.079d0cp-3
+    r = fmaf(r, t, -t);
+    r = 1.0f - expf(r);
+    r = copysignf(r, a);
+  } else {
+    // maximum error 0.98929 ulp
+    r = -5.96761703e-4f;              // -0x1.38e000p-11
+    r = fmaf(r, s, 4.99119423e-3f);   //  0x1.471a58p-8
+    r = fmaf(r, s, -2.67681349e-2f);  // -0x1.b691b2p-6
+    r = fmaf(r, s, 1.12819925e-1f);   //  0x1.ce1c44p-4
+    r = fmaf(r, s, -3.76125336e-1f);  // -0x1.812700p-2
+    r = fmaf(r, s, 1.28379166e-1f);   //  0x1.06eba8p-3
+    r = fmaf(r, a, a);
+  }
+  return r;
+}
+
+#define c_erff_r0_p0 -1.72853470e-5f
+#define c_erff_r0_p1 3.83197126e-4f
+#define c_erff_r0_p2 -3.88396438e-3f
+#define c_erff_r0_p3 2.42546219e-2f
+#define c_erff_r0_p4 -1.06777877e-1f
+#define c_erff_r0_p5 -6.34846687e-1f
+#define c_erff_r0_p6 -1.28717512e-1f
+#define c_erff_r1_p0 -5.96761703e-4f
+#define c_erff_r1_p1 4.99119423e-3f
+#define c_erff_r1_p2 -2.67681349e-2f
+#define c_erff_r1_p3 1.12819925e-1f
+#define c_erff_r1_p4 -3.76125336e-1f
+#define c_erff_r1_p5 1.28379166e-1f
+#define c_erff_threshold 0.927734375f
+
+inline float32x4_t erff_approx_v4(float32x4_t a) {
+  float32x4_t coef0 = vdupq_n_f32(c_erff_r0_p0);
+  float32x4_t coef1 = vdupq_n_f32(c_erff_r0_p1);
+  float32x4_t coef2 = vdupq_n_f32(c_erff_r0_p2);
+  float32x4_t coef3 = vdupq_n_f32(c_erff_r0_p3);
+  float32x4_t coef4 = vdupq_n_f32(c_erff_r0_p4);
+  float32x4_t coef5 = vdupq_n_f32(c_erff_r0_p5);
+  float32x4_t coef6 = vdupq_n_f32(c_erff_r0_p6);
+
+  float32x4_t vzero_4 = vdupq_n_f32(0.f);
+  float32x4_t vones_4 = vdupq_n_f32(1.f);
+  float32x4_t vmask_4 = vdupq_n_f32(c_erff_threshold);
+  float32x4_t r0, r1, s, t, u, t_;
+
+  // r0 (t > 0.927734375f)
+  t = vabsq_f32(a);
+  s = vmulq_f32(a, a);
+  t_ = vsubq_f32(vzero_4, t);
+  r0 = vmlaq_f32(coef1, coef0, t);
+  u = vmlaq_f32(coef3, coef2, t);
+  r0 = vmlaq_f32(u, r0, s);
+  r0 = vmlaq_f32(coef4, r0, t);
+  r0 = vmlaq_f32(coef5, r0, t);
+  r0 = vmlaq_f32(coef6, r0, t);
+  r0 = vmlaq_f32(t_, r0, t);
+  r0 = vsubq_f32(vones_4, exp_ps(r0));
+
+  uint32x4_t vm_gt0 = vcgtq_f32(a, vzero_4);
+  r0 = vbslq_f32(vm_gt0, r0, vsubq_f32(vzero_4, r0));
+
+  // r1 (t <= 0.927734375f)
+  coef0 = vdupq_n_f32(c_erff_r1_p0);
+  coef1 = vdupq_n_f32(c_erff_r1_p1);
+  coef2 = vdupq_n_f32(c_erff_r1_p2);
+  coef3 = vdupq_n_f32(c_erff_r1_p3);
+  coef4 = vdupq_n_f32(c_erff_r1_p4);
+  coef5 = vdupq_n_f32(c_erff_r1_p5);
+
+  r1 = coef0;
+  r1 = vmlaq_f32(coef1, r1, s);
+  r1 = vmlaq_f32(coef2, r1, s);
+  r1 = vmlaq_f32(coef3, r1, s);
+  r1 = vmlaq_f32(coef4, r1, s);
+  r1 = vmlaq_f32(coef5, r1, s);
+  r1 = vmlaq_f32(a, r1, a);
+
+  // choose r0 or r1
+  uint32x4_t v_mask_re = vcltq_f32(t, vmask_4);
+  r0 = vbslq_f32(v_mask_re, r1, r0);
+  return r0;
+}
+
 // when using approximation
 // $out = \\frac{1}{2}x(1+tanh(\\sqrt{\\frac{2}{\\pi}}(x+0.044715x^{3}))$
 // or else
@@ -993,26 +1226,130 @@ void act_elu<float>(
 template <>
 void act_gelu<float>(
     const float* din, float* dout, int size, bool approximate, int threads) {
+  int cnt = size >> 4;
+  int remain = size & 15;
   if (approximate) {
     const float pi = std::atan(1) * 4;
     const float sqrt_2_div_pi = std::sqrt(2 / pi);
-    for (int i = 0; i < size; i++) {
+    float32x4_t sqrt_2_div_pi_v4 = vdupq_n_f32(sqrt_2_div_pi);
+    float32x4_t coeff_v4 = vdupq_n_f32(0.044715);
+    float32x4_t vones_4 = vdupq_n_f32(1.f);
+    float32x4_t v05_4 = vdupq_n_f32(0.5f);
+
+    for (int i = 0; i < cnt; i++) {
+      float32x4_t vx0 = vld1q_f32(din);
+      float32x4_t vx1 = vld1q_f32(din + 4);
+      float32x4_t vx2 = vld1q_f32(din + 8);
+      float32x4_t vx3 = vld1q_f32(din + 12);
+
+      float32x4_t vx0_pow = vmulq_f32(vx0, vx0);
+      float32x4_t vx1_pow = vmulq_f32(vx1, vx1);
+      float32x4_t vx2_pow = vmulq_f32(vx2, vx2);
+      float32x4_t vx3_pow = vmulq_f32(vx3, vx3);
+
+      vx0_pow = vmulq_f32(vx0_pow, vx0);
+      vx1_pow = vmulq_f32(vx1_pow, vx1);
+      vx2_pow = vmulq_f32(vx2_pow, vx2);
+      vx3_pow = vmulq_f32(vx3_pow, vx3);
+
+      vx0_pow = vmlaq_f32(vx0, vx0_pow, coeff_v4);
+      vx1_pow = vmlaq_f32(vx1, vx1_pow, coeff_v4);
+      vx2_pow = vmlaq_f32(vx2, vx2_pow, coeff_v4);
+      vx3_pow = vmlaq_f32(vx3, vx3_pow, coeff_v4);
+
+      vx0_pow = vmulq_f32(vx0_pow, sqrt_2_div_pi_v4);
+      vx1_pow = vmulq_f32(vx1_pow, sqrt_2_div_pi_v4);
+      vx2_pow = vmulq_f32(vx2_pow, sqrt_2_div_pi_v4);
+      vx3_pow = vmulq_f32(vx3_pow, sqrt_2_div_pi_v4);
+
+      float32x4_t v0_res = tansig_approx_v4(vx0_pow);
+      float32x4_t v1_res = tansig_approx_v4(vx1_pow);
+      float32x4_t v2_res = tansig_approx_v4(vx2_pow);
+      float32x4_t v3_res = tansig_approx_v4(vx3_pow);
+
+      v0_res = vaddq_f32(v0_res, vones_4);
+      v1_res = vaddq_f32(v1_res, vones_4);
+      v2_res = vaddq_f32(v2_res, vones_4);
+      v3_res = vaddq_f32(v3_res, vones_4);
+
+      v0_res = vmulq_f32(v0_res, vx0);
+      v1_res = vmulq_f32(v1_res, vx1);
+      v2_res = vmulq_f32(v2_res, vx2);
+      v3_res = vmulq_f32(v3_res, vx3);
+
+      v0_res = vmulq_f32(v0_res, v05_4);
+      v1_res = vmulq_f32(v1_res, v05_4);
+      v2_res = vmulq_f32(v2_res, v05_4);
+      v3_res = vmulq_f32(v3_res, v05_4);
+
+      vst1q_f32(dout, v0_res);
+      vst1q_f32(dout + 4, v1_res);
+      vst1q_f32(dout + 8, v2_res);
+      vst1q_f32(dout + 12, v3_res);
+      din += 16;
+      dout += 16;
+    }
+    for (int i = 0; i < remain; i++) {
       float x = *din;
-      *dout = 0.5 * x *
-              (1 + std::tanh(sqrt_2_div_pi * (x + 0.044715 * std::pow(x, 3))));
+      *dout =
+          0.5 * x *
+          (1 + tansig_approx(sqrt_2_div_pi * (x + 0.044715 * std::pow(x, 3))));
       ++din;
       ++dout;
     }
   } else {
     const float sqrt_2 = std::sqrt(2.0);
-    for (int i = 0; i < size; i++) {
+    const float sqrt_2_rec = 1.0 / std::sqrt(2.0);
+    float32x4_t v_sqrt2_rec = vdupq_n_f32(sqrt_2_rec);
+    float32x4_t vones_4 = vdupq_n_f32(1.f);
+    float32x4_t vdata_0_5 = vdupq_n_f32(0.5);
+    for (int i = 0; i < cnt; i++) {
+      float32x4_t vx0 = vld1q_f32(din);
+      float32x4_t vx1 = vld1q_f32(din + 4);
+      float32x4_t vx2 = vld1q_f32(din + 8);
+      float32x4_t vx3 = vld1q_f32(din + 12);
+
+      float32x4_t v_tmp0 = vmulq_f32(v_sqrt2_rec, vx0);
+      float32x4_t v_tmp1 = vmulq_f32(v_sqrt2_rec, vx1);
+      float32x4_t v_tmp2 = vmulq_f32(v_sqrt2_rec, vx2);
+      float32x4_t v_tmp3 = vmulq_f32(v_sqrt2_rec, vx3);
+
+      float32x4_t v_erf0 = erff_approx_v4(v_tmp0);
+      float32x4_t v_erf1 = erff_approx_v4(v_tmp1);
+      float32x4_t v_erf2 = erff_approx_v4(v_tmp2);
+      float32x4_t v_erf3 = erff_approx_v4(v_tmp3);
+
+      float32x4_t res0 = vmulq_f32(vdata_0_5, vx0);
+      float32x4_t res1 = vmulq_f32(vdata_0_5, vx1);
+      float32x4_t res2 = vmulq_f32(vdata_0_5, vx2);
+      float32x4_t res3 = vmulq_f32(vdata_0_5, vx3);
+
+      v_erf0 = vaddq_f32(vones_4, v_erf0);
+      v_erf1 = vaddq_f32(vones_4, v_erf1);
+      v_erf2 = vaddq_f32(vones_4, v_erf2);
+      v_erf3 = vaddq_f32(vones_4, v_erf3);
+
+      res0 = vmulq_f32(res0, v_erf0);
+      res1 = vmulq_f32(res1, v_erf1);
+      res2 = vmulq_f32(res2, v_erf2);
+      res3 = vmulq_f32(res3, v_erf3);
+
+      vst1q_f32(dout, res0);
+      vst1q_f32(dout + 4, res1);
+      vst1q_f32(dout + 8, res2);
+      vst1q_f32(dout + 12, res3);
+      din += 16;
+      dout += 16;
+    }
+    for (int i = 0; i < remain; i++) {
       float x = *din;
-      *dout = 0.5 * x * (1 + std::erf(x / sqrt_2));
+      *dout = 0.5 * x * (1 + erff_approx(x * sqrt_2_rec));
       ++din;
       ++dout;
     }
   }
 }
+
 template <>
 void mish(const float* din, float* dout, int size, float threshold) {
   int cnt = size >> 4;
@@ -1118,6 +1455,50 @@ void mish(const float* din, float* dout, int size, float threshold) {
     dout[i] = x * std::tanh(sp);
   }
 }
+
+template <>
+void act_silu<float>(const float* din, float* dout, int size, int threads) {
+  int nums_per_thread = size / threads;
+  int remain = size - threads * nums_per_thread;
+  int neon_loop_cnt_dim4 = nums_per_thread >> 2;
+  int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
+
+  // float32x4_t vzero = vdupq_n_f32(0.f);
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
+    float32x4_t x_vec = vdupq_n_f32(0.0f);
+    float32x4_t exp_vec = vdupq_n_f32(0.0f);
+    float32x4_t recip = vdupq_n_f32(0.0f);
+    const float* ptr_in_thread = din + i * nums_per_thread;
+    float* ptr_out_thread = dout + i * nums_per_thread;
+    for (int k = 0; k < neon_loop_cnt_dim4; ++k) {
+      x_vec = vld1q_f32(ptr_in_thread);
+      exp_vec = exp_ps(vnegq_f32(x_vec));
+      exp_vec = vaddq_f32(exp_vec, vdupq_n_f32(1.0f));
+      recip = vrecpeq_f32(exp_vec);
+      // Using Newton-Raphson step for finding the reciprocal
+      recip = vmulq_f32(vrecpsq_f32(exp_vec, recip), recip);
+      recip = vmulq_f32(vrecpsq_f32(exp_vec, recip), recip);
+      recip = vmulq_f32(x_vec, recip);
+      vst1q_f32(ptr_out_thread, recip);
+      ptr_out_thread += 4;
+      ptr_in_thread += 4;
+    }
+    for (int j = 0; j < neon_loop_remain_dim4; ++j) {
+      ptr_out_thread[0] = ptr_in_thread[0] / (1 + expf(-ptr_in_thread[0]));
+      ptr_in_thread++;
+      ptr_out_thread++;
+    }
+  }
+  LITE_PARALLEL_END();
+  float* ptr_out = dout + threads * nums_per_thread;
+  const float* ptr_in = din + threads * nums_per_thread;
+  for (int j = 0; j < remain; ++j) {
+    ptr_out[0] = ptr_in[0] / (1 + expf(-ptr_in[0]));
+    ptr_in++;
+    ptr_out++;
+  }
+}
+
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

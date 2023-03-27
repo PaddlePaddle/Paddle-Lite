@@ -56,7 +56,7 @@ class Flatten2Op : public FlattenOp {
 
   bool InferType() override {
     param_.output->set_precision(param_.x->precision());
-    param_.xshape->set_precision(PRECISION(kInt64));
+    if (param_.xshape) param_.xshape->set_precision(PRECISION(kInt64));
     return true;
   }
 
@@ -78,7 +78,7 @@ class FlattenContiguousRangeOp : public OpLite {
 #ifndef LITE_ON_TINY_PUBLISH
   bool InferType() override {
     param_.out->set_precision(param_.x->precision());
-    param_.xshape->set_precision(PRECISION(kInt64));
+    if (param_.xshape) param_.xshape->set_precision(PRECISION(kInt64));
     return true;
   }
 #endif

@@ -97,14 +97,8 @@ class KernelBase {
 #if defined(LITE_WITH_X86)
     WorkSpace::Global_X86().AllocReset();
 #endif
-#if defined(LITE_WITH_CUDA)
-    WorkSpace::Global_CUDA().AllocReset();
-#endif
 #if defined(LITE_WITH_METAL)
     WorkSpace::Global_METAL().AllocReset();
-#endif
-#if defined(LITE_WITH_MLU)
-    WorkSpace::Global_MLU().AllocReset();
 #endif
 
 #ifdef LITE_WITH_PROFILE
@@ -112,17 +106,16 @@ class KernelBase {
       profiler_->StopTiming(profile::Type::kCreate, profile_id_, ctx_.get());
       profiler_->StartTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
     }
+#endif
 
     Run();
 
+#ifdef LITE_WITH_PROFILE
     // skip test
     if (!is_kernel_test_) {
       SetProfileRuntimeKernelInfo(profiler_->GetOpCharacter(profile_id_));
       profiler_->StopTiming(profile::Type::kDispatch, profile_id_, ctx_.get());
     }
-
-#else
-    Run();
 #endif
   }
 
@@ -226,15 +219,13 @@ class KernelBase {
 // Light-weight kernel implementation.
 // The OpKernel is designed to implement the specific algorithm on a target
 // device.
-// TODO(Superjomn) Consider to add a Platform type to differentiate CUDNN,
-// MKLDNN, plain CUDA C implementations.
 template <TargetType Target,
           PrecisionType Precision,
           DataLayoutType DataLayout = DataLayoutType::kNCHW>
 class KernelLite : public KernelBase {
  public:
   // Run the kernel.
-  virtual void Run() override { CHECK(false) << "Not Implemented"; }
+  void Run() override { CHECK(false) << "Not Implemented"; }
 
   TargetType target() const override { return Target; }
   PrecisionType precision() const override { return Precision; }

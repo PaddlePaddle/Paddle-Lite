@@ -214,18 +214,21 @@ bool test_gemm_int8(bool tra,
 
   /// warmup
   for (int j = 0; j < FLAGS_warmup; ++j) {
-    paddle::lite::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
-                                               db,
-                                               dbias,
-                                               dc_fp32,
-                                               m,
-                                               n,
-                                               k,
-                                               has_bias,
-                                               trb,
-                                               scale_merge_fp32.data(),
-                                               act_param,
-                                               &ctx);
+    paddle::lite::arm::math::gemm_prepack_int8(
+        tpackedA.data<int8_t>(),
+        db,
+        dbias,
+        dc_fp32,
+        m,
+        n,
+        k,
+        has_bias,
+        paddle::lite::arm::math::GemmMBias,
+        trb,
+        scale_merge_fp32.data(),
+        act_param,
+        &ctx,
+        false);
   }
   /// int8 output compute
   Tensor tbias_int8;
@@ -264,7 +267,8 @@ bool test_gemm_int8(bool tra,
         trb,
         scale_merge_fp32.data(),
         act_param,
-        &ctx);
+        &ctx,
+        false);
     t1.Stop();
   }
 
@@ -291,7 +295,8 @@ bool test_gemm_int8(bool tra,
         trb,
         scale_merge_int8.data(),
         act_param,
-        &ctx);
+        &ctx,
+        false);
     t1.Stop();
   }
   LOG(INFO) << "sve int8_int8 M: " << m << ", N: " << n << ", K: " << k
@@ -306,18 +311,21 @@ bool test_gemm_int8(bool tra,
 
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
-    paddle::lite::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
-                                               db,
-                                               dbias_int8,
-                                               dc_int8,
-                                               m,
-                                               n,
-                                               k,
-                                               has_bias,
-                                               trb,
-                                               scale_merge_int8.data(),
-                                               act_param,
-                                               &ctx);
+    paddle::lite::arm::math::gemm_prepack_int8(
+        tpackedA.data<int8_t>(),
+        db,
+        dbias_int8,
+        dc_int8,
+        m,
+        n,
+        k,
+        has_bias,
+        paddle::lite::arm::math::GemmMBias,
+        trb,
+        scale_merge_int8.data(),
+        act_param,
+        &ctx,
+        false);
     t0.Stop();
   }
   LOG(INFO) << "gemm_int8_int8 output: M: " << m << ", N: " << n << ", K: " << k
@@ -333,18 +341,21 @@ bool test_gemm_int8(bool tra,
   t0.Reset();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
-    paddle::lite::arm::math::gemm_prepack_int8(tpackedA.data<int8_t>(),
-                                               db,
-                                               dbias,
-                                               dc_fp32,
-                                               m,
-                                               n,
-                                               k,
-                                               has_bias,
-                                               trb,
-                                               scale_merge_fp32.data(),
-                                               act_param,
-                                               &ctx);
+    paddle::lite::arm::math::gemm_prepack_int8(
+        tpackedA.data<int8_t>(),
+        db,
+        dbias,
+        dc_fp32,
+        m,
+        n,
+        k,
+        has_bias,
+        paddle::lite::arm::math::GemmMBias,
+        trb,
+        scale_merge_fp32.data(),
+        act_param,
+        &ctx,
+        false);
     t0.Stop();
   }
   LOG(INFO) << "gemm_int8_fp32 output: M: " << m << ", N: " << n << ", K: " << k

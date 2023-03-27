@@ -83,7 +83,7 @@ TEST(layout_ImageDefault, compute) {
           auto* y_data = y.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
           auto image_shape =
               paddle::lite::kernels::opencl::InitImageDimInfoWith(x_dim);
-          auto* y_image_data = y_image.mutable_data<half_t, cl::Image2D>(
+          auto* y_image_data = y_image.mutable_data<float, cl::Image2D>(
               image_shape["width"], image_shape["height"]);
           auto* mapped_x = static_cast<float*>(TargetWrapperCL::Map(
               x_data, 0, sizeof(float) * x_dim.production()));
@@ -97,6 +97,8 @@ TEST(layout_ImageDefault, compute) {
           LOG(INFO) << "set context and kernel args";
           std::unique_ptr<KernelContext> context(new KernelContext);
           context->As<OpenCLContext>().InitOnce();
+          CLRuntime::Global()->set_precision(
+              paddle::lite_api::CLPrecisionType::CL_PRECISION_FP32);
 
           buf_to_img_kernel->SetParam(BufferToImageParam);
           std::unique_ptr<KernelContext> buf_to_img_context(new KernelContext);
@@ -186,8 +188,7 @@ TEST(layout_ImageFolder, compute) {
   const int w = randint(1, 9);
   std::vector<std::vector<int64_t>> dims{{w}, {h, w}, {c, h, w}, {n, c, h, w}};
   for (const auto precision_type :
-       {lite_api::CLPrecisionType::CL_PRECISION_FP32,
-        lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
+       {lite_api::CLPrecisionType::CL_PRECISION_FP32}) {
     for (auto dim : dims) {
       // set context and kernel args
       LOG(INFO) << "set context and kernel args";
@@ -346,7 +347,7 @@ TEST(layout_ImageDefault_With_Pre_Post, compute) {
           auto* y_data = y.mutable_data<uint8_t, cl::Buffer>(TARGET(kOpenCL));
           auto image_shape =
               paddle::lite::kernels::opencl::InitImageDimInfoWith(x_dim);
-          auto* y_image_data = y_image.mutable_data<half_t, cl::Image2D>(
+          auto* y_image_data = y_image.mutable_data<float, cl::Image2D>(
               image_shape["width"], image_shape["height"]);
           auto* mapped_x = static_cast<uint8_t*>(TargetWrapperCL::Map(
               x_data, 0, sizeof(uint8_t) * x_dim.production()));

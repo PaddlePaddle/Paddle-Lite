@@ -24,12 +24,7 @@ namespace x86 {
 #define DECLARE_TYPE(__name, ...) decltype(auto)
 #endif
 
-void* GetCublasDsoHandle();
-void* GetCUDNNDsoHandle();
-void* GetCUPTIDsoHandle();
-void* GetCurandDsoHandle();
 void* GetWarpCTCDsoHandle();
-void* GetNCCLDsoHandle();
 void* GetTensorRtDsoHandle();
 void* GetMKLMLDsoHandle();
 

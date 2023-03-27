@@ -43,24 +43,6 @@ class SoftmaxGradFunctor {
                   lite::TensorLite* x_grad);
 };
 
-//#ifdef PADDLE_WITH_CUDA
-// template <typename T>
-// class SoftmaxCUDNNFunctor {
-// public:
-//  void operator()(const platform::CUDADeviceContext& context,
-//                  const lite::TensorLite* X, lite::TensorLite* Y);
-//};
-//
-// template <typename T>
-// class SoftmaxGradCUDNNFunctor {
-// public:
-//  void operator()(const platform::CUDADeviceContext& context,
-//                  const lite::TensorLite* Y, const lite::TensorLite* y_grad,
-//                  lite::TensorLite* x_grad);
-//};
-//
-//#endif
-
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

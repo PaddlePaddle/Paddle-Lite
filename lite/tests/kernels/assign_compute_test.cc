@@ -42,7 +42,7 @@ class AssignComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("assign");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
@@ -78,6 +78,8 @@ TEST(Assign, precision) {
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 2e-5;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-5;
 #else
   return;

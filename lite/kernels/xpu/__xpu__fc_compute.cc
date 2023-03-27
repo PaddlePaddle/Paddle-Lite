@@ -39,6 +39,11 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
   quant_int16_ = param.enable_int16;
   CHECK(!(enable_int8_ && quant_int16_))
       << "param enable_int8 and enable_int16 can't be both true";
+  if (enable_int8_ && param.quant_output_max == 0) {
+    CHECK((std::is_same<DY, float>::value))
+        << "when out scale = 0; fc output precision must float.";
+  }
+
   // max
   int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
   input_max_guard_ =
@@ -51,10 +56,20 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
         TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int8_t, int8_t>(
             reinterpret_cast<const int8_t*>(w_ptr),
             weight_dims,
-            w_trans,
+            !w_trans,
             per_channel_ ? param.weight_max.size() : max_ptr_size);
     CHECK(xpu_quant_weight_.max_ptr_ != nullptr)
         << "slim int8 quant xpu_quant_weight_max_ptr should't be null";
+    std::vector<float> cpu_output_max(max_ptr_size, param.quant_output_max);
+    lite::TargetWrapperXPU::MemcpySync(output_max_guard_->addr_,
+                                       cpu_output_max.data(),
+                                       sizeof(float) * max_ptr_size,
+                                       IoDirection::HtoD);
+
+    if (per_channel_) {
+      weight_one_value_guard_ =
+          TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
+    }
     std::vector<float> cpu_input_max(max_ptr_size, param.quant_input_max);
     lite::TargetWrapperXPU::MemcpySync(input_max_guard_->addr_,
                                        cpu_input_max.data(),
@@ -66,6 +81,11 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
           param.weight_max.data(),
           sizeof(float) * param.weight_max.size(),
           IoDirection::HtoD);
+      std::vector<float> cpu_weight_one_value(max_ptr_size, 1.0);
+      lite::TargetWrapperXPU::MemcpySync(weight_one_value_guard_->addr_,
+                                         cpu_weight_one_value.data(),
+                                         sizeof(float) * max_ptr_size,
+                                         IoDirection::HtoD);
     } else {
       VLOG(3) << "set weight max :" << max_ptr_size
               << ", param.weight_max[0]:" << param.weight_max[0];
@@ -83,7 +103,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
         TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int16_t, int16_t>(
             reinterpret_cast<const int16_t*>(w_ptr),
             weight_dims,
-            w_trans,
+            !w_trans,
             max_ptr_size);
     std::vector<float> cpu_w_max(max_ptr_size, param.weight_max[0]);
     CHECK(xpu_quant_weight_.max_ptr_ != nullptr)
@@ -102,7 +122,7 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::PrepareForRun() {
 
   xpu_quant_weight_ =
       TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, TW>(
-          w_ptr, weight_dims, w_trans, max_ptr_size);
+          w_ptr, weight_dims, !w_trans, max_ptr_size);
   if (std::is_same<TW, float>::value) {
     VLOG(6) << "If fc compute precision is int31,must check weight max should "
                "be null ";
@@ -133,13 +153,18 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
 
   bool x_trans = param.transpose_x;
   bool w_trans = param.transpose_w;
+  if (w_trans) {
+    n = param.w->dims()[0];
+  }
   int ldx = (x_trans ? m : k);
-  int ldw = (w_trans ? k : n);
+  int ldw = k;
   int ldy = n;
 
   float* output_max =
       enable_int8_
-          ? reinterpret_cast<float*>(output_max_guard_->addr_)
+          ? param.quant_output_max
+                ? reinterpret_cast<float*>(output_max_guard_->addr_)
+                : nullptr
           : param.output_max->template mutable_data<float>(TARGET(kXPU));
   const auto* bias =
       param.has_bias ? param.bias->template data<float>() : nullptr;
@@ -158,51 +183,35 @@ void XPUFcCompute<TGEMM, TW, DX, DY, PType>::Run() {
   // TODO(weihaoji): remove fc_int31 and fc_int16 after xpu fc wrapper
   // refactor
   int r = 0;
+  float* pc_weight_max_ptr = nullptr;
+  float* weight_max_ptr = nullptr;
   if (per_channel_ && !(std::is_same<TGEMM, float>::value)) {
-    r = xdnn::fc_fusion_pc<DX, TW, DY, TGEMM>(
-        ctx.GetRawContext(),                                       // ctx
-        param.input->template data<DX>(),                          // x
-        reinterpret_cast<const TW*>(xpu_quant_weight_.data_ptr_),  // w
-        param.output->template mutable_data<DY>(TARGET(kXPU)),     // y
-        m,                                                         // m
-        n,                                                         // n
-        k,                                                         // k
-        x_trans,                                                   // x_trans
-        w_trans,                                                   // w_trans
-        input_max,                                                 // x_maxptr
-        nullptr,                                                   // w_maxptr
-        output_max,                                                // y_maxptr
-        ldx,                                                       // ldx
-        ldw,                                                       // ldw
-        ldy,                                                       // ldy
-        1.0f,                                                      // alpha
-        0.0f,                                                      // beta
-        bias,                                                      // bias
-        reinterpret_cast<const float*>(
-            xpu_quant_weight_.max_ptr_),  // per channel weight_max
-        act);
+    pc_weight_max_ptr = reinterpret_cast<float*>(xpu_quant_weight_.max_ptr_);
+    weight_max_ptr = reinterpret_cast<float*>(weight_one_value_guard_->addr_);
   } else {
-    r = xdnn::fc_fusion<DX, TW, DY, TGEMM>(
-        ctx.GetRawContext(),                                         // ctx
-        param.input->template data<DX>(),                            // x
-        reinterpret_cast<const TW*>(xpu_quant_weight_.data_ptr_),    // w
-        param.output->template mutable_data<DY>(TARGET(kXPU)),       // y
-        m,                                                           // m
-        n,                                                           // n
-        k,                                                           // k
-        x_trans,                                                     // x_trans
-        w_trans,                                                     // w_trans
-        input_max,                                                   // x_maxptr
-        reinterpret_cast<const float*>(xpu_quant_weight_.max_ptr_),  // w_maxptr
-        output_max,                                                  // y_maxptr
-        ldx,                                                         // ldx
-        ldw,                                                         // ldw
-        ldy,                                                         // ldy
-        1.0f,                                                        // alpha
-        0.0f,                                                        // beta
-        bias,                                                        // bias
-        act);
+    weight_max_ptr = reinterpret_cast<float*>(xpu_quant_weight_.max_ptr_);
   }
+  r = xdnn::fc_fusion<DX, TW, DY, TGEMM>(
+      ctx.GetRawContext(),                                       // ctx
+      param.input->template data<DX>(),                          // x
+      reinterpret_cast<const TW*>(xpu_quant_weight_.data_ptr_),  // w
+      param.output->template mutable_data<DY>(TARGET(kXPU)),     // y
+      m,                                                         // m
+      n,                                                         // n
+      k,                                                         // k
+      x_trans,                                                   // x_trans
+      true,                                                      // w_trans
+      input_max,                                                 // x_maxptr
+      weight_max_ptr,                                            // w_maxptr
+      output_max,                                                // y_maxptr
+      ldx,                                                       // ldx
+      ldw,                                                       // ldw
+      ldy,                                                       // ldy
+      param.alpha,                                               // alpha
+      0.0f,                                                      // beta
+      bias,                                                      // bias
+      act,                                                       // act
+      pc_weight_max_ptr);  // per channel weight_max
   CHECK_EQ(r, 0);
 }
 
@@ -233,6 +242,15 @@ using XPUFC_Int8_FP32_FP32 =
 
 using XPUFC_FP32_LOCAL_QUANT =
     xpu::XPUFcCompute<float, float, float, float, PRECISION(kFloat)>;
+
+using XPUFC_Int8_Int8_FP32 =
+    xpu::XPUFcCompute<int8_t, int8_t, int8_t, float, PRECISION(kInt8)>;
+
+using XPUFC_Int8_Int8_Int8 =
+    xpu::XPUFcCompute<int8_t, int8_t, int8_t, int8_t, PRECISION(kInt8)>;
+
+using XPUFC_Int8_Int8_FP32_Int8 =
+    xpu::XPUFcCompute<int8_t, int8_t, float, int8_t, PRECISION(kInt8)>;
 
 REGISTER_LITE_KERNEL(
     __xpu__fc, kXPU, kFloat, kNCHW, XPUFC_FP32, XPU_Real_kFloat)
@@ -299,8 +317,6 @@ REGISTER_LITE_KERNEL(
     .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-using XPUFC_Int8_Int8_Int8 =
-    xpu::XPUFcCompute<int8_t, int8_t, int8_t, int8_t, PRECISION(kInt8)>;
 REGISTER_LITE_KERNEL(
     __xpu__fc, kXPU, kInt8, kNCHW, XPUFC_Int8_Int8_Int8, XPU_Int8_Int8_Int8)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
@@ -312,8 +328,6 @@ REGISTER_LITE_KERNEL(
     .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-using XPUFC_Int8_Int8_FP32 =
-    xpu::XPUFcCompute<int8_t, int8_t, int8_t, float, PRECISION(kInt8)>;
 REGISTER_LITE_KERNEL(
     __xpu__fc, kXPU, kInt8, kNCHW, XPUFC_Int8_Int8_FP32, XPU_Int8_Int8_FP32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
@@ -336,5 +350,21 @@ REGISTER_LITE_KERNEL(__xpu__fc,
     .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(__xpu__fc,
+                     kXPU,
+                     kInt8,
+                     kNCHW,
+                     XPUFC_Int8_Int8_FP32_Int8,
+                     XPU_Int8_Int8_FP32_Int8)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("InputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
     .BindOutput("OutputMax", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

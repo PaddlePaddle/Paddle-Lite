@@ -20,8 +20,12 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
-
-class MatMulCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <typename TGEMM,
+          typename TW,
+          typename DX,
+          typename DY,
+          PrecisionType PType>
+class MatMulCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::MatMulParam;
 

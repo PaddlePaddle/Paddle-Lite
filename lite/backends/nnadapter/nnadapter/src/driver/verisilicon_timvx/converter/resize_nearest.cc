@@ -16,6 +16,7 @@
 #include "driver/verisilicon_timvx/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace verisilicon_timvx {
@@ -28,14 +29,44 @@ int ConvertResizeNearest(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
+  if (shape_operand != nullptr) {
+    auto shape_tensor = converter->GetMappedTensor(shape_operand);
+    if (shape_tensor == nullptr) {
+      shape_tensor = converter->ConvertOperand(shape_operand);
+    }
+  }
   auto output_tensor = converter->ConvertOperand(output_operand);
 
-  float factor = reinterpret_cast<float*>(input_operands[2]->buffer)[0];
+  float factor = 0.0f;
+  if (scales_operand) {
+    NNADAPTER_CHECK(IsConstantOperand(scales_operand));
+    factor = reinterpret_cast<float*>(scales_operand->buffer)[0] ==
+                     reinterpret_cast<float*>(scales_operand->buffer)[1]
+                 ? reinterpret_cast<float*>(scales_operand->buffer)[0]
+                 : 0;
+  } else {
+    NNADAPTER_CHECK(
+        shape_operand && IsConstantOperand(shape_operand) &&
+        (input_operand->type.dimensions.data[2] != NNADAPTER_UNKNOWN));
+    factor =
+        static_cast<float>(output_operand->type.dimensions.data[2] /
+                           input_operand->type.dimensions.data[2]) ==
+                static_cast<float>(output_operand->type.dimensions.data[3] /
+                                   input_operand->type.dimensions.data[3])
+            ? static_cast<float>(output_operand->type.dimensions.data[2] /
+                                 input_operand->type.dimensions.data[2])
+            : 0;
+  }
+  bool half_pixel_centers =
+      (static_cast<float>(output_operand->type.dimensions.data[2] /
+                          input_operand->type.dimensions.data[2]) > 4) ||
+      (static_cast<float>(output_operand->type.dimensions.data[3] /
+                          input_operand->type.dimensions.data[3]) > 4);
   auto resize_op = converter->graph()->CreateOperation<tim::vx::ops::Resize>(
       tim::vx::ResizeType::NEAREST_NEIGHBOR,
       factor,
       align_corners,
-      false,
+      half_pixel_centers,
       output_operand->type.dimensions.data[2],
       output_operand->type.dimensions.data[3]);
   resize_op->BindInputs({input_tensor});

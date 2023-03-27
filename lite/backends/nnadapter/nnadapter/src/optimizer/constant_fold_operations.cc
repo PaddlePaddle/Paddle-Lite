@@ -50,7 +50,7 @@ class ConstantFoldOperationsFuser : public PatternMatcher {
 
 void ConstantFoldOperationsFuser::BuildPattern() {
   // Create patterns
-  auto operation = CreatePattern("operation")->IsOperation();
+  CreatePattern("operation")->IsOperation();
 }
 
 bool ConstantFoldOperationsFuser::HandleMatchedResults(

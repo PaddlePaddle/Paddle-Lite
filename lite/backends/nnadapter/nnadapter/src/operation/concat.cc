@@ -67,6 +67,17 @@ NNADAPTER_EXPORT int ExecuteConcat(core::Operation* operation) {
                             axis,
                             reinterpret_cast<float*>(output_buffer));
     } break;
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER: {
+      std::vector<int8_t*> input_datas;
+      for (int i = 0; i < input_count - 1; i++) {
+        input_datas.push_back(
+            reinterpret_cast<int8_t*>(input_operands[i]->buffer));
+      }
+      status = math::concat(input_datas,
+                            input_shapes,
+                            axis,
+                            reinterpret_cast<int8_t*>(output_buffer));
+    } break;
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported precision code("
                            << OperandPrecisionCodeToString(input_precision)

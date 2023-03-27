@@ -68,7 +68,6 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     w_ext_dims[1] = ROUND_UP(w_dims[1], 4);
     w_cpu_t->Resize(w_ext_dims);
     auto* w_buffer_data = MUTABLE_DATA_CPU(w_cpu_t.get());
-    size_t buf_size = w_cpu_t->memory_size();
 
     auto* w_cpu = param.w->mutable_data<float>();
     OI2OIO4I4(w_cpu, w_buffer_data, w_dims[0], w_dims[1]);

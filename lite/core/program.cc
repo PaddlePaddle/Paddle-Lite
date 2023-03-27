@@ -28,9 +28,6 @@
 #ifdef LITE_WITH_PRECISION_PROFILE
 #include "lite/core/profile/precision_profiler.h"
 #endif
-#ifdef LITE_WITH_FPGA
-#include "lite/backends/fpga/monitor.hpp"
-#endif
 
 namespace paddle {
 namespace lite {
@@ -596,43 +593,13 @@ void RuntimeProgram::Run() {
       inst_precision_profiler.GetSummaryHeader();
 #endif
 
-#ifdef LITE_WITH_NVTX
-  const NVTXAnnotator& annotator = NVTXAnnotator::Global();
-  NVTXRangeAnnotation annotation_one_loop = annotator.AnnotateBlock();
-  if (annotator.IsEnabled()) {
-    annotation_one_loop.generate(register_layer_names_.back(),
-                                 lite::Color::Engine);
-  }
-#endif
-
-#ifdef LITE_WITH_FPGA
-  Monitor& monitor = Monitor::get_instance();
-  monitor.inferStart();
-#endif
-
   int idx = -1;
 
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_METAL)
     if (inst.is_feed_fetch_op()) continue;
-#endif
-#ifdef LITE_WITH_NVTX
-    NVTXRangeAnnotation annotation = annotator.AnnotateBlock();
-    nvtxStringHandle_t registered_name = register_layer_names_[idx];
-    if (annotator.IsEnabled()) {
-      annotation.generate(registered_name, lite::Color::Runner);
-    }
-#endif
-#ifdef LITE_WITH_CUDA
-    if (inst.need_sync()) {
-      inst.Sync();
-    }
-#endif
-
-#ifdef LITE_WITH_FPGA
-    monitor.preRun(inst);
 #endif
 
 #ifdef LITE_WITH_OPENCL
@@ -641,18 +608,11 @@ void RuntimeProgram::Run() {
 #endif
 
     inst.Run();
-
-#ifdef LITE_WITH_FPGA
-    monitor.postRun(inst);
-#endif
-
 #ifdef LITE_WITH_PRECISION_PROFILE
-#ifndef LITE_WITH_FPGA
     if (inst.op()->Type() != "while") {
       precision_profiler_summary +=
           inst_precision_profiler.GetInstPrecision(&inst);
     }
-#endif
 #endif  // LITE_WITH_PRECISION_PROFILE
   }
 
@@ -663,9 +623,6 @@ void RuntimeProgram::Run() {
   }
 #endif
 
-#ifdef LITE_WITH_PROFILE
-  LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 1);
-#endif
 #ifdef LITE_WITH_PRECISION_PROFILE
   LOG(INFO) << "\n"
             << precision_profiler_summary
@@ -753,26 +710,6 @@ void Program::PrepareWorkspace(
       const auto& var_type = var_desc->GetType();
       VLOG(4) << "Var " << var_name << " in block " << block_idx;
       VLOG(4) << " - type " << static_cast<int>(var_type);
-
-#if defined(LITE_WITH_XPU) || defined(LITE_WITH_CUDA)
-      if (!var_desc->Persistable()) {
-#endif
-        // Collect precision info into var_type_map_
-        if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
-          const auto& var_data_type =
-              VarDescType2PrecisionType(var_desc->GetDataType());
-          if (var_data_type != PRECISION(kUnk)) {
-            var_type_map_[var_name] = LiteType::GetTensorTy(
-                TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
-          }
-          VLOG(4) << " - data type " << static_cast<int>(var_data_type);
-        } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
-          var_type_map_[var_name] = LiteType::GetTensorListTy(
-              TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
-        }
-#if defined(LITE_WITH_XPU) || defined(LITE_WITH_CUDA)
-      }
-#endif
       // Create tensors or weights from variable description.
       if (!var_desc->Persistable()) {
         vars_.push_back(var_name);
@@ -806,6 +743,18 @@ void Program::PrepareWorkspace(
           var->GetMutable<std::vector<lite::Scope*>>();
         }
       } else {
+        if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
+          const auto& var_data_type =
+              VarDescType2PrecisionType(var_desc->GetDataType());
+          if (var_data_type != PRECISION(kUnk)) {
+            var_type_map_[var_name] = LiteType::GetTensorTy(
+                TARGET(kUnk), var_data_type, DATALAYOUT(kUnk));
+          }
+          VLOG(4) << " - data type " << static_cast<int>(var_data_type);
+        } else if (var_type == lite::VarDescAPI::Type::LOD_TENSOR_ARRAY) {
+          var_type_map_[var_name] = LiteType::GetTensorListTy(
+              TARGET(kUnk), PRECISION(kUnk), DATALAYOUT(kUnk));
+        }
         if (var_name == "feed" || var_name == "fetch") continue;
         weights_.push_back(var_name);
         scope_->Var(var_name);
@@ -832,6 +781,12 @@ void Instruction::Run() {
   CHECK(profiler_) << "Profiler pointer of kernel can not be nullptr. "
                       "When LITE_WITH_PROFILE is defined, please set a "
                       "Profiler for Instruction.";
+  if (first_epoch_for_profiler_) {
+    kernel_->SetIsKernelTest(false);
+    auto* op_ch = profiler_->GetOpCharacter(profile_id_);
+    SetProfileRuntimeOpInfo(op_ch);
+    first_epoch_for_profiler_ = false;
+  }
   profiler_->StartTiming(
       profile::Type::kCreate, profile_id_, kernel_->mutable_context());
 #endif
@@ -850,15 +805,6 @@ void Instruction::Run() {
   op_->InferShape();
   kernel_->Launch();
   has_run_ = true;
-
-#ifdef LITE_WITH_PROFILE
-  if (first_epoch_for_profiler_) {
-    kernel_->SetIsKernelTest(false);
-    auto* op_ch = profiler_->GetOpCharacter(profile_id_);
-    SetProfileRuntimeOpInfo(op_ch);
-    first_epoch_for_profiler_ = false;
-  }
-#endif
 }
 
 STL::ostream& operator<<(STL::ostream& os, const Instruction& other) {

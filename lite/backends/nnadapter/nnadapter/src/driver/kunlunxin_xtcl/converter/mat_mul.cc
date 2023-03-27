@@ -45,23 +45,43 @@ int ConvertMatMul(Converter* converter, core::Operation* operation) {
     // x: [B, ..., M, K], y: [B, ..., K, N], out: [B, ..., M, N]
     // x: [B, M, K], y: [K, N], out: [B, M, N]
     // Reshape to 3 dimension and transposed x expr
+    auto x_m = static_cast<int>(x_dims.data[x_dims_size - 2]);
+    auto x_k = static_cast<int>(x_dims.data[x_dims_size - 1]);
+    auto x_batch_size = static_cast<int>(
+        ProductionOfDimensions(x_dims.data, x_dims_size) / (x_m * x_k));
+    std::vector<int> x_shape{x_batch_size, x_m, x_k};
     if (x_dims_size != 3) {
-      auto m = static_cast<int>(x_dims.data[x_dims_size - 2]);
-      auto k = static_cast<int>(x_dims.data[x_dims_size - 1]);
-      x_expr = converter->builder()->CreateReshape(x_expr, {-1, m, k});
-      if (transpose_x) {
-        x_expr = converter->builder()->CreateTranspose(x_expr, {0, 2, 1});
-      }
+      x_expr = converter->builder()->CreateReshape(x_expr, {-1, x_m, x_k});
+    }
+    if (transpose_x) {
+      x_expr = converter->builder()->CreateTranspose(x_expr, {0, 2, 1});
+      x_shape[1] = x_k;
+      x_shape[2] = x_m;
     }
     // Reshape to 3 dimension and transposed y expr
-    if (y_dims_size != 3) {
-      auto k = static_cast<int>(y_dims.data[y_dims_size - 2]);
-      auto n = static_cast<int>(y_dims.data[y_dims_size - 1]);
-      y_expr = converter->builder()->CreateReshape(y_expr, {-1, k, n});
-      if (!transpose_y) {
-        y_expr = converter->builder()->CreateTranspose(y_expr, {0, 2, 1});
-      }
+    auto y_k = static_cast<int>(y_dims.data[y_dims_size - 2]);
+    auto y_n = static_cast<int>(y_dims.data[y_dims_size - 1]);
+    auto y_batch_size = static_cast<int>(
+        ProductionOfDimensions(y_dims.data, y_dims_size) / (y_k * y_n));
+    std::vector<int> y_shape{y_batch_size, y_k, y_n};
+    if (y_dims_size == 2) {
+      y_expr = converter->builder()->CreateExpandDims(y_expr, 0);
     }
+    if (y_dims_size > 3) {
+      y_expr = converter->builder()->CreateReshape(y_expr, {-1, y_k, y_n});
+    }
+    if (!transpose_y) {
+      y_expr = converter->builder()->CreateTranspose(y_expr, {0, 2, 1});
+      y_shape[1] = y_n;
+      y_shape[2] = y_k;
+    }
+    NNADAPTER_CHECK(x_shape[0] == y_shape[0] || x_shape[0] == 1 ||
+                    y_shape[0] == 1)
+        << "Batch dimensions don't match, but recieved x_shape[0]: "
+        << x_shape[0] << ", y_shape[0]: " << y_shape[0];
+    NNADAPTER_CHECK_EQ(x_shape[2], y_shape[2])
+        << "Expect x_shape[2] == y_shape[2], but recieved x_shape[2]: "
+        << x_shape[2] << ", y_shape[2]: " << y_shape[2];
     matmul_expr = converter->builder()->CreateBatchMatmul(x_expr, y_expr);
     auto output_dims = output_operand->type.dimensions;
     if (output_dims.count != 3) {
@@ -74,9 +94,16 @@ int ConvertMatMul(Converter* converter, core::Operation* operation) {
     if (transpose_x) {
       x_expr = converter->builder()->CreateTranspose(x_expr, {1, 0});
     }
-    matmul_expr =
-        converter->builder()->CreateMatmul2D(x_expr, y_expr, transpose_y);
-  } else if (x_dims_size == 1 && y_dims_size == 1) {
+    if (!transpose_y) {
+      y_expr = converter->builder()->CreateTranspose(y_expr, {1, 0});
+    }
+    // Add batch dimension
+    x_expr = converter->builder()->CreateExpandDims(x_expr, 0);
+    y_expr = converter->builder()->CreateExpandDims(y_expr, 0);
+    matmul_expr = converter->builder()->CreateBatchMatmul(x_expr, y_expr);
+    // Remove batch dimension
+    matmul_expr = converter->builder()->CreateSqueeze(matmul_expr, {0});
+  } else {
     // x: [K], y: [K], out: [1]
     // x: [M], y: [N], x_transpose: true, y_transpose: true, out: [M, N]
     NNADAPTER_LOG(FATAL) << "Unsupported dims"

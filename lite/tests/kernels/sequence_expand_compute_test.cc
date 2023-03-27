@@ -115,7 +115,7 @@ class SequenceExpandComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("sequence_expand");
     op_desc->SetInput("X", {input_x_});
     op_desc->SetInput("Y", {input_y_});
@@ -174,7 +174,10 @@ void test_sequence_expand(Place place) {
 
 TEST(SequenceExpand, precision) {
   Place place;
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+// only supported xpu2 now, xpu1 will be supported later.
+#if 0 && defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
   return;

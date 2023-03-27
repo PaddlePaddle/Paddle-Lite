@@ -4,7 +4,6 @@ set -e
 
 TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
-CUDNN_ROOT="/usr/local/cudnn"
 LITE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}")/../../" && pwd )"
 NUM_PROC=4
 
@@ -13,7 +12,7 @@ readonly common_flags="-DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
 
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
-readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
+readonly THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 
 readonly workspace=$PWD
 
@@ -116,8 +115,7 @@ function check_coverage() {
 
 function cmake_x86 {
     prepare_workspace
-    #cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags}
-    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON  -DWITH_COVERAGE=$LITE_WITH_COVERAGE ${common_flags}
+    cmake ..  -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON  -DWITH_COVERAGE=$LITE_WITH_COVERAGE ${common_flags}
 }
 
 function cmake_opencl {
@@ -127,9 +125,7 @@ function cmake_opencl {
     # $3: ARM_TARGET_LANG in "gcc" "clang"
     cmake .. \
         -DLITE_WITH_OPENCL=ON \
-        -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
@@ -216,7 +212,7 @@ function build_opencl {
 # This method is only called in CI.
 function cmake_x86_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake ..  -DWITH_GPU=OFF -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
+    cmake ..  -DWITH_MKLDNN=OFF -DLITE_WITH_X86=ON ${common_flags} -DLITE_WITH_PROFILE=ON -DWITH_MKL=ON \
         -DLITE_BUILD_EXTRA=ON -DWITH_COVERAGE=ON -DWITH_AVX=ON
 
     # Compile and execute the gen_code related test, so it will generate some code, and make the compilation reasonable.
@@ -225,16 +221,6 @@ function cmake_x86_for_CI {
     # ctest -R test_cxx_api
     # ctest -R test_gen_code
     # make test_generated_code -j$NUM_CORES_FOR_COMPILE
-}
-
-function cmake_cuda_for_CI {
-    prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake ..  -DLITE_WITH_CUDA=ON -DWITH_MKLDNN=OFF -DLITE_WITH_X86=OFF ${common_flags} -DLITE_WITH_PROFILE=OFF -DWITH_MKL=OFF -DLITE_BUILD_EXTRA=ON -DCUDNN_ROOT=${CUDNN_ROOT}
-}
-
-function cmake_gpu {
-    prepare_workspace
-    cmake .. " -DWITH_GPU=ON {common_flags} -DLITE_WITH_GPU=ON"
 }
 
 function check_style {
@@ -317,24 +303,12 @@ function build_test_coverage {
     test_server
 }
 
-# The CUDA version of CI is cuda_10.1.243_418.87.00_linux.
-# The cuDNN version is cudnn-10.1-linux-x64-v7.5.0.56.
-function build_test_cuda_server {
-    mkdir -p ./build
-    cd ./build
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
-    cmake_cuda_for_CI
-    make -j$NUM_CORES_FOR_COMPILE
-    # temporary remove cuda unittest because the ci PR_CI_Paddle-Lite-server-cuda10.1(ubt16-gcc5.4) is in cpu machine and only build.
-    # ctest -R "/*_cuda_test" -V
-}
-
 function build_test_train {
     mkdir -p ./build
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/paddle/build/third_party/install/mklml/lib"
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake .. -DWITH_GPU=OFF -DWITH_PYTHON=ON -DLITE_WITH_X86=ON -DLITE_WITH_ARM=OFF -DWITH_TESTING=ON -DWITH_MKL=OFF \
+    cmake .. -DWITH_PYTHON=ON -DLITE_WITH_X86=ON -DLITE_WITH_ARM=OFF -DWITH_TESTING=ON -DWITH_MKL=OFF \
         -DLITE_BUILD_EXTRA=ON \
 
     make test_gen_code -j$NUM_CORES_FOR_COMPILE
@@ -383,7 +357,6 @@ function build_test_xpu {
     prepare_workspace
     cmake .. \
         ${common_flags} \
-        -DWITH_GPU=OFF \
         -DWITH_MKLDNN=OFF \
         -DLITE_WITH_X86=ON \
         -DWITH_MKL=ON \
@@ -658,86 +631,6 @@ function run_all_tests_on_remote_device {
     done
 }
 
-# Huawei Kirin NPU
-function huawei_kirin_npu_prepare_device {
-    local remote_device_name=$1
-    local remote_device_work_dir=$2
-    local remote_device_check=$3
-    local remote_device_run=$4
-    local arch=$5
-    local toolchain=$6
-    local sdk_root_dir=$7
-
-    # Check device is available
-    $remote_device_check $remote_device_name
-    if [[ $? -ne 0 ]]; then
-        echo "$remote_device_name not found!"
-        exit 1
-    fi
-
-    # Create work dir on the remote device
-    if [[ -z "$remote_device_work_dir" ]]; then
-        echo "$remote_device_work_dir can't be empty!"
-        exit 1
-    fi
-    if [[ "$remote_device_work_dir" == "/" ]]; then
-        echo "$remote_device_work_dir can't be root dir!"
-        exit 1
-    fi
-    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
-    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
-
-    # Only root user can use HiAI runtime libraries in the android shell executables
-    $remote_device_run $remote_device_name root
-    if [[ $? -ne 0 ]]; then
-        echo "$remote_device_name hasn't the root permission!"
-        exit 1
-    fi
-
-    # Copy the runtime libraries of HiAI DDK to the target device
-    local sdk_lib_dir=""
-    if [[ $arch == "armv8" ]]; then
-        sdk_lib_dir="$sdk_root_dir/lib64"
-    elif [[ $arch == "armv7" ]]; then
-        sdk_lib_dir="$sdk_root_dir/lib"
-    else
-        echo "$arch isn't supported by HiAI DDK!"
-        exit 1
-    fi
-    $remote_device_run $remote_device_name push "$sdk_lib_dir/*" "$remote_device_work_dir"
-}
-
-function huawei_kirin_npu_build_target {
-    local arch=$1
-    local toolchain=$2
-    local sdk_root_dir=$3
-
-    # Build all of tests
-    rm -rf ./build
-    mkdir -p ./build
-    cd ./build
-    prepare_workspace
-    cmake .. \
-        -DWITH_GPU=OFF \
-        -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
-        -DLITE_WITH_X86=OFF \
-        -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON   \
-        -DWITH_TESTING=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_TRAIN=ON \
-        -DANDROID_STL_TYPE="c++_shared" \
-        -DLITE_WITH_NPU=ON \
-        -DNPU_DDK_ROOT="$sdk_root_dir" \
-        -DARM_TARGET_OS="android" -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-}
-
-function huawei_kirin_npu_build_and_test {
-    run_all_tests_on_remote_device $1 "/data/local/tmp/ci" adb_device_pick adb_device_check adb_device_run $2 "$(readlink -f ./hiai_ddk_lib_330)" "armv7" "gcc,clang" huawei_kirin_npu_build_target huawei_kirin_npu_prepare_device
-}
-
 # Rockchip NPU
 function rockchip_npu_prepare_device {
     local remote_device_name=$1
@@ -821,9 +714,7 @@ function armlinux_build_target {
     cd ./build
     prepare_workspace
     cmake .. \
-        -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
@@ -1018,9 +909,7 @@ function cmake_arm {
     # $2: ARM_TARGET_ARCH_ABI in "armv8", "armv7" ,"armv7hf"
     # $3: ARM_TARGET_LANG in "gcc" "clang"
     cmake .. \
-        -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
@@ -1075,9 +964,7 @@ function build_ios {
     touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
 
     cmake .. \
-            -DWITH_GPU=OFF \
             -DWITH_MKL=OFF \
-            -DLITE_WITH_CUDA=OFF \
             -DLITE_WITH_X86=OFF \
             -DLITE_WITH_ARM=ON \
             -DWITH_TESTING=OFF \
@@ -1358,9 +1245,7 @@ function mobile_publish {
     cd $build_dir
 
     cmake .. \
-        -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_TESTING=OFF \
@@ -1379,7 +1264,6 @@ function print_usage {
     echo
     echo "----------------------------------------"
     echo -e "cmake_x86: run cmake with X86 mode"
-    echo -e "cmake_cuda: run cmake with CUDA mode"
     echo -e "--arm_os=<os> --arm_abi=<abi> cmake_arm: run cmake with ARM mode"
     echo
     echo -e "build: compile the tests"
@@ -1463,10 +1347,6 @@ function main {
                 cmake_opencl $ARM_OS $ARM_ABI $ARM_LANG
                 shift
                 ;;
-            cmake_cuda)
-                cmake_cuda
-                shift
-                ;;
             cmake_arm)
                 cmake_arm $ARM_OS $ARM_ABI $ARM_LANG
                 shift
@@ -1495,10 +1375,6 @@ function main {
                 test_huawei_ascend_npu
                 shift
                 ;;
-            build_test_cuda_server)
-                build_test_cuda_server
-                shift
-                ;;
             build_test_server)
                 build_test_server
                 shift
@@ -1510,10 +1386,6 @@ function main {
                 ;;
             build_test_xpu)
                 build_test_xpu OFF
-                shift
-                ;;
-            huawei_kirin_npu_build_and_test)
-                huawei_kirin_npu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST
                 shift
                 ;;
             rockchip_npu_build_and_test_adb)
@@ -1538,10 +1410,6 @@ function main {
                 ;;
             build_test_arm)
                 build_test_arm
-                shift
-                ;;
-            build_test_npu)
-                build_test_npu $TEST_NAME
                 shift
                 ;;
             build_test_arm_opencl)

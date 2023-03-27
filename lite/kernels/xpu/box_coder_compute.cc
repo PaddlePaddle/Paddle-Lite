@@ -66,7 +66,8 @@ void BoxCoderCompute::Run() {
   output_box->Resize({row, col, len});
   auto* output = output_box->mutable_data<float>(TARGET(kXPU));
   float* variance_xpu_ptr =
-      reinterpret_cast<float*>(variance_xpu_guard_->addr_);
+      variance_xpu_guard_ ? reinterpret_cast<float*>(variance_xpu_guard_->addr_)
+                          : nullptr;
 
   if (code_type == "encode_center_size") {
     int r = xdnn::box_coder_encoder<float>(ctx.GetRawContext(),

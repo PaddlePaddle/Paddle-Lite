@@ -102,5 +102,7 @@ typedef paddle::lite::kernels::arm::Pad2dCompute<PRECISION(kFloat),
     Pad2dFp32;
 REGISTER_LITE_KERNEL(pad2d, kARM, kFloat, kNCHW, Pad2dFp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Paddings",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

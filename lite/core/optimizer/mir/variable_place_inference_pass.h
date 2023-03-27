@@ -63,20 +63,11 @@ class VariablePlaceInferencePass : public DebugPass {
                      const LiteType& type,
                      const std::map<std::string, bool>& with_targets) {
     VLOG(4) << "type.precision():" << PrecisionRepr(type.precision());
-    if (with_targets.at("kFPGA")) {
-      weight_node->AsArg().type = LiteType::GetTensorTy(
-          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    } else if (with_targets.at("kOpenCL")) {
-      weight_node->AsArg().type = LiteType::GetTensorTy(
-          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    } else if (with_targets.at("kCUDA")) {
+    if (with_targets.at("kOpenCL")) {
       weight_node->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     } else if (with_targets.at("kMetal") &&
                type.precision() == PRECISION(kUnk)) {
-      weight_node->AsArg().type = LiteType::GetTensorTy(
-          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
-    } else if (with_targets.at("kXPU")) {
       weight_node->AsArg().type = LiteType::GetTensorTy(
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
     } else {
@@ -129,13 +120,10 @@ class VariablePlaceInferencePass : public DebugPass {
     };
     std::map<std::string, bool> with_targets{
         {"kOpenCL", valid_places_has_target(TARGET(kOpenCL))},
-        {"kCUDA", valid_places_has_target(TARGET(kCUDA))},
-        {"kFPGA", valid_places_has_target(TARGET(kFPGA))},
         {"kMetal", valid_places_has_target(TARGET(kMetal))},
         {"kXPU", valid_places_has_target(TARGET(kXPU))},
     };
     VLOG(4) << "with_targets['kOpenCL']:" << with_targets["kOpenCL"];
-    VLOG(4) << "with_targets['kFPGA']:" << with_targets["kFPGA"];
     VLOG(4) << "with_targets['kXPU']:" << with_targets["kXPU"];
 
     VLOG(3) << "param-type-registry:\n" << ParamTypeRegistry::Global();
@@ -146,10 +134,8 @@ class VariablePlaceInferencePass : public DebugPass {
       auto& kernel = inst.picked_kernel();
 
       // The IoCopyOp is a tool operator, it won't support the type inference.
-      // in fpga, we has io_copy+cali+layout tool ops, so we need type inference
-      // for tool operator
-      if (with_targets["kFPGA"] || with_targets["kOpenCL"]) {
-        VLOG(3) << "skip 'io_copy' if target is FPGA or OpenCL";
+      if (with_targets["kOpenCL"]) {
+        VLOG(3) << "skip 'io_copy' if target is OpenCL";
         if (op_type == "io_copy") continue;
       }
 
@@ -176,7 +162,8 @@ class VariablePlaceInferencePass : public DebugPass {
             *var_type = decl_type;
           }
         } else if (!(*var_type)->place().is_valid()) {
-          if (var.is_weight && with_targets["kMetal"]) {
+          if (var.is_weight &&
+              (with_targets["kMetal"] || with_targets["kXPU"])) {
             SetWeightType(in_node, **var_type, with_targets);
           } else if (decl_type->precision() == PRECISION(kInt8) ||
                      (decl_type->precision() == PRECISION(kFP16) &&
@@ -217,6 +204,10 @@ class VariablePlaceInferencePass : public DebugPass {
             *var_type = decl_type;
           } else {
             UpdateTypeFrom(var_type, decl_type);
+          }
+          if (with_targets["kXPU"]) {
+            var.is_weight = false;
+            var.is_persist = false;
           }
         }
       }
@@ -262,47 +253,37 @@ class VariablePlaceInferencePass : public DebugPass {
           // update op's input variables precision from graph nodes info
           //    ps. op's input variables are stored in exec_scope, while
           //        graph node info is a temporary structure.
-          auto UpdateOpInputsFromNodeInfo = [&]() {
-            for (auto* in : node->inlinks) {
-              if (!(in->AsArg().is_weight) && in->AsArg().type->IsTensor()) {
-                auto in_arg_name = in->AsArg().name;
-                auto* tmp_tensor = node->AsStmt()
-                                       .op()
-                                       ->scope()
-                                       ->Var(in_arg_name)
-                                       ->GetMutable<lite::Tensor>();
-                tmp_tensor->set_precision(in->AsArg().type->precision());
-              }
+          for (auto* in : node->inlinks) {
+            if (!(in->AsArg().is_weight) && in->AsArg().type->IsTensor()) {
+              auto in_arg_name = in->AsArg().name;
+              auto* in_tensor = node->AsStmt()
+                                    .op()
+                                    ->scope()
+                                    ->Var(in_arg_name)
+                                    ->GetMutable<lite::Tensor>();
+              in_tensor->set_precision(in->AsArg().type->precision());
             }
-          };
-
-          // update graph nodes precision info from op's output variables
-          //    ps. op's output variables are stored in exec_scope, while
-          //        graph node info is a temporary structure.
-          auto UpdateNodeInfoFromOpOutputs = [&] {
-            for (auto* out : node->outlinks) {
-              if (!(out->AsArg().is_weight) && out->AsArg().type->IsTensor()) {
-                auto out_arg_name = out->AsArg().name;
-                auto* tmp_tensor = node->AsStmt()
-                                       .op()
-                                       ->scope()
-                                       ->Var(out_arg_name)
-                                       ->GetMutable<lite::Tensor>();
-                out->AsArg().type =
-                    LiteType::GetTensorTy(out->AsArg().type->target(),
-                                          tmp_tensor->precision(),
-                                          out->AsArg().type->layout());
-              }
-            }
-          };
-
-          // update op's input variables precision from graph nodes info
-          UpdateOpInputsFromNodeInfo();
+          }
           // update op's output precision from input precision by applying
           // InferType
           inst.op()->InferType();
           // update graph nodes precision info from op's output variables
-          UpdateNodeInfoFromOpOutputs();
+          //    ps. op's output variables are stored in exec_scope, while
+          //        graph node info is a temporary structure.
+          for (auto* out : node->outlinks) {
+            if (!(out->AsArg().is_weight) && out->AsArg().type->IsTensor()) {
+              auto out_arg_name = out->AsArg().name;
+              auto* out_tensor = node->AsStmt()
+                                     .op()
+                                     ->scope()
+                                     ->Var(out_arg_name)
+                                     ->GetMutable<lite::Tensor>();
+              out->AsArg().type =
+                  LiteType::GetTensorTy(out->AsArg().type->target(),
+                                        out_tensor->precision(),
+                                        out->AsArg().type->layout());
+            }
+          }
         }
       }
     }

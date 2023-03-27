@@ -57,7 +57,7 @@ class SequenceReverseTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("sequence_reverse");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Y", {y_});

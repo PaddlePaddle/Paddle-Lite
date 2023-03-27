@@ -28,6 +28,8 @@ OPTMODEL_DIR=""
 WITH_STRIP=OFF
 IOS_DEPLOYMENT_TARGET=9.0
 BUILD_ARM82_FP16=OFF
+# use Arm DNN library instead of built-in math library, defaults to OFF.
+WITH_ADNN=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -86,7 +88,6 @@ function make_ios {
     mkdir -p ./${GEN_CODE_PATH_PREFIX}
     touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
     cmake $workspace $cmake_common_options \
-            -DWITH_LITE=ON \
             -DLITE_WITH_METAL=$WITH_METAL \
             -DLITE_WITH_ARM=ON \
             -DLITE_WITH_XCODE=$WITH_XCODE \
@@ -94,7 +95,6 @@ function make_ios {
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DLITE_WITH_X86=OFF \
             -DLITE_WITH_LOG=$WITH_LOG \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
@@ -105,6 +105,7 @@ function make_ios {
             -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
             -DLITE_WITH_CV=$WITH_CV \
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
+            -DLITE_WITH_ADNN=$WITH_ADNN \
             -DARM_TARGET_OS=$os
 
     if [ "${WITH_XCODE}" == "ON" ]; then
@@ -201,6 +202,11 @@ function main {
             # controls whether to include FP16 kernels, default is OFF
             --with_arm82_fp16=*)
                 BUILD_ARM82_FP16="${i#*=}"
+                shift
+                ;;
+            # use Arm DNN library
+             --with_adnn=*)
+                WITH_ADNN="${i#*=}"
                 shift
                 ;;
             help)

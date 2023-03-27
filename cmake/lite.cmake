@@ -37,19 +37,13 @@ endfunction()
 function (lite_deps TARGET)
   set(options "")
   set(oneValueArgs "")
-  set(multiValueArgs DEPS X86_DEPS CUDA_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS METAL_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS IMAGINATION_NNA_DEPS APU_DEPS NNADAPTER_DEPS CV_DEPS ARGS)
+  set(multiValueArgs DEPS X86_DEPS ARM_DEPS PROFILE_DEPS LIGHT_DEPS HVY_DEPS CL_DEPS METAL_DEPS XPU_DEPS NNADAPTER_DEPS CV_DEPS ARGS)
   cmake_parse_arguments(lite_deps "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   set(deps ${lite_deps_DEPS})
 
   if(LITE_WITH_X86)
     foreach(var ${lite_deps_X86_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
-  if(LITE_WITH_CUDA)
-    foreach(var ${lite_deps_CUDA_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
   endif()
@@ -95,38 +89,8 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
-  if (LITE_WITH_FPGA)
-    foreach(var ${lite_deps_FPGA_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
-  if (LITE_WITH_INTEL_FPGA)
-    foreach(var ${lite_deps_INTEL_FPGA_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
-  if (LITE_WITH_NPU)
-    foreach(var ${lite_deps_NPU_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
   if (LITE_WITH_XPU)
     foreach(var ${lite_deps_XPU_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
-  if (LITE_WITH_BM)
-    foreach(var ${lite_deps_BM_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
-  if (LITE_WITH_MLU)
-    foreach(var ${lite_deps_MLU_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
   endif()
@@ -152,7 +116,6 @@ file(WRITE ${offline_lib_registry_file} "") # clean
 # cc_library with branch support.
 # The branches:
 #  X86_DEPS: works only when LITE_WITH_X86 is ON.
-#  CUDA_DEPS:     LITE_WITH_CUDA
 #  ARM_DEPS:      LITE_WITH_ARM
 #  PROFILE_DEPS:  LITE_WITH_PROFILE
 #  EXCLUDE_COMPILE_DEPS: TARGET will not be included in lite_compile_deps if this is not None
@@ -160,7 +123,7 @@ file(WRITE ${offline_lib_registry_file} "") # clean
 function(lite_cc_library TARGET)
     set(options SHARED shared STATIC static MODULE module)
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS CV_DEPS PROFILE_DEPS LIGHT_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CL_DEPS METAL_DEPS ARM_DEPS XPU_DEPS NNADAPTER_DEPS CV_DEPS PROFILE_DEPS LIGHT_DEPS
       HVY_DEPS EXCLUDE_COMPILE_DEPS ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -168,25 +131,15 @@ function(lite_cc_library TARGET)
     lite_deps(deps
             DEPS ${args_DEPS}
             X86_DEPS ${args_X86_DEPS}
-            CUDA_DEPS ${args_CUDA_DEPS}
             CL_DEPS ${args_CL_DEPS}
             METAL_DEPS ${args_METAL_DEPS}
-            BM_DEPS ${args_BM_DEPS}
-            IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
             NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
-            RKNPU_DEPS ${args_RKNPU_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
             CV_DEPS ${args_CV_DEPS}
-            FPGA_DEPS ${args_FPGA_DEPS}
-            INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
-            NPU_DEPS ${args_NPU_DEPS}
-            APU_DEPS ${args_APU_DEPS}
             XPU_DEPS ${args_XPU_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}
-            MLU_DEPS ${args_MLU_DEPS}
-            HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
             )
 
     if (args_SHARED OR ARGS_shared)
@@ -215,7 +168,7 @@ function(lite_cc_binary TARGET)
         set(options " -g ")
     endif()
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS RKNPU NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
+    set(multiValueArgs SRCS DEPS X86_DEPS CL_DEPS METAL_DEPS ARM_DEPS XPU_DEPS NNADAPTER_DEPS PROFILE_DEPS
       LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS CV_DEPS ARGS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -223,25 +176,15 @@ function(lite_cc_binary TARGET)
     lite_deps(deps
             DEPS ${args_DEPS}
             X86_DEPS ${args_X86_DEPS}
-            CUDA_DEPS ${args_CUDA_DEPS}
             CL_DEPS ${args_CL_DEPS}
             METAL_DEPS ${args_METAL_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
-            FPGA_DEPS ${args_FPGA_DEPS}
-            INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
-            NPU_DEPS ${args_NPU_DEPS}
-            APU_DEPS ${args_APU_DEPS}
             XPU_DEPS ${args_XPU_DEPS}
-            RKNPU_DEPS ${args_RKNPU_DEPS}
-            BM_DEPS ${args_BM_DEPS}
-            IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
             NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
             LIGHT_DEPS ${args_LIGHT_DEPS}
             HVY_DEPS ${args_HVY_DEPS}
             CV_DEPS ${CV_DEPS}
-            MLU_DEPS ${args_MLU_DEPS}
-            HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
             )
     cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps})
 
@@ -265,16 +208,6 @@ function(lite_cc_binary TARGET)
     endif()
     if(LITE_WITH_XPU)
         target_link_libraries(${TARGET} ${xpu_builder_libs} ${xpu_runtime_libs})
-    endif()
-    if(LITE_WITH_NPU)
-        target_link_libraries(${TARGET} ${npu_builder_libs} ${npu_runtime_libs})
-    endif()
-    if(LITE_WITH_CUDA)
-        get_property(cuda_deps GLOBAL PROPERTY CUDA_MODULES)
-        target_link_libraries(${TARGET} ${cuda_deps})
-    endif()
-    if(LITE_WITH_INTEL_FPGA)
-        target_link_libraries(${TARGET} ${intel_fpga_deps})
     endif()
 
     if (NOT APPLE AND NOT WIN32 AND NOT EMSCRIPTEN)

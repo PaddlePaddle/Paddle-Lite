@@ -18,7 +18,7 @@ limitations under the License. */
 ////////////////////////////////////////////////////////
 // buffer -> image2d
 ////////////////////////////////////////////////////////
-__kernel void buffer_to_image2d(__global CL_DTYPE* in,
+__kernel void buffer_to_image2d(__global MUTABLE_TYPE* in,
                                 __write_only image2d_t output_image,
                                 __private const int out_H,
                                 __private const int out_W,
@@ -96,7 +96,7 @@ __kernel void buffer_to_image2d(__global CL_DTYPE* in,
 __kernel void image2d_to_buffer(__read_only image2d_t input,
                                 __private const int in_width,
                                 __private const int in_height,
-                                __global CL_DTYPE* out,
+                                __global MUTABLE_TYPE* out,
                                 __private const int size_ch,
                                 __private const int size_block,
                                 __private const int size_batch,
@@ -129,15 +129,15 @@ __kernel void image2d_to_buffer(__read_only image2d_t input,
 
   const int index =
       in_n * size_batch + in_c * size_block + in_h * in_width + in_w;
-  out[index] = CONVERT_TYPE_TO(in.x, CL_DTYPE);
+  out[index] = CONVERT_TYPE_TO(in.x, MUTABLE_TYPE);
   if (C - 4 * in_c >= 2) {
-    out[index + size_ch] = CONVERT_TYPE_TO(in.y, CL_DTYPE);
+    out[index + size_ch] = CONVERT_TYPE_TO(in.y, MUTABLE_TYPE);
   }
   if (C - 4 * in_c >= 3) {
-    out[index + size_ch * 2] = CONVERT_TYPE_TO(in.z, CL_DTYPE);
+    out[index + size_ch * 2] = CONVERT_TYPE_TO(in.z, MUTABLE_TYPE);
   }
   if (C - 4 * in_c >= 4) {
-    out[index + size_ch * 3] = CONVERT_TYPE_TO(in.w, CL_DTYPE);
+    out[index + size_ch * 3] = CONVERT_TYPE_TO(in.w, MUTABLE_TYPE);
   }
 }
 
@@ -386,9 +386,37 @@ __kernel void image2d_folder_to_image2d_default(__read_only image2d_t input,
 // image2d_folder -> buffer
 ////////////////////////////////////////////////////////
 __kernel void image2d_folder_to_buffer(__read_only image2d_t input,
-                                       __global float* output,
+                                       __global MUTABLE_TYPE* output,
                                        __private const int out_h,
                                        __private const int out_w) {
+  const int pos_x = get_global_id(0);
+  const int pos_y = get_global_id(1);
+
+  CL_DTYPE4 in =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_x, pos_y));
+
+  CL_DTYPE4 out = in;
+  int outpos_base = out_w * pos_y + pos_x * 4;
+
+  output[outpos_base] = CONVERT_TYPE_TO(out.x, MUTABLE_TYPE);
+  if (pos_x * 4 + 1 < out_w) {
+    output[outpos_base + 1] = CONVERT_TYPE_TO(out.y, MUTABLE_TYPE);
+  }
+  if (pos_x * 4 + 2 < out_w) {
+    output[outpos_base + 2] = CONVERT_TYPE_TO(out.z, MUTABLE_TYPE);
+  }
+  if (pos_x * 4 + 3 < out_w) {
+    output[outpos_base + 3] = CONVERT_TYPE_TO(out.w, MUTABLE_TYPE);
+  }
+}
+
+////////////////////////////////////////////////////////
+// image2d_folder -> buffer
+////////////////////////////////////////////////////////
+__kernel void image2d_folder_to_buffer_half2float(__read_only image2d_t input,
+                                                  __global float* output,
+                                                  __private const int out_h,
+                                                  __private const int out_w) {
   const int pos_x = get_global_id(0);
   const int pos_y = get_global_id(1);
 
@@ -413,7 +441,7 @@ __kernel void image2d_folder_to_buffer(__read_only image2d_t input,
 ////////////////////////////////////////////////////////
 // buffer -> image2d_folder
 ////////////////////////////////////////////////////////
-__kernel void buffer_to_image2d_folder(__global const CL_DTYPE* input,
+__kernel void buffer_to_image2d_folder(__global const MUTABLE_TYPE* input,
                                        __write_only image2d_t output,
                                        __private const int out_h,
                                        __private const int out_w,
@@ -424,15 +452,15 @@ __kernel void buffer_to_image2d_folder(__global const CL_DTYPE* input,
   int inpos_base = out_w * pos_y + pos_x * 4;
 
   CL_COMPUTE_DTYPE4 out = (CL_COMPUTE_DTYPE4)(0.f, 0.f, 0.f, 0.f);
-  out.x = input[inpos_base];
+  out.x = CONVERT_TYPE_TO(input[inpos_base], CL_COMPUTE_DTYPE);
   if (inpos_base + 1 < length) {
-    out.y = input[inpos_base + 1];
+    out.y = CONVERT_TYPE_TO(input[inpos_base + 1], CL_COMPUTE_DTYPE);
   }
   if (inpos_base + 2 < length) {
-    out.z = input[inpos_base + 2];
+    out.z = CONVERT_TYPE_TO(input[inpos_base + 2], CL_COMPUTE_DTYPE);
   }
   if (inpos_base + 3 < length) {
-    out.w = input[inpos_base + 3];
+    out.w = CONVERT_TYPE_TO(input[inpos_base + 3], CL_COMPUTE_DTYPE);
   }
 
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_x, pos_y), out);

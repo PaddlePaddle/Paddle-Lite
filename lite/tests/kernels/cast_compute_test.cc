@@ -72,7 +72,7 @@ class CastComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("cast");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
@@ -155,10 +155,16 @@ TEST(Cast, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+  TestCast(place, abs_error, 2, 5);
+  TestCast(place, abs_error, 3, 5);
+  TestCast(place, abs_error, 5, 3);
+  return;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-5;
+  TestCast(place, abs_error, 2, 5);
+  return;
 #elif defined(NNADAPTER_WITH_NVIDIA_TENSORRT)
   abs_error = 1e-5;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
@@ -166,6 +172,11 @@ TEST(Cast, precision) {
   TestCast(place, abs_error, 2, 5);
   return;
 #elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  TestCast(place, abs_error, 2, 5);
+  TestCast(place, abs_error, 0, 5);
+  return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-2;
   TestCast(place, abs_error, 2, 5);
   TestCast(place, abs_error, 0, 5);
@@ -181,17 +192,10 @@ TEST(Cast, precision) {
   return;
 #endif
 
-// BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
-// SIZE_T = 19;UINT8 = 20;INT8 = 21;
-#if !defined(LITE_WITH_XPU) && !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) && \
-    !defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
+  // SIZE_T = 19;UINT8 = 20;INT8 = 21;
   TestCast(place, abs_error, 20, 5);
-#endif
   TestCast(place, abs_error, 2, 5);
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  TestCast(place, abs_error, 3, 5);
-  TestCast(place, abs_error, 5, 3);
-#endif
 }
 
 }  // namespace lite

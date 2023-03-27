@@ -32,6 +32,7 @@
 #else
 #define NOMINMAX  // msvc max/min macro conflict with std::min/max
 #include <windows.h>
+#include <winsock.h>
 #undef min
 #undef max
 extern struct timeval;

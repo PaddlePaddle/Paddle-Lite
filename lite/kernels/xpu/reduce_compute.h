@@ -26,9 +26,14 @@ class ReduceCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::ReduceParam;
 
+  void PrepareForRun() override;
   virtual void Run();
 
   virtual ~ReduceCompute() = default;
+
+ private:
+  XPUScratchPadGuard quant_x_max_value_guard_;
+  XPUScratchPadGuard quant_out_max_value_guard_;
 };
 
 }  // namespace xpu

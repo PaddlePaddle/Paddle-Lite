@@ -74,19 +74,16 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/x86
   demo_guides/opencl
   demo_guides/metal
-  demo_guides/fpga
   demo_guides/huawei_kirin_npu
   demo_guides/huawei_ascend_npu
   demo_guides/kunlunxin_xpu
+  demo_guides/kunlunxin_xtcl
   demo_guides/qualcomm_qnn
-  demo_guides/rockchip_npu
-  demo_guides/amlogic_npu
+  demo_guides/cambricon_mlu
   demo_guides/verisilicon_timvx
   demo_guides/android_nnapi
   demo_guides/mediatek_apu
   demo_guides/imagination_nna
-  demo_guides/bitmain
-  demo_guides/intel_fpga
   demo_guides/intel_openvino
   demo_guides/eeasytech_npu
 
@@ -99,6 +96,7 @@ Welcome to Paddle-Lite's documentation!
   performance/benchmark_tools
   performance/benchmark
   performance/gpu
+  使用 FlyCV 优化图像处理性能 <https://github.com/PaddlePaddle/FlyCV>
 
 .. toctree::
   :maxdepth: 1
@@ -128,6 +126,7 @@ Welcome to Paddle-Lite's documentation!
   api_reference/java_api_doc
   api_reference/python_api_doc
   api_reference/cv
+  FlyCV API <https://github.com/PaddlePaddle/FlyCV/wiki/API%E6%96%87%E6%A1%A3>
 
 .. toctree::
   :maxdepth: 1

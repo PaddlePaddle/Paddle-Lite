@@ -52,6 +52,7 @@ const std::string& ActivationTypeToStr(ActivationType act) {
                                            "PRelu",
                                            "LeakyRelu",
                                            "Sigmoid",
+                                           "Silu",
                                            "Tanh",
                                            "Swish",
                                            "Exp",

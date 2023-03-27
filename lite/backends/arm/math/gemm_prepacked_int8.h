@@ -24,6 +24,37 @@ namespace arm {
 namespace math {
 
 const int KBLOCK_INT8 = 4;
+typedef enum {
+  GemmNoBias = 0,
+  GemmMBias = 1,
+  GemmNBias = 2,
+  GemmMNBias = 3,
+} GemmBiasDirection;
+
+typedef enum {
+  GemmNoScale = 0,
+  GemmMScale = 1,
+  GemmNScale = 2,
+  GemmMNScale = 3,
+} GemmScaleDirection;
+
+void packb_int8(int8_t* out,
+                const int8_t* in,
+                int ldin,
+                int k0,
+                int kmax,
+                int n0,
+                int nmax,
+                const int8_t* zerobuf);
+
+void packb_dot_int8(int8_t* out,
+                    const int8_t* in,
+                    const int ldin,
+                    const int k0,
+                    const int kmax,
+                    const int n0,
+                    const int nmax);
+
 #ifdef __aarch64__
 // for int7/int8 gemm
 // const int HBLOCK = 4;
@@ -33,6 +64,14 @@ const int NBLOCK_INT8_OTH = 16;
 
 const int MBLOCK_INT8_DOT = 8;
 const int NBLOCK_INT8_DOT = 12;
+
+void packb_sdot_int8_n12_n8_n4(int8_t* out,
+                               const int8_t* in,
+                               const int ldin,
+                               const int k0,
+                               const int kmax,
+                               const int n0,
+                               const int nmax);
 
 inline int get_hblock_int8(ARMContext* ctx) {
 #ifdef WITH_ARM_DOTPROD
@@ -94,10 +133,28 @@ void gemm_prepack_int8(const int8_t* A_packed,
                        int N,
                        int K,
                        bool is_bias,
+                       GemmBiasDirection bias_direction,
                        bool is_transB,
                        const float* scale,
                        const operators::ActivationParam act_param,
-                       ARMContext* ctx);
+                       ARMContext* ctx,
+                       bool packed_b = false);
+
+#if defined(__aarch64__) && defined(WITH_ARM_DOTPROD)
+template <typename dtype>
+void gemm_prepack_int8_nopack(const int8_t* A_packed,
+                              const int8_t* B,
+                              const float* bias,
+                              dtype* C,
+                              int M,
+                              int N,
+                              int K,
+                              bool is_bias,
+                              bool is_transB,
+                              const float* scale,
+                              const operators::ActivationParam act_param,
+                              ARMContext* ctx);
+#endif
 
 #define ROUNDUP(a, b) ((((a) + (b)-1) / (b)) * (b))
 }  // namespace math

@@ -181,10 +181,6 @@ TEST(Subgraph, generate_model_and_check_precision) {
                                  input_tensor_shape,
                                  input_tensor_type,
                                  FLAGS_optimized_model_dir + "_ref_opt_model");
-// Generate and run optimized model on NPU as the target predictor
-#ifdef LITE_WITH_NPU
-  valid_places.push_back(lite_api::Place{TARGET(kNPU), PRECISION(kFloat)});
-#endif
   auto tar_predictor = TestModel(FLAGS_model_dir,
                                  FLAGS_model_file,
                                  FLAGS_params_file,

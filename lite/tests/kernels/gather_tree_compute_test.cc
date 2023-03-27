@@ -64,7 +64,7 @@ class GatherTreeComputeTest : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(op_type_);
     op_desc->SetInput("Ids", {ids_});
     op_desc->SetInput("Parents", {parents_});

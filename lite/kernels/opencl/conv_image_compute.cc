@@ -45,8 +45,6 @@ void ConvImageCompute::PrepareForRun() {
     threshold_2 = 256.0f * 6.0f;
     threshold_4 = 256.0f * 16.0f;
   }
-  const bool fp16_support =
-      CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
   conv_param_ = param_.get_mutable<param_t>();
   auto output_dims = conv_param_->output->dims();
   output_tensor_n_ = output_dims[0];
@@ -240,7 +238,7 @@ void ConvImageCompute::PrepareForRun() {
     }
 #endif
   } else if (is_mali_ && filter_tensor_h_ == 1 && filter_tensor_w_ == 1 &&
-             groups_ == 1) {  // mali conv1x1
+             groups_ == 1 && input_tensor_n_ == 1) {  // mali conv1x1
     if (task_size <= threshold_2) {
       CLImageConverterNBlock converter;
       kernel_func_names_.push_back("conv2d_1x1_mali_h1w2c1");
@@ -1674,8 +1672,6 @@ void ConvImageCompute::OIHW2OHWIO4I4(
 
 void ConvImageCompute::NCHW2IMG4(
     void* src, void* dst, size_t oc, size_t ic, size_t index) {
-  bool fp16_support =
-      CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
   size_t oc_block = UP_DIV(oc, 4);
   size_t ic_block = UP_DIV(ic, 4);
 
@@ -1930,6 +1926,54 @@ void ConvImageCompute::Conv2dnxn() {
   status_ = kernel_.setArg(arg_idx++, output_tensor_h_);
   CL_CHECK_FATAL(status_);
   status_ = kernel_.setArg(arg_idx++, *alpha_image_p_);
+  CL_CHECK_FATAL(status_);
+}
+
+void ConvImageCompute::Conv2d3x3() {
+  use_lws_ = false;
+  status_ = kernel_.setArg(0, c_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(1, w_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(2, nh_blk_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(3, *input_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(4, *filter_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(5, *bias_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(6, *output_image_p_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(7, stride_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(8, offset_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(9, input_c_block_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(10, dilation_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(11, input_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(12, input_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(13, output_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(14, output_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(15, output_tensor_c_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(16, filter_tensor_c_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(17, filter_tensor_w_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(18, filter_tensor_h_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(19, groups_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(20, input_tensor_c_);
+  CL_CHECK_FATAL(status_);
+  status_ = kernel_.setArg(21, *alpha_image_p_);
   CL_CHECK_FATAL(status_);
 }
 
@@ -2332,8 +2376,6 @@ void ConvImageCompute::Run() {
     // input_fill0 -> output_fill0
     // setArg
     {
-      int input_w_block = static_cast<int>(input_image_w_ / input_tensor_c_);
-      int single_block = static_cast<int>(input_tensor_c_ / groups_);
       use_lws_ = false;
       status_ = kernel_.setArg(0, c_blk_);
       CL_CHECK_FATAL(status_);

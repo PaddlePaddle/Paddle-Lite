@@ -1,4 +1,4 @@
-if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_NNADAPTER AND NOT LITE_WITH_XPU) AND (LITE_WITH_ARM))
+if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_NNADAPTER AND NOT LITE_WITH_XPU) AND (LITE_WITH_ARM))
     lite_cc_test(get_conv_latency SRCS src/get_conv_latency.cc)
     lite_cc_test(get_batchnorm_latency SRCS src/get_batchnorm_latency.cc)
     lite_cc_test(get_pooling_latency SRCS src/get_pooling_latency.cc)

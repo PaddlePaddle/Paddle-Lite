@@ -384,9 +384,11 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  o_data + i * out_inner,
                                  nullptr,
                                  false,
+                                 lite::arm::math::GemmNoBias,
                                  scale_one.data(),
                                  act_param,
-                                 &ctx);
+                                 &ctx,
+                                 false);
         matmul_add_n_scale_bias(o_data + i * out_inner, scale_.data(), m_, n_);
       }
     } else if (x_dims.size() > 2 && y_dims.size() == 2) {
@@ -401,9 +403,11 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  o_data + i * out_inner,
                                  nullptr,
                                  false,
+                                 lite::arm::math::GemmNoBias,
                                  scale_one.data(),
                                  act_param,
-                                 &ctx);
+                                 &ctx,
+                                 false);
         matmul_add_n_scale_bias(o_data + i * out_inner, scale_.data(), m_, n_);
       }
     } else if (x_dims.size() == 2 && y_dims.size() > 2) {
@@ -418,9 +422,11 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  o_data + i * out_inner,
                                  nullptr,
                                  false,
+                                 lite::arm::math::GemmNoBias,
                                  scale_one.data(),
                                  act_param,
-                                 &ctx);
+                                 &ctx,
+                                 false);
         matmul_add_n_scale_bias(o_data + i * out_inner, scale_.data(), m_, n_);
       }
     }
@@ -437,9 +443,11 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              o_data,
                              nullptr,
                              false,
+                             lite::arm::math::GemmNoBias,
                              scale_one.data(),
                              act_param,
-                             &ctx);
+                             &ctx,
+                             false);
     matmul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
   } else if (x_dims.size() >= 2 && y_dims.size() == 1) {
     // x: [B, M, K], y: [K], out: [B, M]
@@ -453,9 +461,11 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              o_data,
                              nullptr,
                              false,
+                             lite::arm::math::GemmNoBias,
                              scale_one.data(),
                              act_param,
-                             &ctx);
+                             &ctx,
+                             false);
     matmul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
   } else if (x_dims.size() == 1 && y_dims.size() == 1) {
     // x: [K], y: [K], out: [1]
@@ -475,9 +485,11 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                o_data,
                                nullptr,
                                false,
+                               lite::arm::math::GemmNoBias,
                                scale_one.data(),
                                act_param,
-                               &ctx);
+                               &ctx,
+                               false);
     } else {
       LOG(FATAL) << "not supported x_dims.(" << x_dims << ") and y_dims("
                  << y_dims << ")"

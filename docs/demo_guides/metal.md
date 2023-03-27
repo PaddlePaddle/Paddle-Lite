@@ -1,4 +1,4 @@
-# Metal 部署示例
+# Metal
 
 Paddle Lite 支持在 iOS 和 macOS 系统上运行基于 Metal 的程序
 
@@ -8,7 +8,7 @@ Paddle Lite 支持在 iOS 和 macOS 系统上运行基于 Metal 的程序
 
 macOS 操作系统（支持 x86/arm 架构），并且成功安装 Xcode。
 
-详见 [**源码编译指南**](https://paddlelite.paddlepaddle.org.cn/source_compile/macos_compile_ios.html) 章节。
+详见 [**macOS 环境下编译适用于 iOS 的库**](https://paddlelite.paddlepaddle.org.cn/source_compile/macos_compile_ios.html) 章节。
 
 ### 1.2 编译 Paddle Lite Metal 库 iOS 范例
 
@@ -16,20 +16,21 @@ macOS 操作系统（支持 x86/arm 架构），并且成功安装 Xcode。
 
 #### (1) 下载代码
 ```bash
-# 下载 Paddle Lite 源码
-git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-# 切换到 release 分支
-git checkout <release-version-tag>
+下载 Paddle Lite 源码
+$ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
+
+切换到 release 分支
+$ git checkout <release-version-tag>
 ```
 #### (2) 源码编译
 ```bash
-cd Paddle-Lite
+$ cd Paddle-Lite
 
-# (可选) 删除 third-party 目录，编译脚本会自动从国内 CDN 下载第三方库文件
-# rm -rf third-party
+(可选) 删除 third-party 目录，编译脚本会自动从国内 CDN 下载第三方库文件
+$ rm -rf third-party
 
-# 请在 Paddle-Lite 当前目录下执行脚本
-./lite/tools/build_ios.sh --with_metal=ON
+请在 Paddle-Lite 当前目录下执行脚本
+$ ./lite/tools/build_ios.sh --with_metal=ON
 ```
 其他可选择编译选项
 - `with_extra`: `[OFF | ON]`，编译全量 op 和 kernel，包含控制流 NLP 相关的 op 和 kernel 体积会大，编译时间长；
@@ -67,13 +68,13 @@ inference_lite_lib.ios64.armv8.metal
 
 #### (1) 源码编译
 ```bash
-cd Paddle-Lite
+$ cd Paddle-Lite
 
-# (可选) 删除 third-party 目录，编译脚本会自动从国内 CDN 下载第三方库文件
-# rm -rf third-party
+(可选) 删除 third-party 目录，编译脚本会自动从国内 CDN 下载第三方库文件
+$ rm -rf third-party
 
-# 请在 Paddle-Lite 当前目录下执行脚本
-./lite/tools/build_macos.sh --with_metal=ON
+请在 Paddle-Lite 当前目录下执行脚本
+$ ./lite/tools/build_macos.sh --with_metal=ON
 ```
 其他可选择编译选项
 - `with_extra`: `[OFF | ON]`，编译全量 op 和 kernel，包含控制流 NLP 相关的 op 和 kernel 体积会大，编译时间长；
@@ -126,12 +127,12 @@ inference_lite_lib.armmacos.armv8.metal
 - metal 文件中的 Metal 库文件 lite.metallib；
 
 详细 iOS demo 部署方法参考
-[ iOS工程示例 ](https://paddlelite.paddlepaddle.org.cn/v2.10/demo_guides/ios_app_demo.html#ios-demo)
+[ iOS apps ](https://paddlelite.paddlepaddle.org.cn/develop/demo_guides/ios_app_demo.html#ios-demo)
 
 ### 2.2 macOS demo 部署方法
 安装好 Xcode 后，在 demo 目录下添加由 opt 转换得到的 Metal 模型，并运行以下命令：
 ```
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -isysroot $(xcrun --sdk macosx --show-sdk-path) -target arm64-macos11 -std=c++11 -I .{$Paddle-Lite}/build.macos.armmacos.armv8/inference_lite_lib.armmacos.armv8/cxx/include .{$Paddle-Lite}/build.macos.armmacos.armv8/inference_lite_lib.armmacos.armv8/cxx/lib/libpaddle_api_light_bundled.a ./mobilenet_light_api.cc -o mobilenet_light_api -framework MetalPerformanceShaders -framework Metal -framework Foundation -framework CoreGraphics -DMETAL=ON
+$ /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -isysroot $(xcrun --sdk macosx --show-sdk-path) -target arm64-macos11 -std=c++11 -I .{$Paddle-Lite}/build.macos.armmacos.armv8/inference_lite_lib.armmacos.armv8/cxx/include .{$Paddle-Lite}/build.macos.armmacos.armv8/inference_lite_lib.armmacos.armv8/cxx/lib/libpaddle_api_light_bundled.a ./mobilenet_light_api.cc -o mobilenet_light_api -framework MetalPerformanceShaders -framework Metal -framework Foundation -framework CoreGraphics -DMETAL=ON
 ```
 
 

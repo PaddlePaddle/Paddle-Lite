@@ -38,6 +38,8 @@ int ConvertUnaryActivations(Converter* converter, core::Operation* operation) {
     op_type = NEURON_RELU6;
   } else if (operation->type == NNADAPTER_TANH) {
     op_type = NEURON_TANH;
+  } else if (operation->type == NNADAPTER_SIGMOID) {
+    op_type = NEURON_LOGISTIC;
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
                          << OperationTypeToString(operation->type)

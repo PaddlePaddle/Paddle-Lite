@@ -59,12 +59,16 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     param_.hard_sigmoid_offset = opdesc.GetAttr<float>("offset");
   } else if (opdesc.Type() == "sigmoid") {
     param_.active_type = lite_api::ActivationType::kSigmoid;
+  } else if (opdesc.Type() == "silu") {
+    param_.active_type = lite_api::ActivationType::kSilu;
   } else if (opdesc.Type() == "tanh") {
     param_.active_type = lite_api::ActivationType::kTanh;
   } else if (opdesc.Type() == "exp") {
     param_.active_type = lite_api::ActivationType::kExp;
   } else if (opdesc.Type() == "log") {
     param_.active_type = lite_api::ActivationType::kLog;
+  } else if (opdesc.Type() == "log1p") {
+    param_.active_type = lite_api::ActivationType::kLog1p;
   } else if (opdesc.Type() == "abs") {
     param_.active_type = lite_api::ActivationType::kAbs;
   } else if (opdesc.Type() == "hard_swish") {
@@ -116,9 +120,11 @@ REGISTER_LITE_OP(square, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(relu_clipped, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(swish, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(log, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(log1p, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(exp, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(abs, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(floor, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(ceil, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(hard_sigmoid, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(sqrt, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(rsqrt, paddle::lite::operators::ActivationOp);
@@ -140,3 +146,4 @@ REGISTER_LITE_OP(thresholded_relu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(elu, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(erf, paddle::lite::operators::ActivationOp);
 REGISTER_LITE_OP(softplus, paddle::lite::operators::ActivationOp);
+REGISTER_LITE_OP(silu, paddle::lite::operators::ActivationOp);

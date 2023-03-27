@@ -63,10 +63,10 @@ int ConvertExpand(Converter* converter, core::Operation* operation) {
         shape_data);
     shape_operator = converter->AddInt32ConstantOperator(expand_shape);
   } else {
-    NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
-                         << OperandLifetimeCodeToString(
-                                shape_operand->type.lifetime);
-    return NNADAPTER_INVALID_PARAMETER;
+    shape_operator = converter->GetMappedOperator(shape_operand);
+    if (!shape_operator) {
+      shape_operator = converter->ConvertOperand(shape_operand);
+    }
   }
   auto expand_op = converter->AddOperator<ge::op::Expand>(output_operand);
   SET_INPUT(expand_op, x, input_operator);

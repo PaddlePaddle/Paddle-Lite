@@ -238,7 +238,7 @@ class Pad3dComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("pad3d");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});

@@ -29,15 +29,7 @@ namespace mir {
 
 TEST(fc_fuse_pass, fuse_test) {
   lite::Predictor predictor;
-#ifndef LITE_WITH_CUDA
   std::vector<Place> valid_places({Place{TARGET(kX86), PRECISION(kFloat)}});
-#else
-  std::vector<Place> valid_places({
-      Place{TARGET(kCUDA), PRECISION(kFloat), DATALAYOUT(kNCHW)},
-      Place{TARGET(kCUDA), PRECISION(kAny), DATALAYOUT(kNCHW)},
-      Place{TARGET(kCUDA), PRECISION(kAny), DATALAYOUT(kAny)},
-  });
-#endif
 
   predictor.Build(FLAGS_model_dir,
                   "",
@@ -105,9 +97,3 @@ USE_LITE_KERNEL(fetch, kHost, kAny, kAny, def);
 // USE_LITE_KERNEL(softmax, kX86, kFloat, kNCHW, def);
 // USE_LITE_KERNEL(scale, kX86, kFloat, kNCHW, def);
 // #endif
-
-#ifdef LITE_WITH_CUDA
-USE_LITE_KERNEL(mul, kCUDA, kFloat, kNCHW, def);
-USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, host_to_device);
-USE_LITE_KERNEL(io_copy, kCUDA, kAny, kAny, device_to_host);
-#endif

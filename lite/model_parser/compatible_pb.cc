@@ -176,6 +176,14 @@ void OpAttrsAnyToCpp(const OpDescType &any_desc, cpp::OpDesc *cpp_desc) {
         // LOG(INFO) << sub_block->OpsSize();
         break;
       }
+      case AttrType::FLOAT64S:
+        cpp_desc->SetAttr<std::vector<double>>(
+            name, any_desc.template GetAttr<std::vector<double>>(name));
+        break;
+      case AttrType::FLOAT64:
+        cpp_desc->SetAttr<double>(name,
+                                  any_desc.template GetAttr<double>(name));
+        break;
       default:
         LOG(FATAL) << "Unsupported attr type found " << static_cast<int>(type);
     }
@@ -217,6 +225,8 @@ void OpAttrsCppToAny(const cpp::OpDesc &cpp_desc, OpDescType *any_desc) {
       IMPL_ONE(BOOLEAN, bool);
       IMPL_ONE(LONG, int64_t);
       IMPL_ONE(LONGS, std::vector<int64_t>);
+      IMPL_ONE(FLOAT64, double);
+      IMPL_ONE(FLOAT64S, std::vector<double>);
       default:
         LOG(FATAL) << "Unsupported attr type found: " << static_cast<int>(type);
     }

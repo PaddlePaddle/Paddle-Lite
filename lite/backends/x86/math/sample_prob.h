@@ -110,18 +110,6 @@ class SampleWithProb {
   }
 };
 
-// #ifdef PADDLE_WITH_CUDA
-//  template <typename T>
-//  class GPUSampleWithProb {
-//  public:
-//   void operator()(const platform::CUDAlite::Context<Target>& context, const
-//   int seed,
-//                   const int dict_size, const bool uniq,
-//                   const std::size_t num_samples, const lite::Tensor* L,
-//                   lite::Tensor* S,
-//                   lite::Tensor* P);
-// };
-// #endif
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

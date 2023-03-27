@@ -170,9 +170,11 @@ void LSTMComputeRun(const operators::LstmParam& param,
                                  o_data.get(),
                                  nullptr,
                                  false,
+                                 lite::arm::math::GemmNoBias,
                                  scales.data(),
                                  act_param,
-                                 ctx);
+                                 ctx,
+                                 false);
 
         for (int i = 0; i < M * N; i++) {
           gate_t[i] += o_data[i];

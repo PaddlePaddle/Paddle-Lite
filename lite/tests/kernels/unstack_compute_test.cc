@@ -99,7 +99,7 @@ class UnstackComputeTester : public arena::TestCase {
     SplitComputeRef<T>(scope->FindTensor(x_), outs, axis);
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("unstack");
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Y", outs_);
@@ -138,6 +138,11 @@ TEST(unstack, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-2;
+  TestUnstack<float>(place, abs_error, {2, 3, 4, 5});
+  TestUnstack<float>(place, abs_error, {1, 3, 4});
+  return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-2;
   TestUnstack<float>(place, abs_error, {2, 3, 4, 5});
   TestUnstack<float>(place, abs_error, {1, 3, 4});

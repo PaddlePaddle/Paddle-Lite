@@ -7,7 +7,7 @@ GPU 可以用来运行较大运算强度的负载任务，将模型中计算任�
 Paddle Lite 支持多种 GPU 后端，包括 OpenCL、[Metal](https://developer.apple.com/metal/)，支持包括 ARM Mali、Qualcomm Adreno、Apple A Series 等系列 GPU 设备。
 
 ## Android 设备使用 OpenCL 获取最佳性能
-详细见 [OpenCL 部署示例](../demo_guides/opencl)。
+详细见 [OpenCL](../demo_guides/opencl)。
 
 ## iOS 设备使用 Metal 获取最佳性能
 这里介绍在苹果 iOS 设备上，通过使用 Metal 后端利用 GPU 设备获取最佳性能。
@@ -41,7 +41,7 @@ std::shared_ptr<PaddlePredictor> predictor =
 return predictor;
 ```
 ### 4、XCode 集成开发
-iOS 开发配置见 [iOS 工程示例](../demo_guides/ios_app_demo)。配置完成后，手动对 ```include``` 和 ```lib``` 目录进行替换，编译生成的 ```.metallib 文件```也可以同时放置在 ```lib``` 目录下。
+iOS 开发配置见 [iOS apps](../demo_guides/ios_app_demo)。配置完成后，手动对 ```include``` 和 ```lib``` 目录进行替换，编译生成的 ```.metallib 文件```也可以同时放置在 ```lib``` 目录下。
 
 另外使用 Metal 加速会依赖 [MetalPerformaceShaders](https://developer.apple.com/documentation/metalperformanceshaders?language=objc)，需要进行如下图配置，在```Project navigator ->  Your project -> PROJECT -> Your target -> General -> Frameworks, Libraries and Embedded Content``` 中添加 ```libpaddle_api_light_bundled.a``` 和 ```MetalPerformanceShaders.framework```.
 <p align="center"><img width="900" height="400"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/iOS/xcode-metal.png"/>

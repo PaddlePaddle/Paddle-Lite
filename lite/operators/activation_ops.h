@@ -74,6 +74,9 @@ class ActivationOp : public OpLite {
       case lite_api::ActivationType::kLog:
         ch->macs = param_.X->numel();
         break;
+      case lite_api::ActivationType::kLog1p:
+        ch->macs = param_.X->numel();
+        break;
       case lite_api::ActivationType::kAbs:
         ch->macs = param_.X->numel();
         break;
@@ -107,6 +110,9 @@ class ActivationOp : public OpLite {
         ch->macs = param_.X->numel();
         break;
       case lite_api::ActivationType::kSoftPlus:
+        ch->macs = param_.X->numel();
+        break;
+      case lite_api::ActivationType::kSilu:
         ch->macs = param_.X->numel();
         break;
       default:

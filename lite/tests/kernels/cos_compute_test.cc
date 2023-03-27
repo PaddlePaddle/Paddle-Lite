@@ -48,7 +48,7 @@ class CosComputeTest : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType(op_type_);
     op_desc->SetInput("X", {x_});
     op_desc->SetOutput("Out", {out_});
@@ -74,7 +74,11 @@ void test_sin(Place place) {
 
 TEST(Cos, precision) {
   LOG(INFO) << "test cos op";
-#ifdef LITE_WITH_ARM
+
+#if defined(LITE_WITH_XPU)
+  Place place(TARGET(kXPU), PRECISION(kFloat));
+  test_sin(place);
+#elif defined(LITE_WITH_ARM)
   Place place(TARGET(kHost));
   test_sin(place);
 #endif

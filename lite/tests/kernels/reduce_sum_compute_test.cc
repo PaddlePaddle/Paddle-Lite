@@ -292,7 +292,7 @@ class ReduceSumComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("reduce_sum");
     op_desc->SetInput("X", {input_});
     op_desc->SetOutput("Out", {output_});
@@ -321,11 +321,17 @@ void test_reduce_sum(Place place,
         for (auto w : {1, 3}) {
           for (bool keep_dim : keep_dim_vec) {
             for (bool reduce_all : {false, true}) {
-#if defined(LITE_WITH_NNADAPTER)
-              if (reduce_all == true) continue;
-              if (n == 3 && c == 2 && h == 3 && w == 3) continue;
-#endif
               for (auto dim : reduce_dim) {
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU) || \
+    defined(NNADAPTER_WITH_CAMBRICON_MLU) ||     \
+    defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+                if (reduce_all) continue;
+                if (n == 3 && c == 2 && h == 3 && w == 3) continue;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+                if (std::find(dim.begin(), dim.end(), 0) == dim.end() &&
+                    !keep_dim)
+                  continue;
+#endif
                 auto x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
                 std::unique_ptr<arena::TestCase> tester(
                     new ReduceSumComputeTester(
@@ -354,6 +360,8 @@ TEST(ReduceSum, precision) {
   keep_dim_vec = std::vector<bool>{false};
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_QUALCOMM_QNN)
+  abs_error = 1e-3;
 #else
   return;
 #endif

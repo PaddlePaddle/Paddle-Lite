@@ -75,14 +75,19 @@ class PoolOpLite : public OpLite {
       param_.padding_algorithm =
           op_desc.GetAttr<std::string>("padding_algorithm");
     }
-    // 2-pad to 4-pad
+    // 2-pad to 4-pad or 3-pad to 6-pad
     if (paddings.size() == 2L) {
       for (size_t i = 0; i < 2L; ++i) {
         int copy_pad = *(paddings.begin() + 2 * i);
         paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
       }
+    } else if (paddings.size() == 3L) {
+      for (size_t i = 0; i < 3L; ++i) {
+        int copy_pad = *(paddings.begin() + 2 * i);
+        paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
+      }
     } else {
-      if (paddings.size() != 4L) {
+      if (paddings.size() != 4L && paddings.size() != 6L) {
         LOG(FATAL)
             << "Paddings size should be the same or twice as the inputs size.";
       }
@@ -93,13 +98,20 @@ class PoolOpLite : public OpLite {
     if (op_desc.HasAttr("pad_zero")) {
       param_.pad_zero = op_desc.GetAttr<bool>("pad_zero");
     }
+    if (op_desc.HasAttr("enable_int8") &&
+        op_desc.GetAttr<bool>("enable_int8")) {
+      param_.enable_int8 = true;
+      param_.output_scale =
+          op_desc.GetAttr<std::vector<float>>("Out0_scale")[0];
+      param_.input_scale = op_desc.GetAttr<std::vector<float>>("X0_scale")[0];
+    }
 #endif
     return true;
   }
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "pool2d"; }
+  std::string DebugString() const override { return "pool"; }
 
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {

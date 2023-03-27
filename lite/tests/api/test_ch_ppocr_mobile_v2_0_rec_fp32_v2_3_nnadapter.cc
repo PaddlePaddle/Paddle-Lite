@@ -31,6 +31,7 @@ namespace lite {
 TEST(ch_ppocr_mobile_v2_0_rec,
      test_ch_ppocr_mobile_v2_0_rec_fp32_v2_3_nnadapter) {
   FLAGS_warmup = 1;
+  float out_accuracy_threshold = 0.99;
   bool prepare_before_timing = true;
   std::string nnadapter_subgraph_partition_config_buffer;
   std::vector<std::string> nnadapter_device_names;
@@ -58,6 +59,7 @@ TEST(ch_ppocr_mobile_v2_0_rec,
   FLAGS_iteration = 1;
   FLAGS_warmup = 0;
   prepare_before_timing = false;
+  out_accuracy_threshold = 0.97;
   // TODO(zhupengyang): Last matmul is not supported on htp+fp16.
   nnadapter_subgraph_partition_config_buffer =
       "transpose2:lstm_0.tmp_0:transpose_2.tmp_0,transpose_2.tmp_1\n"
@@ -151,7 +153,8 @@ TEST(ch_ppocr_mobile_v2_0_rec,
   for (float abs_error : {1e-1, 1e-2, 1e-3, 1e-4}) {
     float acc = CalOutAccuracy(results, gt_data, abs_error);
     LOG(INFO) << "acc: " << acc << ", if abs_error < " << abs_error;
-    ASSERT_GE(CalOutAccuracy(results, gt_data, abs_error), 0.99);
+    ASSERT_GE(CalOutAccuracy(results, gt_data, abs_error),
+              out_accuracy_threshold);
   }
 
   LOG(INFO) << "================== Speed Report ===================";

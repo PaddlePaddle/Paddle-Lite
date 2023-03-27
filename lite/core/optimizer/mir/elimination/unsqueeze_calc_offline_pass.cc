@@ -50,8 +50,8 @@ void UnsqueezeCalcOfflinePass::RemoveUnsqueezePattern(
       }
     }
     if (has_extra_producers) {
-      LOG(WARNING)
-          << "Unsupported for op output var containing multiple producers";
+      VLOG(5) << "WARNING: Unsupported for op output var containing multiple "
+                 "producers";
       continue;
     }
 
@@ -63,9 +63,8 @@ void UnsqueezeCalcOfflinePass::RemoveUnsqueezePattern(
     auto input_var = scope->FindVar(op_desc->Input("X").front());
     auto input_t = input_var->GetMutable<lite::Tensor>();
     if (!input_t->persistable()) {
-      LOG(WARNING)
-          << "UnsqueezeCalcOfflinePass does not support input that is not "
-             "persistable";
+      VLOG(5) << "WARNING: UnsqueezeCalcOfflinePass does not support input "
+                 "that is not persistable";
       continue;
     }
     auto input_shape = input_t->dims().Vectorize();
@@ -108,4 +107,4 @@ void UnsqueezeCalcOfflinePass::RemoveUnsqueezePattern(
 
 REGISTER_MIR_PASS(unsqueeze_calc_offline_pass,
                   paddle::lite::mir::UnsqueezeCalcOfflinePass)
-    .BindTargets({TARGET(kNNAdapter)});
+    .BindTargets({TARGET(kNNAdapter), TARGET(kARM)});

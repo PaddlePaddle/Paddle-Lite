@@ -31,9 +31,7 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   bool has_weight_quant = false;
   bool is_nnadapter = false;
   for (auto& place : graph->valid_places()) {
-    if (place.target != TARGET(kMLU)) {
-      act_types.push_back("relu");
-    }
+    act_types.push_back("relu");
     if (place.target == TARGET(kARM)) {
       has_arm = true;
       act_types.push_back("relu6");
@@ -57,8 +55,7 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       }
     }
   }
-  if (!(has_int8 && has_weight_quant) && has_arm && !is_nnadapter) {
-    // only support FP32/FP16
+  if (has_arm && !is_nnadapter) {
     mul_types.push_back("matmul");
     mul_types.push_back("matmul_v2");
   }
@@ -77,9 +74,8 @@ void FcFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 REGISTER_MIR_PASS(lite_fc_fuse_pass, paddle::lite::mir::FcFusePass)
     .BindTargets({TARGET(kAny)})
     .ExcludeTargets({TARGET(kXPU)})
-#if (!defined(LITE_WITH_MLU) && !defined(LITE_WITH_NNADAPTER) && \
-     !defined(LITE_WITH_METAL) && !defined(LITE_WITH_X86))
+#if (!defined(LITE_WITH_NNADAPTER) && !defined(LITE_WITH_METAL) && \
+     !defined(LITE_WITH_X86))
     .ExcludeTargets({TARGET(kX86)})
 #endif
-    .ExcludeTargets({TARGET(kBM)})
     .BindKernel("fc");

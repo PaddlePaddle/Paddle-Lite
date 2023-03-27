@@ -158,6 +158,16 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     auto conv_weight_d = conv_weight_t->mutable_data<int8_t>();
     // compute new conv_weight for int8
     auto weight_scale = conv_op_desc->GetInputScale(weight_name);
+    std::vector<float> weight_scale_dup(alpha_tensor.numel(), 0);
+    if (weight_scale.size() == 1) {
+      for (int i = 0; i < weight_scale_dup.size(); i++) {
+        weight_scale_dup[i] = weight_scale[0];
+      }
+    } else {
+      for (int i = 0; i < weight_scale_dup.size(); i++) {
+        weight_scale_dup[i] = weight_scale[i];
+      }
+    }
     if (conv_type_ == "conv2d_transpose") {
       int cout = conv_weight_t->dims()[1] * groups;
       int cin_group = conv_weight_t->dims()[0] / groups;
@@ -165,7 +175,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       int hw = conv_weight_t->dims()[2] * conv_weight_t->dims()[3];
       for (int k = 0; k < cin_group; ++k) {
         for (int i = 0; i < cout; ++i) {
-          weight_scale[i] *= fabsf(alpha_data[i]);
+          weight_scale_dup[i] *= fabsf(alpha_data[i]);
           if (alpha_data[i] < 0.f) {
             auto ptr_row = conv_weight_d + k * c_size + i * hw;
             for (int j = 0; j < hw; ++j) {
@@ -176,7 +186,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       }
     } else {
       for (int i = 0; i < h; ++i) {
-        weight_scale[i] *= fabsf(alpha_data[i]);
+        weight_scale_dup[i] *= fabsf(alpha_data[i]);
         if (alpha_data[i] < 0.f) {
           auto ptr_row = conv_weight_d + i * w;
           for (int j = 0; j < w; ++j) {
@@ -185,7 +195,7 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
         }
       }
     }
-    conv_op_desc->SetInputScale(weight_name, weight_scale);
+    conv_op_desc->SetInputScale(weight_name, weight_scale_dup);
   } else if (is_weight_quantization) {
     std::string scale_name = conv_weight_name + "_quant_scale";
     if (conv_op_desc->HasAttr(scale_name)) {
@@ -198,7 +208,6 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
       conv_op_desc->SetAttr(scale_name, scale);
     }
   } else {
-#ifndef LITE_WITH_FPGA
     // compute new conv_weight
     auto conv_weight_d = conv_weight_t->mutable_data<float>();
     if (conv_type_ == "conv2d_transpose") {
@@ -225,7 +234,6 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
         }
       }
     }
-#endif
   }
 
   // compute new conv_bias
@@ -237,22 +245,12 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     for (unsigned int i = 0; i < bn_bias_t->data_size();
          ++i) {  // bias_size == h == conv2d output channls
                  // bn_bias_d[i] += alpha_data[i] * conv_bias_d[i];
-#ifndef LITE_WITH_FPGA
       bn_bias_d[i] += alpha_data[i] * conv_bias_d[i];
-#else
-      bn_bias_d[i] += conv_bias_d[i];
-#endif
     }
   }
   for (unsigned int i = 0; i < bn_bias_t->data_size(); ++i) {
     bn_bias_d[i] += beta_data[i];
   }
-
-#ifdef LITE_WITH_FPGA
-  for (unsigned int i = 0; i < bn_scale_t->data_size(); ++i) {
-    bn_scale_d[i] = alpha_data[i];
-  }
-#endif
 
   conv_op_desc->SetType(conv_type_);
   conv_op_desc->SetInput("Input", {matched.at("conv_input")->arg()->name});
@@ -260,11 +258,6 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   conv_op_desc->SetOutput("Output", {matched.at("bn_out")->arg()->name});
   conv_op_desc->SetInput("Bias",
                          {matched.at("bn_bias")->arg()->name});  // conv_bias
-#ifdef LITE_WITH_FPGA
-  conv_op_desc->SetInput("Scale",
-                         {matched.at("bn_scale")->arg()->name});  // conv_sias
-  IR_NODE_LINK_TO(matched.at("bn_scale"), matched.at("conv2d"));
-#endif
 
   auto update_conv_desc = *conv_instruct->mutable_op_info();
   conv_instruct->ResetOp(update_conv_desc, graph->valid_places());

@@ -47,8 +47,8 @@ void AssignValueCalcOfflinePass::RemoveAssignValuePattern(
       }
     }
     if (has_extra_producers) {
-      LOG(WARNING)
-          << "The output var of op is not supported with multiple producers";
+      VLOG(5) << "WARNING: The output var of op is not supported with multiple "
+                 "producers";
       continue;
     }
 
@@ -71,21 +71,24 @@ void AssignValueCalcOfflinePass::RemoveAssignValuePattern(
       shape_int64_t.push_back(static_cast<int64_t>(value));
     }
     out_t->Resize(DDim(shape_int64_t));
-    auto out_data = out_t->mutable_data<float>();
 
     if (dtype == static_cast<int>(lite::core::FluidType::INT32)) {
       auto int32_values = op_desc->GetAttr<std::vector<int>>("int32_values");
+      auto out_data = out_t->mutable_data<int32_t>();
       memcpy(out_data, int32_values.data(), sizeof(int) * int32_values.size());
     } else if (dtype == static_cast<int>(lite::core::FluidType::FP32)) {
       auto fp32_values = op_desc->GetAttr<std::vector<float>>("fp32_values");
+      auto out_data = out_t->mutable_data<float>();
       memcpy(out_data, fp32_values.data(), sizeof(float) * fp32_values.size());
     } else if (dtype == static_cast<int>(lite::core::FluidType::INT64)) {
       auto int64_values =
           op_desc->GetAttr<std::vector<int64_t>>("int64_values");
+      auto out_data = out_t->mutable_data<int64_t>();
       memcpy(
           out_data, int64_values.data(), sizeof(int64_t) * int64_values.size());
     } else if (dtype == static_cast<int>(lite::core::FluidType::BOOL)) {
       auto bool_values = op_desc->GetAttr<std::vector<int>>("bool_values");
+      auto out_data = out_t->mutable_data<bool>();
       memcpy(out_data, bool_values.data(), sizeof(bool) * bool_values.size());
     } else {
       LOG(FATAL) << "Unsupported dtype for assign_value op: " << dtype;

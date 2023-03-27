@@ -164,7 +164,7 @@ class FcOPTest : public arena::TestCase {
 #endif
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("fc");
     op_desc->SetInput("Input", {input_});
     if (padding_weights_) {
@@ -285,9 +285,6 @@ TEST(FcOP, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 2e-1;  // Using fp16 in NPU
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
   abs_error = 1e-4;

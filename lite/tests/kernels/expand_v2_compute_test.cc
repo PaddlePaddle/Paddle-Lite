@@ -99,7 +99,7 @@ class ExpandV2ComputeTester : public arena::TestCase {
     }
   }
 
-  void PrepareOpDesc(cpp::OpDesc* op_desc) {
+  void PrepareOpDesc(cpp::OpDesc* op_desc) override {
     op_desc->SetType("expand_v2");
     op_desc->SetInput("X", {x_});
     if (!shape_tensor_.empty()) {
@@ -182,6 +182,13 @@ TEST(ExpandV2, precision) {
   TestExpandV2<float>(place, abs_error, {2, 1, 4}, {2, 2, 3, 4});
   return;
 #elif defined(NNADAPTER_WITH_INTEL_OPENVINO)
+  abs_error = 1e-5;
+  TestExpandV2<float>(place, abs_error);
+  TestExpandV2<float>(place, abs_error, {1, 1, 1}, {2, 3, 4});
+  TestExpandV2<float>(place, abs_error, {2, 1, 4}, {2, 3, 4}, true);
+  TestExpandV2<float>(place, abs_error, {2, 1, 4}, {2, 2, 3, 4});
+  return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-5;
   TestExpandV2<float>(place, abs_error);
   TestExpandV2<float>(place, abs_error, {1, 1, 1}, {2, 3, 4});

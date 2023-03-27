@@ -27,18 +27,6 @@
 #include "lite/backends/opencl/target_wrapper.h"
 #endif  // LITE_WITH_OPENCL
 
-#ifdef LITE_WITH_CUDA
-#include "lite/backends/cuda/target_wrapper.h"
-#endif  // LITE_WITH_CUDA
-
-#ifdef LITE_WITH_BM
-#include "lite/backends/bm/target_wrapper.h"
-#endif  // LITE_WITH_BM
-
-#ifdef LITE_WITH_MLU
-#include "lite/backends/mlu/target_wrapper.h"
-#endif  // LITE_WITH_MLU
-
 #ifdef LITE_WITH_XPU
 #include "lite/backends/xpu/target_wrapper.h"
 #endif  // LITE_WITH_XPU
@@ -83,11 +71,6 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
       TargetWrapper<TARGET(kHost)>::MemcpySync(
           dst, src, size, IoDirection::HtoH);
       break;
-#ifdef LITE_WITH_CUDA
-    case TARGET(kCUDA):
-      TargetWrapperCuda::MemcpySync(dst, src, size, dir);
-      break;
-#endif
 #ifdef LITE_WITH_OPENCL
     case TargetType::kOpenCL:
       TargetWrapperCL::MemcpySync(dst, src, size, dir);
@@ -98,21 +81,6 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
       TargetWrapperMetal::MemcpySync(dst, src, size, dir);
       break;
 #endif  // LITE_WITH_METAL
-#ifdef LITE_WITH_MLU
-    case TARGET(kMLU):
-      TargetWrapperMlu::MemcpySync(dst, src, size, dir);
-      break;
-#endif
-#ifdef LITE_WITH_FPGA
-    case TARGET(kFPGA):
-      TargetWrapper<TARGET(kFPGA)>::MemcpySync(dst, src, size, dir);
-      break;
-#endif
-#ifdef LITE_WITH_BM
-    case TARGET(kBM):
-      TargetWrapper<TARGET(kBM)>::MemcpySync(dst, src, size, dir);
-      break;
-#endif
 #ifdef LITE_WITH_XPU
     case TARGET(kXPU):
       TargetWrapperXPU::MemcpySync(dst, src, size, dir);
@@ -134,7 +102,16 @@ class Buffer {
   TargetType target() const { return target_; }
   size_t space() const { return space_; }
   bool own_data() const { return own_data_; }
-
+#ifdef LITE_WITH_XPU
+  void host_pinned_register() {
+    if (!pinned_ && target_ == TargetType::kHost) {
+      pinned_ = true;
+      if (0 != xpu_host_register(data_, space_, 0)) {
+        LOG(WARNING) << "xpu_host_register failed";
+      }
+    }
+  }
+#endif
   virtual void ResetLazy(TargetType target, size_t size) {
     if (target != target_ || space_ < size) {
       CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
@@ -223,6 +200,14 @@ class Buffer {
   virtual void Free() {
     if (space_ > 0 && own_data_) {
       if (!cl_use_image2d_ && !metal_use_image2d_) {
+#ifdef LITE_WITH_XPU
+        if (pinned_ && target_ == TargetType::kHost) {
+          pinned_ = false;
+          if (0 != xpu_host_unregister(data_)) {
+            LOG(WARNING) << "xpu_host_unregister failed";
+          }
+        }
+#endif
         TargetFree(target_, data_);
       } else if (cl_use_image2d_) {
         TargetFree(target_, data_, "cl_use_image2d_");
@@ -271,6 +256,8 @@ class Buffer {
   void* data_{nullptr};
   bool own_data_{true};
   TargetType target_{TargetType::kHost};
+  // is use pinnd memory
+  bool pinned_{false};
 };
 
 }  // namespace lite
