@@ -405,6 +405,10 @@ REGISTER_CONVERTER(fill_any_like,
                    ConvertFillAnyLike,
                    "huawei_ascend_npu,cambricon_mlu,intel_openvino,"
                    "qualcomm_qnn,kunlunxin_xtcl,verisilicon_timvx");
+REGISTER_CONVERTER(fill_zeros_like,
+                   ConvertFillZerosLike,
+                   "huawei_ascend_npu,cambricon_mlu,intel_openvino,"
+                   "qualcomm_qnn,kunlunxin_xtcl,verisilicon_timvx");
 REGISTER_CONVERTER(fill_constant_batch_size_like,
                    ConvertFillConstantBatchSizeLike,
                    "huawei_ascend_npu,verisilicon_timvx,intel_openvino");
@@ -546,6 +550,7 @@ REGISTER_CONVERTER(sin,
                    "huawei_ascend_npu,verisilicon_timvx");
 REGISTER_CONVERTER(cos, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(silu, ConvertUnaryActivations, "huawei_ascend_npu");
+REGISTER_CONVERTER(rsqrt, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(roll, ConvertRoll, "huawei_ascend_npu");
 REGISTER_CONVERTER(elementwise_floordiv,
                    ConvertElementwise,

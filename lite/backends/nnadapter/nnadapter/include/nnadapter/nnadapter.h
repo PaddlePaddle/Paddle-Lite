@@ -1787,6 +1787,21 @@ typedef enum {
   NNADAPTER_ROLL,
 
   /**
+   * Performs element-wise rsqrt activation.
+   * The output is calculated using this formula: `output` = 1 / (sqrt('input`))
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the same shape and type as `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_RSQRT,
+
+  /**
    * Outputs an 1-D tensor containing the shape of the input tensor.
    *
    * Inputs:

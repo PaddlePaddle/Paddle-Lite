@@ -38,7 +38,13 @@ typedef enum {
   DATA_TYPE_FLOAT64 = 11,
 } DataTypeCode;
 
-typedef enum { RELU = 1, RELU1 = 2, RELU6 = 3, SIGMOID = 4 } ActivationTypeCode;
+typedef enum {
+  RELU = 1,
+  RELU1 = 2,
+  RELU6 = 3,
+  SIGMOID = 4,
+  RSQRT = 5
+} ActivationTypeCode;
 
 typedef enum {
   ADD = 1,

@@ -220,6 +220,10 @@ REGISTER_OPERATION(ROI_ALIGN,
                    PrepareRoiAlign,
                    ExecuteRoiAlign)
 REGISTER_OPERATION(ROLL, ValidateRoll, PrepareRoll, ExecuteRoll)
+REGISTER_OPERATION(RSQRT,
+                   ValidateUnaryActivations,
+                   PrepareUnaryActivations,
+                   ExecuteUnaryActivations)
 REGISTER_OPERATION(SHAPE, ValidateShape, PrepareShape, ExecuteShape)
 REGISTER_OPERATION(SIGMOID,
                    ValidateUnaryActivations,
