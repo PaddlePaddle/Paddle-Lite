@@ -334,26 +334,26 @@ TEST(elementwise_broadcast, compute_i32) {
   const int TEST_RETEAT_NUM = 10;
   for (int repeat_count = 0; repeat_count < TEST_RETEAT_NUM; ++repeat_count) {
     EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
-        paddle::lite::Place(TARGET(kARM), PRECISION(kInt32)),
-        "def",
+        paddle::lite::Place(TARGET(kARM), PRECISION(kFloat)),
+        "int32",
         "add",
         "",
         [](int32_t l, int32_t r) { return l + r; }));
     EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
-        paddle::lite::Place(TARGET(kARM), PRECISION(kInt32)),
-        "def",
+        paddle::lite::Place(TARGET(kARM), PRECISION(kFloat)),
+        "int32",
         "sub",
         "",
         [](int32_t l, int32_t r) { return l - r; }));
     EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
-        paddle::lite::Place(TARGET(kARM), PRECISION(kInt32)),
-        "def",
+        paddle::lite::Place(TARGET(kARM), PRECISION(kFloat)),
+        "int32",
         "mul",
         "",
         [](int32_t l, int32_t r) { return l * r; }));
     EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
-        paddle::lite::Place(TARGET(kARM), PRECISION(kInt32)),
-        "def",
+        paddle::lite::Place(TARGET(kARM), PRECISION(kFloat)),
+        "int32",
         "div",
         "",
         [](int32_t l, int32_t r) { return l / r; }));
