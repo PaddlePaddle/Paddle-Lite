@@ -1689,6 +1689,14 @@ typedef struct Device {
   - 输出 ：
     - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
 
+- NNADAPTER_RSQRT
+
+  逐元素计算平方根的倒数： `output` = 1 / (sqrt(`input`)) 。
+  - 输入：
+    - 0 ： input ，输入操作数，类型： NNADAPTER_FLOAT32 、 NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 。
+  - 输出：
+    - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
+
 - NNADAPTER_SHAPE
 
   获得输入的形状。

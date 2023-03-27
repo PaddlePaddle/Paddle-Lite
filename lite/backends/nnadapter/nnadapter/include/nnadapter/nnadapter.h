@@ -1788,7 +1788,7 @@ typedef enum {
 
   /**
    * Performs element-wise rsqrt activation.
-   * The output is calculated using this formula: `output` = 1 / (sqrt('input`))
+   * The output is calculated using this formula: `output` = 1 / (sqrt(`input`))
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,

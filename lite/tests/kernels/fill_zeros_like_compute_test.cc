@@ -91,7 +91,14 @@ void TestFillZerosLike(Place place, float abs_error) {
 TEST(fill_zeros_like, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-3;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
