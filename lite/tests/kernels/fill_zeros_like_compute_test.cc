@@ -88,6 +88,17 @@ void TestFillZerosLike(Place place, float abs_error) {
   }
 }
 
+void TestFillZerosLikeNNAdapter(Place place, float abs_error) {
+  std::vector<std::vector<int64_t>> x_shapes{
+      {2, 3, 4, 5}, {2, 3, 4}, {3, 4}, {4}};
+  for (auto x_shape : x_shapes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new FillZerosLikeComputeTester<float>(place, "def", DDim(x_shape)));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision();
+  }
+}
+
 TEST(fill_zeros_like, precision) {
   Place place;
   float abs_error = 1e-5;
@@ -95,6 +106,8 @@ TEST(fill_zeros_like, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-3;
+  TestFillZerosLikeNNAdapter(place, abs_error);
+  return;
 #else
   return;
 #endif
