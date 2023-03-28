@@ -121,3 +121,4 @@ USE_MIR_PASS(keepdims_convert_pass);
 USE_MIR_PASS(op_fusion_minimal_set_pass);
 USE_MIR_PASS(lite_sigmoid_elementmul_fuse_pass);
 USE_MIR_PASS(transformer_attention_fuse_pass);
+USE_MIR_PASS(support_0_dim_tensor_pass);
