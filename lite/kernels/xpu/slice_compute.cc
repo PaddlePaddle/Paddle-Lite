@@ -404,7 +404,8 @@ REGISTER_LITE_KERNEL(slice, kXPU, kInt8, kAny, SliceInt8, DISABLE_XPU1_int8)
 
 using SliceInt8 =
     paddle::lite::kernels::xpu::SliceCompute<int8_t, PRECISION(kInt8)>;
-REGISTER_LITE_KERNEL(slice, kXPU, kInt8, kAny, SliceInt8, DISABLE_XPU1_array_int8)
+REGISTER_LITE_KERNEL(
+    slice, kXPU, kInt8, kAny, SliceInt8, DISABLE_XPU1_array_int8)
     .BindInput("Input",
                {LiteType::GetTensorListTy(TARGET(kXPU), PRECISION(kInt8))})
     .BindInput("StartsTensor",
