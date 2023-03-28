@@ -11,6 +11,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <limits>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/tensor.h"
 
@@ -26,21 +27,19 @@ inline void reduce_n(const T* src,
                      int channel_in,
                      int height_in,
                      int width_in) {
-  int hw_size = height_in * width_in;
-  int chw_size = channel_in * hw_size;
-  int data_index, src_index, src_index0;
-  for (int c = 0; c < channel_in; ++c) {
-    for (int h = 0; h < height_in; ++h) {
-      for (int w = 0; w < width_in; ++w) {
-        data_index = c * hw_size + h * width_in + w;
-        dst[data_index] = src[data_index];
-        for (int n = 1; n < num_in; ++n) {
-          src_index = n * chw_size + data_index;
-          dst[data_index] = dst[data_index] > src[src_index] ? dst[data_index]
-                                                             : src[src_index];
+  int64_t size_hw = height_in * width_in;
+  int64_t size_hwc = height_in * width_in * channel_in;
+  for (int nin = 0; nin < num_in; nin++) {
+    T tmp = std::numeric_limits<T>::min();
+    for (int cin = 0; cin < channel_in; cin++) {
+      for (int hin = 0; hin < height_in; hin++) {
+        for (int win = 0; win < width_in; win++) {
+          tmp = std::max(
+              src[nin * size_hwc + cin * size_hw + hin * width_in + win], tmp);
         }
       }
     }
+    dst[nin] = tmp;
   }
 }
 
