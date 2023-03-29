@@ -154,7 +154,7 @@ void TestAdaptiveAveragePool2D(Place place, float abs_error = 2e-5) {
 }
 
 void TestAdaptiveMaxPool2D(Place place, float abs_error = 2e-5) {
-  for (auto dims : std::vector<std::vector<int64_t>>{{2, 3, 4, 5}}) {
+  for (auto dims : std::vector<std::vector<int64_t>>{{2, 3, 6, 6}}) {
     std::unique_ptr<arena::TestCase> tester(
         new AdaptivePoolTester(place, "def", DDim(dims), "max", false));
     arena::Arena arena(std::move(tester), place, abs_error);
@@ -192,7 +192,6 @@ TEST(AdaptiveMaxPool2D, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
-  return;
 #else
   return;
 #endif
