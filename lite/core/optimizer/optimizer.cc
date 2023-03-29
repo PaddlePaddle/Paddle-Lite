@@ -132,7 +132,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
   std::vector<std::string> passes_local{
       {"lite_quant_dequant_fuse_pass",
        "weight_quantization_preprocess_pass",
-       "support_0_dim_tensor_pass",
        "op_transformation_pass",
        "assign_value_calc_offline_pass",
        "ssd_boxes_calc_offline_pass",
@@ -225,6 +224,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__multi_softmax_fuse_pass",
        "__xpu__conv2d_transpose_fuse_pass",
        "__xpu__spatial_transformer_resblock_fuse_pass",
+       "support_0_dim_tensor_pass",
        // pick original kernel from graph (exclude xpu)
        "static_kernel_pick_pass",
        // xpu pick original kernel from graph

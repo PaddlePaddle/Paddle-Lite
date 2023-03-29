@@ -22,48 +22,68 @@ namespace lite {
 namespace mir {
 
 void Support0DimTensor::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  // fix attr
+  const std::vector<std::string> op_cases_fix_attr{"fill_constant"};
   for (auto& x : graph->StmtTopologicalOrder()) {
     if (!x->IsStmt()) continue;
+
     auto& inst = x->AsStmt();
     VLOG(4) << "checking op " << inst.op_info()->Repr();
-
-    std::string op_type = inst.op_type();
     auto op = inst.op();
     auto op_info = *x->stmt()->op_info();
+    std::string op_type = inst.op_type();
     auto* scope = op->scope();
-
-    if (inst.op_type() == "feed" || inst.op_type() == "fetch") {
-      continue;
-    }
-
-    if (op_info.HasAttr("shape")) {
-      auto type = op_info.GetAttrType("shape");
-      if (type == OpAttrType::INTS) {
-        auto shape = op_info.GetAttr<std::vector<int32_t>>("shape");
-        if (shape.empty()) {
-          shape.push_back(1);
+    if (std::find(op_cases_fix_attr.begin(),
+                  op_cases_fix_attr.end(),
+                  op_type) != op_cases_fix_attr.end()) {
+      if (op_info.HasAttr("shape")) {
+        auto type = op_info.GetAttrType("shape");
+        if (type == OpAttrType::INTS) {
+          auto shape = op_info.GetAttr<std::vector<int32_t>>("shape");
+          if (shape.empty()) {
+            shape.push_back(1);
+          }
+          op_info.SetAttr<std::vector<int32_t>>("shape", shape);
+        } else {
+          auto shape = op_info.GetAttr<std::vector<int64_t>>("shape");
+          if (shape.empty()) {
+            shape.push_back(1);
+            VLOG(4) << "op " << op_type
+                    << ", shape dims empty, fix dim -> {1} ";
+          }
+          op_info.SetAttr<std::vector<int64_t>>("shape", shape);
         }
-        op_info.SetAttr<std::vector<int32_t>>("shape", shape);
-      } else {
-        auto shape = op_info.GetAttr<std::vector<int64_t>>("shape");
-        if (shape.empty()) {
-          shape.push_back(1);
-        }
-        op_info.SetAttr<std::vector<int64_t>>("shape", shape);
+        op->Attach(op_info, scope);
       }
-      op->Attach(op_info, scope);
     }
+  }
 
-    for (auto* in_node : x->inlinks) {
-      auto& var = in_node->AsArg();
-      const auto& var_name = var.name;
-      std::string arg_name;
-      CHECK(op_info.GetInputArgname(var_name, &arg_name))
-          << "Can not find the input argument,current var name : " << var_name;
+  // fix var node shape
+  for (auto& node : graph->mutable_nodes()) {
+    if (!node.IsArg()) continue;
+
+    auto& var = node.AsArg();
+    const auto& var_name = var.name;
+    if (var_name == "feed" || var_name == "fetch") continue;
+
+    for (auto* in : node.inlinks) {
+      if (!in->IsStmt()) continue;
+
+      auto* scope = in->AsStmt().op()->scope();
+      auto* var_ptr = scope->FindVar(var_name);
+      if (var_ptr == nullptr) {
+        VLOG(4) << "Can't find ouput var_name:  " << var_name
+                << "in current scope.";
+        continue;
+      }
+      if (!var_ptr->IsType<lite::Tensor>()) {
+        continue;
+      }
+
       auto tensor = scope->FindMutableTensor(var_name);
       auto dims = tensor->dims();
-
-      if (tensor->persistable() && dims.empty()) {
+      if (dims.empty()) {
+        VLOG(4) << "ARG " << var_name << " dims empty, fix dim -> {1} ";
         tensor->Resize({1});
       }
     }
