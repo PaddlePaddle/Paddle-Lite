@@ -413,21 +413,43 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
     act_param.Relu_clipped_coef = param.alpha;
   }
   if (flag_gemm_) {
-    lite::arm::math::gemm_s8(false,
-                             false,
-                             m_,
-                             n_,
-                             k_,
-                             i_data,
-                             w_data,
-                             o_data,
-                             b_data,
-                             true,
-                             lite::arm::math::GemmNBias,
-                             scale_.data(),
-                             act_param,
-                             &ctx,
-                             true);
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+    if (ctx.has_sve2_i8mm()) {
+      lite::arm::math::gemm_sve(false,
+                                false,
+                                m_,
+                                n_,
+                                k_,
+                                i_data,
+                                w_data,
+                                o_data,
+                                b_data,
+                                true,
+                                lite::arm::math::GemmNBias,
+                                scale_.data(),
+                                act_param,
+                                &ctx,
+                                false);
+    } else {
+#endif
+      lite::arm::math::gemm_s8(false,
+                               false,
+                               m_,
+                               n_,
+                               k_,
+                               i_data,
+                               w_data,
+                               o_data,
+                               b_data,
+                               true,
+                               lite::arm::math::GemmNBias,
+                               scale_.data(),
+                               act_param,
+                               &ctx,
+                               true);
+#if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
+    }
+#endif
   } else {
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;
