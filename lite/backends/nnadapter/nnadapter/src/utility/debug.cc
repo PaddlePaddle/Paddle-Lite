@@ -306,6 +306,7 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
       case NNADAPTER_TANH:
       case NNADAPTER_SIN:
       case NNADAPTER_COS:
+      case NNADAPTER_RSQRT:
         input_args = {"input"};
         output_args = {"output"};
         break;
@@ -758,6 +759,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(RESIZE_LINEAR);
     NNADAPTER_TYPE_TO_STRING(ROI_ALIGN);
     NNADAPTER_TYPE_TO_STRING(ROLL);
+    NNADAPTER_TYPE_TO_STRING(RSQRT);
     NNADAPTER_TYPE_TO_STRING(SHAPE);
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
     NNADAPTER_TYPE_TO_STRING(SIN);

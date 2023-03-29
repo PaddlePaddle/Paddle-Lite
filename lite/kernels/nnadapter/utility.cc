@@ -550,6 +550,8 @@ NNAdapterOperationType ConvertUnaryActTypeToNNOperationType(
     unary_act_op_code = NNADAPTER_COS;
   } else if (unary_act_op_type == "silu") {
     unary_act_op_code = NNADAPTER_SWISH;
+  } else if (unary_act_op_type == "rsqrt") {
+    unary_act_op_code = NNADAPTER_RSQRT;
   } else {
     LOG(WARNING) << "Unable to convert a unary activation type("
                  << unary_act_op_type << ") to a NNAdapter operation type!";
