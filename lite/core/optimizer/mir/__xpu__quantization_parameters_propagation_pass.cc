@@ -60,7 +60,14 @@ static float GetOutputThreshold(const OpInfo* op_info,
     CHECK(op_info->GetOutputIndex(name, &arg_index));
     threshold_name = arg_name + to_string(arg_index) + "_threshold";
   }
-  return op_info->GetAttr<float>(threshold_name);
+  float threshold = 0.0;
+  if (op_info->GetAttrType(threshold_name) == OpDescAPI::AttrType::FLOAT) {
+    threshold = op_info->GetAttr<float>(threshold_name);
+  } else if (op_info->GetAttrType(threshold_name) ==
+             OpDescAPI::AttrType::FLOATS) {
+    threshold = op_info->GetAttr<std::vector<float>>(threshold_name)[0];
+  }
+  return threshold;
 }
 
 // Complete the output scale from the input scale of its consumer ops.
