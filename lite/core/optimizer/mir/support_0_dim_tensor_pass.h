@@ -30,8 +30,6 @@ namespace mir {
 class Support0DimTensor : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph> &graph) override;
-
- private:
 };
 
 }  // namespace mir

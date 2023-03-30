@@ -23,7 +23,12 @@ namespace mir {
 
 void Support0DimTensor::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // fix attr
-  const std::vector<std::string> op_cases_fix_attr{"fill_constant"};
+  const std::vector<std::string> op_cases_fix_attr{"fill_constant",
+                                                   "uniform_random",
+                                                   "expand_v2",
+                                                   "assign_value",
+                                                   "gaussian_random",
+                                                   "set_value"};
   for (auto& x : graph->StmtTopologicalOrder()) {
     if (!x->IsStmt()) continue;
 
