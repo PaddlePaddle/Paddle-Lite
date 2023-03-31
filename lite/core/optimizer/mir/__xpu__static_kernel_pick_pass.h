@@ -97,6 +97,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
     xpu_int8_compute_autotune_ = GetBoolFromEnv("XPU_INT8_AUTOTUNE", false);
     xpu_full_quantization_ = GetBoolFromEnv("XPU_FULL_QUANTIZATION", true);
     fetch_tensor_in_xpu_ = GetBoolFromEnv("FETCH_TENSOR_IN_XPU", false);
+    kernel_use_host_ = false;
 #endif
   }
 
