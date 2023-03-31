@@ -231,6 +231,7 @@ add_operator(sequence_pool_grad train SRCS sequence_pool_grad_op.cc)
 
 #for bert encoder
 add_operator(calculate_lod_op extra SRCS calculate_lod_op.cc)
+add_operator(fused_token_prune_op extra SRCS fused_token_prune_op.cc)
 # Only for XPU
 add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc)
 add_operator(__xpu__softmax_topk_op extra SRCS __xpu__softmax_topk_op.cc)
@@ -251,6 +252,9 @@ add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_o
 add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc)
 add_operator(__xpu__dynamic_lstm_fuse_op extra SRCS __xpu__dynamic_lstm_fuse_op.cc)
 add_operator(__xpu__multi_softmax_op extra SRCS __xpu__multi_softmax_op.cc)
+add_operator(__xpu__clip_mask_op extra SRCS __xpu__clip_mask_op.cc)
+add_operator(__xpu__clip_lod_op extra SRCS __xpu__clip_lod_op.cc)
+add_operator(__xpu__token_scatter_op extra SRCS __xpu__token_scatter_op.cc)
 
 add_library(ops STATIC ${OPS_SRC} op_params.cc)
 add_dependencies(ops utils)

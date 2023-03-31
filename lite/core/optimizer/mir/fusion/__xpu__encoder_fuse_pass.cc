@@ -29,10 +29,12 @@ class XPUEncoderFuser : public FuseBase {
  public:
   explicit XPUEncoderFuser(bool with_mask = true,
                            bool norm_before = false,
-                           bool enable_qkv_fusion = true)
+                           bool enable_qkv_fusion = true,
+                           bool token_pruning = false)
       : with_mask_(with_mask),
         norm_before_(norm_before),
-        enable_qkv_fusion_(enable_qkv_fusion) {}
+        enable_qkv_fusion_(enable_qkv_fusion),
+        token_pruning_(token_pruning) {}
 
   void BuildPattern() override {
     auto* input = VarNode("input")->AsInput();
@@ -175,16 +177,38 @@ class XPUEncoderFuser : public FuseBase {
     auto* att_ln_bias = VarNode("att_ln_bias")
                             ->assert_is_op_input("layer_norm", "Bias")
                             ->AsInput();
-    auto* att_ln_out = VarNode("att_ln_out")
-                           ->assert_is_op_output("layer_norm", "Y")
-                           ->assert_is_op_input("__xpu__fc", "Input")
-                           ->AsIntermediate();
+    auto* att_ln_out =
+        VarNode("att_ln_out")->assert_is_op_output("layer_norm", "Y");
     auto* att_ln_mean = VarNode("att_ln_mean")
                             ->assert_is_op_output("layer_norm", "Mean")
                             ->AsIntermediate();
     auto* att_ln_var = VarNode("att_ln_var")
                            ->assert_is_op_output("layer_norm", "Variance")
                            ->AsIntermediate();
+
+    PMNode* token_prune = nullptr;
+    PMNode* clip_mask = nullptr;
+    PMNode* new_mask = nullptr;
+    PMNode* CLSInds = nullptr;
+    PMNode* SlimmedX = nullptr;
+    // token pruning
+    if (token_pruning_) {
+      token_prune =
+          OpNode("token_prune", "fused_token_prune")->AsIntermediate();
+      clip_mask = OpNode("clip_mask", "__xpu__clip_mask");
+      new_mask = VarNode("new_mask")
+                     ->assert_is_op_input("fused_token_prune", "NewMask")
+                     ->AsInput();
+      CLSInds = VarNode("CLSInds")
+                    ->assert_is_op_output("fused_token_prune", "CLSInds")
+                    ->AsOutput();
+      SlimmedX = VarNode("SlimmedX")
+                     ->assert_is_op_output("fused_token_prune", "SlimmedX")
+                     ->AsIntermediate();
+      att_ln_out->AsOutput();
+    } else {
+      att_ln_out->AsIntermediate();
+    }
 
     // ffn
     auto* ffn_fc0 = OpNode("ffn_fc0", "__xpu__fc")->AsIntermediate();
@@ -251,6 +275,12 @@ class XPUEncoderFuser : public FuseBase {
     }
 
     // Links
+    PMNode* ffn_in = (token_pruning_) ? SlimmedX : att_ln_out;
+    if (token_pruning_) {
+      token_prune->LinksFrom({qk_out, qk_mask, new_mask, att_ln_out})
+          .LinksTo({CLSInds, SlimmedX});
+      clip_mask->LinksFrom({qk_mask}).LinksTo({new_mask});
+    }
     if (norm_before_) {
       ln_before->LinksFrom({input, ln_before_scale, ln_before_bias})
           .LinksTo({ln_before_out, ln_before_mean, ln_before_var});
@@ -272,14 +302,14 @@ class XPUEncoderFuser : public FuseBase {
     att_add->LinksFrom({input, qkv_fc_out}).LinksTo({att_add_out});
     att_ln->LinksFrom({att_add_out, att_ln_scale, att_ln_bias})
         .LinksTo({att_ln_out, att_ln_mean, att_ln_var});
-    ffn_fc0->LinksFrom({att_ln_out, ffn_fc0_w, ffn_fc0_bias})
+    ffn_fc0->LinksFrom({ffn_in, ffn_fc0_w, ffn_fc0_bias})
         .LinksTo({ffn_fc0_maxo, ffn_fc0_out});
     ffn_fc1->LinksFrom({ffn_fc0_out, ffn_fc1_w, ffn_fc1_bias})
         .LinksTo({ffn_fc1_maxo, ffn_fc1_out});
     if (norm_before_) {
       ffn_add->LinksFrom({att_add_out, ffn_fc1_out}).LinksTo({ffn_add_out});
     } else {
-      ffn_add->LinksFrom({ffn_fc1_out, att_ln_out}).LinksTo({ffn_add_out});
+      ffn_add->LinksFrom({ffn_fc1_out, ffn_in}).LinksTo({ffn_add_out});
       ffn_ln->LinksFrom({ffn_add_out, ffn_ln_scale, ffn_ln_bias})
           .LinksTo({ffn_ln_out, ffn_ln_mean, ffn_ln_var});
     }
@@ -319,6 +349,26 @@ class XPUEncoderFuser : public FuseBase {
     op_desc.SetAttr<bool>("do_padding", false);
     op_desc.SetAttr<bool>("do_slice", false);
     op_desc.SetAttr<bool>("norm_before", norm_before_);
+    if (token_pruning_) {
+      op_desc.SetAttr<bool>("token_pruning", true);
+      op_desc.SetAttr<bool>("token_pruning_keep_order",
+                            matched.at("token_prune")
+                                ->stmt()
+                                ->op_info()
+                                ->GetAttr<bool>("keep_order"));
+      op_desc.SetAttr<bool>("token_pruning_keep_first",
+                            matched.at("token_prune")
+                                ->stmt()
+                                ->op_info()
+                                ->GetAttr<bool>("keep_first_token"));
+      op_desc.SetAttr<float>("token_pruning_keep_ratio",
+                             matched.at("clip_mask")
+                                 ->stmt()
+                                 ->op_info()
+                                 ->GetAttr<float>("keep_ratio"));
+    } else {
+      op_desc.SetAttr<bool>("token_pruning", false);
+    }
 
     int act_type =
         matched.at("ffn_fc0")->stmt()->op_info()->GetAttr<int>("act_type");
@@ -450,6 +500,12 @@ class XPUEncoderFuser : public FuseBase {
     if (with_mask_) {
       op_desc.SetInput("Mask", {matched.at("qk_mask")->arg()->name});
     }
+    if (token_pruning_) {
+      op_desc.SetOutput("CLSInds", {matched.at("CLSInds")->arg()->name});
+      matched.at("CLSInds")->arg()->type = LiteType::GetTensorTy(
+          TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW));
+      op_desc.SetOutput("OrgTokens", {matched.at("att_ln_out")->arg()->name});
+    }
 
     std::vector<std::string> fc_w;
     std::vector<std::string> fc_bias;
@@ -526,12 +582,17 @@ class XPUEncoderFuser : public FuseBase {
     for (auto& input_node : Input_Nodes) {
       DirectedLink(matched.at(input_node), op_node);
     }
+    if (token_pruning_) {
+      DirectedLink(op_node, matched.at("CLSInds"));
+      DirectedLink(op_node, matched.at("att_ln_out"));
+    }
   }
 
  private:
   bool with_mask_;
   bool norm_before_;
   bool enable_qkv_fusion_;
+  bool token_pruning_;
 
   std::vector<std::string> update_weight(
       Scope* scope,
@@ -622,11 +683,18 @@ class XPUEncoderFusePass : public ProgramPass {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     std::vector<bool> with_masks{true, false};
     std::vector<bool> norm_befores{true, false};
+    std::vector<bool> token_prunings{true, false};
 
     for (auto with_mask : with_masks) {
       for (auto norm_before : norm_befores) {
-        fusion::XPUEncoderFuser fuser(with_mask, norm_before, true);
-        fuser(graph.get());
+        for (auto token_pruning : token_prunings) {
+          if (!with_mask && token_pruning) {
+            continue;
+          }
+          fusion::XPUEncoderFuser fuser(
+              with_mask, norm_before, true, token_pruning);
+          fuser(graph.get());
+        }
       }
     }
   }

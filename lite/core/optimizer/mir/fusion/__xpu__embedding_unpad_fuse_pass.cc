@@ -98,7 +98,7 @@ class XPUEmbeddingUnpadFusePass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     std::vector<bool> with_lns{true, false};
     for (auto with_ln : with_lns) {
-      fusion::XPUEmbeddingUnpadFuser fuser;
+      fusion::XPUEmbeddingUnpadFuser fuser(with_ln);
       fuser(graph.get());
     }
   }

@@ -1787,6 +1787,13 @@ struct XPUEncoderParam : ParamBase {
   const lite::Tensor* seqLod{nullptr};
   const lite::Tensor* padSeqLen{nullptr};
   lite::Tensor* output{nullptr};
+  lite::Tensor* CLSInds{nullptr};
+  lite::Tensor* OrgTokens{nullptr};
+
+  bool token_pruning{false};
+  bool token_pruning_keep_order{false};
+  bool token_pruning_keep_first{false};
+  float token_pruning_keep_ratio{1.0};
 
   int n_layers{};
   int head_num{};
@@ -1805,6 +1812,33 @@ struct XPUEncoderParam : ParamBase {
 
   XPU_ENCODER_QUANT_CONFIG
 };
+
+struct XPUTokenScatterParam : ParamBase {
+  const lite::Tensor* X{nullptr};
+  const lite::Tensor* CLSInds{nullptr};
+  const lite::Tensor* Updates{nullptr};
+  const lite::Tensor* SeqLod{nullptr};
+  const lite::Tensor* PadSeqLen{nullptr};
+  lite::Tensor* Out{nullptr};
+};
+
+struct XPUClipLodParam : ParamBase {
+  const lite::Tensor* SeqLod{nullptr};
+  const lite::Tensor* SeqLen{nullptr};
+  const lite::Tensor* PadSeqLen{nullptr};
+  lite::Tensor* NewSeqLod{nullptr};
+  lite::Tensor* NewSeqLen{nullptr};
+  lite::Tensor* NewPadSeqLen{nullptr};
+  float keep_ratio{0.0};
+};
+
+struct XPUClipMaskParam : ParamBase {
+  const lite::Tensor* old_mask{};
+  lite::Tensor* new_mask{nullptr};
+  float keep_ratio{0.0};
+};
+
+struct FusedTokenPruneParam : ParamBase {};
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
   std::vector<lite::Tensor*> Ids;

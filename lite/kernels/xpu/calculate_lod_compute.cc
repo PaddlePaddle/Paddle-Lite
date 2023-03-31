@@ -31,7 +31,7 @@ void CalculateLodCompute::Run() {
 
   auto* mask_ptr = param.Mask->data<float>();
   auto* seq_lod = param.SeqLod->mutable_data<int>();
-  auto* seq_len = param.SeqLen->mutable_data<int>();
+  auto* seq_len = param.SeqLen->mutable_data<int64_t>();
   seq_lod[0] = 0;
   for (int batch_idx = 0; batch_idx < batch_size; ++batch_idx) {
     seq_len[batch_idx] = 0;

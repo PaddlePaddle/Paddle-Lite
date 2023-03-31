@@ -195,6 +195,11 @@ void XPUEncoderCompute::PrepareForRun() {
     quant_type.push_back(quant_type_map[param.quant_type[i]]);
   }
   encoder_attr_.set_quant_param(quant_type, precision, io_max_, weight_max_);
+  if (param.token_pruning) {
+    encoder_attr_.set_token_prune_param(param.token_pruning_keep_ratio,
+                                        param.token_pruning_keep_order,
+                                        param.token_pruning_keep_first);
+  }
 }
 
 void XPUEncoderCompute::Run() {
@@ -235,7 +240,12 @@ void XPUEncoderCompute::Run() {
         ln_scale_,
         ln_bias_,
         encoder_attr_,
-        (param.mask == nullptr) ? nullptr : param.mask->data<float>());
+        (param.mask == nullptr) ? nullptr : param.mask->data<float>(),
+        (param.CLSInds == nullptr) ? nullptr : param.CLSInds->mutable_data<int>(
+                                                   TARGET(kXPU)),
+        (param.OrgTokens == nullptr)
+            ? nullptr
+            : param.OrgTokens->mutable_data<float>(TARGET(kXPU)));
     CHECK_EQ(r, 0);
   } else {
     cast_in_guard_->Reserve(param.input->numel() * sizeof(float16));
@@ -257,7 +267,12 @@ void XPUEncoderCompute::Run() {
         ln_scale_,
         ln_bias_,
         encoder_attr_,
-        (param.mask == nullptr) ? nullptr : param.mask->data<float>());
+        (param.mask == nullptr) ? nullptr : param.mask->data<float>(),
+        (param.CLSInds == nullptr) ? nullptr : param.CLSInds->mutable_data<int>(
+                                                   TARGET(kXPU)),
+        (param.OrgTokens == nullptr)
+            ? nullptr
+            : param.OrgTokens->mutable_data<float>(TARGET(kXPU)));
     CHECK_EQ(r, 0);
     r = xdnn::cast_v2<float16, float>(
         ctx.GetRawContext(),
@@ -290,4 +305,7 @@ REGISTER_LITE_KERNEL(__xpu__encoder,
     .BindInput("LNBias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("CLSInds",
+                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("OrgTokens", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

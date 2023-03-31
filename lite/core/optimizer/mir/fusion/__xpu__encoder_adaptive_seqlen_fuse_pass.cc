@@ -68,6 +68,7 @@ class XPUEncoderAdaptiveSeqlenFuser : public FuseBase {
     } else {
       stack_out->assert_is_op_input("__xpu__encoder", "Mask");
     }
+    nodes2rm_.clear();
   }
 
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override {
@@ -115,11 +116,115 @@ class XPUEncoderAdaptiveSeqlenFuser : public FuseBase {
     DirectedLink(seq_lod_op_node, pad_seq_len_node);
     DirectedLink(seq_lod_op_node, seq_lod_node);
     DirectedLink(seq_lod_op_node, seq_len_node);
-    for (auto* encoder_node :
-         mask_out_node->outlinks) {  // TODO(TingShen): check is encoder
+    insert_unpad_op(graph,
+                    matched,
+                    mask_out_node,
+                    pad_seq_len_node,
+                    seq_lod_node,
+                    seq_len_node);
+  }
+
+  void DeleteNodes2rm(SSAGraph* graph) {
+    GraphSafeRemoveNodes(graph, nodes2rm_);
+  }
+
+ private:
+  std::string matmul_type_;
+  bool with_bias_;
+  std::set<const Node*> nodes2rm_;
+
+  void insert_unpad_op(SSAGraph* graph,
+                       const key2nodes_t& matched,
+                       Node* mask_out_node,
+                       Node* pad_seq_len_node,
+                       Node* seq_lod_node,
+                       Node* seq_len_node) {
+    auto valid_places = matched.at("matmul")->stmt()->op()->valid_places();
+    auto* scope = matched.at("matmul")->stmt()->op()->scope();
+    for (Node* node : mask_out_node->outlinks) {
+      if (!node->IsStmt()) {
+        VLOG(3) << mask_out_node;
+        VLOG(3) << node;
+        LOG(FATAL) << "node not a stmt";
+      }
+
+      Node* encoder_node = nullptr;
+      if (node->stmt()->op_info()->Type() == "__xpu__clip_mask") {
+        if (node->stmt()->op_info()->HasAttr("DELETED")) {
+          continue;
+        }
+        Node* new_mask_out_node = node->outlinks.front();  // Only one output
+
+        // arg new_seq_lod (reuse new_mask_out_node)
+        auto* new_seq_lod_node = new_mask_out_node;
+        new_seq_lod_node->arg()->type = LiteType::GetTensorTy(
+            TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW));
+
+        // add new arg new_seq_len
+        std::string new_seq_len_name = "new_" + seq_len_node->arg()->name;
+        auto* new_seq_len_node = graph->NewArgumentNode(new_seq_len_name);
+        new_seq_len_node->arg()->type = LiteType::GetTensorTy(
+            TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kNCHW));
+        scope->NewTensor(new_seq_len_name);
+
+        // add new arg new_pad_seq_len
+        std::string new_pad_seq_len_name =
+            "new_" + pad_seq_len_node->arg()->name;
+        auto* new_pad_seq_len_node =
+            graph->NewArgumentNode(new_pad_seq_len_name);
+        new_pad_seq_len_node->arg()->type = LiteType::GetTensorTy(
+            TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kNCHW));
+        scope->NewTensor(new_pad_seq_len_name);
+
+        cpp::OpDesc clip_lod_op_desc;
+        clip_lod_op_desc.mutable_inputs()->clear();
+        clip_lod_op_desc.mutable_outputs()->clear();
+        clip_lod_op_desc.SetType("__xpu__clip_lod");
+        clip_lod_op_desc.SetInput("SeqLod", {seq_lod_node->arg()->name});
+        clip_lod_op_desc.SetInput("SeqLen", {seq_len_node->arg()->name});
+        clip_lod_op_desc.SetInput("PadSeqLen", {pad_seq_len_node->arg()->name});
+        clip_lod_op_desc.SetOutput("NewSeqLod",
+                                   {new_seq_lod_node->arg()->name});
+        clip_lod_op_desc.SetOutput("NewSeqLen", {new_seq_len_name});
+        clip_lod_op_desc.SetOutput("NewPadSeqLen", {new_pad_seq_len_name});
+        clip_lod_op_desc.SetAttr<float>(
+            "keep_ratio",
+            node->stmt()->op_info()->GetAttr<float>("keep_ratio"));
+        auto clip_lod_op = LiteOpRegistry::Global().Create("__xpu__clip_lod");
+        clip_lod_op->Attach(clip_lod_op_desc, scope);
+        clip_lod_op->SetValidPlaces(valid_places);
+        auto* clip_lod_op_node =
+            graph->GraphCreateInstructNode(clip_lod_op, valid_places);
+
+        DirectedLink(pad_seq_len_node, clip_lod_op_node);
+        DirectedLink(seq_lod_node, clip_lod_op_node);
+        DirectedLink(seq_len_node, clip_lod_op_node);
+        DirectedLink(clip_lod_op_node, new_pad_seq_len_node);
+        DirectedLink(clip_lod_op_node, new_seq_lod_node);
+        DirectedLink(clip_lod_op_node, new_seq_len_node);
+        // RemoveDirectedLink(mask_out_node, node);
+        // RemoveDirectedLink(node, new_mask_out_node);
+        nodes2rm_.insert(node);
+        node->stmt()->mutable_op_info()->SetAttr<bool>("DELETED", true);
+        insert_unpad_op(graph,
+                        matched,
+                        new_mask_out_node,
+                        new_pad_seq_len_node,
+                        new_seq_lod_node,
+                        new_seq_len_node);
+        continue;
+      } else if (node->stmt()->op_info()->Type() == "__xpu__encoder") {
+        encoder_node = node;
+      } else if (node->stmt()->op_info()->Type() == "__xpu__clip_lod") {
+        continue;
+      } else {
+        LOG(FATAL) << "Unsupported adative_seqlen op type:"
+                   << node->stmt()->op_info()->Type()
+                   << "Please set multi_encoder_adaptive_seqlen to false, and "
+                      "try again.";
+      }
       auto* encoder_instruct = encoder_node->stmt();
       auto* encoder_op_desc = encoder_instruct->mutable_op_info();
-      auto encoder_op = encoder_instruct->op();
       Node* encoder_input_node;
       for (auto* encoder_in_node : encoder_node->inlinks) {
         if (encoder_in_node->arg()->name ==
@@ -141,7 +246,7 @@ class XPUEncoderAdaptiveSeqlenFuser : public FuseBase {
       seq_unpad_op_desc.mutable_outputs()->clear();
       seq_unpad_op_desc.SetType("sequence_unpad");
       seq_unpad_op_desc.SetInput("X", {encoder_input_name});
-      seq_unpad_op_desc.SetInput("Length", {seq_len_name});
+      seq_unpad_op_desc.SetInput("Length", {seq_len_node->arg()->name});
       seq_unpad_op_desc.SetOutput("Out", {seq_out_name});
       auto seq_unpad_op = LiteOpRegistry::Global().Create("sequence_unpad");
       seq_unpad_op->Attach(seq_unpad_op_desc, scope);
@@ -151,7 +256,7 @@ class XPUEncoderAdaptiveSeqlenFuser : public FuseBase {
 
       // set encoder op
       encoder_op_desc->SetInput("SeqLod", {seq_lod_node->arg()->name});
-      encoder_op_desc->SetInput("PadSeqLen", {pad_seq_len_name});
+      encoder_op_desc->SetInput("PadSeqLen", {pad_seq_len_node->arg()->name});
       encoder_op_desc->SetInput("Input", {seq_out_name});
       encoder_op_desc->SetAttr<bool>("do_padding", true);
       encoder_op_desc->SetAttr<bool>("adaptive_seqlen", true);
@@ -171,10 +276,6 @@ class XPUEncoderAdaptiveSeqlenFuser : public FuseBase {
       RemoveDirectedLink(encoder_input_node, encoder_node);
     }
   }
-
- private:
-  std::string matmul_type_;
-  bool with_bias_;
 };
 
 }  // namespace fusion
@@ -197,6 +298,7 @@ class XPUEncoderAdaptiveSeqlenFusePass : public ProgramPass {
       for (auto with_bias : with_biass) {
         fusion::XPUEncoderAdaptiveSeqlenFuser fuser(matmul_type, with_bias);
         fuser(graph.get());
+        fuser.DeleteNodes2rm(graph.get());
       }
     }
   }

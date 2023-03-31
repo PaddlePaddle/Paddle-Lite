@@ -38,9 +38,34 @@ bool XPUEncoderOp::InferShapeImpl() const {
   auto input_shape = param_.input->dims();
   auto batch_size = input_shape[0];
   auto seq_len = input_shape[1];
-  if (param_.seqLod && param_.seqLod->data<int>()) {
+  if (param_.adaptive_seqlen) {
     batch_size = param_.input->lod()[0].size() - 1;
     seq_len = param_.padSeqLen->data<int>()[0];
+    if (param_.token_pruning) {
+      std::vector<uint64_t> seq_lod = param_.input->lod()[0];
+      std::vector<uint64_t> new_seq_lod = param_.input->lod()[0];
+      for (int i = 1; i < seq_lod.size(); ++i) {
+        new_seq_lod[i] =
+            (seq_lod[i] - seq_lod[i - 1]) * param_.token_pruning_keep_ratio +
+            new_seq_lod[i - 1];
+      }
+      paddle::lite::LoD out_lod;
+      out_lod.push_back(new_seq_lod);
+      param_.output->set_lod(out_lod);
+      param_.CLSInds->set_lod(out_lod);
+      param_.CLSInds->Resize({static_cast<int64_t>(new_seq_lod[batch_size])});
+      param_.OrgTokens->set_lod(param_.input->lod());
+      param_.OrgTokens->Resize(
+          {static_cast<int64_t>(param_.input->lod()[0][batch_size]),
+           param_.hidden_dim});
+      param_.output->Resize(
+          {static_cast<int64_t>(new_seq_lod[batch_size]), param_.hidden_dim});
+    } else {
+      param_.output->set_lod(param_.input->lod());
+      param_.output->Resize(
+          {static_cast<int64_t>(param_.input->lod()[0][batch_size]),
+           param_.hidden_dim});
+    }
   }
   if (param_.do_slice) {
     if (param_.has_slice_decrease_axis) {
@@ -48,7 +73,7 @@ bool XPUEncoderOp::InferShapeImpl() const {
     } else {
       param_.output->Resize({batch_size, 1, param_.hidden_dim});
     }
-  } else {
+  } else if (!param_.adaptive_seqlen || param_.do_padding) {
     param_.output->Resize({batch_size, seq_len, param_.hidden_dim});
   }
   return true;
@@ -76,6 +101,20 @@ bool XPUEncoderOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.weight_max = op_desc.GetAttr<std::vector<float>>("weight_max");
   param_.io_max = op_desc.GetAttr<std::vector<float>>("io_max");
   param_.precision = op_desc.GetAttr<std::vector<std::string>>("precision");
+
+  if (op_desc.HasAttr("token_pruning_keep_ratio")) {
+    param_.CLSInds = scope->FindVar(op_desc.Output("CLSInds").front())
+                         ->GetMutable<lite::Tensor>();
+    param_.OrgTokens = scope->FindVar(op_desc.Output("OrgTokens").front())
+                           ->GetMutable<lite::Tensor>();
+    param_.token_pruning = true;
+    param_.token_pruning_keep_order =
+        op_desc.GetAttr<bool>("token_pruning_keep_order");
+    param_.token_pruning_keep_first =
+        op_desc.GetAttr<bool>("token_pruning_keep_first");
+    param_.token_pruning_keep_ratio =
+        op_desc.GetAttr<float>("token_pruning_keep_ratio");
+  }
 
   // Attach tensors
   param_.input = const_cast<lite::Tensor*>(

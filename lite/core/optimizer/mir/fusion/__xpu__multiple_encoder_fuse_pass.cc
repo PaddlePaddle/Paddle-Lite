@@ -45,12 +45,10 @@ class XPUMultipleEncoderFuser : public FuseBase {
       encoder2->assert_op_attr<bool>("adaptive_seqlen", true);
       auto* seq_lod1 = VarNode("seq_lod_1")
                            ->assert_is_op_input("__xpu__encoder", "SeqLod")
-                           ->assert_is_op_output("calculate_lod", "SeqLod")
                            ->AsInput();
       auto* pad_seq_len1 =
           VarNode("pad_seq_len1")
               ->assert_is_op_input("__xpu__encoder", "PadSeqLen")
-              ->assert_is_op_output("calculate_lod", "PadSeqLen")
               ->AsInput();
 
       encoder1_out->assert_is_op_input("sequence_unpad", "X");
@@ -62,16 +60,15 @@ class XPUMultipleEncoderFuser : public FuseBase {
       if (share_lod_) {
         encoder2->LinksFrom({seq_lod1, pad_seq_len1});
       } else {
+        encoder1->assert_op_attr<bool>("token_pruning", true);
         auto* seq_lod2 = VarNode("seq_lod_2")
                              ->assert_is_op_input("__xpu__encoder", "SeqLod")
-                             ->assert_is_op_output("calculate_lod", "SeqLod")
                              ->AsInput();
         auto* pad_seq_len2 =
             VarNode("pad_seq_len2")
                 ->assert_is_op_input("__xpu__encoder", "PadSeqLen")
-                ->assert_is_op_output("calculate_lod", "PadSeqLen")
                 ->AsInput();
-        encoder2->LinksFrom({seq_lod2, pad_seq_len2});
+        encoder2->LinksFrom({seq_lod2, pad_seq_len2});  // clsinds
       }
       *encoder1_in >> *encoder1 >> *encoder1_out >> *seq_unpad >>
           *seq_unpad_out >> *encoder2;
@@ -98,10 +95,10 @@ class XPUMultipleEncoderFuser : public FuseBase {
         encoder2_node->stmt()->op_info()->HasAttr("DELETED")) {
       return;
     }
-    if (with_unpad_ && share_lod_) {
+    if (with_unpad_) {
       nodes2rm_.insert(matched.at("seq_unpad"));
       nodes2rm_.insert(matched.at("seq_unpad_out"));
-      if (ShareSameAttrs(encoder1_node, encoder2_node)) {
+      if (share_lod_ && ShareSameAttrs(encoder1_node, encoder2_node)) {
         MergeEncoders(graph, matched, encoder1_node, encoder2_node);
       } else {
         encoder1_node->stmt()->mutable_op_info()->SetAttr<bool>("do_padding",
@@ -129,11 +126,17 @@ class XPUMultipleEncoderFuser : public FuseBase {
   bool ShareSameAttrs(Node* op1, Node* op2) {
     cpp::OpDesc op1_desc = *op1->stmt()->mutable_op_info();
     cpp::OpDesc op2_desc = *op2->stmt()->mutable_op_info();
+    std::vector<std::string> neither_bool_attrs = {"token_pruning"};
     std::vector<std::string> bool_attrs = {"enable_qkv_fusion", "norm_before"};
     std::vector<std::string> int_attrs = {
         "act_type", "hidden_dim", "head_num", "head_dim", "intermediate_size"};
     std::vector<std::string> float_attrs = {"alpha"};
     std::vector<std::string> string_vec_attrs = {"precision", "quant_type"};
+    for (std::string& attr : neither_bool_attrs) {
+      if (op1_desc.GetAttr<bool>(attr) || op2_desc.GetAttr<bool>(attr)) {
+        return false;
+      }
+    }
     for (std::string& attr : bool_attrs) {
       if (op1_desc.GetAttr<bool>(attr) != op2_desc.GetAttr<bool>(attr)) {
         return false;

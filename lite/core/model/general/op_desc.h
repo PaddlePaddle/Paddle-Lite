@@ -121,8 +121,8 @@ class OpDesc : public OpDescAPI {
     CHECK(attr_it != attr_types().end());
     auto pair = std::make_pair(it, attr_it);
     CHECK(pair.second->second == OpDataTypeTrait<T>::AT)
-        << "required type is " << OpDataTypeTrait<T>::ATN
-        << " not match the true type";
+        << "The required type of attribute " << name << " is "
+        << OpDataTypeTrait<T>::ATN << " not match the true type";
     return pair.first->second.get<T>();
   }
 
