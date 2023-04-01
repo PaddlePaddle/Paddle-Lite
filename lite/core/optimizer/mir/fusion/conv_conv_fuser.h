@@ -17,6 +17,7 @@
 #include <cmath>
 #include <memory>
 #include <string>
+
 #include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
 #include "lite/utils/log/cp_logging.h"
 
@@ -56,8 +57,8 @@ class ConvConvFuser : public FuseBase {
     int in_size = ih * iw;
     int in_channel_size = ic * in_size;
     // out = w1[j, i, ih, iw] * w2[k, j, kw, kh]
-    // out_dim = [oc1, ic, kh, kw], din_dim = [oc0, ic, kh, kw]
-    // weight_dim = [oc1, oc0, kh, kw]
+    // out_dim = [oc1, ic, ih, iw]
+    // din_dim = [oc0, ic, ih, iw], weight_dim = [oc1, oc0, kh, kw]
     for (int k = 0; k < oc1; k++) {
       const float* weights_ptr = weights + k * oc0;
       float* out_ptr = dout + k * in_channel_size;
@@ -67,7 +68,7 @@ class ConvConvFuser : public FuseBase {
         for (int i = 0; i < in_size; i++) {
           float sum = 0.f;
           for (int j = 0; j < oc0; j++) {
-            sum += din_ptr[j * in_channel_size] * weights_ptr[j];
+            sum += din_ptr[j * in_channel_size + i] * weights_ptr[j];
           }
           *out_ptr_channel++ = sum;
         }
