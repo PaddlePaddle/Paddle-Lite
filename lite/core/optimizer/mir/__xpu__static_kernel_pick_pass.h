@@ -74,12 +74,15 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
     if (cur_dev_attr <= 1) {
       VLOG(4) << "Currents XPU device : XPU1";
       xpu_disable_flag_ = "DISABLE_XPU1";
+      xpu_device_version_ = "XPU1";
     } else if (cur_dev_attr >= 2 && cur_dev_attr <= 299) {
       VLOG(4) << "Currents XPU device : XPU2";
       xpu_disable_flag_ = "DISABLE_XPU2";
+      xpu_device_version_ = "XPU2";
     } else if (cur_dev_attr >= 300 && cur_dev_attr <= 599) {
       VLOG(4) << "Currents XPU device : XPU3";
       xpu_disable_flag_ = "DISABLE_XPU3";
+      xpu_device_version_ = "XPU3";
     } else {
       VLOG(4) << "invaid XPU device";
       xpu_disable_flag_ = "NONE";
@@ -389,6 +392,7 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
   bool xpu_int8_compute_autotune_{false};
   bool xpu_full_quantization_{true};
   bool fetch_tensor_in_xpu_{false};
+  std::string xpu_device_version_{};
 };
 
 }  // namespace mir
