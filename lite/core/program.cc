@@ -28,6 +28,10 @@
 #ifdef LITE_WITH_PRECISION_PROFILE
 #include "lite/core/profile/precision_profiler.h"
 #endif
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/target_wrapper.h"
+#include "lite/backends/xpu/tensor_dump.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -805,6 +809,17 @@ void Instruction::Run() {
   op_->InferShape();
   kernel_->Launch();
   has_run_ = true;
+#ifdef LITE_WITH_XPU
+#ifdef LITE_WITH_PRECISION_PROFILE
+  if (lite::TargetWrapperXPU::xpu_runtime_ptr->need_dump_xpu_info) {
+    const std::string dump_tensor_path =
+        lite::TargetWrapperXPU::xpu_runtime_ptr->xpu_dump_tensor_path;
+    const std::string dump_log_path =
+        lite::TargetWrapperXPU::xpu_runtime_ptr->xpu_dump_log_path;
+    xpu::npy::DumpOpoutTensor(this, op_, dump_tensor_path, dump_log_path);
+  }
+#endif
+#endif
 }
 
 STL::ostream& operator<<(STL::ostream& os, const Instruction& other) {

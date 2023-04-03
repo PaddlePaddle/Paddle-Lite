@@ -52,24 +52,30 @@ class IoCopyHostToXPUCompute
     : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void IoCopyHostToDevice(const Tensor* x, Tensor* y) {
-    if (x->target() == TARGET(kHost) || x->target() == TARGET(kX86) ||
-        x->target() == TARGET(kARM)) {
-      auto mem_size = x->memory_size();
-      VLOG(4) << "host to xpu, copy size " << mem_size;
-      auto* data = y->mutable_data(TARGET(kXPU), mem_size);
-      if (mem_size > 0) {
+    auto& ctx = this->ctx_->template As<XPUContext>();
+    auto mem_size = x->memory_size();
+    auto* data = y->mutable_data(TARGET(kXPU), mem_size);
+    VLOG(4) << "host to xpu, copy size " << mem_size;
+    if (mem_size > 0) {
+      if (x->target() == TARGET(kHost) || x->target() == TARGET(kX86) ||
+          x->target() == TARGET(kARM)) {
         if (can_pinned_ && this->op_type_ == "io_copy" &&
             mem_size > PINNED_MEM_SIZE) {
           x->set_host_pinned_memory();
         }
         TargetWrapperXPU::MemcpySync(
             data, x->raw_data(), mem_size, IoDirection::HtoD);
+
+      } else if (x->target() == TARGET(kXPU)) {
+        int r = xdnn::copy<int8_t>(ctx.GetRawContext(),
+                                   x->data<int8_t>(),
+                                   reinterpret_cast<int8_t*>(data),
+                                   mem_size);
+        CHECK_EQ(r, 0) << "d2d copy failed.";
+      } else {
+        LOG(FATAL) << "IoCopyHostToXPU can not handle with the input target: "
+                   << lite_api::TargetToStr(x->target());
       }
-    } else if (x->target() == TARGET(kXPU)) {
-      y->ShareDataWith(*x);
-    } else {
-      LOG(FATAL) << "IoCopyHostToXPU can not handle with the input target: "
-                 << lite_api::TargetToStr(x->target());
     }
   }
 
