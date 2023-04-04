@@ -5,6 +5,9 @@
 ## ARM 的性能数据
 请参考 [ARM CPU](../demo_guides/arm_cpu)的最新性能数据
 
+## OpenCL 的性能数据
+请参考 [OpenCL](../demo_guides/opencl)的最新性能数据
+
 ## 华为昇腾 NPU 的性能数据
 请参考 [华为昇腾 NPU](../demo_guides/huawei_ascend_npu)的最新性能数据
 

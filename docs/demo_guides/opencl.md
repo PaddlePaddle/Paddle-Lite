@@ -110,6 +110,116 @@ Paddle Lite 利用跨平台计算框架 OpenCL 将计算映射到 GPU 上执行�
 
 - [开源模型支持列表](../quick_start/support_model_list)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 性能数据
+
+请参考[性能测试文档](benchmark_tools)对模型进行测试。
+
+##### 测试环境
+
+* 模型
+    * fp32 浮点模型
+        * [AlexNet](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/AlexNet.tar.gz)
+        * [OCRv2Det](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/ch_PP-OCRv2_det_infer.tar.gz)
+        * [OCRv2Rec](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/ch_PP-OCRv2_rec_infer.tar.gz)
+        * [OCRv3Det](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/ch_PP-OCRv3_det_infer.tar.gz)
+        * [OCRv3Rec](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/ch_PP-OCRv3_rec_infer.tar.gz)
+        * [OcrMobileV20Det](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/ch_ppocr_mobile_v2.0_det_infer.tar.gz)
+        * [OcrMobileV20Rec](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/ch_ppocr_mobile_v2.0_rec_infer.tar.gz)
+        * [EfficientNet](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/efficientnet.tar.gz)
+        * [FaceDetector](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/FaceDetector.tar.gz)
+        * [HRNetW18C](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/hrnet_18_voc.tar.gz)
+        * [InceptionV1](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/inception_v1.tar.gz)
+        * [InceptionV2](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/inception_v2.tar.gz)
+        * [Mobilefacenet](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/mobilefacenet.tar.gz)
+        * [MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/MobileNetV1_infer.tar.gz)
+        * [MobileNetV2](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/MobileNetV2_infer.tar.gz)
+        * [MobileNetV3Large](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/MobileNetV3_large_x1_0_infer.tar.gz)
+        * [MobileNetV3Small](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/MobileNetV3_small_x1_0_infer.tar.gz)
+        * [PicodetS320Coco](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/picodet_s_320_COCO.tar.gz)
+        * [PicodetS320CocoLcnetNonPostprocess](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/picodet_s_320_coco_lcnet_non_postprocess.tar.gz)
+        * [PPLCNetV2Base](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/PPLCNetV2_base_infer.tar.gz)
+        * [PPLCNetX10](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/PPLCNet_x1_0_infer.tar.gz)
+        * [PpyoloTiny650eCoco](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/ppyolo_tiny_650e_coco.tar.gz)
+        * [HumanSegLite](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/RES-paddle2-PPHumanSegLite.tar.gz)
+        * [LIteSegSTDC1](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/RES-paddle2-PPLIteSegSTDC1.tar.gz)
+        * [ResNet18](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/ResNet18_infer.tar.gz)
+        * [ResNet50](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/ResNet50_infer.tar.gz)
+        * [ShuffleNetV2](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/ShuffleNetV2_x1_0_infer.tar.gz)
+        * [SqueezeNet](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/SqueezeNet1_0_infer.tar.gz)
+        * [SsdMobilenetv1](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/ssd_mobilenetv1.tar.gz)
+        * [Tinypose](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/tinypose_128x96.tar.gz)
+        * [Transformer](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/transformer.tar.gz)
+        * [Vgg16](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/VGG16_infer.tar.gz)
+        * [YoloV3](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/yolov3.tar.gz)
+        * [Yolov5s](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpufp32/yolov5s.tar.gz)
+
+
+
+* 测试机器
+
+   |SOC|骁龙 865|骁龙 835|骁龙 625|
+   |:----|----:|----:|----:|
+   |设备|Xiaomi MI10 |Xiaomi mi6 |Xiaomi Redmi6 Pro |
+   |CPU|1xA77 @2.84GHz + 3xA77 @2.42GHz + 4xA55 @1.8GHz |4xA73 @2.45GHz + 4xA53 @1.9GHz |4xA53 @1.8GHz + 4xA53 @1.6GHz| 
+   |GPU|Adreno 650 |Adreno 540 |Adreno 506 |
+
+* 测试说明
+    * Branch: release/v2.13, commit id: 102697b
+    * 使用 Android ndk-r22b armv7 armv8 编译
+    * 在 GPU 上运行时，开启了 Auto Tune
+    * warmup=10, repeats=30，统计平均时间，单位 ms
+    * 输入数据全部设为 1.f
+##### 测试数据
+
+|模型|骁龙 865|骁龙 835|骁龙 625|
+|:----|----:|----:|----:|
+|AlexNet|16.426|33.664|145.968|
+|OCRv2Det|53.572|96.051|777.221|
+|OCRv2Rec|14.823|19.754|41.877|
+|OCRv3Det|59.049|104.19|824.459|
+|OCRv3Rec|45.884|60.491|144.617|
+|OcrMobileV20Det|28.816|43.577|346.57|
+|OcrMobileV20Rec|31.349|21.597|33.124|
+|EfficientNet|12.367|16.649|81.172|
+|FaceDetector|16.467|31.315|122.19|
+|HRNetW18C|161.656|270.613|2269.367|
+|InceptionV1|16.475|21.566|130.674|
+|InceptionV2|20.062|28.816|196.039|
+|Mobilefacenet|5.723|5.906|26.644|
+|MobileNetV1|5.638|8.566|55.181|
+|MobileNetV2|5.843|7.333|42.302|
+|MobileNetV3Large|8.827|9.575|39.094|
+|MobileNetV3Small|6.556|4.46|18.238|
+|PicodetS320Coco|18.258|25.143|70.883|
+|PicodetS320CocoLcnetNonPostprocess|13.211|23.957|83.136|
+|PPLCNetV2Base|9.223|13.361|73.278|
+|PPLCNetX10|3.756|4.398|22.459|
+|PpyoloTiny650eCoco|18.001|23.328|70.168|
+|PPHumanSegLite|83.997|81.512|162.759|
+|PPLIteSegSTDC1|392.905|917.97|5424.396|
+|ResNet18|11.819|20.126|148.153|
+|ResNet50|25.213|45.395|337.966|
+|ShuffleNetV2|12.01|6.831|33.163|
+|SqueezeNet|6.37|8.147|44.144|
+|SsdMobilenetv1|28.132|32.292|129.481|
+|Tinypose|31.836|15.948|33.289|
+|Vgg16|95.283|199.868|1543.216|
+|YoloV3|258.898|428.458|2739.353|
+|Yolov5s|85.677|157.756|944.373|
+
 ## 参考示例演示
 
 ### 准备本地编译环境
