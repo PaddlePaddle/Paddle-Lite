@@ -113,11 +113,11 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
         * [DeeplabV3](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/deeplabv3_quant.tar.gz)
         * [EfficientNet](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/EfficientNetB0_quant.tar.gz)
         * [Hrnet18](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/hrnet18_quant.tar.gz)
-        * [Medium](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/medium_quant.tar.gz)
-        * [Micro](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/micro_quant.tar.gz)
-        * [Mini](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/mini_quant.tar.gz)
+        * [ERNIE 3.0-Medium](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/medium_quant.tar.gz)
+        * [ERNIE 3.0-Micro](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/micro_quant.tar.gz)
+        * [ERNIE 3.0-Mini](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/mini_quant.tar.gz)
         * [MobileNetV3](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/MobileNetV3_large_x1_0_quant.tar.gz)
-        * [Nano](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/nano_quant.tar.gz)
+        * [ERNIE 3.0-Nano](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/nano_quant.tar.gz)
         * [Picodet](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/picodet_s_416_coco_npu_quant.tar.gz)
         * [PPHGNet](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/PPHGNet_tiny_quant.tar.gz)
         * [PPLCNetV2](https://paddlelite-demo.bj.bcebos.com/models/benchmark/armcpuint8/PPLCNetV2_base_quant.tar.gz)
@@ -316,11 +316,11 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
 |DeeplabV3|476.312|
 |EfficientNet|39.345|
 |Hrnet18|99.822|
-|Medium|94.506|
-|Micro|23.444|
-|Mini|35.075|
+|ERNIE 3.0-Medium|94.506|
+|ERNIE 3.0-Micro|23.444|
+|ERNIE 3.0-Mini|35.075|
 |MobileNetV3|8.481|
-|Nano|18.38|
+|ERNIE 3.0-Nano|18.38|
 |Picodet|30.397|
 |PPHGNet|71.05|
 |PPLCNetV2|13.743|
@@ -339,11 +339,11 @@ Paddle Lite 支持在 Android/iOS/ARMLinux 等移动端设备上运行高性能�
 |DeeplabV3|551.74|
 |EfficientNet|76.063|
 |Hrnet18|126.647|
-|Medium|116.793|
-|Micro|31.18|
-|Mini|46.336|
+|ERNIE 3.0-Medium|116.793|
+|ERNIE 3.0-Micro|31.18|
+|ERNIE 3.0-Mini|46.336|
 |MobileNetV3|11.658|
-|Nano|24.933|
+|ERNIE 3.0-Nano|24.933|
 |Picodet|42.257|
 |PPHGNet|85.009|
 |PPLCNetV2|17.912|
