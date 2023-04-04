@@ -35,6 +35,8 @@ void ReduceImpl(const T* X,
                 bool reduce_all,
                 ReduceProcessType op_name);
 
+template <typename T>
+void mean_grad(const T* out_grad, T* in_grad, int size);
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/arm/mean_grad_compute.h"
-#include "lite/backends/arm/math/reduce_mean.h"
+#include "lite/backends/arm/math/reduce_function.h"
 namespace paddle {
 namespace lite {
 namespace kernels {
