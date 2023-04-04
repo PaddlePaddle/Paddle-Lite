@@ -41,9 +41,9 @@ void CheckProgramDescValidity(std::shared_ptr<cpp::ProgramDesc> program_desc,
   CHECK_GT(block_size, 0) << "No block exists in current program_desc";
   // TODD(hong19860320) Only support updating the block desc which already
   // exists in the origin program desc
-  CHECK_LE(block_size, inst_block_size)
-      << "Invalid block size, expected (0," << inst_block_size << "] but got "
-      << block_size;
+  CHECK_LE(block_size, inst_block_size) << "Invalid block size, expected (0,"
+                                        << inst_block_size << "] but got "
+                                        << block_size;
 }
 
 std::map<std::string, cpp::VarDesc> ClearBlockDescInfo(
