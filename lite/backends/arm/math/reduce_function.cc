@@ -159,7 +159,7 @@ void reduce_common_max<float>(
         scalar_sum = std::max(input[in_idx], scalar_sum);
       }
       for (int id = 0; id < 4; id++)
-        scalar_sum = std::max(vec_sum[id], scalar_sum);
+        scalar_sum = std::max(static_cast<float>(vec_sum[id]), scalar_sum);
       output[out_idx] = scalar_sum;
     }
   }
@@ -188,7 +188,7 @@ void reduce_common_max<int>(
         scalar_sum = std::max(input[in_idx], scalar_sum);
       }
       for (int id = 0; id < 4; id++)
-        scalar_sum = std::max(vec_sum[id], scalar_sum);
+        scalar_sum = std::max(static_cast<int>(vec_sum[id]), scalar_sum);
       output[out_idx] = scalar_sum;
     }
   }
@@ -237,7 +237,7 @@ void reduce_common_min<float>(
         scalar_sum = std::min(input[in_idx], scalar_sum);
       }
       for (int id = 0; id < 4; id++)
-        scalar_sum = std::min(vec_sum[id], scalar_sum);
+        scalar_sum = std::min(static_cast<float>(vec_sum[id]), scalar_sum);
       output[out_idx] = scalar_sum;
     }
   }
@@ -266,7 +266,7 @@ void reduce_common_min<int>(
         scalar_sum = std::min(input[in_idx], scalar_sum);
       }
       for (int id = 0; id < 4; id++)
-        scalar_sum = std::min(vec_sum[id], scalar_sum);
+        scalar_sum = std::min(static_cast<int>(vec_sum[id]), scalar_sum);
       output[out_idx] = scalar_sum;
     }
   }
@@ -494,7 +494,7 @@ void reduce_cont_max<float>(const float *input,
       scalar_sum = std::max(input[in_idx], scalar_sum);
     }
     for (int id = 0; id < 4; id++)
-      scalar_sum = std::max(vec_sum[id], scalar_sum);
+      scalar_sum = std::max(static_cast<float>(vec_sum[id]), scalar_sum);
     output[out_idx] = scalar_sum;
   }
 }
@@ -517,7 +517,7 @@ void reduce_cont_max<int>(const int *input, int *output, int pre, int cur) {
       scalar_sum = std::max(input[in_idx], scalar_sum);
     }
     for (int id = 0; id < 4; id++)
-      scalar_sum = std::max(vec_sum[id], scalar_sum);
+      scalar_sum = std::max(static_cast<int>(vec_sum[id]), scalar_sum);
     output[out_idx] = scalar_sum;
   }
 }
@@ -562,7 +562,7 @@ void reduce_cont_min<float>(const float *input,
       scalar_sum = std::min(input[in_idx], scalar_sum);
     }
     for (int id = 0; id < 4; id++)
-      scalar_sum = std::min(vec_sum[id], scalar_sum);
+      scalar_sum = std::min(static_cast<float>(vec_sum[id]), scalar_sum);
     output[out_idx] = scalar_sum;
   }
 }
@@ -585,7 +585,7 @@ void reduce_cont_min<int>(const int *input, int *output, int pre, int cur) {
       scalar_sum = std::min(input[in_idx], scalar_sum);
     }
     for (int id = 0; id < 4; id++)
-      scalar_sum = std::min(vec_sum[id], scalar_sum);
+      scalar_sum = std::min(static_cast<int>(vec_sum[id]), scalar_sum);
     output[out_idx] = scalar_sum;
   }
 }
