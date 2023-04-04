@@ -113,6 +113,7 @@ add_kernel(group_norm_compute_xpu XPU extra SRCS group_norm_compute.cc)
 add_kernel(deformable_conv_compute_xpu XPU extra SRCS deformable_conv_compute.cc)
 add_kernel(sin_compute_xpu XPU extra SRCS sin_compute.cc)
 add_kernel(cos_compute_xpu XPU extra SRCS cos_compute.cc)
+add_kernel(scatter_compute_xpu XPU extra SRCS scatter_compute.cc)
 
 # extra(fused kernel)
 add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc)
