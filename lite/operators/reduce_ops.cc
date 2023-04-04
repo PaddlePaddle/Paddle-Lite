@@ -44,20 +44,22 @@ bool ReduceOp::CheckShape() const {
       << "The input dim should be greater than 0. But received the dim = "
       << dims.size();
   for (int i = 0; i < dims.size(); i++) {
-    CHECK_OR_FALSE(dims[i] <= x_rank && dims[i] >= -x_rank);
+    CHECK(dims[i] <= x_rank && dims[i] + x_rank >= 0)
+        << "dims[i] is " << dims[i] << ", x_rank is " << x_rank;
   }
   return true;
 }
 
 bool ReduceOp::InferShapeImpl() const {
   const auto& x_dims = param_.X->dims();
-  size_t x_rank = x_dims.size();
+  int x_rank = x_dims.size();
   auto dims = param_.dim;
   bool& reduce_all = param_.reduce_all;
   bool keep_dim = param_.keep_dim;
 
   for (int i = 0; i < dims.size(); i++) {
-    CHECK_OR_FALSE(dims[i] <= x_rank && dims[i] >= -x_rank);
+    CHECK(dims[i] <= x_rank && dims[i] + x_rank >= 0)
+        << "dims[i] is " << dims[i] << ", x_rank is " << x_rank;
     if (dims[i] < 0) {
       dims[i] = x_rank + dims[i];
     }
@@ -74,14 +76,15 @@ bool ReduceOp::InferShapeImpl() const {
     }
   }
   reduce_all = (reduce_all || full_dim);
-
   if (reduce_all) {
     if (keep_dim)
       param_.Out->Resize(std::vector<int64_t>(x_rank, 1));
     else
       param_.Out->Resize(std::vector<int64_t>({1}));
   } else {
-    std::vector<int64_t> dims_vector(x_rank, 0);
+    std::vector<int64_t> dims_vector(x_rank, 1);
+    for (int i = 0; i < x_rank; i++) dims_vector[i] = x_dims[i];
+
     if (keep_dim) {
       for (size_t i = 0; i < dims.size(); ++i) {
         dims_vector[dims[i]] = 1;

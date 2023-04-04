@@ -24,54 +24,54 @@ namespace lite {
 namespace arm {
 namespace math {
 
-#define ReduceSumKernel_FP32(avg)                              \
-  int size_cur_post = cur * post;                              \
-  for (int i = 0; i < pre; i++) {                              \
-    for (int k = 0; k < post; k++) {                           \
-      int j = 0;                                               \
-      int out_idx = i * post + k;                              \
-      float scalar_sum = 0;                                    \
-      float32x4_t vec_sum = vdupq_n_f32(scalar_sum);           \
-      for (; j + 3 < cur; j += 4) {                            \
-        int in_idx = i * size_cur_post + j * post + k;         \
-        float32x4_t vec_cur = {input[in_idx],                  \
-                               input[in_idx + post],           \
-                               input[in_idx + 2 * post],       \
-                               input[in_idx + 3 * post]};      \
-        vec_sum = vaddq_f32(vec_sum, vec_cur);                 \
-      }                                                        \
-      for (; j < cur; j++) {                                   \
-        int in_idx = i * size_cur_post + j * post + k;         \
-        scalar_sum += input[in_idx];                           \
-      }                                                        \
-      for (int id = 0; id < 4; id++) scalar_sum += vec_sum[i]; \
-      output[out_idx] = scalar_sum / avg;                      \
-    }                                                          \
+#define ReduceSumKernel_FP32(avg)                               \
+  int size_cur_post = cur * post;                               \
+  for (int i = 0; i < pre; i++) {                               \
+    for (int k = 0; k < post; k++) {                            \
+      int j = 0;                                                \
+      int out_idx = i * post + k;                               \
+      float scalar_sum = 0;                                     \
+      float32x4_t vec_sum = vdupq_n_f32(scalar_sum);            \
+      for (; j + 3 < cur; j += 4) {                             \
+        int in_idx = i * size_cur_post + j * post + k;          \
+        float32x4_t vec_cur = {input[in_idx],                   \
+                               input[in_idx + post],            \
+                               input[in_idx + 2 * post],        \
+                               input[in_idx + 3 * post]};       \
+        vec_sum = vaddq_f32(vec_sum, vec_cur);                  \
+      }                                                         \
+      for (; j < cur; j++) {                                    \
+        int in_idx = i * size_cur_post + j * post + k;          \
+        scalar_sum += input[in_idx];                            \
+      }                                                         \
+      for (int id = 0; id < 4; id++) scalar_sum += vec_sum[id]; \
+      output[out_idx] = scalar_sum / avg;                       \
+    }                                                           \
   }
 
-#define ReduceSumKernel_INT32(avg)                             \
-  int size_cur_post = cur * post;                              \
-  for (int i = 0; i < pre; i++) {                              \
-    for (int k = 0; k < post; k++) {                           \
-      int j = 0;                                               \
-      int out_idx = i * post + k;                              \
-      int scalar_sum = 0;                                      \
-      int32x4_t vec_sum = vdupq_n_s32(scalar_sum);             \
-      for (; j + 3 < cur; j += 4) {                            \
-        int in_idx = i * size_cur_post + j * post + k;         \
-        int32x4_t vec_cur = {input[in_idx],                    \
-                             input[in_idx + post],             \
-                             input[in_idx + 2 * post],         \
-                             input[in_idx + 3 * post]};        \
-        vec_sum = vaddq_s32(vec_sum, vec_cur);                 \
-      }                                                        \
-      for (; j < cur; j++) {                                   \
-        int in_idx = i * size_cur_post + j * post + k;         \
-        scalar_sum += input[in_idx];                           \
-      }                                                        \
-      for (int id = 0; id < 4; id++) scalar_sum += vec_sum[i]; \
-      output[out_idx] = scalar_sum / avg;                      \
-    }                                                          \
+#define ReduceSumKernel_INT32(avg)                              \
+  int size_cur_post = cur * post;                               \
+  for (int i = 0; i < pre; i++) {                               \
+    for (int k = 0; k < post; k++) {                            \
+      int j = 0;                                                \
+      int out_idx = i * post + k;                               \
+      int scalar_sum = 0;                                       \
+      int32x4_t vec_sum = vdupq_n_s32(scalar_sum);              \
+      for (; j + 3 < cur; j += 4) {                             \
+        int in_idx = i * size_cur_post + j * post + k;          \
+        int32x4_t vec_cur = {input[in_idx],                     \
+                             input[in_idx + post],              \
+                             input[in_idx + 2 * post],          \
+                             input[in_idx + 3 * post]};         \
+        vec_sum = vaddq_s32(vec_sum, vec_cur);                  \
+      }                                                         \
+      for (; j < cur; j++) {                                    \
+        int in_idx = i * size_cur_post + j * post + k;          \
+        scalar_sum += input[in_idx];                            \
+      }                                                         \
+      for (int id = 0; id < 4; id++) scalar_sum += vec_sum[id]; \
+      output[out_idx] = scalar_sum / avg;                       \
+    }                                                           \
   }
 
 #define ReduceSumKernel_INT64(avg)                                 \
@@ -91,7 +91,7 @@ namespace math {
         int in_idx = i * size_cur_post + j * post + k;             \
         scalar_sum += input[in_idx];                               \
       }                                                            \
-      for (int id = 0; id < 2; id++) scalar_sum += vec_sum[i];     \
+      for (int id = 0; id < 2; id++) scalar_sum += vec_sum[id];    \
       output[out_idx] = scalar_sum / avg;                          \
     }                                                              \
   }
@@ -159,7 +159,7 @@ void reduce_common_max<float>(
         scalar_sum = std::max(input[in_idx], scalar_sum);
       }
       for (int id = 0; id < 4; id++)
-        scalar_sum = std::max(vec_sum[i], scalar_sum);
+        scalar_sum = std::max(vec_sum[id], scalar_sum);
       output[out_idx] = scalar_sum;
     }
   }
@@ -188,7 +188,7 @@ void reduce_common_max<int>(
         scalar_sum = std::max(input[in_idx], scalar_sum);
       }
       for (int id = 0; id < 4; id++)
-        scalar_sum = std::max(vec_sum[i], scalar_sum);
+        scalar_sum = std::max(vec_sum[id], scalar_sum);
       output[out_idx] = scalar_sum;
     }
   }
@@ -237,7 +237,7 @@ void reduce_common_min<float>(
         scalar_sum = std::min(input[in_idx], scalar_sum);
       }
       for (int id = 0; id < 4; id++)
-        scalar_sum = std::min(vec_sum[i], scalar_sum);
+        scalar_sum = std::min(vec_sum[id], scalar_sum);
       output[out_idx] = scalar_sum;
     }
   }
@@ -266,7 +266,7 @@ void reduce_common_min<int>(
         scalar_sum = std::min(input[in_idx], scalar_sum);
       }
       for (int id = 0; id < 4; id++)
-        scalar_sum = std::min(vec_sum[i], scalar_sum);
+        scalar_sum = std::min(vec_sum[id], scalar_sum);
       output[out_idx] = scalar_sum;
     }
   }
@@ -315,7 +315,7 @@ void reduce_common_prod<float>(
         int in_idx = i * size_cur_post + j * post + k;
         scalar_sum *= input[in_idx];
       }
-      for (int id = 0; id < 4; id++) scalar_sum *= vec_sum[i];
+      for (int id = 0; id < 4; id++) scalar_sum *= vec_sum[id];
       output[out_idx] = scalar_sum;
     }
   }
@@ -343,7 +343,7 @@ void reduce_common_prod<int>(
         int in_idx = i * size_cur_post + j * post + k;
         scalar_sum *= input[in_idx];
       }
-      for (int id = 0; id < 4; id++) scalar_sum *= vec_sum[i];
+      for (int id = 0; id < 4; id++) scalar_sum *= vec_sum[id];
       output[out_idx] = scalar_sum;
     }
   }
@@ -367,64 +367,64 @@ void reduce_common_prod<int64_t>(
   }
 }
 
-#define ReduceSumContKernel_FP32(avg)                        \
-  int size_cur_post = cur;                                   \
-  for (int i = 0; i < pre; i++) {                            \
-    int j = 0;                                               \
-    int out_idx = i;                                         \
-    float scalar_sum = 0;                                    \
-    float32x4_t vec_sum = vdupq_n_f32(scalar_sum);           \
-    for (; j + 3 < cur; j += 4) {                            \
-      int in_idx = i * size_cur_post + j;                    \
-      float32x4_t vec_cur = vld1q_f32(input + in_idx);       \
-      vec_sum = vaddq_f32(vec_sum, vec_cur);                 \
-    }                                                        \
-    for (; j < cur; j++) {                                   \
-      int in_idx = i * size_cur_post + j;                    \
-      scalar_sum += input[in_idx];                           \
-    }                                                        \
-    for (int id = 0; id < 4; id++) scalar_sum += vec_sum[i]; \
-    output[out_idx] = scalar_sum / avg;                      \
+#define ReduceSumContKernel_FP32(avg)                         \
+  int size_cur_post = cur;                                    \
+  for (int i = 0; i < pre; i++) {                             \
+    int j = 0;                                                \
+    int out_idx = i;                                          \
+    float scalar_sum = 0;                                     \
+    float32x4_t vec_sum = vdupq_n_f32(scalar_sum);            \
+    for (; j + 3 < cur; j += 4) {                             \
+      int in_idx = i * size_cur_post + j;                     \
+      float32x4_t vec_cur = vld1q_f32(input + in_idx);        \
+      vec_sum = vaddq_f32(vec_sum, vec_cur);                  \
+    }                                                         \
+    for (; j < cur; j++) {                                    \
+      int in_idx = i * size_cur_post + j;                     \
+      scalar_sum += input[in_idx];                            \
+    }                                                         \
+    for (int id = 0; id < 4; id++) scalar_sum += vec_sum[id]; \
+    output[out_idx] = scalar_sum / avg;                       \
   }
 
-#define ReduceSumContKernel_INT32(avg)                       \
-  int size_cur_post = cur;                                   \
-  for (int i = 0; i < pre; i++) {                            \
-    int j = 0;                                               \
-    int out_idx = i;                                         \
-    int scalar_sum = 0;                                      \
-    int32x4_t vec_sum = vdupq_n_s32(scalar_sum);             \
-    for (; j + 3 < cur; j += 4) {                            \
-      int in_idx = i * size_cur_post + j;                    \
-      int32x4_t vec_cur = vld1q_s32(input + in_idx);         \
-      vec_sum = vaddq_s32(vec_sum, vec_cur);                 \
-    }                                                        \
-    for (; j < cur; j++) {                                   \
-      int in_idx = i * size_cur_post + j;                    \
-      scalar_sum += input[in_idx];                           \
-    }                                                        \
-    for (int id = 0; id < 4; id++) scalar_sum += vec_sum[i]; \
-    output[out_idx] = scalar_sum / avg;                      \
+#define ReduceSumContKernel_INT32(avg)                        \
+  int size_cur_post = cur;                                    \
+  for (int i = 0; i < pre; i++) {                             \
+    int j = 0;                                                \
+    int out_idx = i;                                          \
+    int scalar_sum = 0;                                       \
+    int32x4_t vec_sum = vdupq_n_s32(scalar_sum);              \
+    for (; j + 3 < cur; j += 4) {                             \
+      int in_idx = i * size_cur_post + j;                     \
+      int32x4_t vec_cur = vld1q_s32(input + in_idx);          \
+      vec_sum = vaddq_s32(vec_sum, vec_cur);                  \
+    }                                                         \
+    for (; j < cur; j++) {                                    \
+      int in_idx = i * size_cur_post + j;                     \
+      scalar_sum += input[in_idx];                            \
+    }                                                         \
+    for (int id = 0; id < 4; id++) scalar_sum += vec_sum[id]; \
+    output[out_idx] = scalar_sum / avg;                       \
   }
 
-#define ReduceSumContKernel_INT64(avg)                       \
-  int size_cur_post = cur;                                   \
-  for (int i = 0; i < pre; i++) {                            \
-    int j = 0;                                               \
-    int out_idx = i;                                         \
-    int scalar_sum = 0;                                      \
-    int64x2_t vec_sum = vdupq_n_s64(scalar_sum);             \
-    for (; j + 1 < cur; j += 2) {                            \
-      int in_idx = i * size_cur_post + j;                    \
-      int64x2_t vec_cur = vld1q_s64(input + in_idx);         \
-      vec_sum = vaddq_s64(vec_sum, vec_cur);                 \
-    }                                                        \
-    for (; j < cur; j++) {                                   \
-      int in_idx = i * size_cur_post + j;                    \
-      scalar_sum += input[in_idx];                           \
-    }                                                        \
-    for (int id = 0; id < 2; id++) scalar_sum += vec_sum[i]; \
-    output[out_idx] = scalar_sum / avg;                      \
+#define ReduceSumContKernel_INT64(avg)                        \
+  int size_cur_post = cur;                                    \
+  for (int i = 0; i < pre; i++) {                             \
+    int j = 0;                                                \
+    int out_idx = i;                                          \
+    int scalar_sum = 0;                                       \
+    int64x2_t vec_sum = vdupq_n_s64(scalar_sum);              \
+    for (; j + 1 < cur; j += 2) {                             \
+      int in_idx = i * size_cur_post + j;                     \
+      int64x2_t vec_cur = vld1q_s64(input + in_idx);          \
+      vec_sum = vaddq_s64(vec_sum, vec_cur);                  \
+    }                                                         \
+    for (; j < cur; j++) {                                    \
+      int in_idx = i * size_cur_post + j;                     \
+      scalar_sum += input[in_idx];                            \
+    }                                                         \
+    for (int id = 0; id < 2; id++) scalar_sum += vec_sum[id]; \
+    output[out_idx] = scalar_sum / avg;                       \
   }
 
 // contiguous memory
@@ -494,7 +494,7 @@ void reduce_cont_max<float>(const float *input,
       scalar_sum = std::max(input[in_idx], scalar_sum);
     }
     for (int id = 0; id < 4; id++)
-      scalar_sum = std::max(vec_sum[i], scalar_sum);
+      scalar_sum = std::max(vec_sum[id], scalar_sum);
     output[out_idx] = scalar_sum;
   }
 }
@@ -517,7 +517,7 @@ void reduce_cont_max<int>(const int *input, int *output, int pre, int cur) {
       scalar_sum = std::max(input[in_idx], scalar_sum);
     }
     for (int id = 0; id < 4; id++)
-      scalar_sum = std::max(vec_sum[i], scalar_sum);
+      scalar_sum = std::max(vec_sum[id], scalar_sum);
     output[out_idx] = scalar_sum;
   }
 }
@@ -562,7 +562,7 @@ void reduce_cont_min<float>(const float *input,
       scalar_sum = std::min(input[in_idx], scalar_sum);
     }
     for (int id = 0; id < 4; id++)
-      scalar_sum = std::min(vec_sum[i], scalar_sum);
+      scalar_sum = std::min(vec_sum[id], scalar_sum);
     output[out_idx] = scalar_sum;
   }
 }
@@ -585,7 +585,7 @@ void reduce_cont_min<int>(const int *input, int *output, int pre, int cur) {
       scalar_sum = std::min(input[in_idx], scalar_sum);
     }
     for (int id = 0; id < 4; id++)
-      scalar_sum = std::min(vec_sum[i], scalar_sum);
+      scalar_sum = std::min(vec_sum[id], scalar_sum);
     output[out_idx] = scalar_sum;
   }
 }
@@ -628,7 +628,7 @@ void reduce_cont_prod<float>(const float *input,
       int in_idx = i * size_cur_post + j;
       scalar_sum *= input[in_idx];
     }
-    for (int id = 0; id < 4; id++) scalar_sum *= vec_sum[i];
+    for (int id = 0; id < 4; id++) scalar_sum *= vec_sum[id];
     output[i] = scalar_sum;
   }
 }
@@ -649,7 +649,7 @@ void reduce_cont_prod<int>(const int *input, int *output, int pre, int cur) {
       int in_idx = i * size_cur_post + j;
       scalar_sum *= input[in_idx];
     }
-    for (int id = 0; id < 4; id++) scalar_sum *= vec_sum[i];
+    for (int id = 0; id < 4; id++) scalar_sum *= vec_sum[id];
     output[i] = scalar_sum;
   }
 }
@@ -708,7 +708,6 @@ void Reduce_n_dims(const T *X,
   auto input_dims = x_dims;
   auto x_dims_size = x_dims.size();
   auto dim_size = dim.size();
-
   if (dim_size == 1) {
     REDUCE_PROCESS(dim[0], input_dims, X, Out);
   } else if (dim_size == 2) {
