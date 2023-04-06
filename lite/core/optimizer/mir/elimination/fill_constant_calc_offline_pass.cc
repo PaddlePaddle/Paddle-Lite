@@ -111,7 +111,20 @@ void FillConstantCalcOfflinePass::RemoveFillConstantPattern(
         convert_stream >> value;
       }
     }
-    auto shape = op_desc->GetAttr<std::vector<int64_t>>("shape");
+    std::vector<int64_t> shape;
+
+    auto type = op_desc->GetAttrType("shape");
+
+    if (type == OpAttrType::INTS) {  // paddle1.0 shape type is ints
+      auto tmp_shape = op_desc->GetAttr<std::vector<int32_t>>("shape");
+      shape.resize(tmp_shape.size());
+      shape.assign(tmp_shape.begin(), tmp_shape.end());
+    } else {
+      auto tmp_shape = op_desc->GetAttr<std::vector<int64_t>>("shape");
+      shape.resize(tmp_shape.size());
+      shape.assign(tmp_shape.begin(), tmp_shape.end());
+    }
+
     // Get fill_constant's output tensor
     auto out_var = scope->FindVar(op_desc->Output("Out").front());
     auto out_t = out_var->GetMutable<lite::Tensor>();
