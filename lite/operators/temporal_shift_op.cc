@@ -43,7 +43,7 @@ bool TemporalShiftOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   if (op_desc.HasAttr("seg_num")) {
     param_.seg_num = op_desc.GetAttr<int>("seg_num");
   }
-  if (op_desc.HasAttr("shift_radio")) {
+  if (op_desc.HasAttr("shift_ratio")) {
     param_.shift_ratio = op_desc.GetAttr<float>("shift_ratio");
   }
   if (op_desc.HasAttr("data_format")) {
