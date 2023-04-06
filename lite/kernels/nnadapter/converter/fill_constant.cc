@@ -48,8 +48,8 @@ int ConvertFillConstant(Converter* converter, OpInfo* op, Scope* scope) {
     // Concat operation
     converter->AddOperation(NNADAPTER_CONCAT, shapes_operands, {shape_operand});
   } else if (op->HasAttr("shape")) {
-    auto type = op->GetAttrType("shape");
-    if (type == OpAttrType::INTS) {  // paddle1.0 shape type is ints
+    if (op->GetAttrType("shape") ==
+        OpAttrType::INTS) {  // paddle1.0 shape type is ints
       auto shape = op->GetAttr<std::vector<int32_t>>("shape");
       shape_operand = converter->AddConstantOperand(shape);
     } else {
