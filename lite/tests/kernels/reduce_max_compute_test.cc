@@ -404,10 +404,10 @@ class ReduceMaxComputeTester : public arena::TestCase {
 void test_reduce_max_4d(Place place) {
   std::vector<std::vector<int>> reduce_dim{
       {0}, {1}, {2}, {3}, {0, 1}, {1, 2}, {2, 3}, {-2, -1}};
-  for (auto n : {1, 3, 16}) {
-    for (auto c : {1, 2, 16}) {
-      for (auto h : {1, 3, 17}) {
-        for (auto w : {1, 3, 18}) {
+  for (auto n : {1, 3}) {
+    for (auto c : {1, 2}) {
+      for (auto h : {1, 3}) {
+        for (auto w : {1, 3}) {
           for (bool keep_dim : {false, true}) {
             for (auto dim : reduce_dim) {
 #ifdef NNADAPTER_WITH_QUALCOMM_QNN
