@@ -15,7 +15,7 @@
 #include "lite/kernels/arm/reduce_compute.h"
 #include <string>
 #include "lite/backends/arm/math/funcs.h"
-#include "lite/backends/arm/math/reduce_function.h"
+#include "lite/backends/arm/math/reduce.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
