@@ -27,13 +27,13 @@ void MulticlassNmsCompute::PrepareForRun() {
   double n = GetDoubleFromEnv("ResetMulticlassNMSScoreThreshold", 0.0);
   if (n > 0.0) {
     custom_config_score_threshod_ = static_cast<float>(n);
-    printf("ResetMulticlassNMSScoreThreshold set to %f",
-           custom_config_score_threshod_);
+    VLOG(2) << "ResetMulticlassNMSScoreThreshold set to "
+            << custom_config_score_threshod_;
   }
   int k = GetIntFromEnv("ResetMulticlassNMSTopK", 0);
   if (k > 0) {
-    printf("ResetMulticlassNMSTopK set to %d\n", k);
     custom_config_topk_ = k;
+    VLOG(2) << "ResetMulticlassNMSTopK set to " << k;
   }
 }
 
@@ -128,6 +128,7 @@ void MulticlassNmsCompute::Run() {
     if (return_index) {
       // out_dim may be zero when there is no object in picture, so add some
       // zeros to it
+      // caution: results may differ between cpu and xpu due to this operation
       outs->Resize({1, out_dim});
       float* out_ptr = outs->mutable_data<float>();
       std::vector<float> temp_value(out_dim, 0.0f);
