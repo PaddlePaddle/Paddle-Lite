@@ -303,13 +303,58 @@ bool RunOnRandomArgs(const Place& place,
   return arena.TestPrecision();
 }
 
+template <class T>
+bool RunOnRandomArgs_ZeroDim(const Place& place,
+                             const std::string& alias,
+                             const std::string& elt_type,
+                             const std::string& act_type,
+                             const std::function<T(T, T)> op,
+                             double abs_error = 1e-3) {
+  const int MAX_DIM_SIZE = 8;
+  const int MAX_SHAPE_VALUE = 10;
+  // gen out_dim
+  int dim_size = randint(2, MAX_DIM_SIZE);
+  std::vector<int> out_dim(dim_size, 0);
+  for (int i = 0; i < dim_size; ++i) {
+    out_dim[i] = randint(2, MAX_SHAPE_VALUE);
+  }
+  bool swap_flag = randbool();
+  std::vector<int> x_dim_cut;
+  std::vector<int> y_dim_cut;
+  std::vector<int> zero_dim{};
+  x_dim_cut = swap_flag ? zero_dim : out_dim;
+  y_dim_cut = swap_flag ? out_dim : zero_dim;
+  std::vector<int> x_dim_full = x_dim_cut;
+  std::vector<int> y_dim_full = y_dim_cut;
+
+  // run on device
+  auto x_dim = std::vector<int64_t>(x_dim_cut.begin(), x_dim_cut.end());
+  auto y_dim = std::vector<int64_t>(y_dim_cut.begin(), y_dim_cut.end());
+  auto z_dim = std::vector<int64_t>(out_dim.begin(), out_dim.end());
+
+  std::unique_ptr<arena::TestCase> tester(
+      new ElementwiseComputeTester<T>(place,
+                                      alias,
+                                      elt_type,
+                                      x_dim,
+                                      y_dim,
+                                      z_dim,
+                                      x_dim_full,
+                                      y_dim_full,
+                                      0,
+                                      act_type,
+                                      op));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  return arena.TestPrecision();
+}
+
 }  // namespace lite
 }  // namespace paddle
 
 #if defined(LITE_WITH_ARM)
 
 TEST(elementwise_broadcast, compute_fp32) {
-  const int TEST_RETEAT_NUM = 10;
+  const int TEST_RETEAT_NUM = 50;
   for (int repeat_count = 0; repeat_count < TEST_RETEAT_NUM; ++repeat_count) {
     EXPECT_TRUE(paddle::lite::RunOnRandomArgs<float>(
         TARGET(kARM), "def", "add", "", [](float l, float r) {
@@ -331,7 +376,7 @@ TEST(elementwise_broadcast, compute_fp32) {
 }
 
 TEST(elementwise_broadcast, compute_i32) {
-  const int TEST_RETEAT_NUM = 10;
+  const int TEST_RETEAT_NUM = 50;
   for (int repeat_count = 0; repeat_count < TEST_RETEAT_NUM; ++repeat_count) {
     EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
         paddle::lite::Place(TARGET(kARM), PRECISION(kFloat)),
@@ -360,6 +405,57 @@ TEST(elementwise_broadcast, compute_i32) {
   }
 }
 
+TEST(elementwise_broadcast, compute_fp32_0dim) {
+  const int TEST_RETEAT_NUM = 50;
+  for (int repeat_count = 0; repeat_count < TEST_RETEAT_NUM; ++repeat_count) {
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs_ZeroDim<float>(
+        TARGET(kARM), "def", "add", "", [](float l, float r) {
+          return l + r;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs_ZeroDim<float>(
+        TARGET(kARM), "def", "sub", "", [](float l, float r) {
+          return l - r;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs_ZeroDim<float>(
+        TARGET(kARM), "def", "mul", "", [](float l, float r) {
+          return l * r;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs_ZeroDim<float>(
+        TARGET(kARM), "def", "div", "", [](float l, float r) {
+          return l / r;
+        }));
+  }
+}
+
+TEST(elementwise_broadcast, compute_i32_0dim) {
+  const int TEST_RETEAT_NUM = 50;
+  for (int repeat_count = 0; repeat_count < TEST_RETEAT_NUM; ++repeat_count) {
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs_ZeroDim<int32_t>(
+        paddle::lite::Place(TARGET(kARM), PRECISION(kFloat)),
+        "int32",
+        "add",
+        "",
+        [](int32_t l, int32_t r) { return l + r; }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs_ZeroDim<int32_t>(
+        paddle::lite::Place(TARGET(kARM), PRECISION(kFloat)),
+        "int32",
+        "sub",
+        "",
+        [](int32_t l, int32_t r) { return l - r; }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs_ZeroDim<int32_t>(
+        paddle::lite::Place(TARGET(kARM), PRECISION(kFloat)),
+        "int32",
+        "mul",
+        "",
+        [](int32_t l, int32_t r) { return l * r; }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs_ZeroDim<int32_t>(
+        paddle::lite::Place(TARGET(kARM), PRECISION(kFloat)),
+        "int32",
+        "div",
+        "",
+        [](int32_t l, int32_t r) { return l / r; }));
+  }
+}
 #endif  // LITE_WITH_ARM
 
 #if defined(LITE_WITH_X86)

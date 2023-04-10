@@ -314,6 +314,10 @@ void TestEltDims(Place place, float abs_error) {
   TestElt(place, abs_error, "add", {2, 3, 4, 5}, {5}, 3);
   TestElt(place, abs_error, "add", {2, 3, 4, 5}, {3, 4, 5}, -1);
   TestElt(place, abs_error, "add", {2, 3, 4}, {3, 4}, -1);
+#ifdef LITE_WITH_ARM
+  TestElt(place, abs_error, "add", {2, 3, 4, 5}, {}, 0);
+  TestElt(place, abs_error, "add", {}, {}, 0);
+#endif
 }
 
 void TestEltTypes(Place place, float abs_error) {
@@ -321,6 +325,10 @@ void TestEltTypes(Place place, float abs_error) {
            "add", "sub", "mul", "div", "max", "min", "pow"}) {
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0);
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1);
+#ifdef LITE_WITH_ARM
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {}, 0);
+    TestElt(place, abs_error, elt_type, {}, {}, 0);
+#endif
   }
 
   if (place.target == TARGET(kARM)) {
@@ -384,6 +392,10 @@ void TestEltFuseAct(Place place, float abs_error) {
        std::vector<std::string>{"add", "sub", "mul", "div", "min", "max"}) {
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {2, 3, 4, 5}, 0, "relu");
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1, "relu");
+#ifdef LITE_WITH_ARM
+    TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {}, 0, "relu");
+    TestElt(place, abs_error, elt_type, {}, {}, 0, "relu");
+#endif
   }
 }
 
