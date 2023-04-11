@@ -96,6 +96,18 @@ template <typename InType, PrecisionType PType>
 void XPUSpatialTransformerResBlockCompute<InType, PType>::PrepareForRun() {
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->template Param<param_t>();
+
+  // achieve params from model
+  resblock_param_.conv_fix = param.conv_fix;
+  resblock_param_.has_silu_fc_input = param.has_silu_fc_input;
+  resblock_param_.conv_groups = param.groups;
+  resblock_param_.kernel_dims = param.filter_dims;
+  resblock_param_.dilations = param.dilations;
+  resblock_param_.paddings = param.paddings;
+  resblock_param_.strides = param.strides;
+  resblock_param_.gn_groups = param.gn_groups;
+  resblock_param_.gn_eps = param.gn_eps;
+
   // prepare bias
   for (auto* fc_bias : param.fc_bias) {
     xft_fc_bias_.emplace_back(
@@ -126,19 +138,11 @@ void XPUSpatialTransformerResBlockCompute<InType, PType>::PrepareForRun() {
     input_max_.push_back(nullptr);
   }
 
-  arg_fc_weight_int16_ = PrepareWeight<int16_t>(param.fc_weight);
+  // prepare conv params
   arg_conv_filter_int16_ = PrepareWeight<int16_t>(param.conv_filter);
   const int XPU_QUANT_SCALE_NUM = ctx.GetRawContext()->max_ptr_size();
-  PrepareWeightMax(param.weight_max, XPU_QUANT_SCALE_NUM, &fc_weight_max_);
   PrepareFilterMax(param.filter_max, XPU_QUANT_SCALE_NUM, &conv_filter_max_);
-  int input2_dim = static_cast<int>(param.input2->dims()[1]);
   int channel = static_cast<int>(param.input1->dims()[1]);
-  for (size_t i = 0; i < arg_fc_weight_int16_.size(); i++) {
-    int xn = param.filter_dims[i][0];
-    xft_fc_weights_.emplace_back(const_cast<int16_t*>(arg_fc_weight_int16_[i]),
-                                 const_cast<float*>(fc_weight_max_[i]),
-                                 xft::xftMat<int16_t>::dim_t{xn, input2_dim});
-  }
   for (size_t i = 0; i < arg_conv_filter_int16_.size(); i++) {
     int xn = param.filter_dims[i][0];
     int nh = param.filter_dims[i][2];
@@ -148,14 +152,20 @@ void XPUSpatialTransformerResBlockCompute<InType, PType>::PrepareForRun() {
         const_cast<float*>(conv_filter_max_[i]),
         xft::xftTensor<int16_t, 4>::dim_t{channel, xn, nh, nw});
   }
-  resblock_param_.conv_fix = param.conv_fix;
-  resblock_param_.conv_groups = param.groups;
-  resblock_param_.kernel_dims = param.filter_dims;
-  resblock_param_.dilations = param.dilations;
-  resblock_param_.paddings = param.paddings;
-  resblock_param_.strides = param.strides;
-  resblock_param_.gn_groups = param.gn_groups;
-  resblock_param_.gn_eps = param.gn_eps;
+
+  // prepare fc params
+  if (resblock_param_.has_silu_fc_input) {
+    arg_fc_weight_int16_ = PrepareWeight<int16_t>(param.fc_weight);
+    PrepareWeightMax(param.weight_max, XPU_QUANT_SCALE_NUM, &fc_weight_max_);
+    int input2_dim = static_cast<int>(param.input2->dims()[1]);
+    for (size_t i = 0; i < arg_fc_weight_int16_.size(); i++) {
+      int xn = param.filter_dims[i][0];
+      xft_fc_weights_.emplace_back(
+          const_cast<int16_t*>(arg_fc_weight_int16_[i]),
+          const_cast<float*>(fc_weight_max_[i]),
+          xft::xftMat<int16_t>::dim_t{xn, input2_dim});
+    }
+  }
 }
 
 template <typename InType, PrecisionType PType>
@@ -163,13 +173,17 @@ void XPUSpatialTransformerResBlockCompute<InType, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   const InType* in1 = param.input1->template data<InType>();
-  const InType* in2 = param.input2->template data<InType>();
+  const InType* in2 = (param.has_silu_fc_input)
+                          ? param.input2->template data<InType>()
+                          : nullptr;
   InType* out = param.output->template mutable_data<InType>(TARGET(kXPU));
   int batch = static_cast<int>(param.input1->dims()[0]);
   int channel = static_cast<int>(param.input1->dims()[1]);
   int nh = static_cast<int>(param.input1->dims()[2]);
   int nw = static_cast<int>(param.input1->dims()[3]);
-  int input2_dim = static_cast<int>(param.input2->dims()[1]);
+  int input2_dim = (param.has_silu_fc_input)
+                       ? static_cast<int>(param.input2->dims()[1])
+                       : -1;
   // input
   xft::xftTensor<InType, 4> in_tensor(const_cast<InType*>(in1),
                                       const_cast<float*>(input_max_[0]),
