@@ -81,7 +81,7 @@ class TestSwishOp(AutoScanTest):
         C = draw(st.integers(min_value=1, max_value=128))
         H = draw(st.integers(min_value=1, max_value=128))
         W = draw(st.integers(min_value=1, max_value=128))
-        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
+        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W], []]))
         beta_data = draw(st.floats(min_value=0.0, max_value=1.0))
         if self.get_target() == "NNAdapter":
             beta_data = 1.0
@@ -90,6 +90,7 @@ class TestSwishOp(AutoScanTest):
             inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"]},
             attrs={"beta": beta_data})
+
         program_config = ProgramConfig(
             ops=[swish_op],
             weights={},
@@ -135,7 +136,7 @@ class TestSwishOp(AutoScanTest):
         elif self.get_nnadapter_device_name() == "kunlunxin_xtcl":
             self.run_and_statis(quant=False, max_examples=300)
         else:
-            self.run_and_statis(quant=False, max_examples=25)
+            self.run_and_statis(quant=False, max_examples=300)
 
 
 if __name__ == "__main__":

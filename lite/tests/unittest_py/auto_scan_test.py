@@ -69,14 +69,14 @@ parser.add_argument(
     help="Set nnadapter mixed precision quantization config path")
 args = parser.parse_args()
 
-if (args.target == "ARM" and platform.system() == 'Darwin') or (
-        args.target == "OpenCL") or (
-            args.target == "Metal") or args.enforce_rpc == "on":
-    from auto_scan_test_rpc import AutoScanTest
-    from auto_scan_test_rpc import FusePassAutoScanTest
-else:
-    from auto_scan_test_no_rpc import AutoScanTest
-    from auto_scan_test_no_rpc import FusePassAutoScanTest
+# if (args.target == "ARM" and platform.system() == 'Darwin') or (
+#         args.target == "OpenCL") or (
+#             args.target == "Metal") or args.enforce_rpc == "on":
+#     from auto_scan_test_rpc import AutoScanTest
+#     from auto_scan_test_rpc import FusePassAutoScanTest
+# else:
+from auto_scan_test_no_rpc import AutoScanTest
+from auto_scan_test_no_rpc import FusePassAutoScanTest
 
 IgnoreReasons = IgnoreReasonsBase
 AutoScanTest = AutoScanTest
