@@ -37,6 +37,7 @@ class MulticlassNmsCompute
   std::vector<float> outs_vec_;
   std::vector<int> out_index_vec_;
   float custom_config_score_threshod_{0.0};
+  int custom_config_topk_{0};
 };
 
 }  // namespace xpu
