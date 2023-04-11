@@ -37,8 +37,7 @@ class TestElementwiseFloorDivOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
-            TargetType.ARM,
-            [PrecisionType.FP32],
+            TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
         opencl_valid_places = [
@@ -91,8 +90,7 @@ class TestElementwiseFloorDivOp(AutoScanTest):
             input_data_type = draw(
                 st.sampled_from([np.float32, np.int32, np.int64]))
         elif self.get_target().upper() == 'ARM':
-            input_data_type = draw(
-                st.sampled_from([np.int32, np.int64]))
+            input_data_type = draw(st.sampled_from([np.int32, np.int64]))
         elif self.get_target().upper() == 'OPENCL':
             input_data_type = draw(st.sampled_from([np.float32]))
         elif self.get_target().upper() == 'METAL':

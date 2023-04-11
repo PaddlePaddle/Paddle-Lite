@@ -95,8 +95,10 @@ class TestElementwiseSubOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=1, max_size=4))
-        input_data_x_shape = draw(st.sampled_from([input_data_x_shape_tmp, []]))
-        input_data_y_shape = draw(st.sampled_from([input_data_y_shape_tmp, []]))
+        input_data_x_shape = draw(
+            st.sampled_from([input_data_x_shape_tmp, []]))
+        input_data_y_shape = draw(
+            st.sampled_from([input_data_y_shape_tmp, []]))
         axis = draw(st.integers(min_value=-1, max_value=4))
         assume(
             check_broadcast(input_data_x_shape, input_data_y_shape, axis) ==
@@ -109,7 +111,8 @@ class TestElementwiseSubOp(AutoScanTest):
             input_data_type = draw(
                 st.sampled_from([np.float32, np.int32, np.int64]))
         elif self.get_target().upper() == 'ARM':
-            input_data_type = draw(st.sampled_from([np.float32, np.int32, np.int64]))
+            input_data_type = draw(
+                st.sampled_from([np.float32, np.int32, np.int64]))
         elif self.get_target().upper() == 'OPENCL':
             input_data_type = draw(st.sampled_from([np.float32]))
         elif self.get_target().upper() == 'METAL':

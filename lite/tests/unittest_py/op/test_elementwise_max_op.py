@@ -96,7 +96,8 @@ class TestElementwiseMaxOp(AutoScanTest):
             input_data_type = draw(
                 st.sampled_from([np.float32, np.int32, np.int64]))
         elif self.get_target().upper() == 'ARM':
-            input_data_type = draw(st.sampled_from([np.float32, np.int32, np.int64]))
+            input_data_type = draw(
+                st.sampled_from([np.float32, np.int32, np.int64]))
         elif self.get_target().upper() == 'OPENCL':
             input_data_type = draw(st.sampled_from([np.float32]))
         elif self.get_target().upper() == 'METAL':
