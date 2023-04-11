@@ -92,6 +92,7 @@ class TestReluOp(AutoScanTest):
                 st.integers(
                     min_value=1, max_value=4), min_size=1, max_size=1))
         in_shape = in_shape1 + in_shape3
+        in_shape = []
         build_ops = OpConfig(
             type="relu",
             inputs={"X": ["input_data"]},
