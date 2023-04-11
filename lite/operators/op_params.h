@@ -1799,7 +1799,7 @@ struct XPUMultiEncoderParam : ParamBase {
 
 struct XPUSpatialTransformerResBlockParam : ParamBase {
   const lite::Tensor* input1{};
-  const lite::Tensor* input2{};
+  const lite::Tensor* input2{nullptr};
   std::vector<lite::Tensor*> fc_weight;
   std::vector<lite::Tensor*> fc_bias;
   std::vector<lite::Tensor*> conv_filter;
@@ -1818,6 +1818,7 @@ struct XPUSpatialTransformerResBlockParam : ParamBase {
   std::vector<int> gn_groups{};
   std::vector<float> gn_eps{};
   bool conv_fix{};
+  bool has_silu_fc_input{true};
 };
 
 struct XPUSpatialTransformerParam : ParamBase {

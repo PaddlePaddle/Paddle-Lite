@@ -32,8 +32,15 @@ uint64_t GetRandomSeed() {
 std::shared_ptr<std::mt19937_64> GetCPURandomEngine(uint64_t seed) {
   auto engine = std::make_shared<std::mt19937_64>();
   if (seed == 0) {
-    seed = GetRandomSeed();
-    VLOG(4) << "Use default random engine with random seed = " << seed;
+    seed = GetUInt64FromEnv("PADDLELITE_RANDOM_OP_SEED", 0);
+    if (seed == 0) {
+      seed = GetRandomSeed();
+      VLOG(4) << "Use default random engine with random seed = " << seed;
+    } else {
+      VLOG(4) << "Use default random with fixed random seed from "
+                 "PADDLELITE_RANDOM_OP_SEED = "
+              << seed;
+    }
   } else {
     VLOG(4) << "Use default random engine with fixed random seed = " << seed;
   }
