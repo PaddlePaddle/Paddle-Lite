@@ -74,8 +74,7 @@ class TestElementwiseAddOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
-            TargetType.ARM,
-            [PrecisionType.FP32],
+            TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
         opencl_valid_places = [
@@ -134,8 +133,10 @@ class TestElementwiseAddOp(AutoScanTest):
                 st.integers(
                     min_value=1, max_value=20), min_size=1, max_size=4))
         axis = draw(st.integers(min_value=-1, max_value=4))
-        input_data_x_shape = draw(st.sampled_from([input_data_x_shape_tmp, []]))
-        input_data_y_shape = draw(st.sampled_from([input_data_y_shape_tmp, []]))
+        input_data_x_shape = draw(
+            st.sampled_from([input_data_x_shape_tmp, []]))
+        input_data_y_shape = draw(
+            st.sampled_from([input_data_y_shape_tmp, []]))
         assume(
             check_broadcast(input_data_x_shape, input_data_y_shape, axis) ==
             True)

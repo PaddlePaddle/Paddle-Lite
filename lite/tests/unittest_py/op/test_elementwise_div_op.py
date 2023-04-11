@@ -36,8 +36,7 @@ class TestElementwiseDivOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
-            TargetType.ARM,
-            [PrecisionType.FP32],
+            TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
         opencl_valid_places = [

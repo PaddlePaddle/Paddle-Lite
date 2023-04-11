@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import numpy as np
-import math
 import unittest
 import abc
 import os
@@ -352,25 +351,6 @@ class AutoScanBaseTest(unittest.TestCase):
             arr = np.array(tensor[tensor_key[0]])
             base_key = list(baseline.keys())
             base = np.array(baseline[base_key[0]])
-
-            ###############################################################
-            max_err = 0.0
-            lv = 0.0
-            rv = 0.0
-            res_paddle = base.flatten()
-            res_lite = arr.flatten()
-            for index in range(len(res_lite)):
-                abc = math.fabs(res_paddle[index] - res_lite[index])
-                if (abc > max_err):
-                    max_err = abc
-                    lv = res_paddle[index]
-                    rv = res_lite[index]
-            print("-----------------------------------------------")
-            print("numel = ",
-                  len(res_lite), " ,max_err = ", max_err, ", base is ", lv,
-                  ", lite is ", rv)
-            print("-----------------------------------------------")
-            ###############################################################
 
             if not base.shape and arr.shape == (1, ):
                 pass
