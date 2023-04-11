@@ -104,7 +104,8 @@ args = parser.parse_args()
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logg = logging.getLogger(__name__)
-logg.setLevel(logging.INFO)  # for Mac, logging only print waring/fatal, can't print info
+logg.setLevel(
+    logging.INFO)  # for Mac, logging only print waring/fatal, can't print info
 
 settings.register_profile(
     "ci",
@@ -360,15 +361,16 @@ class AutoScanBaseTest(unittest.TestCase):
             res_lite = arr.flatten()
             for index in range(len(res_lite)):
                 abc = math.fabs(res_paddle[index] - res_lite[index])
-                if(abc > max_err):
+                if (abc > max_err):
                     max_err = abc
                     lv = res_paddle[index]
                     rv = res_lite[index]
             print("-----------------------------------------------")
-            print("numel = ", len(res_lite), " ,max_err = ", max_err, ", base is ", lv, ", lite is ", rv)
+            print("numel = ",
+                  len(res_lite), " ,max_err = ", max_err, ", base is ", lv,
+                  ", lite is ", rv)
             print("-----------------------------------------------")
             ###############################################################
-
 
             if not base.shape and arr.shape == (1, ):
                 pass
@@ -762,13 +764,13 @@ class AutoScanBaseTest(unittest.TestCase):
         gl.set_all_test_ops(self.get_target(),
                             self.get_nnadapter_device_name(), sys.argv[0])
         if not self.is_actived():
-            logg.info("Error: This test is not actived on " +
-                         self.get_target())
+            logg.info("Error: This test is not actived on " + self.get_target(
+            ))
             return
 
         if not self.is_nnadapter_device_actived():
             logg.info("Error: This test is not actived on " +
-                         self.get_nnadapter_device_name())
+                      self.get_nnadapter_device_name())
             return
 
         if self.get_target().upper() == "NNADAPTER":
@@ -797,8 +799,7 @@ class AutoScanBaseTest(unittest.TestCase):
         else:
             logg.info(
                 "===================Statistical Information===================")
-            logg.info("Number of Generated Programs: {}".format(
-                max_examples))
+            logg.info("Number of Generated Programs: {}".format(max_examples))
             logg.info("Number of Predictor Kinds: {}".format(
                 int(self.num_predictor_kinds)))
             self.assertTrue(self.num_predictor_kinds > 0,

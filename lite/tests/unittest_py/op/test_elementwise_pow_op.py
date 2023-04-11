@@ -36,7 +36,7 @@ class TestElementwisePowOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
-            TargetType.ARM, [PrecisionType.FP32, PrecisionType.INT32],
+            TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
         opencl_valid_places = [
@@ -66,18 +66,8 @@ class TestElementwisePowOp(AutoScanTest):
         # Check config
         if target_type in [TargetType.ARM]:
             if predictor_config.precision(
-            ) == PrecisionType.INT64 and input_data_type != np.int64:
+            ) == PrecisionType.FP16 and input_data_type != np.float32:
                 return False
-            if predictor_config.precision(
-            ) == PrecisionType.FP32 and input_data_type != np.float32:
-                return False
-            if predictor_config.precision(
-            ) == PrecisionType.FP16 and input_data_type != np.float16:
-                return False
-            if predictor_config.precision(
-            ) == PrecisionType.INT32 and input_data_type != np.int32:
-                return False
-
         return True
 
     def sample_program_configs(self, draw):
@@ -89,6 +79,8 @@ class TestElementwisePowOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=1, max_size=4))
+        input_data_x_shape = draw(st.sampled_from([input_data_x_shape, []]))
+        input_data_y_shape = draw(st.sampled_from([input_data_y_shape, []]))
         axis = draw(st.integers(min_value=-1, max_value=4))
         assume(
             check_broadcast(input_data_x_shape, input_data_y_shape, axis) ==

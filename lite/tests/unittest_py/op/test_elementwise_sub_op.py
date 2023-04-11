@@ -36,7 +36,7 @@ class TestElementwiseSubOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
-            TargetType.ARM, [PrecisionType.FP32, PrecisionType.INT32],
+            TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
         opencl_valid_places = [
@@ -82,28 +82,21 @@ class TestElementwiseSubOp(AutoScanTest):
         # Check config
         if target_type in [TargetType.ARM]:
             if predictor_config.precision(
-            ) == PrecisionType.INT64 and input_data_type != np.int64:
-                return False
-            if predictor_config.precision(
-            ) == PrecisionType.FP32 and input_data_type != np.float32:
-                return False
-            if predictor_config.precision(
             ) == PrecisionType.FP16 and input_data_type != np.float32:
-                return False
-            if predictor_config.precision(
-            ) == PrecisionType.INT32 and input_data_type != np.int32:
                 return False
         return True
 
     def sample_program_configs(self, draw):
-        input_data_x_shape = draw(
+        input_data_x_shape_tmp = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=1, max_size=4))
-        input_data_y_shape = draw(
+        input_data_y_shape_tmp = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=1, max_size=4))
+        input_data_x_shape = draw(st.sampled_from([input_data_x_shape_tmp, []]))
+        input_data_y_shape = draw(st.sampled_from([input_data_y_shape_tmp, []]))
         axis = draw(st.integers(min_value=-1, max_value=4))
         assume(
             check_broadcast(input_data_x_shape, input_data_y_shape, axis) ==
@@ -116,7 +109,7 @@ class TestElementwiseSubOp(AutoScanTest):
             input_data_type = draw(
                 st.sampled_from([np.float32, np.int32, np.int64]))
         elif self.get_target().upper() == 'ARM':
-            input_data_type = draw(st.sampled_from([np.float32, np.int32]))
+            input_data_type = draw(st.sampled_from([np.float32, np.int32, np.int64]))
         elif self.get_target().upper() == 'OPENCL':
             input_data_type = draw(st.sampled_from([np.float32]))
         elif self.get_target().upper() == 'METAL':
