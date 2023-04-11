@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 #pragma once
 #include <stdint.h>
+#include "lite/backends/arm/math/reduce.h"
 #include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -23,12 +24,12 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-template <typename T>
-class ReduceMinCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <typename T, paddle::lite::arm::math::ReduceProcessType OpType>
+class ReduceCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   void Run() override;
 
-  virtual ~ReduceMinCompute() = default;
+  virtual ~ReduceCompute() = default;
 
  private:
 };
