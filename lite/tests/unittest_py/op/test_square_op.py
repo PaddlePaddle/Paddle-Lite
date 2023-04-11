@@ -68,6 +68,7 @@ class TestSquareOp(AutoScanTest):
                 st.integers(
                     min_value=1, max_value=64), min_size=1, max_size=4))
         in_shape = draw(st.sampled_from([in_shape1, []]))
+
         def generate_input(*args, **kwargs):
             return np.random.normal(1.0, 2.0, in_shape).astype(np.float32)
 
