@@ -243,9 +243,9 @@ if (LITE_WITH_PYTHON)
   add_definitions("-DNNADAPTER_WITH_PYTHON")
 endif(LITE_WITH_PYTHON)
 
-if (LITE_WITH_ARM_DNN)
-  add_definitions("-DLITE_WITH_ARM_DNN")
-endif(LITE_WITH_ARM_DNN)
+if (LITE_WITH_ARM_DNN_LIBRARY)
+  add_definitions("-DLITE_WITH_ARM_DNN_LIBRARY")
+endif(LITE_WITH_ARM_DNN_LIBRARY)
 
 if (LITE_WITH_ARM82_FP16)
   add_definitions("-DLITE_WITH_ARM82_FP16")

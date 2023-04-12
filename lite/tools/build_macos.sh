@@ -37,7 +37,7 @@ workspace=$PWD/$(dirname $0)/../../
 OPTMODEL_DIR=""
 IOS_DEPLOYMENT_TARGET=11.0
 # use Arm DNN library instead of built-in math library, defaults to OFF.
-WITH_ARM_DNN=OFF
+WITH_ARM_DNN_LIBRARY=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -209,7 +209,7 @@ function make_armosx {
             -DLITE_WITH_CV=$BUILD_CV \
             -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
-            -DLITE_WITH_ARM_DNN=$WITH_ARM_DNN \
+            -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY \
             -DARM_TARGET_OS=armmacos
     if [ "${WITH_BENCHMARK}" == "ON" ]; then
         make benchmark_bin -j$NUM_PROC
@@ -284,7 +284,7 @@ function make_x86 {
             -DLITE_WITH_LOG=${WITH_LOG} \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_WITH_LTO=${WITH_LTO} \
-            -DLITE_WITH_ARM_DNN=$WITH_ARM_DNN \
+            -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY \
             -DCMAKE_BUILD_TYPE=Release \
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
@@ -444,8 +444,8 @@ function main {
                 shift
                 ;;
              # use Arm DNN library
-            --with_arm_dnn=*)
-                WITH_ARM_DNN="${i#*=}"
+            --with_arm_dnn_library=*)
+                WITH_ARM_DNN_LIBRARY="${i#*=}"
                 shift
                 ;;
             arm64)
