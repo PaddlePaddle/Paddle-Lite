@@ -53,8 +53,8 @@ if (LITE_WITH_NNADAPTER)
   set(CORE_SRC  ${CORE_SRC} ${SUBGRAPH_SRC})
 endif ()
 
-if (LITE_WITH_ADNN)
-  set(ARM_DEPS adnn)
+if (LITE_WITH_ARM_DNN)
+  set(ARM_DEPS arm_dnn)
 endif ()
 
 lite_cc_library(core SRCS ${CORE_SRC}
