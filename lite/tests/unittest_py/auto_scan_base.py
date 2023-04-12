@@ -243,7 +243,13 @@ class AutoScanBaseTest(unittest.TestCase):
         base_len = len(base_shape)
         arr_len = len(arr_shape)
         diff_len = abs(base_len - arr_len)
-        if diff_len == 1:
+        if (base_len == 0):
+            # 0D-tensor
+            self.assertTrue(
+                arr_shape == base_shape,
+                "The output shapes are not equal, the baseline shape is " +
+                str(base_shape) + ', but got ' + str(arr.shape))
+        elif diff_len == 1:
             # base=[1, K], arr=[k]
             if base_len > arr_len and (base_shape[0] == 1 or
                                        base_shape[-1] == 1):
@@ -352,11 +358,8 @@ class AutoScanBaseTest(unittest.TestCase):
             base_key = list(baseline.keys())
             base = np.array(baseline[base_key[0]])
 
-            if not base.shape and arr.shape == (1, ):
-                pass
-            else:
-                self.count_shape_and_diff(base, arr, atol, rtol,
-                                          flag_precision_fp16)
+            self.count_shape_and_diff(base, arr, atol, rtol,
+                                      flag_precision_fp16)
         else:
             for key in tensor:
                 suffix_str = [
