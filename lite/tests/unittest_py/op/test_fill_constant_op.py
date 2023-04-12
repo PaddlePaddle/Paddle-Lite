@@ -55,6 +55,7 @@ class TestFillConstantOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=10), min_size=1, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape, []]))
         dtype = draw(st.sampled_from([2, 3, 5]))
 
         with_value_tensor = draw(st.sampled_from([True, False]))
