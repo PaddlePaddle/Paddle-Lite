@@ -30,8 +30,7 @@ class TestBitwiseNotOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         host_places = [
-            Place(TargetType.Host, PrecisionType.BOOL, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.INT32, DataLayoutType.NCHW)
+            Place(TargetType.Host, PrecisionType.Any, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=host_places)
 
@@ -39,10 +38,8 @@ class TestBitwiseNotOp(AutoScanTest):
         input_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=64), min_size=1, max_size=4))
-        input_type = draw(st.sampled_from(["int32"]))
-
-        #["int64", "int32", "int16", "int8", "uint8", "bool"]))
+                    min_value=1, max_value=64), min_size=0, max_size=4))
+        input_type = draw(st.sampled_from(["int32", "int64"]))
 
         def generate_input(*args, **kwargs):
             if kwargs["type"] == "bool":
@@ -94,7 +91,7 @@ class TestBitwiseNotOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=100)
+        self.run_and_statis(quant=False, max_examples=200)
 
 
 if __name__ == "__main__":
