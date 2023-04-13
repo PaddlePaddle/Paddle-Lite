@@ -204,52 +204,20 @@ typedef union {
 /**
  * Custom callback functions.
  */
-typedef void* (*DEVICE_OPEN_CALLBACK_FUNC)();
-typedef void (*DEVICE_CLOSE_CALLBACK_FUNC)(void* device);
-typedef Status (*DEVICE_SETPARAM_CALLBACK_FUNC)(void* device,
-                                                ParamKey key,
-                                                ParamValue value);
-typedef Status (*DEVICE_GETPARAM_CALLBACK_FUNC)(void* device,
-                                                ParamKey key,
-                                                ParamValue* value);
-typedef void* (*CONTEXT_CREATE_CALLBACK_FUNC)(void* device);
-typedef void (*CONTEXT_DESTROY_CALLBACK_FUNC)(void* context);
-typedef Status (*CONTEXT_SETPRARM_CALLBACK_FUNC)(void* device,
-                                                 ParamKey key,
-                                                 ParamValue value);
-typedef Status (*CONTEXT_GETPRARM_CALLBACK_FUNC)(void* device,
-                                                 ParamKey key,
-                                                 ParamValue* value);
-typedef void* (*MEMORY_ALLOC_CALLBACK_FUNC)(void* context, size_t size);
-typedef void (*MEMORY_FREE_CALLBACK_FUNC)(void* context, void* ptr);
-typedef void* (*MEMORY_ALIGNED_ALLOC_CALLBACK_FUNC)(void* context,
-                                                    size_t size,
-                                                    size_t alignment);
-typedef void (*MEMORY_ALIGNED_FREE_CALLBACK_FUNC)(void* context, void* ptr);
 typedef struct {
-  DEVICE_OPEN_CALLBACK_FUNC device_open;
-  DEVICE_CLOSE_CALLBACK_FUNC device_close;
-  DEVICE_SETPARAM_CALLBACK_FUNC device_setparam;
-  DEVICE_GETPARAM_CALLBACK_FUNC device_getparam;
-  CONTEXT_CREATE_CALLBACK_FUNC context_create;
-  CONTEXT_DESTROY_CALLBACK_FUNC context_destroy;
-  CONTEXT_SETPRARM_CALLBACK_FUNC context_setparam;
-  CONTEXT_GETPRARM_CALLBACK_FUNC context_getparam;
-  MEMORY_ALLOC_CALLBACK_FUNC memory_alloc;
-  MEMORY_FREE_CALLBACK_FUNC memory_free;
-  MEMORY_ALIGNED_ALLOC_CALLBACK_FUNC memory_aligned_alloc;
-  MEMORY_ALIGNED_FREE_CALLBACK_FUNC memory_aligned_free;
+  void* (*device_open)();
+  void (*device_close)(void* device);
+  Status (*device_setparam)(void* device, ParamKey key, ParamValue value);
+  Status (*device_getparam)(void* device, ParamKey key, ParamValue* value);
+  void* (*context_create)(void* device);
+  void (*context_destroy)(void* context);
+  Status (*context_setparam)(void* device, ParamKey key, ParamValue value);
+  Status (*context_getparam)(void* device, ParamKey key, ParamValue* value);
+  void* (*memory_alloc)(void* context, size_t size);
+  void (*memory_free)(void* context, void* ptr);
+  void* (*memory_aligned_alloc)(void* context, size_t size, size_t alignment);
+  void (*memory_aligned_free)(void* context, void* ptr);
 } Callback;
-
-/**
- * An opaque type for Device.
- */
-typedef struct Device Device;
-
-/**
- * An opaque type for Context.
- */
-typedef struct Context Context;
 
 /* Convert types to readable string */
 std::string status_to_string(Status type);
