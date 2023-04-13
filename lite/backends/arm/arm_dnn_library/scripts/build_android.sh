@@ -18,11 +18,11 @@ set +x
 
 # Configurable options
 # armv7 or armv8, default armv8.
-ADNN_ARCH=armv8
+ARM_DNN_LIBRARY_ARCH=armv8
 # gcc or clang, default gcc.
-ADNN_TOOLCHAIN=gcc
-# Set the type of ADNN library: shared, static, or default, defaults to default.
-ADNN_LIBRARY_TYPE=default
+ARM_DNN_LIBRARY_TOOLCHAIN=gcc
+# Set the type of ARM_DNN_LIBRARY library: shared, static, or default, defaults to default.
+ARM_DNN_LIBRARY_LIBRARY_TYPE=default
 # Set the type of target: Debug, Release, RelWithDebInfo and MinSizeRel, defaults to Release.
 CMAKE_BUILD_TYPE=Release
 # Path to Android NDK
@@ -35,7 +35,7 @@ ANDROID_NATIVE_API_LEVEL="default"
 MIN_ANDROID_NATIVE_API_LEVEL_ARMV7=16
 MIN_ANDROID_NATIVE_API_LEVEL_ARMV8=21
 # Throw an exception when error occurs, defaults to OFF.
-ADNN_WITH_EXCEPTION=OFF
+ARM_DNN_LIBRARY_WITH_EXCEPTION=OFF
 # Set the num of threads to build.
 readonly NUM_PROC=${NUM_PROC:-4}
 
@@ -49,14 +49,14 @@ function build {
   cmake_args=()
   cmake_args+=("-DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE")
   cmake_args+=("-DCMAKE_POSITION_INDEPENDENT_CODE=ON")
-  cmake_args+=("-DADNN_LIBRARY_TYPE=$ADNN_LIBRARY_TYPE")
+  cmake_args+=("-DARM_DNN_LIBRARY_LIBRARY_TYPE=$ARM_DNN_LIBRARY_LIBRARY_TYPE")
 
   # Android NDK toolchain depends on android ndk version.
   if [ "$ANDROID_NDK" ]; then
     name=$(echo $ANDROID_NDK | egrep -o "android-ndk-r[0-9]{2}")
     version=$(echo $name | egrep -o "[0-9]{2}")
     if [ "$version" -gt 17 ]; then
-      ADNN_TOOLCHAIN=clang
+      ARM_DNN_LIBRARY_TOOLCHAIN=clang
     fi
   else
     echo "ANDROID_NDK not set."
@@ -65,14 +65,14 @@ function build {
   cmake_args+=("-DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake")
 
   # Android native api level depends on arch.
-  if [ "$ADNN_ARCH" == "armv8" ]; then
+  if [ "$ARM_DNN_LIBRARY_ARCH" == "armv8" ]; then
     ANDROID_ABI=arm64-v8a
     MIN_ANDROID_NATIVE_API_LEVEL=$MIN_ANDROID_NATIVE_API_LEVEL_ARMV8
-  elif [ "$ADNN_ARCH" == "armv7" ]; then
+  elif [ "$ARM_DNN_LIBRARY_ARCH" == "armv7" ]; then
     ANDROID_ABI=armeabi-v7a
     MIN_ANDROID_NATIVE_API_LEVEL=$MIN_ANDROID_NATIVE_API_LEVEL_ARMV7
   else
-    echo "Unsupported arch $ADNN_ARCH."
+    echo "Unsupported arch $ARM_DNN_LIBRARY_ARCH."
     exit 1
   fi
   cmake_args+=("-DANDROID_ABI=$ANDROID_ABI")
@@ -81,11 +81,11 @@ function build {
   elif [ $ANDROID_NATIVE_API_LEVEL -ge $MIN_ANDROID_NATIVE_API_LEVEL ]; then
     cmake_args+=("-DANDROID_NATIVE_API_LEVEL=$ANDROID_NATIVE_API_LEVEL")
   else
-    echo "ANDROID_NATIVE_API_LEVEL should be no less than $MIN_ANDROID_NATIVE_API_LEVEL on $ADNN_ARCH."
+    echo "ANDROID_NATIVE_API_LEVEL should be no less than $MIN_ANDROID_NATIVE_API_LEVEL on $ARM_DNN_LIBRARY_ARCH."
     exit 1
   fi
 
-  build_dir=build/android/$ADNN_ARCH
+  build_dir=build/android/$ARM_DNN_LIBRARY_ARCH
   if [ -d $build_dir ]; then
     rm -rf $build_dir
   fi
@@ -99,16 +99,16 @@ function main {
   for i in "$@"; do
     case $i in
       --arch=*)
-        ADNN_ARCH="${i#*=}"
+        ARM_DNN_LIBRARY_ARCH="${i#*=}"
         shift
         ;;
       --toolchain=*)
-        ADNN_TOOLCHAIN="${i#*=}"
+        ARM_DNN_LIBRARY_TOOLCHAIN="${i#*=}"
         shift
         ;;
       --with_exception=*)
-        ADNN_WITH_EXCEPTION="${i#*=}"
-        if [[ $ADNN_WITH_EXCEPTION == "ON" && $ADNN_ARCH == "armv7" && $ADNN_TOOLCHAIN != "clang" ]]; then
+        ARM_DNN_LIBRARY_WITH_EXCEPTION="${i#*=}"
+        if [[ $ARM_DNN_LIBRARY_WITH_EXCEPTION == "ON" && $ARM_DNN_LIBRARY_ARCH == "armv7" && $ARM_DNN_LIBRARY_TOOLCHAIN != "clang" ]]; then
           set +x
           echo
           echo -e "Only clang provide C++ exception handling support for 32-bit ARM."
@@ -130,7 +130,7 @@ function main {
         shift
         ;;
       --library_type=*)
-        ADNN_LIBRARY_TYPE="${i#*=}"
+        ARM_DNN_LIBRARY_LIBRARY_TYPE="${i#*=}"
         shift
         ;;
       --build_type=*)

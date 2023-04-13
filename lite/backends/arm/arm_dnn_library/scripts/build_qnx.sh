@@ -18,13 +18,13 @@ set +x
 
 # Configurable options
 # armv7 or armv8, default armv8.
-ADNN_ARCH=armv8
-# Set the type of ADNN library: shared, static, or default, defaults to default.
-ADNN_LIBRARY_TYPE=default
+ARM_DNN_LIBRARY_ARCH=armv8
+# Set the type of ARM_DNN_LIBRARY library: shared, static, or default, defaults to default.
+ARM_DNN_LIBRARY_LIBRARY_TYPE=default
 # Set the type of target: Debug, Release, RelWithDebInfo and MinSizeRel, defaults to Release.
 CMAKE_BUILD_TYPE=Release
 # Throw an exception when error occurs, defaults to OFF.
-ADNN_WITH_EXCEPTION=OFF
+ARM_DNN_LIBRARY_WITH_EXCEPTION=OFF
 # Set the num of threads to build.
 readonly NUM_PROC=${NUM_PROC:-4}
 
@@ -38,17 +38,15 @@ function build {
   cmake_args=()
   cmake_args+=("-DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE")
   cmake_args+=("-DCMAKE_POSITION_INDEPENDENT_CODE=ON")
-  cmake_args+=("-DADNN_LIBRARY_TYPE=$ADNN_LIBRARY_TYPE")
-  if [ "$ADNN_ARCH" == "armv8" ]; then
-    cmake_args+=("-DCMAKE_TOOLCHAIN_FILE=cmake/platforms/linux/aarch64.toolchain.cmake")
-  elif [ "$ADNN_ARCH" == "armv7hf" ]; then
-    cmake_args+=("-DCMAKE_TOOLCHAIN_FILE=cmake/platforms/linux/armhf.toolchain.cmake")
+  cmake_args+=("-DARM_DNN_LIBRARY_LIBRARY_TYPE=$ARM_DNN_LIBRARY_LIBRARY_TYPE")
+  if [ "$ARM_DNN_LIBRARY_ARCH" == "armv8" ]; then
+    cmake_args+=("-DCMAKE_TOOLCHAIN_FILE=cmake/platforms/qnx/aarch64.toolchain.cmake")
   else
-    echo "Unsupported arch $ADNN_ARCH."
+    echo "Unsupported arch $ARM_DNN_LIBRARY_ARCH."
     exit 1
   fi
 
-  build_dir=build/linux/$ADNN_ARCH
+  build_dir=build/linux/$ARM_DNN_LIBRARY_ARCH
   if [ -d $build_dir ]; then
     rm -rf $build_dir
   fi
@@ -62,15 +60,15 @@ function main {
   for i in "$@"; do
     case $i in
       --arch=*)
-        ADNN_ARCH="${i#*=}"
+        ARM_DNN_LIBRARY_ARCH="${i#*=}"
         shift
         ;;
       --with_exception=*)
-        ADNN_WITH_EXCEPTION="${i#*=}"
+        ARM_DNN_LIBRARY_WITH_EXCEPTION="${i#*=}"
         shift
         ;;
       --library_type=*)
-        ADNN_LIBRARY_TYPE="${i#*=}"
+        ARM_DNN_LIBRARY_LIBRARY_TYPE="${i#*=}"
         shift
         ;;
       --build_type=*)
