@@ -36,15 +36,18 @@ static std::vector<int> IntVec2DTo1D(const std::vector<std::vector<int>>& vec) {
 
 class SpatialTransformerfuser : public FuseBase {
  public:
-  explicit SpatialTransformerfuser(bool dyn_reshape = false)
-      : dyn_reshape_(dyn_reshape) {}
+  explicit SpatialTransformerfuser(bool dyn_reshape = false,
+                                   bool output_xshape = true,
+                                   bool post_reshape_new_pattern = false)
+      : dyn_reshape_(dyn_reshape),
+        output_xshape_(output_xshape),
+        post_reshape_new_pattern_(post_reshape_new_pattern) {}
 
   void BuildPattern() override {
     auto* input = VarNode("input")
                       ->assert_is_op_input("group_norm", "X")
                       ->assert_is_op_input("__xpu__conv2d", "Branch")
                       ->AsInput();
-
     PMNode* shape = nullptr;
     PMNode* slice0 = nullptr;
     PMNode* slice1 = nullptr;
@@ -134,11 +137,6 @@ class SpatialTransformerfuser : public FuseBase {
     auto* transpose2_output = VarNode("transpose2_output")
                                   ->AsIntermediate()
                                   ->assert_is_op_output("transpose2", "Out");
-    auto* transpose2_output_xshape =
-        VarNode("transpose2_output_xshape")
-            ->AsIntermediate()
-            ->assert_is_op_output("transpose2", "XShape");
-
     PMNode* flatten = nullptr;
     PMNode* flatten_output = nullptr;
     PMNode* flatten_output_xshape = nullptr;
@@ -167,10 +165,6 @@ class SpatialTransformerfuser : public FuseBase {
               ->assert_is_op_output("flatten_contiguous_range", "Out")
               ->assert_is_op_input("__xpu__multihead_self_attn", "Input")
               ->assert_is_op_input("elementwise_add", "Y");
-      flatten_output_xshape =
-          VarNode("flatten_output_xshape")
-              ->AsIntermediate()
-              ->assert_is_op_output("flatten_contiguous_range", "XShape");
       transpose2_output->assert_is_op_input("flatten_contiguous_range", "X");
     }
 
@@ -347,10 +341,6 @@ class SpatialTransformerfuser : public FuseBase {
             ->AsIntermediate()
             ->assert_is_op_input("__xpu__conv2d", "Input")
             ->assert_is_op_output("transpose2", "Out");
-    auto* transpose2_2_output_xshape =
-        VarNode("transpose2_2_output_xshape")
-            ->AsIntermediate()
-            ->assert_is_op_output("transpose2", "XShape");
     auto* post_xpu_conv2d =
         OpNode("post__xpu__conv2d", "__xpu__conv2d")->AsIntermediate();
     auto* post_xpu_conv2d_bias =
@@ -379,8 +369,14 @@ class SpatialTransformerfuser : public FuseBase {
                                            pre_xpu_conv2d_output_max};
     pre_conv2d_input >> *pre_xpu_conv2d >> pre_conv2d_output;
     *pre_xpu_conv2d_output >> *transpose2 >> *transpose2_output;
-    *transpose2 >> *transpose2_output_xshape;
 
+    if (output_xshape_) {
+      auto* transpose2_output_xshape =
+          VarNode("transpose2_output_xshape")
+              ->AsIntermediate()
+              ->assert_is_op_output("transpose2", "XShape");
+      *transpose2 >> *transpose2_output_xshape;
+    }
     PMNode* sequence_input = nullptr;
     if (dyn_reshape_) {
       *input >> *shape >> *shape_out;
@@ -394,7 +390,13 @@ class SpatialTransformerfuser : public FuseBase {
       sequence_input = reshape2_output;
     } else {
       *transpose2_output >> *flatten >> *flatten_output;
-      *flatten >> *flatten_output_xshape;
+      if (output_xshape_) {
+        flatten_output_xshape =
+            VarNode("flatten_output_xshape")
+                ->AsIntermediate()
+                ->assert_is_op_output("flatten_contiguous_range", "XShape");
+        *flatten >> *flatten_output_xshape;
+      }
       sequence_input = flatten_output;
     }
 
@@ -439,7 +441,13 @@ class SpatialTransformerfuser : public FuseBase {
     *residual_add3_output >> *post_reshape >> *reshape_output >>
         *transpose2_2 >> *transpose2_2_output;
     *post_reshape >> *reshape_output_xshape;
-    *transpose2_2 >> *transpose2_2_output_xshape;
+    if (output_xshape_) {
+      auto* transpose2_2_output_xshape =
+          VarNode("transpose2_2_output_xshape")
+              ->AsIntermediate()
+              ->assert_is_op_output("transpose2", "XShape");
+      *transpose2_2 >> *transpose2_2_output_xshape;
+    }
     if (dyn_reshape_) {
       *fill_constant2 >> *fill_constant2_out;
       std::vector<PMNode*> dyn_reshape__inputs = {residual_add3_output,
@@ -447,6 +455,53 @@ class SpatialTransformerfuser : public FuseBase {
                                                   slice1_out,
                                                   slice2_out,
                                                   fill_constant2_out};
+      dyn_reshape__inputs >> *post_reshape;
+    }
+
+    if (post_reshape_new_pattern_) {
+      // This is for new pattern in new pipeline model.
+      input->assert_is_op_input("shape", "Input");
+      PMNode* shape_1 = OpNode("shape_1", "shape")->AsIntermediate();
+      PMNode* shape_out_1 = VarNode("shape_out_1")
+                                ->assert_is_op_output("shape", "Out")
+                                ->assert_is_op_input("slice", "Input")
+                                ->AsIntermediate();
+
+      PMNode* slice_1 = OpNode("slice_1", "slice")->AsIntermediate();
+      PMNode* slice_2 = OpNode("slice_2", "slice")->AsIntermediate();
+      PMNode* slice_1_out = VarNode("slice_1_out")
+                                ->assert_is_op_output("slice", "Out")
+                                ->AsIntermediate();
+      PMNode* slice_2_out = VarNode("slice_2_out")
+                                ->assert_is_op_output("slice", "Out")
+                                ->AsIntermediate();
+
+      PMNode* fill_constant3 =
+          OpNode("fill_constant3", "fill_constant")->AsIntermediate();
+      PMNode* fill_constant3_out =
+          VarNode("fill_constant3_out")
+              ->AsIntermediate()
+              ->assert_is_op_nth_input("reshape2", "ShapeTensor", 0);
+      PMNode* fill_constant4 =
+          OpNode("fill_constant4", "fill_constant")->AsIntermediate();
+      PMNode* fill_constant4_out =
+          VarNode("fill_constant4_out")
+              ->AsIntermediate()
+              ->assert_is_op_nth_input("reshape2", "ShapeTensor", 3);
+      slice_1_out->assert_is_op_nth_input("reshape2", "ShapeTensor", 1);
+      slice_2_out->assert_is_op_nth_input("reshape2", "ShapeTensor", 2);
+
+      *fill_constant3 >> *fill_constant3_out;
+      *fill_constant4 >> *fill_constant4_out;
+      *input >> *shape_1 >> *shape_out_1;
+      *shape_out_1 >> *slice_1 >> *slice_1_out;
+      *shape_out_1 >> *slice_2 >> *slice_2_out;
+
+      std::vector<PMNode*> dyn_reshape__inputs = {residual_add3_output,
+                                                  fill_constant3_out,
+                                                  slice_1_out,
+                                                  slice_2_out,
+                                                  fill_constant4_out};
       dyn_reshape__inputs >> *post_reshape;
     }
 
@@ -691,6 +746,8 @@ class SpatialTransformerfuser : public FuseBase {
     }
   }
   bool dyn_reshape_;
+  bool output_xshape_;
+  bool post_reshape_new_pattern_;
 };
 
 }  // namespace fusion
@@ -699,8 +756,13 @@ class XPUSpatialTransformerfusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     for (auto dyn_reshape : {true, false}) {
-      fusion::SpatialTransformerfuser fuser(dyn_reshape);
-      fuser(graph.get());
+      for (auto output_xshape : {true, false}) {
+        for (auto post_reshape_new_pattern : {true, false}) {
+          fusion::SpatialTransformerfuser fuser(
+              dyn_reshape, output_xshape, post_reshape_new_pattern);
+          fuser(graph.get());
+        }
+      }
     }
   }
 };

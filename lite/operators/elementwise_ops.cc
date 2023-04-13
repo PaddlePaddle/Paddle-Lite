@@ -101,6 +101,16 @@ bool ElementwiseOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     param_.alpha = opdesc.GetAttr<float>("alpha");
     param_.bias = opdesc.GetAttr<float>("bias");
   }
+#ifdef LITE_WITH_XPU
+  if (opdesc.HasAttr("enable_int8") && opdesc.GetAttr<bool>("enable_int8")) {
+    param_.enable_int8 = true;
+    if (opdesc.HasAttr("X0_scale") && opdesc.HasAttr("Y0_scale")) {
+      param_.x_input_scale = opdesc.GetAttr<std::vector<float>>("X0_scale")[0];
+      param_.y_input_scale = opdesc.GetAttr<std::vector<float>>("Y0_scale")[0];
+      param_.output_scale = opdesc.GetAttr<std::vector<float>>("Out0_scale")[0];
+    }
+  }
+#endif
   input_tensor_ptrs_cache_.push_back(param_.X);
   input_tensor_ptrs_cache_.push_back(param_.Y);
   output_tensor_ptrs_cache_.push_back(param_.Out);

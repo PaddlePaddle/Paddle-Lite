@@ -14,9 +14,7 @@
 
 #include "lite/core/optimizer/optimizer.h"
 #include <fstream>
-#ifdef LITE_WITH_XPU
 #include "lite/core/optimizer/mir/__xpu__static_kernel_pick_pass.h"
-#endif
 #include "lite/core/optimizer/mir/static_kernel_pick_pass.h"
 #include "lite/core/optimizer/mir/type_target_cast_pass.h"
 #include "lite/model_parser/model_parser.h"
@@ -70,6 +68,12 @@ void Optimizer::SpecifyKernelPickTactic(core::KernelPickFactor factor) {
 #endif
   auto* pass = mir::PassManager::Global().LookUp<mir::StaticKernelPickPass>(
       static_pick_name);
+  if (pass->name() == "__xpu__static_kernel_pick_pass") {
+    auto* static_pass = static_cast<mir::XPUStaticKernelPickPass*>(
+        reinterpret_cast<void*>(pass));
+    static_pass->InitKernelPickInfo();
+  }
+
   CHECK(pass);
 
   *pass->mutable_kernel_pick_factors() = factor;
@@ -147,6 +151,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        // quantized ops are inferred by the propagation method according to the
        // input scales and out_threashold.
        "quantization_parameters_propagation_pass",
+       "__xpu__quantization_parameters_propagation_pass",
        // Based on the custom mixed precision configuration information, remove
        // the quantization parameters of some quantized ops to force them to run
        // at fp32 precision.
@@ -236,6 +241,13 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "opencl_kernel_place_correct_pass",
        // debug pass: show arg-type-node's info (target/precision/layout/device)
        "argument_type_display_pass",
+// precision cast pass must be  in front of target cast pass.
+#ifdef LITE_WITH_XPU
+       "type_precision_cast_pass",
+       "variable_place_inference_pass",
+       "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
+       "argument_type_display_pass",
+#endif
 
        // add io_copy/io_copy_once
        "type_target_cast_pass",
@@ -249,11 +261,12 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "variable_place_inference_pass",
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
        "argument_type_display_pass",
-
+#ifndef LITE_WITH_XPU
        "type_precision_cast_pass",
        "variable_place_inference_pass",
        "control_flow_op_shared_inputs_and_outputs_place_sync_pass",
        "argument_type_display_pass",
+#endif
 
        // add layout/layout_once op
        "type_layout_cast_pass",

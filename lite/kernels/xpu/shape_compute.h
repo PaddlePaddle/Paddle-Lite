@@ -20,8 +20,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class ShapeCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
+template <PrecisionType PType>
+class ShapeCompute : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kAny)> {
  public:
   void Run() override;
 

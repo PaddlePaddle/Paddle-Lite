@@ -19,9 +19,9 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
-
+template <PrecisionType PType>
 class FlattenContiguousRangeCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
+    : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kAny)> {
  public:
   using param_t = operators::FlattenContiguousRangeParam;
 

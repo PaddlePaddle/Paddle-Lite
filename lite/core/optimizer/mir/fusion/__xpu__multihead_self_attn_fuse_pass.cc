@@ -26,6 +26,8 @@ namespace fusion {
 
 class MHSAfuser : public FuseBase {
  public:
+  explicit MHSAfuser(bool b_transpose_out_shape = true)
+      : b_transpose_out_shape_(b_transpose_out_shape) {}
   void BuildPattern() override {
     // layer norm
     auto* input = VarNode("input")
@@ -71,11 +73,6 @@ class MHSAfuser : public FuseBase {
                                  ->assert_is_op_output("transpose2", "Out")
                                  ->assert_is_op_input("matmul_v2", "X")
                                  ->AsIntermediate();
-    auto* q_transpose2_xshape =
-        VarNode("q_transpose2_xshape")
-            ->assert_is_op_output("transpose2", "XShape")
-            ->AsIntermediate();
-
     auto* k_mul_y =
         VarNode("k_mul_y")->assert_is_op_input("matmul_v2", "Y")->AsInput();
     auto* k_mul = OpNode("k_mul", "matmul_v2")->AsIntermediate();
@@ -95,10 +92,6 @@ class MHSAfuser : public FuseBase {
     auto* k_transpose2_out = VarNode("k_transpose2_out")
                                  ->assert_is_op_output("transpose2", "Out")
                                  ->AsIntermediate();
-    auto* k_transpose2_xshape =
-        VarNode("k_transpose2_xshape")
-            ->assert_is_op_output("transpose2", "XShape")
-            ->AsIntermediate();
 
     auto* qk_matmul = OpNode("qk_matmul", "matmul_v2")->AsIntermediate();
     auto* qk_matmul_out = VarNode("qk_matmul_out")
@@ -137,10 +130,6 @@ class MHSAfuser : public FuseBase {
                                  ->assert_is_op_output("transpose2", "Out")
                                  ->assert_is_op_input("matmul_v2", "Y")
                                  ->AsIntermediate();
-    auto* v_transpose2_xshape =
-        VarNode("v_transpose2_xshape")
-            ->assert_is_op_output("transpose2", "XShape")
-            ->AsIntermediate();
 
     auto* qkv_matmul = OpNode("qkv_matmul", "matmul_v2")->AsIntermediate();
     auto* qkv_matmul_out = VarNode("qkv_matmul_out")
@@ -153,10 +142,7 @@ class MHSAfuser : public FuseBase {
                                    ->assert_is_op_output("transpose2", "Out")
                                    ->assert_is_op_input("reshape2", "X")
                                    ->AsIntermediate();
-    auto* qkv_transpose2_xshape =
-        VarNode("qkv_transpose2_xshape")
-            ->assert_is_op_output("transpose2", "XShape")
-            ->AsIntermediate();
+
     auto* qkv_reshape2 = OpNode("qkv_reshape2", "reshape2")->AsIntermediate();
     auto* qkv_reshape2_out = VarNode("qkv_reshape2_out")
                                  ->assert_is_op_output("reshape2", "Out")
@@ -191,13 +177,25 @@ class MHSAfuser : public FuseBase {
         *q_transpose2 >> *q_transpose2_out >> *qk_matmul;
     *q_mul_y >> *q_mul;
     *q_reshape2 >> *q_reshape2_xshape;
-    *q_transpose2 >> *q_transpose2_xshape;
+    if (b_transpose_out_shape_) {
+      auto* q_transpose2_xshape =
+          VarNode("q_transpose2_xshape")
+              ->assert_is_op_output("transpose2", "XShape")
+              ->AsIntermediate();
+      *q_transpose2 >> *q_transpose2_xshape;
+    }
     // k_info
     *ln_before_out >> *k_mul >> *k_mul_out >> *k_reshape2 >> *k_reshape2_out >>
         *k_transpose2 >> *k_transpose2_out >> *qk_matmul;
     *k_mul_y >> *k_mul;
     *k_reshape2 >> *k_reshape2_xshape;
-    *k_transpose2 >> *k_transpose2_xshape;
+    if (b_transpose_out_shape_) {
+      auto* k_transpose2_xshape =
+          VarNode("k_transpose2_xshape")
+              ->assert_is_op_output("transpose2", "XShape")
+              ->AsIntermediate();
+      *k_transpose2 >> *k_transpose2_xshape;
+    }
     // qk_matmul
     *qk_matmul >> *qk_matmul_out >> *qk_scale >> *qk_scale_out >> *qk_softmax >>
         *qk_softmax_out >> *qkv_matmul;
@@ -206,12 +204,24 @@ class MHSAfuser : public FuseBase {
         *v_transpose2_out >> *qkv_matmul;
     *v_mul_y >> *v_mul;
     *v_reshape2 >> *v_reshape2_xshape;
-    *v_transpose2 >> *v_transpose2_xshape;
+    if (b_transpose_out_shape_) {
+      auto* v_transpose2_xshape =
+          VarNode("v_transpose2_xshape")
+              ->assert_is_op_output("transpose2", "XShape")
+              ->AsIntermediate();
+      *v_transpose2 >> *v_transpose2_xshape;
+    }
     // after qkv_matmul
     *qkv_matmul >> *qkv_matmul_out >> *qkv_transpose2 >> *qkv_transpose2_out >>
         *qkv_reshape2 >> *qkv_reshape2_out >> *qkv_mul >> *qkv_mul_out >>
         *qkv_add >> *qkv_add_out;
-    *qkv_transpose2 >> *qkv_transpose2_xshape;
+    if (b_transpose_out_shape_) {
+      auto* qkv_transpose2_xshape =
+          VarNode("qkv_transpose2_xshape")
+              ->assert_is_op_output("transpose2", "XShape")
+              ->AsIntermediate();
+      *qkv_transpose2 >> *qkv_transpose2_xshape;
+    }
     *qkv_reshape2 >> *qkv_reshape2_xshape;
     *qkv_mul_y >> *qkv_mul;
     *qkv_add_y >> *qkv_add;
@@ -304,6 +314,7 @@ class MHSAfuser : public FuseBase {
   }
 
  private:
+  bool b_transpose_out_shape_;
   void update_weight(Scope* scope,
                      const std::vector<std::string>& fc_weight_names,
                      const std::vector<std::string>& fc_weight_max_names) {
@@ -413,8 +424,11 @@ class XPUMHSAfusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
-    fusion::MHSAfuser fuser;
-    fuser(graph.get());
+    std::vector<bool> b_transpose_out_shapes{true, false};
+    for (auto b_transpose_out_shape : b_transpose_out_shapes) {
+      fusion::MHSAfuser fuser(b_transpose_out_shape);
+      fuser(graph.get());
+    }
   }
 };
 
