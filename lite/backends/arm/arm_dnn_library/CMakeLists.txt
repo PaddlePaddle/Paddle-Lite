@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 
 PROJECT(ARM_DNN_LIBRARY C CXX ASM)
 INCLUDE(GNUInstallDirs)
@@ -124,19 +124,19 @@ IF(CMAKE_SYSTEM_NAME MATCHES "Android")
     IF(ARM_DNN_LIBRARY_TARGET_PROCESSOR STREQUAL "arm")
       IF(ANDROID_NDK_MAJOR AND ANDROID_NDK_MAJOR LESS 22)
         # Suggested to use ndk r22 or newer version to be compatible with armv7 fp16 intrinsic func compilation
-        message(FATAL_ERROR "Arm v7+fp16 is only supported by ndk r22 or later, but receive ndk r${ANDROID_NDK_MAJOR} .")
+        MESSAGE(FATAL_ERROR "Arm v7+fp16 is only supported by ndk r22 or later, but receive ndk r${ANDROID_NDK_MAJOR} .")
       ENDIF()
     ENDIF()
     IF(ARM_DNN_LIBRARY_TARGET_PROCESSOR MATCHES "^arm64")
       IF(ANDROID_NDK_MAJOR AND ANDROID_NDK_MAJOR LESS 18)
-        message(FATAL_ERROR "Arm v8+fp16 is only supported by ndk r18 or later, but receive ndk r${ANDROID_NDK_MAJOR} .")
+        MESSAGE(FATAL_ERROR "Arm v8+fp16 is only supported by ndk r18 or later, but receive ndk r${ANDROID_NDK_MAJOR} .")
       ENDIF()
     ENDIF()
   ENDIF()
 ENDIF()
 
-include_directories(include)
-include_directories(src)
+INCLUDE_DIRECTORIES(include)
+INCLUDE_DIRECTORIES(src)
 
 SET(OP_SRCS 
   src/operators/relu/op.cc
