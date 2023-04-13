@@ -1552,7 +1552,7 @@ bool CPUInfo::SetRunMode(PowerMode power_mode, size_t thread_num) {
                                  << active_idxs_.size() << " threads.";
   }
   ARM_DNN_LIBRARY_CHECK_GE(active_idxs_.size(), 1);
-#ifdef ARM_WITH_OMP
+#ifdef ARM_DNN_LIBRARY_WITH_OMP
   omp_set_num_threads(active_idxs_.size());
 #endif
   return true;
