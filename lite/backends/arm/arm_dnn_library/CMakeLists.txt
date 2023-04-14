@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 
 PROJECT(ARM_DNN_LIBRARY C CXX ASM)
 INCLUDE(GNUInstallDirs)
@@ -64,11 +64,38 @@ OPTION(ARM_DNN_LIBRARY_ARM_WITH_SVE "Build ARM_DNN_LIBRARY with Arm SVE kernels"
 OPTION(ARM_DNN_LIBRARY_ARM_WITH_SVE2 "Build ARM_DNN_LIBRARY with Arm SVE2 kernels" ON)
 
 IF(ARM_DNN_LIBRARY_WITH_THREAD_POOL)
-  ADD_DEFINITIONS(-DARM_DNN_LIBRARY_WITH_OMP)
+  ADD_DEFINITIONS(-DARM_DNN_LIBRARY_WITH_THREAD_POOL)
   SET(ARM_DNN_LIBRARY_WITH_OMP OFF)
   MESSAGE(WARNNING "Disable ARM_DNN_LIBRARY_WITH_OMP when ARM_DNN_LIBRARY_WITH_THREAD_POOL is enabled.")
 ENDIF()
+IF(CMAKE_SYSTEM_NAME MATCHES "QNX")
+  SET(ARM_DNN_LIBRARY_WITH_OMP OFF)
+  MESSAGE(WARNNING "Disable ARM_DNN_LIBRARY_WITH_OMP when OS is QNX.")
+ENDIF()
 IF(ARM_DNN_LIBRARY_WITH_OMP)
+  FIND_PACKAGE(OpenMP REQUIRED)
+  IF(OpenMP_FOUND OR OpenMP_CXX_FOUND)
+    IF(ANDROID_NDK_MAJOR)
+      IF(ANDROID_NDK_MAJOR GREATER 20)
+        SET(OpenMP_LINK_FLAGS "-fopenmp -static-openmp")
+      ELSE()
+        SET(OpenMP_LINK_FLAGS "-fopenmp")
+      ENDIF()
+    ENDIF()
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_LINK_FLAGS}")
+    SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${OpenMP_LINK_FLAGS}")
+    MESSAGE(STATUS "Found OpenMP ${OpenMP_VERSION} ${OpenMP_CXX_VERSION}")
+    MESSAGE(STATUS "OpenMP C flags:  ${OpenMP_C_FLAGS}")
+    MESSAGE(STATUS "OpenMP CXX flags:  ${OpenMP_CXX_FLAGS}")
+    MESSAGE(STATUS "OpenMP LINK flags:  ${OpenMP_LINK_FLAGS}")
+    MESSAGE(STATUS "OpenMP OpenMP_CXX_LIB_NAMES:  ${OpenMP_CXX_LIB_NAMES}")
+    MESSAGE(STATUS "OpenMP OpenMP_CXX_LIBRARIES:  ${OpenMP_CXX_LIBRARIES}")
+  ELSE()
+    MESSAGE(FATAL_ERROR "OpenMP not found!")
+    RETURN()
+  ENDIF()
   ADD_DEFINITIONS(-DARM_DNN_LIBRARY_WITH_OMP)
 ENDIF()
 IF(ARM_DNN_LIBRARY_WITH_ARM)
@@ -97,19 +124,19 @@ IF(CMAKE_SYSTEM_NAME MATCHES "Android")
     IF(ARM_DNN_LIBRARY_TARGET_PROCESSOR STREQUAL "arm")
       IF(ANDROID_NDK_MAJOR AND ANDROID_NDK_MAJOR LESS 22)
         # Suggested to use ndk r22 or newer version to be compatible with armv7 fp16 intrinsic func compilation
-        message(FATAL_ERROR "Arm v7+fp16 is only supported by ndk r22 or later, but receive ndk r${ANDROID_NDK_MAJOR} .")
+        MESSAGE(FATAL_ERROR "Arm v7+fp16 is only supported by ndk r22 or later, but receive ndk r${ANDROID_NDK_MAJOR} .")
       ENDIF()
     ENDIF()
     IF(ARM_DNN_LIBRARY_TARGET_PROCESSOR MATCHES "^arm64")
       IF(ANDROID_NDK_MAJOR AND ANDROID_NDK_MAJOR LESS 18)
-        message(FATAL_ERROR "Arm v8+fp16 is only supported by ndk r18 or later, but receive ndk r${ANDROID_NDK_MAJOR} .")
+        MESSAGE(FATAL_ERROR "Arm v8+fp16 is only supported by ndk r18 or later, but receive ndk r${ANDROID_NDK_MAJOR} .")
       ENDIF()
     ENDIF()
   ENDIF()
 ENDIF()
 
-include_directories(include)
-include_directories(src)
+INCLUDE_DIRECTORIES(include)
+INCLUDE_DIRECTORIES(src)
 
 SET(OP_SRCS 
   src/operators/relu/op.cc
@@ -232,5 +259,5 @@ ENDIF()
 INSTALL(TARGETS arm_dnn_library
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
+INSTALL(DIRECTORY include/arm_dnn_library DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
