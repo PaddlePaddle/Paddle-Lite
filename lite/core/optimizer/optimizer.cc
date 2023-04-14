@@ -136,7 +136,9 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
   std::vector<std::string> passes_local{
       {"lite_quant_dequant_fuse_pass",
        "weight_quantization_preprocess_pass",
-       // "support_0_dim_tensor_pass",
+#ifndef LITE_BLOCK_0DIM_PASS
+       "support_0_dim_tensor_pass",
+#endif  // LITE_BLOCK_0DIM_PASS
        "op_transformation_pass",
        "assign_value_calc_offline_pass",
        "ssd_boxes_calc_offline_pass",
