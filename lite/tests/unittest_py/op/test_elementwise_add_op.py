@@ -220,6 +220,18 @@ class TestElementwiseAddOp(AutoScanTest):
             "Lite does not support 'x_shape_size == 1' or 'x_shape_size != y_shape_size' "
             "or 'x_shape[0] != y_shape[0]' or 'axis == 0' on NvidiaTensorrt.")
 
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data_x"].shape)
+            in_y_shape = list(program_config.inputs["input_data_y"].shape)
+            if target_type != TargetType.ARM and target_type != TargetType.X86 and target_type != TargetType.Host:
+                if len(in_x_shape) == 0 or len(in_y_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(X86/ARM/Host) now.")
+
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         max_examples = 150
