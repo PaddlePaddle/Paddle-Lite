@@ -136,7 +136,7 @@ class TestReluOp(AutoScanTest):
                                    "Only test 0D-tensor on CPU(ARM/Host) now.")
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=1000)
 
 
 if __name__ == "__main__":
