@@ -20,79 +20,97 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
+// paddle op reduce_all default is true, so we need recompute
+bool recompute_reduce_all(const Tensor* x,
+                          const std::vector<int>& dims,
+                          bool reduce_all = false) {
+  if (dims.size() == 0 || x->dims().size() == 0 ||
+      dims.size() == x->dims().size() || reduce_all) {
+    // when input 0D, it can only reduce_all
+    return true;
+  } else {
+    return false;
+  }
+}
+
 bool ReduceOp::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
   auto dims = param_.dim;
   auto x_dims = param_.X->dims();
   int x_rank = x_dims.size();
-  if (dims.size() != 0) {
-    for (int i = 0; i < dims.size(); i++) {
-      if (dims[i] < 0) {
-        dims[i] = x_rank + dims[i];
-      }
-      CHECK_OR_FALSE(dims[i] <= x_rank && dims[i] >= -x_rank);
-    }
+  // dim at least is [0]
+  CHECK_GT(dims.size(), 0)
+      << "The input dim should be greater than 0. But received the dim = "
+      << dims.size();
+  for (int i = 0; i < dims.size(); i++) {
+    CHECK(dims[i] <= x_rank && dims[i] + x_rank >= 0)
+        << "dims[i] is " << dims[i] << ", x_rank is " << x_rank;
   }
   return true;
 }
 
 bool ReduceOp::InferShapeImpl() const {
-  const auto &x_dims = param_.X->dims();
-  size_t x_rank = x_dims.size();
+  const auto& x_dims = param_.X->dims();
+  int x_rank = x_dims.size();
   auto dims = param_.dim;
-  bool reduce_all = param_.reduce_all;
+  bool& reduce_all = param_.reduce_all;
   bool keep_dim = param_.keep_dim;
 
-  for (size_t i = 0; i < dims.size(); ++i) {
+  for (int i = 0; i < dims.size(); i++) {
+    CHECK(dims[i] <= x_rank && dims[i] + x_rank >= 0)
+        << "dims[i] is " << dims[i] << ", x_rank is " << x_rank;
     if (dims[i] < 0) {
       dims[i] = x_rank + dims[i];
     }
-    CHECK_LT(dims[i], x_rank)
-        << "The dim should be in the range [-rank(input), rank(input).";
   }
-
+  // recompute reduce_all
+  reduce_all = recompute_reduce_all(param_.X, dims, reduce_all);
   std::set<int> dims_set(dims.begin(), dims.end());
   bool full_dim = true;
   for (size_t i = 0; i < x_rank; i++) {
-    if (dims_set.find(i) == dims_set.end()) {
+    if (dims_set.find(i) == dims_set.end() &&
+        dims_set.find(i - x_rank) == dims_set.end()) {
       full_dim = false;
       break;
     }
   }
   reduce_all = (reduce_all || full_dim);
-
   if (reduce_all) {
     if (keep_dim)
       param_.Out->Resize(std::vector<int64_t>(x_rank, 1));
     else
-      param_.Out->Resize(std::vector<int64_t>{1});
+      param_.Out->Resize(std::vector<int64_t>({1}));
   } else {
-    size_t out_rank = keep_dim ? x_rank : x_rank - dims.size();
-    std::vector<DDim::value_type> out_dims(out_rank);
-    std::stable_sort(dims.begin(), dims.end());
-    int dim_index = 0;
-    int out_index = 0;
-    for (size_t i = 0; i < x_rank; ++i) {
-      if (dim_index < dims.size() &&
-          dims[dim_index] == static_cast<DDim::value_type>(i)) {
-        if (keep_dim) {
-          out_dims[out_index++] = 1;
-        }
-        dim_index++;
-      } else {
-        out_dims[out_index++] = x_dims[i];
+    std::vector<int64_t> dims_vector(x_rank, 1);
+    for (int i = 0; i < x_rank; i++) dims_vector[i] = x_dims[i];
+
+    if (keep_dim) {
+      for (size_t i = 0; i < dims.size(); ++i) {
+        dims_vector[dims[i]] = 1;
       }
+    } else {
+      const int kDelFlag = -2;
+      for (size_t i = 0; i < dims.size(); ++i) {
+        dims_vector[dims[i]] = kDelFlag;
+      }
+      dims_vector.erase(
+          remove(dims_vector.begin(), dims_vector.end(), kDelFlag),
+          dims_vector.end());
     }
-    param_.Out->Resize(out_dims);
-    if (dims[0] != 0) {
+    if (!keep_dim && dims_vector.size() == 0) {
+      dims_vector.push_back(1);
+    }
+    param_.Out->Resize(dims_vector);
+    if (dims.size() > 0 && dims[0] != 0) {
+      // Only pass LoD when not reducing on the first dim.
       param_.Out->set_lod(param_.X->lod());
     }
   }
   return true;
 }
 
-bool ReduceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
+bool ReduceOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
 

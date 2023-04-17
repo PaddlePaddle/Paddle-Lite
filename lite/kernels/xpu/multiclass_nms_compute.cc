@@ -27,6 +27,13 @@ void MulticlassNmsCompute::PrepareForRun() {
   double n = GetDoubleFromEnv("ResetMulticlassNMSScoreThreshold", 0.0);
   if (n > 0.0) {
     custom_config_score_threshod_ = static_cast<float>(n);
+    VLOG(2) << "ResetMulticlassNMSScoreThreshold set to "
+            << custom_config_score_threshod_;
+  }
+  int k = GetIntFromEnv("ResetMulticlassNMSTopK", 0);
+  if (k > 0) {
+    custom_config_topk_ = k;
+    VLOG(2) << "ResetMulticlassNMSTopK set to " << k;
   }
 }
 
@@ -47,6 +54,9 @@ void MulticlassNmsCompute::Run() {
   auto rois_num = param.rois_num;
   int background_label = param.background_label;
   int nms_top_k = param.nms_top_k;
+  if (custom_config_topk_ > 0) {
+    nms_top_k = custom_config_topk_;
+  }
   int keep_top_k = param.keep_top_k;
   bool normalized = param.normalized;
   float nms_threshold = static_cast<float>(param.nms_threshold);
@@ -116,8 +126,18 @@ void MulticlassNmsCompute::Run() {
   uint64_t num_kept = batch_starts.back();
   if (num_kept == 0) {
     if (return_index) {
-      outs->Resize({0, out_dim});
-      out_index->Resize({0, 1});
+      // out_dim may be zero when there is no object in picture, so add some
+      // zeros to it
+      // caution: results may differ between cpu and xpu due to this operation
+      outs->Resize({1, out_dim});
+      float* out_ptr = outs->mutable_data<float>();
+      std::vector<float> temp_value(out_dim, 0.0f);
+      std::memcpy(out_ptr, temp_value.data(), 1 * out_dim * sizeof(float));
+
+      out_index->Resize({1, 1});
+      int* out_index_ptr = out_index->mutable_data<int>();
+      std::vector<int> temp_idx(1, 0);
+      std::memcpy(out_index_ptr, temp_idx.data(), 1 * sizeof(int));
     } else {
       outs->Resize({1, 1});
       float* od = outs->mutable_data<float>(TARGET(kHost));
@@ -147,6 +167,9 @@ void MulticlassNmsCompute::Run() {
   }
 
   LoD lod;
+  if (num_kept == 0) {
+    batch_starts[batch_starts.size() - 1] = 1;
+  }
   lod.emplace_back(batch_starts);
   if (return_index) {
     out_index->set_lod(lod);

@@ -48,8 +48,11 @@ bool XPUSpatialTransformerResBlockOp::InferShapeImpl() const {
 
 bool XPUSpatialTransformerResBlockOp::AttachImpl(const cpp::OpDesc& op_desc,
                                                  lite::Scope* scope) {
+  param_.has_silu_fc_input = op_desc.GetAttr<bool>("HasSiluFCInput");
   param_.input1 = scope->FindTensor(op_desc.Input("Input1").front());
-  param_.input2 = scope->FindTensor(op_desc.Input("Input2").front());
+  if (param_.has_silu_fc_input) {
+    param_.input2 = scope->FindTensor(op_desc.Input("Input2").front());
+  }
   param_.output = scope->FindMutableTensor(op_desc.Output("Output").front());
 
   param_.input_max.clear();
@@ -59,14 +62,23 @@ bool XPUSpatialTransformerResBlockOp::AttachImpl(const cpp::OpDesc& op_desc,
   }
 
   param_.fc_weight.clear();
-  for (auto& name : op_desc.Input("FCWeight")) {
-    auto t = scope->FindVar(name)->GetMutable<Tensor>();
-    param_.fc_weight.push_back(t);
-  }
   param_.fc_bias.clear();
-  for (auto& name : op_desc.Input("FCBias")) {
-    auto t = scope->FindVar(name)->GetMutable<Tensor>();
-    param_.fc_bias.push_back(t);
+  param_.weight_max.clear();
+  if (param_.has_silu_fc_input) {
+    for (auto& name : op_desc.Input("FCWeight")) {
+      auto t = scope->FindVar(name)->GetMutable<Tensor>();
+      param_.fc_weight.push_back(t);
+    }
+    for (auto& name : op_desc.Input("FCBias")) {
+      auto t = scope->FindVar(name)->GetMutable<Tensor>();
+      param_.fc_bias.push_back(t);
+    }
+    for (const auto& weight_max_tensor :
+         op_desc.GetAttr<std::vector<std::string>>("FCWeightMax")) {
+      auto tensor = scope->FindMutableTensor(weight_max_tensor);
+      CHECK(tensor != nullptr);
+      param_.weight_max.push_back(tensor);
+    }
   }
   param_.conv_filter.clear();
   for (auto& name : op_desc.Input("ConvFilter")) {
@@ -87,13 +99,6 @@ bool XPUSpatialTransformerResBlockOp::AttachImpl(const cpp::OpDesc& op_desc,
   for (auto& name : op_desc.Input("GNBias")) {
     auto t = scope->FindVar(name)->GetMutable<Tensor>();
     param_.gn_bias.push_back(t);
-  }
-  param_.weight_max.clear();
-  for (const auto& weight_max_tensor :
-       op_desc.GetAttr<std::vector<std::string>>("FCWeightMax")) {
-    auto tensor = scope->FindMutableTensor(weight_max_tensor);
-    CHECK(tensor != nullptr);
-    param_.weight_max.push_back(tensor);
   }
   param_.filter_max.clear();
   for (const auto& weight_max_tensor :

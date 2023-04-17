@@ -74,7 +74,7 @@ WITH_BENCHMARK=OFF
 # option of convert_to_ssa_graph
 WITH_CONVERT_TO_SSA=ON
 # use Arm DNN library instead of built-in math library, defaults to OFF.
-WITH_ADNN=OFF
+WITH_ARM_DNN_LIBRARY=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -277,6 +277,7 @@ function make_tiny_publish_so {
       -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA \
       -DLITE_WITH_ADNN=$WITH_ADNN \
       -DLITE_BLOCK_0DIM_PASS=$BLOCK_0DIM_PASS"
+      -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY"
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
@@ -375,6 +376,7 @@ function make_full_publish_so {
       -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA \
       -DLITE_WITH_ADNN=$WITH_ADNN \
       -DLITE_BLOCK_0DIM_PASS=$BLOCK_0DIM_PASS"
+      -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY"
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
@@ -664,8 +666,8 @@ function main {
                 shift
                 ;;
              # use Arm DNN library
-            --with_adnn=*)
-                WITH_ADNN="${i#*=}"
+            --with_arm_dnn_library=*)
+                WITH_ARM_DNN_LIBRARY="${i#*=}"
                 shift
                 ;;
             help)

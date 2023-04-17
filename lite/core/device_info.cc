@@ -619,22 +619,22 @@ bool bind_threads(const std::vector<int> cpu_ids) {
 #endif  // LITE_WITH_LINUX
 
 DeviceInfo::DeviceInfo() {
-#ifdef LITE_WITH_ADNN
-  device_ = adnn::device_open();
-  CHECK(device_) << "Failed to open an adnn device !";
-  context_ = adnn::context_create(device_);
-  CHECK(context_) << "Failed to create an adnn context !";
+#ifdef LITE_WITH_ARM_DNN_LIBRARY
+  device_ = armdnnlibrary::device_open();
+  CHECK(device_) << "Failed to open an arm_dnn_library device !";
+  context_ = armdnnlibrary::context_create(device_);
+  CHECK(context_) << "Failed to create an arm_dnn_library context !";
 #endif
 }
 
 DeviceInfo::~DeviceInfo() {
-#ifdef LITE_WITH_ADNN
+#ifdef LITE_WITH_ARM_DNN_LIBRARY
   if (context_) {
-    adnn::context_destroy(context_);
+    armdnnlibrary::context_destroy(context_);
     context_ = nullptr;
   }
   if (device_) {
-    adnn::device_close(device_);
+    armdnnlibrary::device_close(device_);
     device_ = nullptr;
   }
 #endif
