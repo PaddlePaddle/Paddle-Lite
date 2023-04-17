@@ -249,6 +249,20 @@ class AutoScanBaseTest(unittest.TestCase):
                 arr_shape == base_shape,
                 "The output shapes are not equal, the baseline shape is " +
                 str(base_shape) + ', but got ' + str(arr.shape))
+            if flag_precision_fp16:
+                # count diff
+                arr_value = arr.flatten()
+                base_value = base.flatten()
+                # return true: has diff
+                res = self.count_fp16_diff(arr_value, base_value, atol, rtol)
+                self.assertTrue(res, "Output has diff. ")
+            else:
+                diff = abs(base - arr)
+                self.assertTrue(
+                    np.allclose(
+                        base.flatten(), arr.flatten(), atol=atol, rtol=rtol),
+                    "Output has diff, max_diff : {}, index : {}.\nbase={}, \narr={}".
+                    format(diff.max(), diff.argmax(), base, arr))
         elif diff_len == 1:
             # base=[1, K], arr=[k]
             if base_len > arr_len and (base_shape[0] == 1 or
