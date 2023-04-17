@@ -79,7 +79,8 @@ void UpdatePersistableVarDesc(cpp::VarDesc* var,
     }
   }
   if (var_name != "feed" && var_name != "fetch") {
-    var->SetShape(previous_var_desc.GetShape());
+    auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
+    var->SetShape(tensor->dims().data());
     var->SetDataType(previous_var_desc.GetDataType());
   }
 }
