@@ -124,6 +124,17 @@ class TestReluOp(AutoScanTest):
             teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' on nvidia_tensorrt.")
 
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type != TargetType.ARM and target_type != TargetType.X86 and target_type != TargetType.Host:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(ARM/X86/Host) now.")
+
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
 

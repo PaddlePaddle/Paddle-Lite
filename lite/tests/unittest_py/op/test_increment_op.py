@@ -51,6 +51,8 @@ class TestIncrementOp(AutoScanTest):
         input_type = draw(
             st.sampled_from(["type_int", "type_int64", "type_float"]))
 
+        in_shape = []
+
         def generate_input1(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
 

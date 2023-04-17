@@ -60,6 +60,15 @@ bool naive_not<bool>(bool a) {
   return !a;
 }
 
+#define PROCESS_0D                                                  \
+  if (param.X->dims().size() == 0 && param.Y->dims().size() == 0) { \
+    auto out_ptr = param.Out->template mutable_data<T>();           \
+    auto x_ptr = param.X->template data<T>();                       \
+    auto y_ptr = param.Y->template data<T>();                       \
+    out_ptr[0] = AndFunc(x_ptr[0], y_ptr[0]);                       \
+    return;                                                         \
+  }
+
 template <typename T>
 void BitwiseAndCompute<T>::Run() {
   auto& param = this->template Param<param_t>();
@@ -68,6 +77,7 @@ void BitwiseAndCompute<T>::Run() {
 
   // ElementwiseComputeEx can do broadcasting
   std::function<T(T, T)> AndFunc = naive_and<T>;
+  PROCESS_0D;
   auto batch_arg = lite::kernels::host::GenBatchElementWiseArg<T>(
       param.X, param.Y, param.Out);
   common_elmentwise_op_naive_cpu(batch_arg, AndFunc);
@@ -82,6 +92,7 @@ void BitwiseXorCompute<T>::Run() {
 
   // ElementwiseComputeEx can do broadcasting
   std::function<T(T, T)> AndFunc = naive_xor<T>;
+  PROCESS_0D;
   auto batch_arg = lite::kernels::host::GenBatchElementWiseArg<T>(
       param.X, param.Y, param.Out);
   common_elmentwise_op_naive_cpu(batch_arg, AndFunc);
@@ -96,6 +107,7 @@ void BitwiseOrCompute<T>::Run() {
 
   // ElementwiseComputeEx can do broadcasting
   std::function<T(T, T)> AndFunc = naive_or<T>;
+  PROCESS_0D;
   auto batch_arg = lite::kernels::host::GenBatchElementWiseArg<T>(
       param.X, param.Y, param.Out);
   common_elmentwise_op_naive_cpu(batch_arg, AndFunc);
@@ -116,6 +128,7 @@ void BitwiseNotCompute<T>::Run() {
   return;
 }
 
+#undef PROCESS_0D
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite
