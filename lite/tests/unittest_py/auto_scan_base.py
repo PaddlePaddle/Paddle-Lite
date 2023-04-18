@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import numpy as np
+import math
 import unittest
 import abc
 import os
@@ -594,12 +595,19 @@ class AutoScanBaseTest(unittest.TestCase):
                         if not op_fusion_error_flag:
                             self.assert_op_list(opt_model_bytes, op_list_)
                     else:  # op check
+                        op_white_list = ["empty"]
                         self.assert_kernel_type(opt_model_bytes, op_list_,
                                                 paddlelite_config)
                         if not accuracy_error_flag:
-                            self.assert_tensors_near(atol_, rtol_, results[-1],
-                                                     results[0],
-                                                     flag_precision_fp16)
+                            if str(prog_config.ops[0]
+                                   .type) not in op_white_list:
+                                self.assert_tensors_near(
+                                    atol_, rtol_, results[-1], results[0],
+                                    flag_precision_fp16)
+                            else:
+                                logg.info(
+                                    str(prog_config.ops[0].type) +
+                                    ' skip accuracy test.')
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +

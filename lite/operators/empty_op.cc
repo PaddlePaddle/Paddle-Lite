@@ -40,8 +40,7 @@ bool EmptyOp::InferShapeImpl() const {
   } else if (!param_.shape.empty()) {
     OutShape = param_.shape;
   } else {
-    LOG(FATAL) << "no valid out_shape. Must set one of shape_tensor, or "
-                  "shape_tensor_list, or shape.";
+    LOG(WARNING) << "EmptyOp output is 0D-tensor.";
   }
 
   param_.Out->Resize(OutShape);
