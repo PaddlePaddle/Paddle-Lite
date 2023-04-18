@@ -78,7 +78,10 @@ class TestArgMaxOp(AutoScanTest):
         keepdims = draw(st.booleans())
         dtype = draw(st.sampled_from([-1, 2, 3]))
         assume(axis < len(in_shape))
-
+        # need Paddle Develop support
+        # in_shape = draw(st.sampled_from([in_shape, []]))
+        # if in_shape == []:
+        #     axis = 0
         arg_max_op = OpConfig(
             type="arg_max",
             inputs={"X": ["input_data"]},
@@ -141,6 +144,13 @@ class TestArgMaxOp(AutoScanTest):
                 if len(in_shape) == 1:
                     return True
 
+        def _teller6(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type != TargetType.ARM and target_type != TargetType.Host:
+                if len(in_x_shape) == 0:
+                    return True
+
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'int-precision output' or 'in_shape_size == 1' or 'axis == 0' on NvidiaTensorrt."
@@ -160,6 +170,10 @@ class TestArgMaxOp(AutoScanTest):
         self.add_ignore_check_case(
             _teller5, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' on kunlunxin_xtcl.")
+
+        self.add_ignore_check_case(_teller6,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

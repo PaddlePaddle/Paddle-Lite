@@ -63,7 +63,7 @@ function compile_publish_inference_lib {
   rm -rf build.lite.linux.x86.*
 
   # Step1. Compiling python installer
-  local cmd_line="./lite/tools/build_linux.sh --with_python=ON --python_version=$PYTHON_VERSION --with_extra=$BUILD_EXTRA --arch=x86"
+  local cmd_line="./lite/tools/build_linux.sh --with_python=ON --python_version=$PYTHON_VERSION --with_extra=$BUILD_EXTRA --arch=x86 --block_0dim_pass=ON"
   $cmd_line
 
   # Step2. Checking results: cplus and python inference lib

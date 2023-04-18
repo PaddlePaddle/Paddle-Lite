@@ -132,13 +132,13 @@ class TestSwishOp(AutoScanTest):
         def _teller3(program_config, predictor_config):
             target_type = predictor_config.target()
             in_x_shape = list(program_config.inputs["input_data"].shape)
-            if target_type != TargetType.ARM and target_type != TargetType.X86 and target_type != TargetType.Host:
+            if target_type != TargetType.ARM and target_type != TargetType.Host:
                 if len(in_x_shape) == 0:
                     return True
 
-        self.add_ignore_check_case(
-            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Only test 0D-tensor on CPU(ARM/X86/Host) now.")
+        self.add_ignore_check_case(_teller3,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
