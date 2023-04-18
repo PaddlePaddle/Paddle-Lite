@@ -30,7 +30,7 @@ class TestEmptyOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
-            TargetType.Host, [PrecisionType.Any],
+            TargetType.Host, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
 
@@ -44,53 +44,77 @@ class TestEmptyOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=8), min_size=1, max_size=6))
+        in_shape = np.array(in_shape).astype(np.int64).tolist()
         in_shape = draw(st.sampled_from([in_shape, []]))
         tensor_shape = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=10), min_size=1, max_size=4))
-        dtype = draw(st.sampled_from([2, 3, 5]))
+        dtype = draw(st.sampled_from([5]))
         with_shape = draw(st.sampled_from([True, False]))
         with_tensor = draw(st.sampled_from([True, False]))
+        mean = draw(st.floats(min_value=0, max_value=10))
+        std = draw(st.floats(min_value=0, max_value=10))
+        seed = draw(st.integers(min_value=0, max_value=10))
 
         def generate_shape_tensor(*args, **kwargs):
             return np.array(tensor_shape).astype(np.int32)
 
         if with_shape and with_tensor:
-            empty_op = OpConfig(
-                type="empty",
+            gaussian_random_op = OpConfig(
+                type="gaussian_random",
                 inputs={"ShapeTensor": ["shape_tensor"]},
                 outputs={"Out": ["output_data"]},
-                attrs={"dtype": dtype,
-                       "shape": in_shape})
+                attrs={
+                    "dtype": dtype,
+                    "shape": in_shape,
+                    "mean": mean,
+                    "std": std,
+                    "seed": seed
+                })
         elif with_tensor:
-            empty_op = OpConfig(
-                type="empty",
+            gaussian_random_op = OpConfig(
+                type="gaussian_random",
                 inputs={"ShapeTensor": ["shape_tensor"]},
                 outputs={"Out": ["output_data"]},
-                attrs={"dtype": dtype})
+                attrs={
+                    "dtype": dtype,
+                    "mean": mean,
+                    "std": std,
+                    "seed": seed
+                })
         elif with_shape:
-            empty_op = OpConfig(
-                type="empty",
+            gaussian_random_op = OpConfig(
+                type="gaussian_random",
                 inputs={},
                 outputs={"Out": ["output_data"]},
-                attrs={"dtype": dtype,
-                       "shape": in_shape})
+                attrs={
+                    "dtype": dtype,
+                    "shape": in_shape,
+                    "mean": mean,
+                    "std": std,
+                    "seed": seed
+                })
         else:
-            empty_op = OpConfig(
-                type="empty",
+            gaussian_random_op = OpConfig(
+                type="gaussian_random",
                 inputs={},
                 outputs={"Out": ["output_data"]},
-                attrs={"dtype": dtype})
+                attrs={
+                    "dtype": dtype,
+                    "mean": mean,
+                    "std": std,
+                    "seed": seed
+                })
         if dtype == 2:
-            empty_op.outputs_dtype = {"output_data": np.int32}
+            gaussian_random_op.outputs_dtype = {"output_data": np.int32}
         elif dtype == 3:
-            empty_op.outputs_dtype = {"output_data": np.int64}
+            gaussian_random_op.outputs_dtype = {"output_data": np.int64}
         else:
-            empty_op.outputs_dtype = {"output_data": np.float32}
+            gaussian_random_op.outputs_dtype = {"output_data": np.float32}
 
         program_config = ProgramConfig(
-            ops=[empty_op],
+            ops=[gaussian_random_op],
             weights={},
             inputs={
                 "shape_tensor":
@@ -100,7 +124,7 @@ class TestEmptyOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["empty"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["gaussian_random"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
