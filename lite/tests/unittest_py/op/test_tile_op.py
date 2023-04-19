@@ -44,11 +44,10 @@ class TestTileOp(AutoScanTest):
     def sample_program_configs(self, draw):
 
         N = draw(st.integers(min_value=1, max_value=4))
-        C = draw(st.integers(min_value=1, max_value=128))
-        H = draw(st.integers(min_value=1, max_value=128))
-        W = draw(st.integers(min_value=1, max_value=128))
-        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
-
+        C = draw(st.integers(min_value=1, max_value=10))
+        H = draw(st.integers(min_value=1, max_value=10))
+        W = draw(st.integers(min_value=1, max_value=10))
+        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W], []]))
         in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
 
         def generate_X_data():
@@ -58,7 +57,6 @@ class TestTileOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=5), min_size=1, max_size=4))
-
         choose_repeat = draw(
             st.sampled_from(
                 ["RepeatTimes", "repeat_times_tensor", "repeat_times"]))

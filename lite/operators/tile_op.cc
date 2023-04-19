@@ -57,13 +57,9 @@ bool TileOp::InferShapeImpl() const {
     repeat_times = param_.repeat_times;
   }
   param_.repeat_times = repeat_times;
-  if (repeat_times.size() == 0) {
+  if (repeat_times.size() == 0 && x_dims.size() > 0) {
     repeat_times = std::vector<int>(x_dims.size(), -1);
   }
-  CHECK_GE(x_dims.size(), 1)
-      << "The rank of the input 'x' for tile op "
-      << "must be positive integers, but the value received is "
-      << x_dims.size();
 
   CHECK_LE(x_dims.size(), 6)
       << "The rank of the input 'x' for tile op "
@@ -73,11 +69,6 @@ bool TileOp::InferShapeImpl() const {
   CHECK_LE(repeat_times.size(), 6)
       << "The size of the shape of input 'repeat_times' for tile op "
       << "must not be greater than 6, but the value received is "
-      << repeat_times.size();
-
-  CHECK_GE(repeat_times.size(), 1)
-      << "The size of the shape of input 'repeat_times' for tile op "
-      << "must be positive integers, but the value received is "
       << repeat_times.size();
 
   auto out_rank =
@@ -104,7 +95,7 @@ bool TileOp::InferShapeImpl() const {
     }
   }
   out->Resize(out_shape);
-  if (out_shape[0] == x_dims[0]) {
+  if (out_shape.size() > 0 && x_dims.size() > 0 && out_shape[0] == x_dims[0]) {
     param_.X->set_lod(param_.Out->lod());
   }
   return true;
