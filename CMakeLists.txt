@@ -74,7 +74,7 @@ lite_option(LITE_ON_TINY_PUBLISH               "Publish tiny predictor lib."    
 lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL        "Build the model optimize tool"                                        OFF)
 lite_option(LITE_WITH_BENCHMARK_TEST           "Build benchmark test cases"                                           OFF)
 lite_option(LITE_THREAD_POOL                   "Enable thread pool in lite"                                           OFF)
-lite_option(LITE_BLOCK_0DIM_PASS               "Block support_0_dim_tensor_pass"                                      OFF)
+lite_option(LITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS "Skip support_0_dim_tensor_pass"                                      OFF)
 # publish options
 lite_option(LITE_BUILD_EXTRA                   "Enable extra algorithm support in Lite, both kernels and operators"   OFF)
 lite_option(LITE_BUILD_TAILOR                  "Enable tailoring library according to model"                          OFF)

@@ -103,8 +103,8 @@ parser.add_argument(
 args = parser.parse_args()
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
-logg = logging.getLogger(__name__)
-logg.setLevel(
+logger = logging.getLogger(__name__)
+logger.setLevel(
     logging.INFO)  # for Mac, logging only print waring/fatal, can't print info
 
 settings.register_profile(
@@ -411,15 +411,15 @@ class AutoScanBaseTest(unittest.TestCase):
 
     @abc.abstractmethod
     def ignore_log(self, msg: str):
-        logg.warning("SKIP: " + msg)
+        logger.warning("SKIP: " + msg)
 
     @abc.abstractmethod
     def fail_log(self, msg: str):
-        logg.fatal("FAILE: " + msg)
+        logger.fatal("FAILE: " + msg)
 
     @abc.abstractmethod
     def success_log(self, msg: str):
-        logg.info("SUCCESS: " + msg)
+        logger.info("SUCCESS: " + msg)
 
     @abc.abstractmethod
     def is_model_test(self) -> bool:
@@ -568,7 +568,7 @@ class AutoScanBaseTest(unittest.TestCase):
 
                 # baseline: cpu no ir_optim run
                 base_config = self.create_inference_config(ir_optim=False)
-                logg.info('[ProgramConfig]: ' + str(prog_config))
+                logger.info('[ProgramConfig]: ' + str(prog_config))
                 results.append(
                     self.run_test_config(model, params, base_config,
                                          feed_data))
@@ -605,9 +605,9 @@ class AutoScanBaseTest(unittest.TestCase):
                                     atol_, rtol_, results[-1], results[0],
                                     flag_precision_fp16)
                             else:
-                                logg.info('[AccuracyWarning] ' + str(
+                                logger.info('[AccuracyWarning] ' + str(
                                     prog_config.ops[0].type) +
-                                          ' skip accuracy test.')
+                                            ' skip accuracy test.')
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
@@ -769,13 +769,13 @@ class AutoScanBaseTest(unittest.TestCase):
         gl.set_all_test_ops(self.get_target(),
                             self.get_nnadapter_device_name(), sys.argv[0])
         if not self.is_actived():
-            logg.info("Error: This test is not actived on " + self.get_target(
-            ))
+            logger.info("Error: This test is not actived on " +
+                        self.get_target())
             return
 
         if not self.is_nnadapter_device_actived():
-            logg.info("Error: This test is not actived on " +
-                      self.get_nnadapter_device_name())
+            logger.info("Error: This test is not actived on " +
+                        self.get_nnadapter_device_name())
             return
 
         if self.get_target().upper() == "NNADAPTER":
@@ -793,37 +793,38 @@ class AutoScanBaseTest(unittest.TestCase):
 
         if reproduce is not None:
             loop_func = reproduce(loop_func)
-        logg.info("Start to running test of {}".format(type(self)))
+        logger.info("Start to running test of {}".format(type(self)))
         loop_func()
         if self.is_model_test():
-            logg.info(
+            logger.info(
                 "===================Statistical Information===================")
-            logg.info("Number of Input Configs: {}".format(max_examples))
-            logg.info("Number of Predictor Kinds: {}".format(
+            logger.info("Number of Input Configs: {}".format(max_examples))
+            logger.info("Number of Predictor Kinds: {}".format(
                 int(self.num_predictor_kinds)))
         else:
-            logg.info(
+            logger.info(
                 "===================Statistical Information===================")
-            logg.info("Number of Generated Programs: {}".format(max_examples))
-            logg.info("Number of Predictor Kinds: {}".format(
+            logger.info("Number of Generated Programs: {}".format(
+                max_examples))
+            logger.info("Number of Predictor Kinds: {}".format(
                 int(self.num_predictor_kinds)))
             self.assertTrue(self.num_predictor_kinds > 0,
                             "Number of Predictor Kinds must be greater than 0")
-            logg.info("Number of Ran Programs: {}".format(
+            logger.info("Number of Ran Programs: {}".format(
                 self.num_ran_programs_list))
-            logg.info("Number of Invalid Programs: {}".format(
+            logger.info("Number of Invalid Programs: {}".format(
                 self.num_invalid_programs_list))
-            logg.info("Number of Ignored Tests: {}".format(
+            logger.info("Number of Ignored Tests: {}".format(
                 self.num_ignore_tests_list))
             successful_ran_programs = int(
                 (sum(self.num_ran_programs_list) +
                  sum(self.num_ignore_tests_list)) / self.num_predictor_kinds)
 
-            logg.info(
+            logger.info(
                 "Number of successfully ran programs approximately equal to {}".
                 format(successful_ran_programs))
             if successful_ran_programs < min_success_num:
-                logg.fatal(
+                logger.fatal(
                     "At least {} programs need to ran successfully, but now only about {} programs satisfied.".
                     format(min_success_num, successful_ran_programs))
                 assert False

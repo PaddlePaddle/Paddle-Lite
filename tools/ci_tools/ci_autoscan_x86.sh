@@ -48,7 +48,7 @@ function auto_scan_test {
   done
 
   cd $WORKSPACE/lite/tests/unittest_py/model_test/
-  python3.7 run_model_test.py --target=$target_name
+  python$PYTHON_VERSION run_model_test.py --target=$target_name
 }
 
 ####################################################################################################
@@ -56,6 +56,25 @@ function auto_scan_test {
 # Globals:
 #   WORKSPACE, PYTHON_VERSION
 ####################################################################################################
+function check_paddle_version {
+  if python$PYTHON_VERSION -c "import paddle" >/dev/null 2>&1;then
+    # need paddle version >= 2.4
+    major_v=`python$PYTHON_VERSION -c "import paddle;paddle.version.show()" | grep major`
+    minor_v=`python$PYTHON_VERSION -c "import paddle;paddle.version.show()" | grep minor`
+    major_num=`echo ${major_v##*:} | awk '{print int($0)}'`
+    minor_num=`echo ${minor_v##*:} | awk '{print int($0)}'`
+    if (( $major_num < 2 || $minor_num < 4 ));then
+      # need reinstall
+      echo "present version is ${major_num}.${minor_num}, need reinstall paddlepaddle."
+      python$PYTHON_VERSION -m pip uninstall -y paddlepaddle
+    else
+      echo "paddlepaddle >= 2.4, satisfied!"
+    fi
+  else
+    echo "Don't have paddlepaddle, need install."
+  fi
+}
+
 function compile_publish_inference_lib {
   cd $WORKSPACE
 
@@ -63,7 +82,7 @@ function compile_publish_inference_lib {
   rm -rf build.lite.linux.x86.*
 
   # Step1. Compiling python installer
-  local cmd_line="./lite/tools/build_linux.sh --with_python=ON --python_version=$PYTHON_VERSION --with_extra=$BUILD_EXTRA --arch=x86 --block_0dim_pass=ON"
+  local cmd_line="./lite/tools/build_linux.sh --with_python=ON --python_version=$PYTHON_VERSION --with_extra=$BUILD_EXTRA --arch=x86 --skip_support_0_dim_tensor_pass=ON"
   $cmd_line
 
   # Step2. Checking results: cplus and python inference lib
@@ -78,6 +97,7 @@ function compile_publish_inference_lib {
   fi
 
   # Step3. Install whl and its depends
+  check_paddle_version
   python$PYTHON_VERSION -m pip install --force-reinstall $whl_path
   python$PYTHON_VERSION -m pip install -r ./lite/tests/unittest_py/requirements.txt
 }

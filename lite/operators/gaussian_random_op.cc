@@ -23,13 +23,7 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-bool GaussRandomOp::CheckShape() const {
-  if (param_.ShapeTensor == nullptr && param_.ShapeTensorList.empty() &&
-      param_.shape.size() == 0) {
-    LOG(WARNING) << "GaussianRandom output is 0D-tensor.";
-  }
-  return true;
-}
+bool GaussRandomOp::CheckShape() const { return true; }
 
 bool GaussRandomOp::InferShapeImpl() const {
   auto shape = param_.shape;
