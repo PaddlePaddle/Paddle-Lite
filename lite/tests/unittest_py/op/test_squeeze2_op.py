@@ -190,6 +190,18 @@ class TestSqueeze2Op(AutoScanTest):
             "Lite does not support 'all axis of inputs are squeezed' on kunlunxin_xtcl. because output shape is wrong"
         )
 
+        def teller4(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "intel_openvino":
+                in_shape = program_config.inputs["input_data"].shape
+                axes = program_config.ops[0].attrs["axes"]
+                if len(axes) == 0 or len(in_shape) <= 1:
+                    return True
+
+        self.add_ignore_check_case(
+            teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Output is 0D which changes to 1D due to support_0_dim_tensor_pass, need to skip it."
+        )
+
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         max_examples = 200
