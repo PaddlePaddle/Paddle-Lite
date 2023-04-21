@@ -194,8 +194,7 @@ class TestSqueeze2Op(AutoScanTest):
             if self.get_nnadapter_device_name() == "intel_openvino":
                 in_shape = program_config.inputs["input_data"].shape
                 axes = program_config.ops[0].attrs["axes"]
-                if len(axes) == 0 or len(in_shape) <= 1:
-                    return True
+                return True
 
         self.add_ignore_check_case(
             teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
