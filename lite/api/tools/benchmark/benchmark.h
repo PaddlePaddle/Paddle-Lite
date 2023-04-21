@@ -38,7 +38,7 @@ class PerfData {
  public:
   void init(const int repeats) { repeats_ = repeats; }
   const float init_time() const { return init_time_; }
-  const float first_time() const { return run_time_.at(0); }
+  const float first_time() const { return run_time_.at(run_time_.size() - repeats_); }
   const float avg_pre_process_time() const {
     return std::accumulate(pre_process_time_.end() - repeats_,
                            pre_process_time_.end(),
