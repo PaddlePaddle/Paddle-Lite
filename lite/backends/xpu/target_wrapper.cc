@@ -205,6 +205,9 @@ template XPUQuantData
 TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, float>(
     const float*, const DDimLite&, bool, size_t);
 template XPUQuantData
+TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, float16>(
+    const float*, const DDimLite&, bool, size_t);
+template XPUQuantData
 TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int16_t>(
     const float*, const DDimLite&, bool, size_t);
 template XPUQuantData
