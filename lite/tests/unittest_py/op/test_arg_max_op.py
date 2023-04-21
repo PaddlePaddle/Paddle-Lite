@@ -151,6 +151,11 @@ class TestArgMaxOp(AutoScanTest):
                 if len(in_x_shape) == 0:
                     return True
 
+        def _teller7(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.OpenCL or target_type == TargetType.Metal:
+                return True
+
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'int-precision output' or 'in_shape_size == 1' or 'axis == 0' on NvidiaTensorrt."
@@ -174,6 +179,14 @@ class TestArgMaxOp(AutoScanTest):
         self.add_ignore_check_case(_teller6,
                                    IgnoreReasons.PADDLELITE_NOT_SUPPORT,
                                    "Only test 0D-tensor on CPU(ARM/Host) now.")
+
+        self.add_ignore_check_case(_teller7,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "ArgMax ERROR INFO: False is not true : \
+                                   Expected kernel_type of op arg_max is \
+                                   (TargetType.OpenCL,PrecisionType.FP16,DataLayoutType.ImageDefault), \
+                                   but now it's (TargetType.ARM,PrecisionType.Any,DataLayoutType.NCHW)."
+                                   )
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

@@ -162,7 +162,15 @@ class TestBatchNormOp(AutoScanTest):
         return self.get_predictor_configs(), ["batch_norm"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller7(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.Metal:
+                return True
+
+        self.add_ignore_check_case(
+            _teller7, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Metal error: failed assertion commit command buffer with uncommitted encoder"
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=250)

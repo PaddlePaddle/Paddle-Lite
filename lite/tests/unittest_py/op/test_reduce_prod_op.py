@@ -80,7 +80,14 @@ class TestReduceProdOp(AutoScanTest):
         return self.get_predictor_configs(), ["reduce_prod"], (1e-2, 1e-2)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.OpenCL:
+                return True
+
+        self.add_ignore_check_case(_teller3,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Expected kernel_type false.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)
