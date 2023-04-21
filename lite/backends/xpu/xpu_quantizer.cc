@@ -92,6 +92,13 @@ void XPUQuantizer::QuantFP32ToIntX<float>(const float* src_ptr,
   std::copy(src_ptr, src_ptr + numel, dst_ptr);
 }
 template <>
+void XPUQuantizer::QuantFP32ToIntX<float16>(const float* src_ptr,
+                                            float16* dst_ptr,
+                                            float max_val,
+                                            int numel) {
+  paddle::lite::xpu::math::ConvertFP32ToFP16(src_ptr, dst_ptr, numel);
+}
+template <>
 void XPUQuantizer::QuantFP32ToIntX<int16_t>(const float* src_ptr,
                                             int16_t* dst_ptr,
                                             float max_val,
@@ -234,6 +241,10 @@ template XPUQuantData XPUQuantizer::quant<float, float>(const float*,
                                                         const DDimLite&,
                                                         bool,
                                                         size_t);
+template XPUQuantData XPUQuantizer::quant<float, float16>(const float*,
+                                                          const DDimLite&,
+                                                          bool,
+                                                          size_t);
 template XPUQuantData XPUQuantizer::quant<float, int16_t>(const float*,
                                                           const DDimLite&,
                                                           bool,
