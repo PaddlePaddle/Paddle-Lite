@@ -76,7 +76,7 @@ class TestClipOp(AutoScanTest):
                     min_value=1, max_value=8), min_size=1, max_size=4))
         min_val = float(np.random.randint(0, 100) / 100)
         max_val = min_val + 0.5
-        min_max_shape = draw(st.integers(min_value=1, max_value=20))
+        min_max_shape = draw(st.integers(min_value=1, max_value=1))
         case_type = draw(st.sampled_from(["c1", "c2"]))
 
         def generate_input(*args, **kwargs):

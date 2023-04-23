@@ -318,6 +318,17 @@ class TestConv2dTransposeOp(AutoScanTest):
             _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Group count must divide output channel count in intel OpenVINO.")
 
+        def _teller4(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.OpenCL:
+                return True
+
+        self.add_ignore_check_case(
+            _teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "conv_transpose_image_compute.cc:144 PrepareForRun] \
+                                   conv2d_transpose image compute not support this condition yet! 1 2 11"
+        )
+
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=150)
 

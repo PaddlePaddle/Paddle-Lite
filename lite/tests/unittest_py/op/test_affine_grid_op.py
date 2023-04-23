@@ -84,7 +84,13 @@ class TestAffineGridOp(AutoScanTest):
         return self.get_predictor_configs(), ["affine_grid"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.ARM:
+                return True
+
+        self.add_ignore_check_case(_teller1, IgnoreReasons.PADDLE_NOT_SUPPORT,
+                                   "paddle(ARM) report Fail to alloc memory.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

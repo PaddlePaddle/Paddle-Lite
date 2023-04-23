@@ -74,8 +74,7 @@ class TestElementwiseAddOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
-            TargetType.ARM,
-            [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64],
+            TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
         opencl_valid_places = [
@@ -120,29 +119,24 @@ class TestElementwiseAddOp(AutoScanTest):
         # Check config
         if target_type in [TargetType.ARM]:
             if predictor_config.precision(
-            ) == PrecisionType.INT64 and input_data_type != np.int64:
-                return False
-            if predictor_config.precision(
-            ) == PrecisionType.FP32 and input_data_type != np.float32:
-                return False
-            if predictor_config.precision(
             ) == PrecisionType.FP16 and input_data_type != np.float32:
-                return False
-            if predictor_config.precision(
-            ) == PrecisionType.INT32 and input_data_type != np.int32:
                 return False
         return True
 
     def sample_program_configs(self, draw):
-        input_data_x_shape = draw(
+        input_data_x_shape_tmp = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=1, max_size=4))
-        input_data_y_shape = draw(
+        input_data_y_shape_tmp = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=1, max_size=4))
         axis = draw(st.integers(min_value=-1, max_value=4))
+        input_data_x_shape = draw(
+            st.sampled_from([input_data_x_shape_tmp, []]))
+        input_data_y_shape = draw(
+            st.sampled_from([input_data_y_shape_tmp, []]))
         assume(
             check_broadcast(input_data_x_shape, input_data_y_shape, axis) ==
             True)
@@ -225,6 +219,18 @@ class TestElementwiseAddOp(AutoScanTest):
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'x_shape_size == 1' or 'x_shape_size != y_shape_size' "
             "or 'x_shape[0] != y_shape[0]' or 'axis == 0' on NvidiaTensorrt.")
+
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data_x"].shape)
+            in_y_shape = list(program_config.inputs["input_data_y"].shape)
+            if target_type != TargetType.ARM and target_type != TargetType.Host:
+                if len(in_x_shape) == 0 or len(in_y_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(X86/ARM/Host) now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

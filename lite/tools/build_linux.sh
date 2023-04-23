@@ -31,6 +31,8 @@ WITH_AVX=ON
 WITH_OPENCL=OFF
 # options of compiling Metal lib for Mac OS.
 WITH_METAL=OFF
+# controls whether to block temporary 0dim pass, default is OFF
+SKIP_SUPPORT_0_DIM_TENSOR_PASS=OFF
 # options of compiling rockchip NPU lib.
 WITH_ROCKCHIP_NPU=OFF
 ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
@@ -249,6 +251,7 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
                         -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
                         -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
+                        -DLITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS=$SKIP_SUPPORT_0_DIM_TENSOR_PASS \
                         -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY \
                         -DLITE_ON_TINY_PUBLISH=$WITH_TINY_PUBLISH"
 
@@ -538,6 +541,10 @@ function main {
                 ;;
             --with_avx=*)
                 WITH_AVX="${i#*=}"
+                shift
+                ;;
+            --skip_support_0_dim_tensor_pass=*)
+                SKIP_SUPPORT_0_DIM_TENSOR_PASS="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on opencl and cpu.
