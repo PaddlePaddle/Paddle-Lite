@@ -66,18 +66,8 @@ class TestElementwiseMaxOp(AutoScanTest):
         # Check config
         if target_type in [TargetType.ARM]:
             if predictor_config.precision(
-            ) == PrecisionType.INT64 and input_data_type != np.int64:
+            ) == PrecisionType.FP16 and input_data_type != np.float32:
                 return False
-            if predictor_config.precision(
-            ) == PrecisionType.FP32 and input_data_type != np.float32:
-                return False
-            if predictor_config.precision(
-            ) == PrecisionType.FP16 and input_data_type != np.float16:
-                return False
-            if predictor_config.precision(
-            ) == PrecisionType.INT32 and input_data_type != np.int32:
-                return False
-
         return True
 
     def sample_program_configs(self, draw):
@@ -89,6 +79,8 @@ class TestElementwiseMaxOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=1, max_size=4))
+        input_data_x_shape = draw(st.sampled_from([input_data_x_shape, []]))
+        input_data_y_shape = draw(st.sampled_from([input_data_y_shape, []]))
         axis = draw(st.integers(min_value=-1, max_value=4))
         assume(
             check_broadcast(input_data_x_shape, input_data_y_shape, axis) ==
@@ -104,7 +96,8 @@ class TestElementwiseMaxOp(AutoScanTest):
             input_data_type = draw(
                 st.sampled_from([np.float32, np.int32, np.int64]))
         elif self.get_target().upper() == 'ARM':
-            input_data_type = draw(st.sampled_from([np.float32]))
+            input_data_type = draw(
+                st.sampled_from([np.float32, np.int32, np.int64]))
         elif self.get_target().upper() == 'OPENCL':
             input_data_type = draw(st.sampled_from([np.float32]))
         elif self.get_target().upper() == 'METAL':
@@ -142,7 +135,17 @@ class TestElementwiseMaxOp(AutoScanTest):
         return self.get_predictor_configs(), ["elementwise_max"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data_x"].shape)
+            in_y_shape = list(program_config.inputs["input_data_y"].shape)
+            if target_type != TargetType.ARM and target_type != TargetType.Host:
+                if len(in_x_shape) == 0 or len(in_y_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(_teller3,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

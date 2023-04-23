@@ -95,7 +95,8 @@ class TestBilinearOp(AutoScanTest):
             return np.random.random(in_shape).astype(np.float32) * 10
 
         def generate_out_size(*args, **kwargs):
-            return np.random.randint(1, 100, size=out_size_shape)
+            return np.random.randint(
+                1, 100, size=out_size_shape).astype(np.int32)
 
         def generate_size_tensor(*args, **kwargs):
             return np.random.randint(4, 100, [1]).astype(np.int32)
@@ -183,6 +184,16 @@ class TestBilinearOp(AutoScanTest):
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "The paddle's and trt_layer's results has diff in a specific case. We need to fix it as soon as possible."
+        )
+
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.Metal:
+                return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Metal error: failed assertion commit command buffer with uncommitted encoder"
         )
 
     def test(self, *args, **kwargs):

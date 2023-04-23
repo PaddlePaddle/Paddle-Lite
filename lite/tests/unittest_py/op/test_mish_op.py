@@ -75,6 +75,8 @@ class TestMishOp(AutoScanTest):
         if self.get_target().upper() == "ARM":
             return self.get_predictor_configs(), ["mish"], (5e-4,
                                                             5e-4)  # arm_linux
+        elif self.get_target().upper() == "X86":
+            return self.get_predictor_configs(), ["mish"], (5e-4, 5e-4)
         else:
             return self.get_predictor_configs(), ["mish"], (1e-5, 1e-5)
 

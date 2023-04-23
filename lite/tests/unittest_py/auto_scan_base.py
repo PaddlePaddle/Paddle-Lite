@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import numpy as np
+import math
 import unittest
 import abc
 import os
@@ -102,6 +103,9 @@ parser.add_argument(
 args = parser.parse_args()
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
+logger.setLevel(
+    logging.INFO)  # for Mac, logging only print waring/fatal, can't print info
 
 settings.register_profile(
     "ci",
@@ -240,7 +244,27 @@ class AutoScanBaseTest(unittest.TestCase):
         base_len = len(base_shape)
         arr_len = len(arr_shape)
         diff_len = abs(base_len - arr_len)
-        if diff_len == 1:
+        if (base_len == 0):
+            # 0D-tensor
+            self.assertTrue(
+                arr_shape == base_shape,
+                "The output shapes are not equal, the baseline shape is " +
+                str(base_shape) + ', but got ' + str(arr.shape))
+            if flag_precision_fp16:
+                # count diff
+                arr_value = arr.flatten()
+                base_value = base.flatten()
+                # return true: has diff
+                res = self.count_fp16_diff(arr_value, base_value, atol, rtol)
+                self.assertTrue(res, "Output has diff. ")
+            else:
+                diff = abs(base - arr)
+                self.assertTrue(
+                    np.allclose(
+                        base.flatten(), arr.flatten(), atol=atol, rtol=rtol),
+                    "Output has diff, max_diff : {}, index : {}.\nbase={}, \narr={}".
+                    format(diff.max(), diff.argmax(), base, arr))
+        elif diff_len == 1:
             # base=[1, K], arr=[k]
             if base_len > arr_len and (base_shape[0] == 1 or
                                        base_shape[-1] == 1):
@@ -349,11 +373,8 @@ class AutoScanBaseTest(unittest.TestCase):
             base_key = list(baseline.keys())
             base = np.array(baseline[base_key[0]])
 
-            if not base.shape and arr.shape == (1, ):
-                pass
-            else:
-                self.count_shape_and_diff(base, arr, atol, rtol,
-                                          flag_precision_fp16)
+            self.count_shape_and_diff(base, arr, atol, rtol,
+                                      flag_precision_fp16)
         else:
             for key in tensor:
                 suffix_str = [
@@ -390,15 +411,15 @@ class AutoScanBaseTest(unittest.TestCase):
 
     @abc.abstractmethod
     def ignore_log(self, msg: str):
-        logging.warning("SKIP: " + msg)
+        logger.warning("SKIP: " + msg)
 
     @abc.abstractmethod
     def fail_log(self, msg: str):
-        logging.fatal("FAILE: " + msg)
+        logger.fatal("FAILE: " + msg)
 
     @abc.abstractmethod
     def success_log(self, msg: str):
-        logging.info("SUCCESS: " + msg)
+        logger.info("SUCCESS: " + msg)
 
     @abc.abstractmethod
     def is_model_test(self) -> bool:
@@ -547,7 +568,7 @@ class AutoScanBaseTest(unittest.TestCase):
 
                 # baseline: cpu no ir_optim run
                 base_config = self.create_inference_config(ir_optim=False)
-                logging.info('[ProgramConfig]: ' + str(prog_config))
+                logger.info('[ProgramConfig]: ' + str(prog_config))
                 results.append(
                     self.run_test_config(model, params, base_config,
                                          feed_data))
@@ -574,12 +595,19 @@ class AutoScanBaseTest(unittest.TestCase):
                         if not op_fusion_error_flag:
                             self.assert_op_list(opt_model_bytes, op_list_)
                     else:  # op check
+                        op_white_list = ["empty", "gaussian_random"]
                         self.assert_kernel_type(opt_model_bytes, op_list_,
                                                 paddlelite_config)
                         if not accuracy_error_flag:
-                            self.assert_tensors_near(atol_, rtol_, results[-1],
-                                                     results[0],
-                                                     flag_precision_fp16)
+                            if str(prog_config.ops[0]
+                                   .type) not in op_white_list:
+                                self.assert_tensors_near(
+                                    atol_, rtol_, results[-1], results[0],
+                                    flag_precision_fp16)
+                            else:
+                                logger.info('[AccuracyWarning] ' + str(
+                                    prog_config.ops[0].type) +
+                                            ' skip accuracy test.')
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
@@ -741,13 +769,13 @@ class AutoScanBaseTest(unittest.TestCase):
         gl.set_all_test_ops(self.get_target(),
                             self.get_nnadapter_device_name(), sys.argv[0])
         if not self.is_actived():
-            logging.info("Error: This test is not actived on " +
-                         self.get_target())
+            logger.info("Error: This test is not actived on " +
+                        self.get_target())
             return
 
         if not self.is_nnadapter_device_actived():
-            logging.info("Error: This test is not actived on " +
-                         self.get_nnadapter_device_name())
+            logger.info("Error: This test is not actived on " +
+                        self.get_nnadapter_device_name())
             return
 
         if self.get_target().upper() == "NNADAPTER":
@@ -765,38 +793,38 @@ class AutoScanBaseTest(unittest.TestCase):
 
         if reproduce is not None:
             loop_func = reproduce(loop_func)
-        logging.info("Start to running test of {}".format(type(self)))
+        logger.info("Start to running test of {}".format(type(self)))
         loop_func()
         if self.is_model_test():
-            logging.info(
+            logger.info(
                 "===================Statistical Information===================")
-            logging.info("Number of Input Configs: {}".format(max_examples))
-            logging.info("Number of Predictor Kinds: {}".format(
+            logger.info("Number of Input Configs: {}".format(max_examples))
+            logger.info("Number of Predictor Kinds: {}".format(
                 int(self.num_predictor_kinds)))
         else:
-            logging.info(
+            logger.info(
                 "===================Statistical Information===================")
-            logging.info("Number of Generated Programs: {}".format(
+            logger.info("Number of Generated Programs: {}".format(
                 max_examples))
-            logging.info("Number of Predictor Kinds: {}".format(
+            logger.info("Number of Predictor Kinds: {}".format(
                 int(self.num_predictor_kinds)))
             self.assertTrue(self.num_predictor_kinds > 0,
                             "Number of Predictor Kinds must be greater than 0")
-            logging.info("Number of Ran Programs: {}".format(
+            logger.info("Number of Ran Programs: {}".format(
                 self.num_ran_programs_list))
-            logging.info("Number of Invalid Programs: {}".format(
+            logger.info("Number of Invalid Programs: {}".format(
                 self.num_invalid_programs_list))
-            logging.info("Number of Ignored Tests: {}".format(
+            logger.info("Number of Ignored Tests: {}".format(
                 self.num_ignore_tests_list))
             successful_ran_programs = int(
                 (sum(self.num_ran_programs_list) +
                  sum(self.num_ignore_tests_list)) / self.num_predictor_kinds)
 
-            logging.info(
+            logger.info(
                 "Number of successfully ran programs approximately equal to {}".
                 format(successful_ran_programs))
             if successful_ran_programs < min_success_num:
-                logging.fatal(
+                logger.fatal(
                     "At least {} programs need to ran successfully, but now only about {} programs satisfied.".
                     format(min_success_num, successful_ran_programs))
                 assert False

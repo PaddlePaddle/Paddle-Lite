@@ -60,6 +60,15 @@ bool naive_not<bool>(bool a) {
   return !a;
 }
 
+#define PROCESS_0D                                                  \
+  if (param.X->dims().size() == 0 && param.Y->dims().size() == 0) { \
+    auto out_ptr = param.Out->template mutable_data<T>();           \
+    auto x_ptr = param.X->template data<T>();                       \
+    auto y_ptr = param.Y->template data<T>();                       \
+    out_ptr[0] = AndFunc(x_ptr[0], y_ptr[0]);                       \
+    return;                                                         \
+  }
+
 template <typename T>
 void BitwiseAndCompute<T>::Run() {
   auto& param = this->template Param<param_t>();
@@ -68,6 +77,37 @@ void BitwiseAndCompute<T>::Run() {
 
   // ElementwiseComputeEx can do broadcasting
   std::function<T(T, T)> AndFunc = naive_and<T>;
+  PROCESS_0D;
+  auto batch_arg = lite::kernels::host::GenBatchElementWiseArg<T>(
+      param.X, param.Y, param.Out);
+  common_elmentwise_op_naive_cpu(batch_arg, AndFunc);
+  return;
+}
+
+template <typename T>
+void BitwiseXorCompute<T>::Run() {
+  auto& param = this->template Param<param_t>();
+  CHECK(param.X);
+  CHECK(param.Y);
+
+  // ElementwiseComputeEx can do broadcasting
+  std::function<T(T, T)> AndFunc = naive_xor<T>;
+  PROCESS_0D;
+  auto batch_arg = lite::kernels::host::GenBatchElementWiseArg<T>(
+      param.X, param.Y, param.Out);
+  common_elmentwise_op_naive_cpu(batch_arg, AndFunc);
+  return;
+}
+
+template <typename T>
+void BitwiseOrCompute<T>::Run() {
+  auto& param = this->template Param<param_t>();
+  CHECK(param.X);
+  CHECK(param.Y);
+
+  // ElementwiseComputeEx can do broadcasting
+  std::function<T(T, T)> AndFunc = naive_or<T>;
+  PROCESS_0D;
   auto batch_arg = lite::kernels::host::GenBatchElementWiseArg<T>(
       param.X, param.Y, param.Out);
   common_elmentwise_op_naive_cpu(batch_arg, AndFunc);
@@ -88,6 +128,7 @@ void BitwiseNotCompute<T>::Run() {
   return;
 }
 
+#undef PROCESS_0D
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite
@@ -143,3 +184,57 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .Finalize();
+
+#ifdef LITE_BUILD_EXTRA
+using bitwise_xor_bool = paddle::lite::kernels::host::BitwiseXorCompute<bool>;
+REGISTER_LITE_KERNEL(bitwise_xor, kHost, kAny, kNCHW, bitwise_xor_bool, bl)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
+    .Finalize();
+
+using bitwise_xor_int32_t =
+    paddle::lite::kernels::host::BitwiseXorCompute<int32_t>;
+REGISTER_LITE_KERNEL(
+    bitwise_xor, kHost, kAny, kNCHW, bitwise_xor_int32_t, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .Finalize();
+
+using bitwise_xor_int64_t =
+    paddle::lite::kernels::host::BitwiseXorCompute<int64_t>;
+REGISTER_LITE_KERNEL(
+    bitwise_xor, kHost, kAny, kNCHW, bitwise_xor_int64_t, int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .Finalize();
+
+using bitwise_or_bool = paddle::lite::kernels::host::BitwiseOrCompute<bool>;
+REGISTER_LITE_KERNEL(bitwise_or, kHost, kAny, kNCHW, bitwise_or_bool, bl)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kBool))})
+    .Finalize();
+
+using bitwise_or_int32_t =
+    paddle::lite::kernels::host::BitwiseOrCompute<int32_t>;
+REGISTER_LITE_KERNEL(bitwise_or, kHost, kAny, kNCHW, bitwise_or_int32_t, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .Finalize();
+
+using bitwise_or_int64_t =
+    paddle::lite::kernels::host::BitwiseOrCompute<int64_t>;
+REGISTER_LITE_KERNEL(bitwise_or, kHost, kAny, kNCHW, bitwise_or_int64_t, int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .Finalize();
+#endif  // LITE_BUILD_EXTRA

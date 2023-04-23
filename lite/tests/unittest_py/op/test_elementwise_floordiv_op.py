@@ -37,8 +37,7 @@ class TestElementwiseFloorDivOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
-            TargetType.ARM,
-            [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64],
+            TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
         opencl_valid_places = [
@@ -64,16 +63,7 @@ class TestElementwiseFloorDivOp(AutoScanTest):
         # Check config
         if target_type in [TargetType.ARM]:
             if predictor_config.precision(
-            ) == PrecisionType.INT64 and input_data_type != np.int64:
-                return False
-            if predictor_config.precision(
-            ) == PrecisionType.FP32 and input_data_type != np.float32:
-                return False
-            if predictor_config.precision(
-            ) == PrecisionType.FP16 and input_data_type != np.float16:
-                return False
-            if predictor_config.precision(
-            ) == PrecisionType.INT32 and input_data_type != np.int32:
+            ) == PrecisionType.FP16 and input_data_type != np.float32:
                 return False
         return True
 
@@ -86,6 +76,8 @@ class TestElementwiseFloorDivOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=1, max_size=4))
+        input_data_x_shape = draw(st.sampled_from([input_data_x_shape, []]))
+        input_data_y_shape = draw(st.sampled_from([input_data_y_shape, []]))
         axis = draw(st.integers(min_value=-1, max_value=4))
         assume(
             check_broadcast(input_data_x_shape, input_data_y_shape, axis) ==
@@ -98,8 +90,7 @@ class TestElementwiseFloorDivOp(AutoScanTest):
             input_data_type = draw(
                 st.sampled_from([np.float32, np.int32, np.int64]))
         elif self.get_target().upper() == 'ARM':
-            input_data_type = draw(
-                st.sampled_from([np.float32, np.int32, np.int64]))
+            input_data_type = draw(st.sampled_from([np.int32, np.int64]))
         elif self.get_target().upper() == 'OPENCL':
             input_data_type = draw(st.sampled_from([np.float32]))
         elif self.get_target().upper() == 'METAL':
@@ -146,6 +137,18 @@ class TestElementwiseFloorDivOp(AutoScanTest):
             _teller1, IgnoreReasons.PADDLE_NOT_SUPPORT,
             "Paddle does not support this op in a specific case. We need to fix it as soon as possible."
         )
+
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data_x"].shape)
+            in_y_shape = list(program_config.inputs["input_data_y"].shape)
+            if target_type != TargetType.ARM and target_type != TargetType.Host:
+                if len(in_x_shape) == 0 or len(in_y_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(_teller3,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

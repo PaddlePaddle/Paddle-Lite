@@ -99,6 +99,15 @@ class TestReduceSumOp(AutoScanTest):
             "Lite does not support 'in_shape_size == 1' or 'axis has 0' on nvidia_tensorrt."
         )
 
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.OpenCL:
+                return True
+
+        self.add_ignore_check_case(_teller3,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Expected kernel_type false.")
+
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)
 

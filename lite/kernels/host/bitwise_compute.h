@@ -44,6 +44,40 @@ class BitwiseAndCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
 };
 
 template <typename T>
+class BitwiseXorCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
+ public:
+  using param_t = operators::BitwiseParam;
+
+  void Run() override;
+
+  virtual ~BitwiseXorCompute() = default;
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+  }
+  std::string kernel_func_name_{"NotImplForBitXor"};
+#endif
+};
+
+template <typename T>
+class BitwiseOrCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
+ public:
+  using param_t = operators::BitwiseParam;
+
+  void Run() override;
+
+  virtual ~BitwiseOrCompute() = default;
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+  }
+  std::string kernel_func_name_{"NotImplForBitOr"};
+#endif
+};
+
+template <typename T>
 class BitwiseNotCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
   using param_t = operators::BitwiseParam;

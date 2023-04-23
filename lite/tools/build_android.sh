@@ -32,6 +32,8 @@ BUILD_ARM82_FP16=OFF
 # controls whether to support SVE2 instructions, default is OFF
 WITH_ARM8_SVE2=OFF
 WITH_ARM_DOTPROD=ON
+# controls whether to block temporary 0dim pass, default is OFF
+SKIP_SUPPORT_0_DIM_TENSOR_PASS=OFF
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
@@ -270,7 +272,8 @@ function make_tiny_publish_so {
       -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
       -DANDROID_STL_TYPE=$ANDROID_STL \
       -DLITE_THREAD_POOL=$WITH_THREAD_POOL \
-      -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA"
+      -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA \
+      -DLITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS=$SKIP_SUPPORT_0_DIM_TENSOR_PASS"
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
@@ -366,7 +369,8 @@ function make_full_publish_so {
       -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
       -DLITE_WITH_PRECISION_PROFILE=$WITH_PRECISION_PROFILE \
       -DANDROID_STL_TYPE=$ANDROID_STL \
-      -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA"
+      -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA \
+      -DLITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS=$SKIP_SUPPORT_0_DIM_TENSOR_PASS"
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
@@ -636,6 +640,10 @@ function main {
             # compiling lib with benchmark feature, default OFF.
             --with_benchmark=*)
                 WITH_BENCHMARK="${i#*=}"
+                shift
+                ;;
+            --skip_support_0_dim_tensor_pass=*)
+                SKIP_SUPPORT_0_DIM_TENSOR_PASS="${i#*=}"
                 shift
                 ;;
             # controls whether to include FP16 kernels, default is OFF

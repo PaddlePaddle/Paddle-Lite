@@ -31,6 +31,7 @@ WITH_LTO=OFF
 WITH_TESTING=OFF
 BUILD_ARM82_FP16=OFF
 BUILD_ARM82_INT8_SDOT=OFF
+SKIP_SUPPORT_0_DIM_TENSOR_PASS=OFF
 PYTHON_EXECUTABLE_OPTION=""
 PY_VERSION=""
 workspace=$PWD/$(dirname $0)/../../
@@ -126,6 +127,7 @@ function build_opt {
     fi
     cmake .. \
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
+      -DLITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS=$SKIP_SUPPORT_0_DIM_TENSOR_PASS \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
       -DLITE_WITH_X86=${with_x86} \
@@ -205,6 +207,7 @@ function make_armosx {
             -DARM_TARGET_ARCH_ABI=$arch \
             -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
             -DLITE_WITH_CV=$BUILD_CV \
+            -DLITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS=$SKIP_SUPPORT_0_DIM_TENSOR_PASS \
             -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
             -DARM_TARGET_OS=armmacos
@@ -279,6 +282,7 @@ function make_x86 {
             -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \
             -DLITE_OPTMODEL_DIR=${OPTMODEL_DIR} \
             -DLITE_WITH_LOG=${WITH_LOG} \
+            -DLITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS=$SKIP_SUPPORT_0_DIM_TENSOR_PASS \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_WITH_LTO=${WITH_LTO} \
             -DCMAKE_BUILD_TYPE=Release \
@@ -377,6 +381,10 @@ function main {
                 ;;
             --with_log=*)
                 WITH_LOG="${i#*=}"
+                shift
+                ;;
+            --skip_support_0_dim_tensor_pass=*)
+                SKIP_SUPPORT_0_DIM_TENSOR_PASS="${i#*=}"
                 shift
                 ;;
             # controls whether to include FP16 kernels, default is OFF

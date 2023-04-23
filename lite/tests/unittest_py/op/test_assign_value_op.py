@@ -44,27 +44,16 @@ class TestAssignValueOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=4), min_size=1, max_size=4))
+                    min_value=1, max_value=4), min_size=0, max_size=4))
         dtype = draw(st.sampled_from([2, 3, 5]))
-        bool_values = draw(st.lists(st.booleans(), min_size=1, max_size=4))
-        fp32_values = draw(
-            st.lists(
-                st.floats(
-                    min_value=1, max_value=4), min_size=1, max_size=4))
-        int32_values = draw(
-            st.lists(
-                st.integers(
-                    min_value=1, max_value=4), min_size=1, max_size=4))
-        int64_values = np.random.random([1]).astype(np.int64).tolist()
-        in_shape_num = 1
-        for val in in_shape:
-            in_shape_num *= val
-        if dtype == 2:
-            assume(in_shape_num == len(int32_values))
-        if dtype == 3:
-            assume(in_shape_num == len(int64_values))
-        if dtype == 5:
-            assume(in_shape_num == len(fp32_values))
+        int32_values = np.random.randint(
+            low=0, high=100, size=in_shape).astype(np.int32).flatten().tolist()
+        int64_values = np.random.randint(
+            low=0, high=100, size=in_shape).astype(np.int64).flatten().tolist()
+        bool_values = np.random.randint(
+            low=0, high=1, size=in_shape).astype(np.bool_).flatten().tolist()
+        fp32_values = np.random.random(
+            size=in_shape).astype(np.float32).flatten().tolist()
 
         assign_value_op = OpConfig(
             type="assign_value",
@@ -73,12 +62,11 @@ class TestAssignValueOp(AutoScanTest):
             attrs={
                 "shape": in_shape,
                 "dtype": dtype,
-                "bool_values": bool_values,
-                "fp32_values": fp32_values,
                 "int32_values": int32_values,
-                "int64_values": int64_values
+                "int64_values": int64_values,
+                "fp32_values": fp32_values,
+                "bool_values": bool_values
             })
-
         program_config = ProgramConfig(
             ops=[assign_value_op],
             weights={},
@@ -93,7 +81,7 @@ class TestAssignValueOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

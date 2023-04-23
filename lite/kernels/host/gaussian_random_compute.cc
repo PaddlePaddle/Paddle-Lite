@@ -54,7 +54,10 @@ void GaussRandomCompute::Run() {
   float gstd = param.gauss_std;
 
   // output shape
-  if (param.ShapeTensor != nullptr) {
+  if (param.shape.size() > 0) {
+    DDimLite dims(param.shape);
+    param.Out->Resize(dims);
+  } else if (param.ShapeTensor != nullptr) {
     std::vector<int64_t> tmp{};
     auto ptr = param.ShapeTensor->data<int>();
     for (int i = 0; i < param.ShapeTensor->numel(); i++) {
@@ -70,9 +73,6 @@ void GaussRandomCompute::Run() {
       tmp.push_back(static_cast<int64_t>(tmp_tensor_ptr[0]));
     }
     DDimLite dims(tmp);
-    param.Out->Resize(dims);
-  } else {
-    DDimLite dims(param.shape);
     param.Out->Resize(dims);
   }
   auto data = param.Out->mutable_data<float>();
