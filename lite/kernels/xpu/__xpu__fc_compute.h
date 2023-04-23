@@ -43,6 +43,7 @@ class XPUFcCompute : public KernelLite<TARGET(kXPU), PType> {
   bool per_channel_;
   bool enable_int8_;
   bool quant_int16_;
+  bool local_quant_;
 };
 
 }  // namespace xpu
