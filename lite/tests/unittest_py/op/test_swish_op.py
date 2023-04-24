@@ -111,7 +111,7 @@ class TestSwishOp(AutoScanTest):
         def teller1(program_config, predictor_config):
             x_shape = list(program_config.inputs["input_data"].shape)
             if predictor_config.target() == TargetType.Metal:
-                if x_shape[0] != 1 or len(x_shape) != 4:
+                if (len(x_shape) > 0 and x_shape[0] != 1) or len(x_shape) != 4:
                     return True
 
         self.add_ignore_check_case(

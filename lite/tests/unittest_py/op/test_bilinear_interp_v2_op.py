@@ -196,16 +196,6 @@ class TestBilinearV2Op(AutoScanTest):
             "The paddle's and trt_layer's results has diff in a specific case. We need to fix it as soon as possible."
         )
 
-        def _teller2(program_config, predictor_config):
-            target_type = predictor_config.target()
-            if target_type == TargetType.Metal:
-                return True
-
-        self.add_ignore_check_case(
-            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Metal error: failed assertion commit command buffer with uncommitted encoder"
-        )
-
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)
 

@@ -67,7 +67,7 @@ class TestCastOp(AutoScanTest):
         # BOOL and INT16 and FP16 and FP64 paddle-lite doesn't support
         def generate_input(*args, **kwargs):
             if in_dtype == 0:
-                return np.random.random(in_shape).astype(np.bool)
+                return np.random.random(in_shape).astype(np.bool_)
             elif in_dtype == 1:
                 return np.random.random(in_shape).astype(np.int16)
             elif in_dtype == 2:
