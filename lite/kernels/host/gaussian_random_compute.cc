@@ -63,7 +63,7 @@ void GaussRandomCompute::Run() {
     }
     DDimLite dims(tmp);
     param.Out->Resize(dims);
-  }else if (param.shape.size() > 0) {
+  } else if (param.shape.size() > 0) {
     DDimLite dims(param.shape);
     param.Out->Resize(dims);
   } else if (param.ShapeTensor != nullptr) {
