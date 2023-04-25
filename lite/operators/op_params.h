@@ -2640,6 +2640,14 @@ struct TemporalShiftParam : ParamBase {
   std::string data_format{"NCHW"};
 };
 
+struct EmptyParam : ParamBase {
+  lite::Tensor* ShapeTensor{nullptr};
+  std::vector<lite::Tensor*> ShapeTensorList{};
+  std::vector<int64_t> shape{};
+  int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
+  lite::Tensor* Out{};
+};
+
 struct ViterbiDecodeParam : ParamBase {
   const lite::Tensor* input{};
   const lite::Tensor* length{};
@@ -2647,6 +2655,12 @@ struct ViterbiDecodeParam : ParamBase {
   lite::Tensor* path{};
   lite::Tensor* scores{};
   bool include_bos_eos_tag{};
+};
+
+struct Atan2Param : ParamBase {
+  const lite::Tensor* X1{};
+  const lite::Tensor* X2{};
+  lite::Tensor* Out{};
 };
 
 }  // namespace operators

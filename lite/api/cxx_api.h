@@ -372,6 +372,11 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
       bool record_info = false) override;
 
   void SetStream(TargetType target, void* stream) override;
+  void Synchronize() {
+#ifdef LITE_WITH_XPU
+    XPU_CALL(xpu_wait());
+#endif
+  }
 
  private:
   std::shared_ptr<Predictor> raw_predictor_;

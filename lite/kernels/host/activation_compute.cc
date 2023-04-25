@@ -151,6 +151,17 @@ void LogCompute::Run() {
   }
 }
 
+void Log1pCompute::Run() {
+  auto& param = this->Param<param_t>();
+  CHECK(param.X);
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
+  for (int i = 0; i < x_dims.production(); i++) {
+    output_data[i] = std::log(x_data[i] + 1);
+  }
+}
+
 void ExpCompute::Run() {
   auto& param = this->Param<param_t>();
   CHECK(param.X);
@@ -170,6 +181,17 @@ void FloorCompute::Run() {
   auto output_data = param.Out->mutable_data<float>();
   for (int i = 0; i < x_dims.production(); i++) {
     output_data[i] = std::floor(x_data[i]);
+  }
+}
+
+void CeilCompute::Run() {
+  auto& param = this->Param<param_t>();
+  CHECK(param.X);
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
+  for (int i = 0; i < x_dims.production(); i++) {
+    output_data[i] = std::ceil(x_data[i]);
   }
 }
 
@@ -368,12 +390,22 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 REGISTER_LITE_KERNEL(
+    log1p, kHost, kFloat, kNCHW, paddle::lite::kernels::host::Log1pCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
     exp, kHost, kFloat, kNCHW, paddle::lite::kernels::host::ExpCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 REGISTER_LITE_KERNEL(
     floor, kHost, kFloat, kNCHW, paddle::lite::kernels::host::FloorCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
+    ceil, kHost, kFloat, kNCHW, paddle::lite::kernels::host::CeilCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

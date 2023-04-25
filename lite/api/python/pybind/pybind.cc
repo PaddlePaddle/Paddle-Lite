@@ -394,7 +394,8 @@ void BindLiteCxxPredictor(py::module *m) {
            [](CxxPaddleApiImpl &self, const std::string &output_dir) {
              self.SaveOptimizedModel(output_dir,
                                      lite_api::LiteModelType::kNaiveBuffer);
-           });
+           })
+      .def("Synchronize", &CxxPaddleApiImpl::Synchronize);
 }
 #endif
 

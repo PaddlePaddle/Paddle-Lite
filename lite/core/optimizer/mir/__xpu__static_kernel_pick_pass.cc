@@ -47,7 +47,8 @@ void XPUStaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Collect input data precision for each node in the graph
   // Collect XPU op type,which used in fp16/in8;
   DataPrecisionDicide(graph);
-  if (xpu_use_int8_optimizer_ && xpu_full_quantization_) {
+  if (xpu_use_int8_optimizer_ && xpu_full_quantization_ &&
+      xpu_device_version_ != "XPU1") {
     SetEnableInt8Attribute(graph);
   }
 

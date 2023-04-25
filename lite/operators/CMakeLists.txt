@@ -65,6 +65,8 @@ add_operator(pow_op extra SRCS pow_op.cc)
 add_operator(sign_op extra SRCS sign_op.cc)
 add_operator(rnn_op extra SRCS rnn_op.cc)
 
+add_operator(empty_op extra SRCS empty_op.cc)
+
 # 2.basic ops not used in basic models
 add_operator(negative_op extra SRCS negative_op.cc)
 add_operator(crop_op extra SRCS crop_op.cc)
@@ -211,6 +213,8 @@ add_operator(where_op extra SRCS where_op.cc)
 add_operator(unique_with_counts_op extra SRCS unique_with_counts_op.cc)
 add_operator(unique_op extra SRCS unique_op.cc)
 add_operator(viterbi_decode extra SRCS viterbi_decode_op.cc)
+add_operator(atan2 extra SRCS atan2_op.cc)
+
 
 # for content-dnn specific
 add_operator(search_aligned_mat_mul_op extra SRCS search_aligned_mat_mul_op.cc)

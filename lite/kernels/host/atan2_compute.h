@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,40 +13,34 @@
 // limitations under the License.
 
 #pragma once
-
+#include <algorithm>
+#include <string>
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace xpu {
-template <typename TGEMM,
-          typename TW,
-          typename DX,
-          typename DY,
-          PrecisionType PType>
-class XPUFcCompute : public KernelLite<TARGET(kXPU), PType> {
+namespace host {
+
+template <typename T>
+class Atan2Compute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
-  using param_t = operators::XPUFcParam;
+  using param_t = operators::Atan2Param;
 
-  void PrepareForRun() override;
+  void Run() override;
 
-  virtual void Run();
-
-  virtual ~XPUFcCompute() = default;
-
- private:
-  XPUScratchPadGuard input_max_guard_;
-  XPUScratchPadGuard output_max_guard_;
-  XPUQuantData xpu_quant_weight_;
-  XPUScratchPadGuard weight_one_value_guard_;
-  bool per_channel_;
-  bool enable_int8_;
-  bool quant_int16_;
-  bool local_quant_;
+  virtual ~Atan2Compute() = default;
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+  }
+  std::string kernel_func_name_{"NotImplForCos"};
+#endif
 };
 
-}  // namespace xpu
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
