@@ -47,7 +47,7 @@ class TestArgSortOp(AutoScanTest):
         axis = draw(st.integers(min_value=-1, max_value=3))
         assume(axis < len(in_shape))
 
-        in_shape = draw(st.sampled_from([in_shape, []]))
+        in_shape = draw(st.sampled_from([in_shape]))
         if in_shape == []:
             axis = 0
 

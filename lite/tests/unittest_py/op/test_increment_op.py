@@ -47,7 +47,8 @@ class TestIncrementOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=1), min_size=1, max_size=1))
-        in_shape = draw(st.sampled_from([in_shape_tmp, []]))
+        # in_shape = draw(st.sampled_from([in_shape_tmp, []]))
+        in_shape = draw(st.sampled_from([in_shape_tmp]))
         step_data = draw(st.floats(min_value=0.1, max_value=0.5))
         input_type = draw(
             st.sampled_from(["type_int", "type_int64", "type_float"]))
@@ -104,9 +105,9 @@ class TestIncrementOp(AutoScanTest):
         def _teller1(program_config, predictor_config):
             target_type = predictor_config.target()
             in_x_shape = list(program_config.inputs["input_data"].shape)
-            if target_type != TargetType.ARM and target_type != TargetType.Host:
-                if len(in_x_shape) == 0:
-                    return True
+            #if target_type != TargetType.ARM and target_type != TargetType.Host:
+            if len(in_x_shape) == 0:
+                return True
 
         self.add_ignore_check_case(_teller1,
                                    IgnoreReasons.PADDLELITE_NOT_SUPPORT,

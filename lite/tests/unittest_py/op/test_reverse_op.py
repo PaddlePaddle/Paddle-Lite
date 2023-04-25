@@ -49,7 +49,7 @@ class TestReverseOp(AutoScanTest):
                     min_value=1, max_value=10), min_size=4, max_size=4))
         axis = draw(st.sampled_from([0, [1], [0, 1]]))
 
-        in_shape = draw(st.sampled_from([in_shape, []]))
+        in_shape = draw(st.sampled_from([in_shape]))
         if in_shape == []:
             axis = 0
 

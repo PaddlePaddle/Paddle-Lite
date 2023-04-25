@@ -35,7 +35,7 @@ class TestBitwiseNotOp(AutoScanTest):
         self.enable_testing_on_place(places=host_places)
 
     def sample_program_configs(self, draw):
-        input_shape_tmp = draw(
+        input_shape = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=64), min_size=0, max_size=4))
