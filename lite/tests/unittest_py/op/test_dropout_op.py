@@ -101,8 +101,6 @@ class TestDropoutOp(AutoScanTest):
         def gen_input_data_seed():
             return np.array([seed]).astype(np.int32)
 
-        input_data_x_shape = []
-
         def generate_input(*args, **kwargs):
             return np.random.random(size=input_data_x_shape).astype(np.float32)
 

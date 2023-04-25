@@ -144,9 +144,9 @@ class TestCastOp(AutoScanTest):
                 if len(in_x_shape) == 0:
                     return True
 
-        self.add_ignore_check_case(
-            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Only test 0D-tensor on CPU(ARM/X86/Host) now.")
+        self.add_ignore_check_case(_teller3,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

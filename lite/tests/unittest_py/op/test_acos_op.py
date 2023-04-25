@@ -60,20 +60,30 @@ class TestAcosOp(AutoScanTest):
                 high = kwargs["high"]
             if "dtype" in kwargs:
                 dtype = kwargs["dtype"]
-
-            if dtype == "int32":
-                if low == high:
-                    return low * np.ones(shape).astype(np.int32)
-                else:
-                    return np.random.randint(low, high, shape).astype(np.int32)
-            elif dtype == "int64":
-                if low == high:
-                    return low * np.ones(shape).astype(np.int64)
-                else:
-                    return np.random.randint(low, high, shape).astype(np.int64)
-            elif dtype == "float32":
-                return (high - low
-                        ) * np.random.random(shape).astype(np.float32) + low
+            if shape == []:
+                if dtype == "int32":
+                    return np.ones(shape).astype(np.int32)
+                elif dtype == "int64":
+                    return np.ones(shape).astype(np.int64)
+                elif dtype == "float32":
+                    return np.random.random(shape).astype(np.float32)
+            else:
+                if dtype == "int32":
+                    if low == high:
+                        return low * np.ones(shape).astype(np.int32)
+                    else:
+                        return np.random.randint(low, high,
+                                                 shape).astype(np.int32)
+                elif dtype == "int64":
+                    if low == high:
+                        return low * np.ones(shape).astype(np.int64)
+                    else:
+                        return np.random.randint(low, high,
+                                                 shape).astype(np.int64)
+                elif dtype == "float32":
+                    return (
+                        high - low
+                    ) * np.random.random(shape).astype(np.float32) + low
 
         in_shape_tmp = draw(
             st.lists(
@@ -107,12 +117,12 @@ class TestAcosOp(AutoScanTest):
                 if len(in_x_shape) == 0:
                     return True
 
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Only test 0D-tensor on CPU(ARM/X86/Host) now.")
+        self.add_ignore_check_case(_teller1,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=1000)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

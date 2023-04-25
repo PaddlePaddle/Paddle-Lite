@@ -219,9 +219,9 @@ class TestScaleOp(AutoScanTest):
             teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' on nvidia_tensorrt.")
 
-        self.add_ignore_check_case(
-            _teller5, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Only test 0D-tensor on CPU(ARM/X86/Host) now.")
+        self.add_ignore_check_case(_teller5,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

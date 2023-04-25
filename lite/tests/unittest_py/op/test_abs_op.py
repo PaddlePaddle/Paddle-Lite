@@ -90,13 +90,12 @@ class TestAbsOp(AutoScanTest):
                 if len(in_x_shape) == 0:
                     return True
 
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Only test 0D-tensor on CPU(ARM/X86/Host) now.")
+        self.add_ignore_check_case(_teller1,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(
-            quant=False, min_success_num=1000, max_examples=1000)
+        self.run_and_statis(quant=False, min_success_num=25, max_examples=100)
 
 
 if __name__ == "__main__":

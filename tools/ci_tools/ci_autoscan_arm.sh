@@ -60,17 +60,23 @@ function auto_scan_test {
 ####################################################################################################
 function check_paddle_version {
   if python$PYTHON_VERSION -c "import paddle" >/dev/null 2>&1;then
-    # need paddle version >= 2.4
-    major_v=`python$PYTHON_VERSION -c "import paddle;paddle.version.show()" | grep major`
-    minor_v=`python$PYTHON_VERSION -c "import paddle;paddle.version.show()" | grep minor`
-    major_num=`echo ${major_v##*:} | awk '{print int($0)}'`
-    minor_num=`echo ${minor_v##*:} | awk '{print int($0)}'`
-    if (( $major_num < 2 || $minor_num < 4 ));then
-      # need reinstall
-      echo "present version is ${major_num}.${minor_num}, need reinstall paddlepaddle."
-      python$PYTHON_VERSION -m pip uninstall -y paddlepaddle
+    #padddle don't have version
+    if python$PYTHON_VERSION -c "import paddle;paddle.version.show()" >/dev/null 2>&1;then
+      # need paddle version >= 2.4
+      major_v=`python$PYTHON_VERSION -c "import paddle;paddle.version.show()" | grep major`
+      minor_v=`python$PYTHON_VERSION -c "import paddle;paddle.version.show()" | grep minor`
+      major_num=`echo ${major_v##*:} | awk '{print int($0)}'`
+      minor_num=`echo ${minor_v##*:} | awk '{print int($0)}'`
+      if (( $major_num < 2 || $minor_num < 4 ));then
+        # need reinstall
+        echo "present version is ${major_num}.${minor_num}, need reinstall paddlepaddle."
+        python$PYTHON_VERSION -m pip uninstall -y paddlepaddle
+      else
+        echo "paddlepaddle >= 2.4, satisfied!"
+      fi
     else
-      echo "paddlepaddle >= 2.4, satisfied!"
+      echo "old paddle don't have paddle.version.show(), need reinstall."
+      python$PYTHON_VERSION -m pip uninstall -y paddlepaddle
     fi
   else
     echo "Don't have paddlepaddle, need install."

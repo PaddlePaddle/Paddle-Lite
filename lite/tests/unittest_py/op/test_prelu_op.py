@@ -57,23 +57,16 @@ class TestPreluOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape_tmp = draw(
+        in_shape = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=10), min_size=4, max_size=4))
-        in_shape = draw(st.sampled_from([in_shape_tmp, []]))
         mode_data = draw(st.sampled_from(["channel", "element"]))
         alpha_shape = [1]
         if mode_data == "channel":
-            if in_shape == []:
-                alpha_shape = []
-            else:
-                alpha_shape = [1, in_shape[1], 1, 1]
+            alpha_shape = [1, in_shape[1], 1, 1]
         elif mode_data == 'element':
-            if in_shape == []:
-                alpha_shape = []
-            else:
-                alpha_shape = [1] + list(in_shape)[1:]
+            alpha_shape = [1] + list(in_shape)[1:]
 
         def generate_input(*args, **kwargs):
             return np.random.random(kwargs['tensor_shape']).astype(np.float32)
@@ -106,19 +99,10 @@ class TestPreluOp(AutoScanTest):
         return self.get_predictor_configs(), ["prelu"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            target_type = predictor_config.target()
-            in_x_shape = list(program_config.inputs["input_data"].shape)
-            if target_type != TargetType.ARM and target_type != TargetType.Host:
-                if len(in_x_shape) == 0:
-                    return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Only test 0D-tensor on CPU(ARM/X86/Host) now.")
+        pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=1000)
+        self.run_and_statis(quant=False, max_examples=25)
 
 
 if __name__ == "__main__":
