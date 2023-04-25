@@ -53,7 +53,7 @@ NNADAPTER_EXPORT int PrepareSplit(core::Operation* operation) {
     std::vector<int32_t*> output_data_ptrs;
     std::vector<std::vector<int32_t*>> dynamic_output_data_ptrs;
     std::vector<NNAdapterOperandDimensionType> dimension_types;
-    //Initialize the vector and avoid Out of bounds access
+    // Initialize the vector and avoid Out of bounds access
     dimension_types.resize(output_count);
     output_data_ptrs.resize(output_count);
     for (size_t i = 0; i < output_count; i++) {
