@@ -61,7 +61,7 @@ bool FlattenOp::InferShapeImpl() const {
   out_shape[1] = inner;
 
   param_.output->Resize(out_shape);
-  if (x_dims[0] == out_shape[0]) {
+  if (x_dims.size() > 0 && x_dims[0] == out_shape[0]) {
     param_.output->set_lod(param_.x->lod());
   }
   return true;

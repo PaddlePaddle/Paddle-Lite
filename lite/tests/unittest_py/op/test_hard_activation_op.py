@@ -84,10 +84,11 @@ class TestHardActivationOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
+        in_shape_tmp = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=64), min_size=4, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape_tmp, []]))
         alpha_data = draw(st.floats(min_value=0.1, max_value=0.9))
         threshold_data = draw(st.floats(min_value=0.5, max_value=0.9))
         scale_data = draw(st.floats(min_value=0.7, max_value=0.9))
@@ -96,7 +97,10 @@ class TestHardActivationOp(AutoScanTest):
         op_type_str = draw(st.sampled_from(["hard_swish", "hard_sigmoid"]))
 
         def generate_input(*args, **kwargs):
-            return 2 * np.random.random(in_shape).astype(np.float32) - 1
+            if in_shape == []:
+                return np.random.random(in_shape).astype(np.float32)
+            else:
+                return 2 * np.random.random(in_shape).astype(np.float32) - 1
 
         def get_attr_np(op_type):
             attr = {}
@@ -142,8 +146,19 @@ class TestHardActivationOp(AutoScanTest):
             teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "NNAdapter tensorrt will support hard_sigmoid later.")
 
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type != TargetType.ARM and target_type != TargetType.Host:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(_teller2,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
+
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

@@ -41,13 +41,14 @@ class TestLogicalOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
+        in_shape_tmp = draw(
             st.lists(
                 st.integers(
                     min_value=3, max_value=64), min_size=2, max_size=4))
         op_type_str = draw(
             st.sampled_from(
                 ["logical_and", "logical_not", "logical_or", "logical_xor"]))
+        in_shape = draw(st.sampled_from([in_shape_tmp, []]))
 
         if self.get_nnadapter_device_name() == "kunlunxin_xtcl":
             in_shape = [1]
@@ -122,10 +123,20 @@ class TestLogicalOp(AutoScanTest):
         return self.get_predictor_configs(), ["logical"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data_x"].shape)
+            in_y_shape = list(program_config.inputs["input_data_y"].shape)
+            if target_type != TargetType.ARM and target_type != TargetType.Host:
+                if len(in_x_shape) == 0 or len(in_y_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(_teller1,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=60)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

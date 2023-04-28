@@ -145,6 +145,13 @@ class TestSoftmaxOp(AutoScanTest):
                 if len(in_shape) == 1 or axis == 0 or axis == -len(in_shape):
                     return True
 
+        def _teller4(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            # if target_type != TargetType.ARM and target_type != TargetType.Host:
+            if len(in_x_shape) == 0:
+                return True
+
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
@@ -157,6 +164,9 @@ class TestSoftmaxOp(AutoScanTest):
             teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' or 'axis == 0' on nvidia_tensorrt."
         )
+        self.add_ignore_check_case(_teller4,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

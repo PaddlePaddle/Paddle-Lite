@@ -54,7 +54,15 @@ void GaussRandomCompute::Run() {
   float gstd = param.gauss_std;
 
   // output shape
-  if (param.shape.size() > 0) {
+  if (param.ShapeTensorList.size() > 0) {
+    std::vector<int64_t> tmp{};
+    for (size_t i = 0; i < param.ShapeTensorList.size(); ++i) {
+      auto tmp_tensor_ptr = param.ShapeTensorList[i]->data<int>();
+      tmp.push_back(static_cast<int64_t>(tmp_tensor_ptr[0]));
+    }
+    DDimLite dims(tmp);
+    param.Out->Resize(dims);
+  } else if (param.shape.size() > 0) {
     DDimLite dims(param.shape);
     param.Out->Resize(dims);
   } else if (param.ShapeTensor != nullptr) {
@@ -66,15 +74,8 @@ void GaussRandomCompute::Run() {
     }
     DDimLite dims(tmp);
     param.Out->Resize(dims);
-  } else if (param.ShapeTensorList.size() > 0) {
-    std::vector<int64_t> tmp{};
-    for (size_t i = 0; i < param.ShapeTensorList.size(); ++i) {
-      auto tmp_tensor_ptr = param.ShapeTensorList[i]->data<int>();
-      tmp.push_back(static_cast<int64_t>(tmp_tensor_ptr[0]));
-    }
-    DDimLite dims(tmp);
-    param.Out->Resize(dims);
   }
+
   auto data = param.Out->mutable_data<float>();
   int size = param.Out->numel();
   std::normal_distribution<float> dist(mean, gstd);

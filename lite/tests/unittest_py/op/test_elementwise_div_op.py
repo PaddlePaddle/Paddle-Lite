@@ -163,7 +163,7 @@ class TestElementwiseDivOp(AutoScanTest):
                 if input_data_type != np.float32 \
                     or in_x_shape != in_y_shape \
                     or len(in_x_shape) == 3 \
-                    or in_x_shape[0] != 1:
+                    or (len(in_x_shape) > 0 and in_x_shape[0] != 1):
                     return True
 
         self.add_ignore_check_case(

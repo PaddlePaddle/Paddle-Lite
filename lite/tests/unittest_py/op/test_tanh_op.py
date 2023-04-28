@@ -76,7 +76,7 @@ class TestTanhOp(AutoScanTest):
         C = draw(st.integers(min_value=1, max_value=128))
         H = draw(st.integers(min_value=1, max_value=128))
         W = draw(st.integers(min_value=1, max_value=128))
-        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
+        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W], []]))
         tanh_op = OpConfig(
             type="tanh",
             inputs={"X": ["input_data"]},
@@ -106,8 +106,19 @@ class TestTanhOp(AutoScanTest):
             teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' on nvidia_tensorrt.")
 
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type != TargetType.ARM and target_type != TargetType.Host:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(_teller2,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
+
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":
