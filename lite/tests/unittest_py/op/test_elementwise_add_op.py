@@ -24,45 +24,7 @@ from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 import numpy as np
 from functools import partial
-
-
-def check_broadcast(x_shape, y_shape, axis):
-    if x_shape == y_shape:
-        return True
-    else:
-        x_dims_size = len(x_shape)
-        y_dims_size = len(y_shape)
-        max_dims_size = max(x_dims_size, y_dims_size)
-        if (x_dims_size == y_dims_size):
-            # The axis should be -1 or 0 while the dimension of tensor X is equal to the dimension of tensor Y.
-            if not (axis == -1 or axis == 0):
-                return False
-        # The axis should be met [-max(x_dims_size, y_dims_size), max(x_dims_size, y_dims_size))
-        if not (axis >= (-max_dims_size) and axis < max_dims_size):
-            return False
-        if axis < 0:
-            axis = abs(x_dims_size - y_dims_size) + axis + 1
-        if not (axis >= 0 and axis < max_dims_size):
-            return False
-        # The axis should be met axis + min(x_dims_size, y_dims_size) <= max(x_dims_size, y_dims_size)
-        if axis + min(x_dims_size, y_dims_size) > max_dims_size:
-            return False
-        x_dims_array = [1 for i in range(max_dims_size)]
-        y_dims_array = [1 for i in range(max_dims_size)]
-        if x_dims_size > y_dims_size:
-            x_dims_array = x_shape
-            for i in range(y_dims_size):
-                y_dims_array[axis + i] = y_shape[i]
-        else:
-            y_dims_array = y_shape
-            for i in range(x_dims_size):
-                x_dims_array[axis + i] = x_shape[i]
-        for i in range(max_dims_size):
-            broadcast_flag = (x_dims_array[i] == y_dims_array[i]) or (
-                x_dims_array[i] <= 1) or (y_dims_array[i] <= 1)
-            if not broadcast_flag:
-                return False
-        return True
+from test_elementwise_util import check_broadcast
 
 
 class TestElementwiseAddOp(AutoScanTest):
@@ -196,7 +158,7 @@ class TestElementwiseAddOp(AutoScanTest):
                 if input_data_type != np.float32 \
                     or in_x_shape != in_y_shape \
                     or len(in_x_shape) == 3 \
-                    or in_x_shape[0] != 1:
+                    or (len(in_x_shape) > 0 and in_x_shape[0] != 1):
                     return True
 
         self.add_ignore_check_case(

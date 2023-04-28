@@ -42,10 +42,11 @@ class TestFillZerosLikeOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
+        in_shape_tmp = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=8), min_size=1, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape_tmp, []]))
 
         def generate_input(*args, **kwargs):
             if kwargs["type"] == "int32":
@@ -55,8 +56,11 @@ class TestFillZerosLikeOp(AutoScanTest):
                 return np.random.randint(kwargs["low"], kwargs["high"],
                                          kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return (kwargs["high"] - kwargs["low"]) * np.random.random(
-                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
+                if kwargs["shape"] == []:
+                    return np.random.random(kwargs["shape"]).astype(np.float32)
+                else:
+                    return (kwargs["high"] - kwargs["low"]) * np.random.random(
+                        kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
 
@@ -83,10 +87,19 @@ class TestFillZerosLikeOp(AutoScanTest):
         return self.get_predictor_configs(), ["fill_zeros_like"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type != TargetType.ARM and target_type != TargetType.Host:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(_teller1,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

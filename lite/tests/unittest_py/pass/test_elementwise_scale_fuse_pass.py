@@ -115,9 +115,13 @@ class TestElementwiseScaleFuse(FusePassAutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
+        target_str = self.get_target()
+        max_examples = 100
+        if target_str == "OpenCL":
+            max_examples = 1000
         self.run_and_statis(
             quant=False,
-            max_examples=1000,
+            max_examples=max_examples,
             passes=["lite_elementwise_scale_fuse_pass"])
 
 

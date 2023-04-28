@@ -56,10 +56,11 @@ class TestCastOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
+        in_shape_tmp = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=10), min_size=1, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape_tmp, []]))
         # BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
         in_dtype = draw(st.sampled_from([0, 2, 3, 5]))
         out_dtype = draw(st.sampled_from([0, 2, 3, 5]))
@@ -67,7 +68,7 @@ class TestCastOp(AutoScanTest):
         # BOOL and INT16 and FP16 and FP64 paddle-lite doesn't support
         def generate_input(*args, **kwargs):
             if in_dtype == 0:
-                return np.random.random(in_shape).astype(np.bool)
+                return np.random.random(in_shape).astype(np.bool_)
             elif in_dtype == 1:
                 return np.random.random(in_shape).astype(np.int16)
             elif in_dtype == 2:
@@ -135,6 +136,17 @@ class TestCastOp(AutoScanTest):
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "nvidia_tensorrt now support int32<->float32.")
+
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type != TargetType.ARM and target_type != TargetType.Host:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(_teller3,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

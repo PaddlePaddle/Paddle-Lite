@@ -188,13 +188,13 @@ class TestBilinearOp(AutoScanTest):
 
         def _teller2(program_config, predictor_config):
             target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
             if target_type == TargetType.Metal:
                 return True
 
         self.add_ignore_check_case(
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Metal error: failed assertion commit command buffer with uncommitted encoder"
-        )
+            "Can't find a io_copy  kernel for io_copy op.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)
