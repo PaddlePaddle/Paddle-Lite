@@ -81,6 +81,9 @@ class TestElementwiseActivationFuse(FusePassAutoScanTest):
             st.integers(
                 min_value=-1, max_value=max(len(in_shape_x), len(in_shape_y))))
 
+        in_shape_x = draw(st.sampled_from([in_shape_x, []]))
+        in_shape_y = draw(st.sampled_from([in_shape_y, []]))
+
         assume(
             check_input_shape_available(
                 in_shape_x=in_shape_x, in_shape_y=in_shape_y, axis=axis) ==

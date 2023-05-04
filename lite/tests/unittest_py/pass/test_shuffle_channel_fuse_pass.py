@@ -91,16 +91,20 @@ class TestShuffleChannelFusePass(FusePassAutoScanTest):
                 st.integers(
                     min_value=1, max_value=32), min_size=4, max_size=4))
 
-        reshape1_input_shape[0] = reshape1_output_shape[0]
-        reshape1_input_shape[1] = reshape1_output_shape[
-            1] * reshape1_output_shape[2]
-        reshape1_input_shape[2] = reshape1_output_shape[3]
-        reshape1_input_shape[3] = reshape1_output_shape[4]
+        reshape1_output_shape = []
+        reshape2_output_shape = []
+        reshape1_input_shape = []
 
-        reshape2_output_shape[0] = reshape1_input_shape[0]
-        reshape2_output_shape[1] = -1
-        reshape2_output_shape[2] = reshape1_input_shape[2]
-        reshape2_output_shape[3] = reshape1_input_shape[3]
+        # reshape1_input_shape[0] = reshape1_output_shape[0]
+        # reshape1_input_shape[1] = reshape1_output_shape[
+        #     1] * reshape1_output_shape[2]
+        # reshape1_input_shape[2] = reshape1_output_shape[3]
+        # reshape1_input_shape[3] = reshape1_output_shape[4]
+
+        # reshape2_output_shape[0] = reshape1_input_shape[0]
+        # reshape2_output_shape[1] = -1
+        # reshape2_output_shape[2] = reshape1_input_shape[2]
+        # reshape2_output_shape[3] = reshape1_input_shape[3]
 
         shuffle_channel_fuser_type = draw(
             st.sampled_from(

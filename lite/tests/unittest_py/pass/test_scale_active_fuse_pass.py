@@ -46,6 +46,7 @@ class TestScaleActiveFusePass(FusePassAutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=4, max_size=4))
+        in_shape_x = draw(st.sampled_from([in_shape_x, []]))
         threshold = draw(st.floats(min_value=0, max_value=1))
         alpha = draw(st.floats(min_value=0, max_value=1))
         scale = draw(st.floats(min_value=0.5, max_value=5))

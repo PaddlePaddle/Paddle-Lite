@@ -70,8 +70,7 @@ class TestRemoveScale1Fuse(FusePassAutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=1, max_size=4))
-
+                    min_value=1, max_value=8), min_size=0, max_size=4))
         threshold = draw(st.floats(min_value=0, max_value=1))
         scale = draw(st.floats(min_value=0.5, max_value=5))
         offset = draw(st.floats(min_value=0, max_value=1))

@@ -47,7 +47,7 @@ class TestIdentifyDropoutEleminateFuse(FusePassAutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=2, max_size=4))
+                    min_value=1, max_value=8), min_size=0, max_size=4))
         dropout_prob_data = draw(st.floats(min_value=0.0, max_value=1.0))
         seed_data = draw(st.integers(min_value=0.0, max_value=1.0))
         fix_seed = draw(st.booleans())
