@@ -51,6 +51,14 @@ void FillAnyLikeCompute::Run() {
 
   int r = 0;
   switch (dtype) {
+    case 0: {
+      auto data = param.Out->mutable_data<bool>(TARGET(kXPU));
+      r = xdnn::constant<bool>(ctx.GetRawContext(),
+                               data,
+                               write_size,
+                               static_cast<bool>(param.value));
+      break;
+    }
     case 1: {
       auto data = param.Out->mutable_data<int16_t>(TARGET(kXPU));
       r = xdnn::constant<int16_t>(ctx.GetRawContext(),
@@ -84,10 +92,11 @@ void FillAnyLikeCompute::Run() {
       break;
     }
     default: {
-      LOG(FATAL) << "Attribute dtype in fill_any_like op "
-                    "must be 1[int16] or 3[int64] or 2[int32] or 5[fp32] "
-                    "for xpu: "
-                 << param.dtype;
+      LOG(FATAL)
+          << "Attribute dtype in fill_any_like op "
+             "must be 0[bool] or 1[int16] or 3[int64] or 2[int32] or 5[fp32] "
+             "for xpu: "
+          << param.dtype;
       break;
     }
   }

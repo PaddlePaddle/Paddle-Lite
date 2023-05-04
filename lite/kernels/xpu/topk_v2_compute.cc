@@ -28,7 +28,6 @@ void TopkV2Compute::Run() {
 
   DDim x_dims = param.X->dims();
   int axis = param.axis;
-  CHECK_EQ(axis, -1);
   int dim_size = x_dims.size();
   if (axis < 0) {
     axis += dim_size;
