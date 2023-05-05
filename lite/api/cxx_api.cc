@@ -507,16 +507,6 @@ void Predictor::Run() {
 #endif
 }
 
-#ifdef LITE_WITH_METAL
-void ConfigMetalContext(const lite_api::CxxConfig &config) {
-  program_->ConfigMetalContext(config.metal_lib_path(),
-                               config.metal_use_mps(),
-                               config.metal_use_aggressive(),
-                               config.metal_use_memory_reuse(),
-                               config.metal_device());
-}
-#endif
-
 const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
   auto *var = exec_scope_->FindVar(name);
   CHECK(var) << "no variable named with " << name << " in exec_scope";
