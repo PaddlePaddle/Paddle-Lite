@@ -66,9 +66,6 @@ class TestGreaterThanCastFusePass(FusePassAutoScanTest):
 
         axis = -1
 
-        # in_shape_x = draw(st.sampled_from([in_shape_x, []]))
-        # in_shape_y = in_shape_x
-
         def generate_input_x(*args, **kwargs):
             return np.random.randint(in_shape_x).astype(np.float32)
 
