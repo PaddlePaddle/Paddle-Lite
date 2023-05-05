@@ -1825,6 +1825,105 @@ struct XPUSpatialTransformerResBlockParam : ParamBase {
   bool has_silu_fc_input{true};
 };
 
+struct XPUUpDecoderParam : ParamBase {
+  const lite::Tensor* input1{};
+  std::vector<lite::Tensor*> resblock_conv_filter;
+  std::vector<lite::Tensor*> resblock_conv_bias;
+  std::vector<lite::Tensor*> resblock_gn_scale;
+  std::vector<lite::Tensor*> resblock_gn_bias;
+  std::vector<lite::Tensor*> resblock_conv_input_max;
+  lite::Tensor* post_conv_filter{nullptr};
+  lite::Tensor* post_conv_bias{nullptr};
+  lite::Tensor* post_conv_input_max{nullptr};
+  lite::Tensor* output{nullptr};
+  std::vector<lite::Tensor*> resblock_filter_max{};
+  std::vector<lite::Tensor*> post_filter_max{};
+  // Multi resblock attrs
+  std::vector<int> resblock_conv_fix;
+  std::vector<std::vector<int>> resblock_conv_groups;
+  std::vector<std::vector<std::vector<int>>> resblock_conv_strides{};
+  std::vector<std::vector<std::vector<int>>> resblock_conv_paddings{};
+  std::vector<std::vector<std::vector<int>>> resblock_conv_dilations{};
+  std::vector<std::vector<std::vector<int>>> resblock_filter_dims{};
+  std::vector<std::vector<int>> resblock_gn_groups{};
+  std::vector<std::vector<float>> resblock_gn_eps{};
+  int num_inputs;
+  int num_resblocks;
+  // Post interp attrs
+  bool has_post_interp_conv{false};
+  bool interp_align_corners{false};
+  std::string interp_method{""};
+  int interp_out_d{0};
+  int interp_out_h{0};
+  int interp_out_w{0};
+  std::vector<float> interp_scale{};
+  // Post conv attrs
+  std::vector<int> post_conv_strides{};
+  std::vector<int> post_conv_paddings{};
+  std::vector<int> post_conv_dilations{};
+  std::vector<int> post_filter_dims{};
+  std::vector<int> post_conv_groups{};
+};
+
+struct XPUMultiUpDecoderParam : ParamBase {
+  const lite::Tensor* input1{};
+  std::vector<lite::Tensor*> all_resblock_conv_filter;
+  std::vector<lite::Tensor*> all_resblock_conv_bias;
+  std::vector<lite::Tensor*> all_resblock_conv_input_max;
+
+  std::vector<lite::Tensor*> all_resblock_gn_scale;
+  std::vector<lite::Tensor*> all_resblock_gn_bias;
+
+  std::vector<lite::Tensor*> all_post_conv_filter;
+  std::vector<lite::Tensor*> all_post_conv_bias;
+  std::vector<lite::Tensor*> all_post_conv_input_max;
+
+  lite::Tensor* output{nullptr};
+  std::vector<lite::Tensor*> all_resblock_filter_max{};
+  std::vector<lite::Tensor*> all_post_filter_max{};
+
+  lite::Tensor* last_gn_scale{nullptr};
+  lite::Tensor* last_gn_bias{nullptr};
+
+  // All resblock conv/group-norm attrs among different up-coders
+  std::vector<std::vector<int>> all_resblock_conv_fix;
+  std::vector<std::vector<std::vector<int>>> all_resblock_conv_groups;
+  std::vector<std::vector<std::vector<std::vector<int>>>>
+      all_resblock_conv_strides{};
+  std::vector<std::vector<std::vector<std::vector<int>>>>
+      all_resblock_conv_paddings{};
+  std::vector<std::vector<std::vector<std::vector<int>>>>
+      all_resblock_conv_dilations{};
+  std::vector<std::vector<std::vector<std::vector<int>>>>
+      all_resblock_filter_dims{};
+  std::vector<std::vector<std::vector<int>>> all_resblock_gn_groups{};
+  std::vector<std::vector<std::vector<float>>> all_resblock_gn_eps{};
+
+  // All post interp attrs
+  std::vector<int> has_post_interp;
+  std::vector<int> post_interp_align_corners;
+  std::vector<std::string> post_interp_method;
+  std::vector<std::vector<int>> post_interp_out_dhw;
+  std::vector<std::vector<float>> post_interp_scale;
+  // All post conv attrs
+  std::vector<std::vector<int>> all_post_conv_strides{};
+  std::vector<std::vector<int>> all_post_conv_paddings{};
+  std::vector<std::vector<int>> all_post_conv_dilations{};
+  std::vector<std::vector<int>> all_post_filter_dims{};
+  std::vector<int> all_post_conv_groups{};
+
+  // Last gn silu attrs
+  float last_gn_eps = 0.0;
+  int last_gn_groups = 0;
+
+  // Other info
+  std::vector<int> num_resblocks_per_up_decoder;
+  int num_up_decoders;
+  std::vector<int> resblock_start_idx;
+  std::vector<int> resblock_end_idx;
+  bool has_last_gn_silu{false};
+};
+
 struct XPUSpatialTransformerParam : ParamBase {
   const lite::Tensor* input{};
   const lite::Tensor* embedding{};
@@ -1900,6 +1999,14 @@ struct XPUMhcaParam : ParamBase {
   int size_per_head{};
   int hidden_dim{};
   int embedding_dim{};
+};
+
+struct XpuMatmulScaleSoftmaxV1Param : ParamBase {
+  lite::Tensor* mat_q{nullptr};
+  lite::Tensor* mat_k{nullptr};
+  lite::Tensor* mat_v{nullptr};
+  lite::Tensor* output{nullptr};
+  float alpha{1};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {

@@ -263,6 +263,9 @@ add_operator(__xpu__multihead_self_attn_op extra SRCS __xpu__multihead_self_attn
 add_operator(__xpu__multihead_cross_attn_op extra SRCS __xpu__multihead_cross_attn_op.cc)
 add_operator(__xpu__geglu_op extra SRCS __xpu__geglu_op.cc)
 add_operator(__xpu__spatial_transformer_op XPU extra SRCS __xpu__spatial_transformer_op.cc)
+add_operator(__xpu__matmul_scale_softmax_v1_op extra SRCS __xpu__matmul_scale_softmax_v1_op.cc)
+add_operator(__xpu__up_decoder_op extra SRCS __xpu__up_decoder_op.cc)
+add_operator(__xpu__multi_up_decoder_op extra SRCS __xpu__multi_up_decoder_op.cc)
 
 if(XPU_WITH_XFT)
     add_operator(fusion_decoding_op extra SRCS fusion_decoding_op.cc)
