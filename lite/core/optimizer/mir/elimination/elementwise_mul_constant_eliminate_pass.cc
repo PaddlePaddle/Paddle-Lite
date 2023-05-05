@@ -67,11 +67,21 @@ class ElementwiseMulConstantEliminator : public FuseBase {
     auto mul_input_x_dims = mul_input_x->Get<lite::Tensor>().dims();
     auto mul_output = scope->FindVar(matched.at("output")->arg()->name);
     auto mul_output_dims = mul_output->Get<lite::Tensor>().dims();
-    if (mul_input_x_dims != mul_output_dims) {
+
+    if (mul_input_x_dims.size() != mul_output_dims.size()) {
       nodes_.erase(nodes_.begin(), nodes_.end());
-      LOG(WARNING)
-          << "elementwise_mul input x not equal to output, eleminate failed";
+      LOG(WARNING) << "elementwise_mul input x.size() not equal to "
+                      "output.size(), eleminate failed";
       return;
+    }
+    for (int i = 0; i < mul_input_x_dims.size(); i++) {
+      if (mul_input_x_dims[i] != mul_output_dims[i] &&
+          mul_output_dims[i] != -1) {
+        nodes_.erase(nodes_.begin(), nodes_.end());
+        LOG(WARNING) << "elementwise_mul input x[i] not equal to output[i], "
+                        "eleminate failed";
+        return;
+      }
     }
 
     op_info.UpdateAllInputs(matched.at("output")->AsArg().name,

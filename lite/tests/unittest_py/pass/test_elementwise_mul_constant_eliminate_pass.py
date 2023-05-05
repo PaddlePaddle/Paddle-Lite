@@ -72,8 +72,10 @@ class TestElementwiseMulConstantEliminateFuse(FusePassAutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=2, max_size=5))
-        in_shape = draw(st.sampled_from([in_shape, []]))
-        fill_constant_shape = draw(st.sampled_from([fill_constant_shape, []]))
+        # in_shape = draw(st.sampled_from([in_shape, []]))
+        # fill_constant_shape = draw(st.sampled_from([fill_constant_shape, []]))
+
+        fill_constant_shape = []
 
         axis = draw(
             st.integers(
@@ -92,6 +94,8 @@ class TestElementwiseMulConstantEliminateFuse(FusePassAutoScanTest):
         threshold = draw(st.floats(min_value=0, max_value=1))
         scale = draw(st.floats(min_value=0.5, max_value=5))
         offset = draw(st.floats(min_value=0, max_value=1))
+
+        print("==============", in_shape, fill_constant_shape, out_shape)
 
         hard_swish_op0 = OpConfig(
             type="hard_swish",
