@@ -205,5 +205,21 @@ class TargetWrapper<TARGET(kXPU)> {
   static std::mutex mutex_l3_;
 };
 
+class XPULoadRunTimeOptionGuard {
+ public:
+  XPULoadRunTimeOptionGuard(const XPULoadRunTimeOptionGuard&) = delete;
+  XPULoadRunTimeOptionGuard& operator=(const XPULoadRunTimeOptionGuard&) =
+      delete;
+  explicit XPULoadRunTimeOptionGuard(XPURunTimeOption* xpu_runtime_option) {
+    if (TargetWrapperXPU::xpu_runtime_ptr != xpu_runtime_option) {
+      TargetWrapperXPU::xpu_runtime_ptr = xpu_runtime_option;
+      // As rumtime context is thread_local,so we should set device when
+      // using different predictor in the same thread.
+      XPU_CALL(xpu_set_device(TargetWrapperXPU::xpu_runtime_ptr->xpu_dev_num));
+    }
+  }
+  ~XPULoadRunTimeOptionGuard() { TargetWrapperXPU::xpu_runtime_ptr = nullptr; }
+};
+
 }  // namespace lite
 }  // namespace paddle

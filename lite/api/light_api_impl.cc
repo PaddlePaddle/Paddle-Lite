@@ -61,6 +61,14 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
 
   mode_ = config.power_mode();
   threads_ = config.threads();
+  raw_predictor_->SetTargetConfigs(config.target_configs());
+#ifdef LITE_WITH_XPU
+  CHECK(config.target_configs().count(TARGET(kXPU)))
+      << "XPU runtime option is not initialized!";
+  XPULoadRunTimeOptionGuard xpu_load_runtime_option_guard(
+      reinterpret_cast<paddle::lite::XPURunTimeOption*>(
+          config.target_configs().at(TARGET(kXPU)).get()));
+#endif
 #ifdef LITE_USE_THREAD_POOL
   int thread_num = ThreadPool::Init(threads_);
   if (thread_num > 1) {
@@ -169,6 +177,10 @@ std::vector<std::string> LightPredictorImpl::GetOutputNames() {
 
 bool LightPredictorImpl::TryShrinkMemory() {
   return raw_predictor_->TryShrinkMemory();
+}
+
+void LightPredictorImpl::SetStream(TargetType target, void* stream) {
+  raw_predictor_->SetStream(target, stream);
 }
 
 }  // namespace lite

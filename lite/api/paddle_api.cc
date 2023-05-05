@@ -434,38 +434,10 @@ void ConfigBase::set_nnadapter_model_cache_buffers(
 #endif
 }
 
-CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
-                               size_t program_buffer_size,
-                               const char *params_buffer,
-                               size_t params_buffer_size) {
-  program_ = std::string(program_buffer, program_buffer + program_buffer_size);
-  params_ = std::string(params_buffer, params_buffer + params_buffer_size);
-}
-
-CxxModelBuffer::CxxModelBuffer(std::string &&program_buffer,
-                               std::string &&params_buffer) {
-  program_ = std::forward<std::string>(program_buffer);
-  params_ = std::forward<std::string>(params_buffer);
-}
-
-const std::string &CxxModelBuffer::get_program() const {
-  CHECK(!program_.empty());
-  return program_;
-}
-
-const std::string &CxxModelBuffer::get_params() const { return params_; }
-
-bool CxxModelBuffer::is_empty() const { return program_.empty(); }
-
-const CxxModelBuffer &CxxConfig::get_model_buffer() const {
-  CHECK(model_buffer_) << "Cannot get an empty model buffer.";
-  return *model_buffer_;
-}
-
 // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
-void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
+void ConfigBase::set_xpu_workspace_l3_size_per_thread(int l3_size) {
 #ifdef LITE_WITH_XPU
-  CxxConfig::set_xpu_l3_cache_method(l3_size, false);
+  ConfigBase::set_xpu_l3_cache_method(l3_size, false);
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_workspace_l3_size_per_thread' is ignored, please "
@@ -477,7 +449,7 @@ void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
 // local_l3 > 0, locked == false : USE local l3
 // locked == true : USE Shared L3
 // default : locked = false, local_l3 = max_l3_size;
-void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
+void ConfigBase::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 #ifdef LITE_WITH_XPU
   static std::mutex set_l3_mutex;
   const std::lock_guard<std::mutex> lock(set_l3_mutex);
@@ -508,7 +480,7 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 #endif
 }
 
-void CxxConfig::set_xpu_l3_cache_autotune(bool autotune) {
+void ConfigBase::set_xpu_l3_cache_autotune(bool autotune) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -520,7 +492,7 @@ void CxxConfig::set_xpu_l3_cache_autotune(bool autotune) {
 #endif
 }
 
-void CxxConfig::set_xpu_gm_workspace_method(size_t gm_size) {
+void ConfigBase::set_xpu_gm_workspace_method(size_t gm_size) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -532,7 +504,7 @@ void CxxConfig::set_xpu_gm_workspace_method(size_t gm_size) {
 #endif
 }
 
-void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
+void ConfigBase::set_xpu_dev_per_thread(int dev_no) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -543,7 +515,7 @@ void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 #endif
 }
 
-void CxxConfig::enable_xpu_multi_stream() {
+void ConfigBase::enable_xpu_multi_stream() {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -556,9 +528,9 @@ void CxxConfig::enable_xpu_multi_stream() {
 }
 
 // **DEPRECATED**, use set_xpu_multi_encoder_method() in the future
-void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
+void ConfigBase::set_xpu_multi_encoder_precision(const std::string &precision) {
 #ifdef LITE_WITH_XPU
-  CxxConfig::set_xpu_multi_encoder_method(precision, false);
+  ConfigBase::set_xpu_multi_encoder_method(precision, false);
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_multi_encoder_precision' is "
@@ -566,8 +538,8 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
 #endif
 }
 
-void CxxConfig::set_xpu_multi_encoder_method(const std::string &precision,
-                                             bool adaptive_seqlen) {
+void ConfigBase::set_xpu_multi_encoder_method(const std::string &precision,
+                                              bool adaptive_seqlen) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -582,7 +554,7 @@ void CxxConfig::set_xpu_multi_encoder_method(const std::string &precision,
 #endif
 }
 
-void CxxConfig::set_xpu_local_quant(bool local_quant) {
+void ConfigBase::set_xpu_local_quant(bool local_quant) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -594,7 +566,7 @@ void CxxConfig::set_xpu_local_quant(bool local_quant) {
 #endif
 }
 
-void CxxConfig::set_xpu_compute_precision(const std::string &precision) {
+void ConfigBase::set_xpu_compute_precision(const std::string &precision) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -606,8 +578,8 @@ void CxxConfig::set_xpu_compute_precision(const std::string &precision) {
 #endif
 }
 
-void CxxConfig::set_xpu_conv_autotune(bool autotune,
-                                      const std::string &autotune_file) {
+void ConfigBase::set_xpu_conv_autotune(bool autotune,
+                                       const std::string &autotune_file) {
 #ifdef LITE_WITH_XPU
   LOG(WARNING)
       << "This function "
@@ -622,7 +594,7 @@ void CxxConfig::set_xpu_conv_autotune(bool autotune,
 #endif
 }
 
-void CxxConfig::set_xpu_cluster_num(const int num) {
+void ConfigBase::set_xpu_cluster_num(const int num) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -634,7 +606,7 @@ void CxxConfig::set_xpu_cluster_num(const int num) {
 #endif
 }
 
-void CxxConfig::set_xpu_sdnn_num(const int num) {
+void ConfigBase::set_xpu_sdnn_num(const int num) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -646,7 +618,7 @@ void CxxConfig::set_xpu_sdnn_num(const int num) {
 #endif
 }
 
-void CxxConfig::set_xpu_dump_tensor_path(const std::string &dump_tensor_path) {
+void ConfigBase::set_xpu_dump_tensor_path(const std::string &dump_tensor_path) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -660,7 +632,7 @@ void CxxConfig::set_xpu_dump_tensor_path(const std::string &dump_tensor_path) {
 #endif
 }
 
-void CxxConfig::set_xpu_dump_log_path(const std::string &dump_log_path) {
+void ConfigBase::set_xpu_dump_log_path(const std::string &dump_log_path) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -672,6 +644,34 @@ void CxxConfig::set_xpu_dump_log_path(const std::string &dump_log_path) {
                   "'set_xpu_dump_log_path' is ignored, please "
                   "rebuild it with LITE_WITH_XPU=ON.";
 #endif
+}
+
+CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
+                               size_t program_buffer_size,
+                               const char *params_buffer,
+                               size_t params_buffer_size) {
+  program_ = std::string(program_buffer, program_buffer + program_buffer_size);
+  params_ = std::string(params_buffer, params_buffer + params_buffer_size);
+}
+
+CxxModelBuffer::CxxModelBuffer(std::string &&program_buffer,
+                               std::string &&params_buffer) {
+  program_ = std::forward<std::string>(program_buffer);
+  params_ = std::forward<std::string>(params_buffer);
+}
+
+const std::string &CxxModelBuffer::get_program() const {
+  CHECK(!program_.empty());
+  return program_;
+}
+
+const std::string &CxxModelBuffer::get_params() const { return params_; }
+
+bool CxxModelBuffer::is_empty() const { return program_.empty(); }
+
+const CxxModelBuffer &CxxConfig::get_model_buffer() const {
+  CHECK(model_buffer_) << "Cannot get an empty model buffer.";
+  return *model_buffer_;
 }
 
 template <class T>

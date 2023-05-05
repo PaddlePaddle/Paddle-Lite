@@ -325,6 +325,33 @@ class LITE_API ConfigBase {
   nnadapter_model_cache_buffers() const {
     return nnadapter_model_cache_buffers_;
   }
+  // XPU only, set the size of the workspace memory from L3 cache for the
+  // current thread.
+  // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
+  void set_xpu_workspace_l3_size_per_thread(int l3_size = 0x4000000);
+  void set_xpu_l3_cache_method(size_t l3_size, bool locked = false);
+  void set_xpu_l3_cache_autotune(bool autotune = true);
+  void set_xpu_gm_workspace_method(size_t gm_size);
+  // **DEPRECATED**, use environ variable to enable autotune
+  // check http://agroup.baidu.com/share/md/f9233d84df11452488a1fdd4f859647f
+  void set_xpu_conv_autotune(bool autotune = true,
+                             const std::string& autotune_file = "");
+  // XPU only, specify the target device ID for the current thread.
+  // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
+  // thread
+  void set_xpu_dev_per_thread(int dev_no = 0);
+  // XPU set multi_stream
+  void enable_xpu_multi_stream();
+  // **DEPRECATED**, use set_xpu_multi_encoder_method() in the future
+  void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
+  void set_xpu_multi_encoder_method(const std::string& precision = "int16",
+                                    bool adaptive_seqlen = false);
+  void set_xpu_cluster_num(const int num);
+  void set_xpu_sdnn_num(const int num);
+  void set_xpu_local_quant(bool local_quant = false);
+  void set_xpu_compute_precision(const std::string& precision = "int16");
+  void set_xpu_dump_tensor_path(const std::string& dump_tensor_path = "");
+  void set_xpu_dump_log_path(const std::string& dump_log_path = "");
   // set Device ID
   void set_device_id(int device_id) { device_id_ = device_id; }
   int get_device_id() const { return device_id_; }
@@ -434,39 +461,6 @@ class LITE_API CxxConfig : public ConfigBase {
   // but is_model_from_memory is recommended and `model_from_memory` will be
   // abandoned in v3.0.
   bool model_from_memory() const { return static_cast<bool>(model_buffer_); }
-
-  // XPU only, set the size of the workspace memory from L3 cache for the
-  // current thread.
-  // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
-  void set_xpu_workspace_l3_size_per_thread(int l3_size = 0x4000000);
-  void set_xpu_l3_cache_method(size_t l3_size, bool locked = false);
-  void set_xpu_l3_cache_autotune(bool autotune = true);
-
-  void set_xpu_gm_workspace_method(size_t gm_size);
-
-  // **DEPRECATED**, use environ variable to enable autotune
-  // check http://agroup.baidu.com/share/md/f9233d84df11452488a1fdd4f859647f
-  void set_xpu_conv_autotune(bool autotune = true,
-                             const std::string& autotune_file = "");
-
-  // XPU only, specify the target device ID for the current thread.
-  // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
-  // thread
-  void set_xpu_dev_per_thread(int dev_no = 0);
-
-  // XPU set multi_stream
-  void enable_xpu_multi_stream();
-
-  // **DEPRECATED**, use set_xpu_multi_encoder_method() in the future
-  void set_xpu_multi_encoder_precision(const std::string& precision = "int16");
-  void set_xpu_multi_encoder_method(const std::string& precision = "int16",
-                                    bool adaptive_seqlen = false);
-  void set_xpu_cluster_num(const int num);
-  void set_xpu_sdnn_num(const int num);
-  void set_xpu_local_quant(bool local_quant = false);
-  void set_xpu_compute_precision(const std::string& precision = "int16");
-  void set_xpu_dump_tensor_path(const std::string& dump_tensor_path = "");
-  void set_xpu_dump_log_path(const std::string& dump_log_path = "");
 
   // set input tensor for warmup.
   // It is optional. If you set prefered_inputs, model wil run immediately when

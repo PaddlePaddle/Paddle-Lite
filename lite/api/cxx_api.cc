@@ -481,6 +481,42 @@ void Predictor::GenRuntimeProgram() {
   program_generated_ = true;
 }
 
+void Predictor::Run() {
+  if (!program_generated_) {
+    GenRuntimeProgram();
+  }
+  CheckInputValid();
+
+#ifdef LITE_WITH_XPU
+  CHECK(target_configs_.count(TARGET(kXPU)))
+      << "XPU runtime option is not initialized!";
+  XPULoadRunTimeOptionGuard xpu_load_runtime_option_guard(
+      reinterpret_cast<lite::XPURunTimeOption *>(
+          target_configs_.at(TARGET(kXPU)).get()));
+  std::vector<std::vector<int64_t>> query_shape;
+  for (size_t i = 0; i < input_names_.size(); i++) {
+    query_shape.push_back(std::vector<int64_t>(GetInput(i)->dims().data()));
+  }
+  lite::TargetWrapperXPU::MallocL3Cache(query_shape);
+#endif
+
+  program_->Run();
+
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::FreeL3Cache();
+#endif
+}
+
+#ifdef LITE_WITH_METAL
+void ConfigMetalContext(const lite_api::CxxConfig &config) {
+  program_->ConfigMetalContext(config.metal_lib_path(),
+                               config.metal_use_mps(),
+                               config.metal_use_aggressive(),
+                               config.metal_use_memory_reuse(),
+                               config.metal_device());
+}
+#endif
+
 const lite::Tensor *Predictor::GetTensor(const std::string &name) const {
   auto *var = exec_scope_->FindVar(name);
   CHECK(var) << "no variable named with " << name << " in exec_scope";
@@ -639,6 +675,33 @@ void Predictor::ClearTensorArray(
         tensor_array_var->clear();
       }
     }
+  }
+}
+
+void Predictor::SetTargetConfigs(
+    const std::map<TargetType, std::shared_ptr<void>> &target_configs) {
+#ifdef LITE_WITH_XPU
+  std::shared_ptr<void> runtime_option =
+      std::shared_ptr<lite::XPURunTimeOption>(new lite::XPURunTimeOption);
+  target_configs_.emplace(TARGET(kXPU), std::move(runtime_option));
+  if (target_configs.at(TARGET(kXPU)).get()) {
+    reinterpret_cast<lite::XPURunTimeOption *>(
+        target_configs_[TARGET(kXPU)].get())
+        ->Set(reinterpret_cast<const lite::XPURunTimeOption *>(
+            target_configs.at(TARGET(kXPU)).get()));
+  }
+#endif
+}
+
+void Predictor::SetStream(TargetType target, void *stream) {
+  if (target == TARGET(kXPU)) {
+#ifdef LITE_WITH_XPU
+    CHECK(target_configs_.count(TARGET(kXPU)))
+        << "XPU runtime option is not initialized!";
+    reinterpret_cast<lite::XPURunTimeOption *>(
+        target_configs_[TARGET(kXPU)].get())
+        ->xpu_stream.SetXPUStream(stream);
+#endif
   }
 }
 
