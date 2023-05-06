@@ -45,9 +45,12 @@ class BoxCoderOpLite : public OpLite {
     // auto output_dims = param_.Output->dims();
     // ch->input_shape = ch->DimToStr(input_dims);
     // ch->output_shape = ch->DimToStr(output_dims);
-    ch->remark = "proposals" + std::to_string(param_.proposals->dims()[0]) +
-                 "x" + std::to_string(param_.proposals->dims()[1]);
-    ch->macs = param_.proposals->dims()[0] * param_.proposals->dims()[1] * 30.f;
+    if (param_.proposals->dims().size() > 1) {
+      ch->remark = "proposals" + std::to_string(param_.proposals->dims()[0]) +
+                   "x" + std::to_string(param_.proposals->dims()[1]);
+      ch->macs =
+          param_.proposals->dims()[0] * param_.proposals->dims()[1] * 30.f;
+    }
   }
 #endif
 
