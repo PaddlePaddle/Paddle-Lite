@@ -74,11 +74,7 @@ class LITE_API LightPredictor {
     Build(model_dir, model_buffer, param_buffer, model_type, model_from_memory);
   }
 
-  void Run() {
-    CheckInputValid();
-    program_->Run();
-    if (bool_clear_tensor_) ClearTensorArray(program_desc_);
-  }
+  void Run();
 
   /// \brief Release all tmp tensor to compress the size of the memory pool.
   /// The memory pool is considered to be composed of a list of chunks, if
@@ -121,6 +117,10 @@ class LITE_API LightPredictor {
   }
 #endif
 
+  void SetTargetConfigs(
+      const std::map<TargetType, std::shared_ptr<void>>& target_configs);
+  void SetStream(TargetType target, void* stream);
+
  private:
   // check if the input tensor precision type is correct.
   // would be called in Run().
@@ -151,6 +151,7 @@ class LITE_API LightPredictor {
       const std::shared_ptr<const cpp::ProgramDesc>& program_desc);
 
  private:
+  std::map<TargetType, std::shared_ptr<void>> target_configs_;
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
   std::shared_ptr<cpp::ProgramDesc> program_desc_;
@@ -190,6 +191,13 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
   ///
   /// \return a boolean variable.
   bool TryShrinkMemory() override;
+
+  void SetStream(TargetType target, void* stream) override;
+  void Synchronize() {
+#ifdef LITE_WITH_XPU
+    XPU_CALL(xpu_wait());
+#endif
+  }
 
   bool use_low_precision_ = false;
 
