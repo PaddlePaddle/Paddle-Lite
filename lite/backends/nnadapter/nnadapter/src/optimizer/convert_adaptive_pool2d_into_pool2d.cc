@@ -81,14 +81,20 @@ bool AdaptivePool2dIntoPool2dConverter::HandleMatchedResults(
   auto count_include_pad_operand = AddBool8ConstantOperand(model, true);
   auto fuse_code_operand = AddInt32ConstantOperand(
       model, static_cast<int32_t>(NNADAPTER_FUSED_NONE));
-  int32_t stride_height = std::floor(input_height / output_height);
-  int32_t stride_width = std::floor(input_width / output_width);
+  int32_t stride_height = std::floor(input_height / output_height) == 0
+                              ? 1
+                              : std::floor(input_height / output_height);
+  int32_t stride_width = std::floor(input_width / output_width) == 0
+                             ? 1
+                             : std::floor(input_width / output_width);
   std::vector<int32_t> strides = {stride_height, stride_width};
   auto strides_operand = AddInt32ConstantOperand(
       model, strides.data(), {static_cast<int>(strides.size())});
   // Calulate the kernel size
   int32_t kernel_height = input_height - ((output_height - 1) * stride_height);
   int32_t kernel_width = input_width - ((output_width - 1) * stride_width);
+  NNADAPTER_CHECK_GT(kernel_height, 0);
+  NNADAPTER_CHECK_GT(kernel_width, 0);
   std::vector<int32_t> kernel_sizes = {kernel_height, kernel_width};
   auto kernel_size_operand = AddInt32ConstantOperand(
       model, kernel_sizes.data(), {static_cast<int>(kernel_sizes.size())});
