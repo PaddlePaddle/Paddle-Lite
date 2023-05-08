@@ -69,6 +69,12 @@ class TestScatterNdAddOp(AutoScanTest):
         index_np = np.vstack(
             [np.random.randint(
                 0, s, size=100) for s in in_shape]).T.astype(index_type)
+        index_np = draw(
+            st.sampled_from([
+                index_np, np.array([
+                    np.random.randint(0, s) for s in in_shape
+                ]).T.astype(index_type)
+            ]))
         update_shape = judge_update_shape(in_shape, index_np.shape)
         assume(index_np.shape[-1] <= len(in_shape))
 

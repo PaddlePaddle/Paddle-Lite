@@ -51,6 +51,7 @@ class TestUniqueOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=2, max_value=10), min_size=1, max_size=8))
+        in_shape = draw(st.sampled_from([in_shape, []]))
 
         if is_sorted == False:
             return_index = False
@@ -62,6 +63,7 @@ class TestUniqueOp(AutoScanTest):
                         min_value=2, max_value=10),
                     min_size=1,
                     max_size=1))
+            in_shape = draw(st.sampled_from([in_shape, []]))
 
         in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
 

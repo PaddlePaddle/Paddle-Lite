@@ -56,27 +56,63 @@ class TestRangeOp(AutoScanTest):
 
         def generate_start(*args, **kwargs):
             if input_type == "type_float":
-                return np.array([input_start]).astype(np.float32)
+                return draw(
+                    st.sampled_from([
+                        np.array([input_start]).astype(np.float32), np.array(
+                            input_start).astype(np.float32)
+                    ]))
             elif input_type == "type_int":
-                return np.array([input_start]).astype(np.int32)
+                return draw(
+                    st.sampled_from([
+                        np.array([input_start]).astype(np.int32), np.array(
+                            input_start).astype(np.int32)
+                    ]))
             elif input_type == "type_int64":
-                return np.array([input_start]).astype(np.int64)
+                return draw(
+                    st.sampled_from([
+                        np.array([input_start]).astype(np.int64), np.array(
+                            input_start).astype(np.int64)
+                    ]))
 
         def generate_end(*args, **kwargs):
             if input_type == "type_float":
-                return np.array([input_end]).astype(np.float32)
+                return draw(
+                    st.sampled_from([
+                        np.array([input_end]).astype(np.float32), np.array(
+                            input_end).astype(np.float32)
+                    ]))
             elif input_type == "type_int":
-                return np.array([input_end]).astype(np.int32)
+                return draw(
+                    st.sampled_from([
+                        np.array([input_end]).astype(np.int32), np.array(
+                            input_end).astype(np.int32)
+                    ]))
             elif input_type == "type_int64":
-                return np.array([input_end]).astype(np.int64)
+                return draw(
+                    st.sampled_from([
+                        np.array([input_end]).astype(np.int64), np.array(
+                            input_end).astype(np.int64)
+                    ]))
 
         def generate_step(*args, **kwargs):
             if input_type == "type_float":
-                return np.array([input_step]).astype(np.float32)
+                return draw(
+                    st.sampled_from([
+                        np.array([input_step]).astype(np.float32), np.array(
+                            input_step).astype(np.float32)
+                    ]))
             elif input_type == "type_int":
-                return np.array([input_step]).astype(np.int32)
+                return draw(
+                    st.sampled_from([
+                        np.array([input_step]).astype(np.int32), np.array(
+                            input_step).astype(np.int32)
+                    ]))
             elif input_type == "type_int64":
-                return np.array([input_step]).astype(np.int64)
+                return draw(
+                    st.sampled_from([
+                        np.array([input_step]).astype(np.int64), np.array(
+                            input_step).astype(np.int64)
+                    ]))
 
         ops_config = OpConfig(
             type="range",
@@ -105,7 +141,7 @@ class TestRangeOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

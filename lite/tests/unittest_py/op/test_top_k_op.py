@@ -48,6 +48,7 @@ class TestTopKOp(AutoScanTest):
         H = draw(st.integers(min_value=1, max_value=128))
         W = draw(st.integers(min_value=1, max_value=128))
         in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
+        in_shape = draw(st.sampled_from([in_shape, []]))
 
         # top_k only supports fp32
         in_dtype = draw(st.sampled_from([np.float32]))
@@ -55,9 +56,11 @@ class TestTopKOp(AutoScanTest):
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
-        k_data = draw(st.integers(min_value=1, max_value=4))
+        k_data = draw(st.integers(
+            min_value=1, max_value=4)) if len(in_shape) else 1
 
-        assume(k_data <= in_shape[-1])
+        if len(in_shape):
+            assume(k_data <= in_shape[-1])
 
         top_k_op = OpConfig(
             type="top_k",
@@ -82,7 +85,7 @@ class TestTopKOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

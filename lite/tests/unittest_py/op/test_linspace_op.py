@@ -49,19 +49,31 @@ class TestLinspaceOp(AutoScanTest):
             [5]))  #2:int 5:float, lite only support float
 
         def generate_start1(*args, **kwargs):
-            return np.array([float(start_id)]).astype(np.float32)
+            return draw(
+                st.sampled_from([
+                    np.array([float(start_id)]).astype(np.float32), np.array(
+                        float(start_id)).astype(np.float32)
+                ]))
 
         def generate_start2(*args, **kwargs):
             return np.array([int(start_id)]).astype(np.int32)
 
         def generate_stop1(*args, **kwargs):
-            return np.array([float(stop_id)]).astype(np.float32)
+            return draw(
+                st.sampled_from([
+                    np.array([float(stop_id)]).astype(np.float32), np.array(
+                        float(start_id)).astype(np.float32)
+                ]))
 
         def generate_stop2(*args, **kwargs):
             return np.array([int(stop_id)]).astype(np.int32)
 
         def generate_num(*args, **kwargs):
-            return np.array([int(num_data)]).astype(np.int32)
+            return draw(
+                st.sampled_from([
+                    np.array([int(num_data)]).astype(np.int32), np.array(
+                        float(start_id)).astype(np.float32)
+                ]))
 
         build_ops = OpConfig(
             type="linspace",
@@ -106,7 +118,7 @@ class TestLinspaceOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

@@ -51,6 +51,7 @@ class TestSumOp(AutoScanTest):
         H = draw(st.integers(min_value=1, max_value=128))
         W = draw(st.integers(min_value=1, max_value=128))
         in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
+        in_shape = draw(st.sampled_from([in_shape, []]))
 
         in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
 
@@ -78,7 +79,7 @@ class TestSumOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

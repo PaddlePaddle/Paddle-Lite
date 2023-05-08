@@ -33,7 +33,7 @@ class TestExpandOp(AutoScanTest):
         host_places = [
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
-        self.enable_testing_on_place(thread=[1, 4], places=host_places)
+        self.enable_testing_on_place(thread=[1], places=host_places)
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -64,11 +64,14 @@ class TestExpandOp(AutoScanTest):
                     max_size=4))
         else:
             in_shape = draw(
-                st.lists(
-                    st.integers(
-                        min_value=1, max_value=8),
-                    min_size=2,
-                    max_size=4))
+                st.sampled_from([
+                    draw(
+                        st.lists(
+                            st.integers(
+                                min_value=1, max_value=8),
+                            min_size=2,
+                            max_size=4)), []
+                ]))
         expand_shape = draw(
             st.lists(
                 st.integers(
@@ -88,6 +91,8 @@ class TestExpandOp(AutoScanTest):
                 return np.random.randint(kwargs["low"], kwargs["high"],
                                          kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
+                if len(in_shape) == 0:
+                    return np.random.random(kwargs["shape"]).astype(np.float32)
                 return (kwargs["high"] - kwargs["low"]) * np.random.random(
                     kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
@@ -157,6 +162,17 @@ class TestExpandOp(AutoScanTest):
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case on OpenCL. We need to fix it as soon as possible."
         )
+
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_shape = list(program_config.inputs["input_data"].shape)
+            if (target_type not in [TargetType.X86, TargetType.ARM]
+                ) and len(in_shape) == 0:
+                return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(X86/ARM/Host) now.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

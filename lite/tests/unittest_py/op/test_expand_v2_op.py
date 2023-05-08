@@ -45,7 +45,7 @@ class TestExpandV2Op(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.sampled_from([[1, 1, 1], [2, 1, 4]]))
+        in_shape = draw(st.sampled_from([[1, 1, 1], [2, 1, 4], []]))
         Shape = draw(st.sampled_from([[2, 4, 4], [3, 2, 3, 4]]))
         expand_shape = draw(st.sampled_from([[2, 5, 4], [2, 3, 4]]))
         with_Shape = draw(st.sampled_from([True, False]))
@@ -71,6 +71,8 @@ class TestExpandV2Op(AutoScanTest):
                 return np.random.randint(kwargs["low"], kwargs["high"],
                                          kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
+                if in_shape == []:
+                    return np.random.random(kwargs["shape"]).astype(np.float32)
                 return (kwargs["high"] - kwargs["low"]) * np.random.random(
                     kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
@@ -164,7 +166,7 @@ class TestExpandV2Op(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

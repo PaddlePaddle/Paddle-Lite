@@ -43,15 +43,18 @@ class TestCumsumOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        input_data_x_shape = draw(
+        input_shape = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=8), min_size=1, max_size=8))
-        x_dims_size = len(input_data_x_shape)
+        input_shape = draw(st.sampled_from([input_shape, []]))
+        input_dim = len(input_shape)
         flatten = draw(st.booleans())
         axis = draw(
             st.integers(
-                min_value=-x_dims_size, max_value=x_dims_size - 1))
+                min_value=-input_dim, max_value=input_dim - 1)
+        ) if input_dim else draw(st.integers(
+            min_value=-1, max_value=0))
         if "intel_openvino" in self.get_nnadapter_device_name():
             flatten = False
         if flatten:
@@ -61,7 +64,7 @@ class TestCumsumOp(AutoScanTest):
 
         cumsum_op = OpConfig(
             type="cumsum",
-            inputs={"X": ["input_data_x"]},
+            inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"]},
             attrs={
                 "axis": axis,
@@ -72,7 +75,7 @@ class TestCumsumOp(AutoScanTest):
         program_config = ProgramConfig(
             ops=[cumsum_op],
             weights={},
-            inputs={"input_data_x": TensorConfig(shape=input_data_x_shape), },
+            inputs={"input_data": TensorConfig(shape=input_shape), },
             outputs=["output_data"])
         return program_config
 
@@ -83,7 +86,7 @@ class TestCumsumOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

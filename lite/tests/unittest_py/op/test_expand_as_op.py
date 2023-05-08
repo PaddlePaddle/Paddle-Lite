@@ -41,6 +41,7 @@ class TestExpandAsOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=8), min_size=3, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape, []]))
         target1 = []
         target2 = []
         target3 = []
@@ -58,6 +59,8 @@ class TestExpandAsOp(AutoScanTest):
                 return np.random.randint(kwargs["low"], kwargs["high"],
                                          kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
+                if len(in_shape) == 0:
+                    return np.random.random(kwargs["shape"]).astype(np.float32)
                 return (kwargs["high"] - kwargs["low"]) * np.random.random(
                     kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
@@ -98,7 +101,7 @@ class TestExpandAsOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":
