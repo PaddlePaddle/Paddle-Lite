@@ -204,6 +204,15 @@ class TestReshape2Op(AutoScanTest):
             teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support change batch on nvidia_tensorrt.")
 
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.Metal:
+                return True
+
+        self.add_ignore_check_case(_teller2,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Metal report Can't find a io_copy kernel.")
+
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=1000)
 
