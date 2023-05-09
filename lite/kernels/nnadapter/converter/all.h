@@ -329,6 +329,10 @@ REGISTER_CONVERTER(
     "huawei_ascend_npu,huawei_kirin_npu,cambricon_mlu,qualcomm_qnn,"
     "kunlunxin_xtcl,verisilicon_timvx");
 REGISTER_CONVERTER(
+    lrn,
+    ConvertLrn,
+    "huawei_ascend_npu");
+REGISTER_CONVERTER(
     reduce_mean,
     ConvertReduce,
     "huawei_ascend_npu,cambricon_mlu,huawei_kirin_npu,intel_openvino,"
