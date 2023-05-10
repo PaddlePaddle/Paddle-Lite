@@ -166,6 +166,7 @@ REGISTER_OPERATION(LP_NORMALIZATION,
                    ValidateLpNormalization,
                    PrepareLpNormalization,
                    ExecuteLpNormalization)
+REGISTER_OPERATION(LRN, ValidateLrn, PrepareLrn, ExecuteLrn)
 REGISTER_OPERATION(MAT_MUL, ValidateMatMul, PrepareMatMul, ExecuteMatMul)
 REGISTER_OPERATION(MAX,
                    ValidateElementwise,

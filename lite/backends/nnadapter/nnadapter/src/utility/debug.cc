@@ -428,6 +428,10 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         input_args = {"input", "axis", "p", "epsilon"};
         output_args = {"output"};
         break;
+      case NNADAPTER_LRN:
+        input_args = {"input", "size", "bias", "alpha", "beta"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_RANGE:
         input_args = {"start", "ends", "step"};
         output_args = {"output"};
