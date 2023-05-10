@@ -130,9 +130,20 @@ function compile_publish_inference_lib {
   fi
 
   # Step3. Install whl and its depends
-  check_paddle_version
+  # check_paddle_version
+  # We use develop version for 0D-Tensor
+  # first, you need install MacM1 Paddle Dev version use: 
+  # python -m pip install paddlepaddle==0.0.0 -f https://www.paddlepaddle.org.cn/whl/mac/cpu/develop.html
+  # second, you need install PaddleSlim Dev use:
+  # git clone https://github.com/PaddlePaddle/PaddleSlim.git & cd PaddleSlim;python3.9 setup.py install
+  # if you failed in openv-python, then manually install opencv-python==4.6.0.66
+  # PaddleLite
   python$PYTHON_VERSION -m pip install --force-reinstall $whl_path
-  python$PYTHON_VERSION -m pip install -r ./lite/tests/unittest_py/requirements.txt
+  # requirements
+  python$PYTHON_VERSION -m pip install numpy
+  python$PYTHON_VERSION -m pip install hypothesis==6.27.0
+  python$PYTHON_VERSION -m pip install rpyc
+  python$PYTHON_VERSION -m pip install wheel
 }
 
 function run_test() {

@@ -14,20 +14,22 @@
 
 from typing import Optional, List, Callable, Dict, Any, Set
 import numpy as np
-import paddle
 import paddleslim
-import paddle.fluid as fluid
-import paddle.fluid.core as core
-from paddle import compat as cpt
-from paddle.fluid.initializer import NumpyArrayInitializer
-from paddle.fluid.framework import convert_np_dtype_to_dtype_
-
-from paddle.fluid.contrib.slim.quantization import QuantizationTransformPass
-from paddle.fluid.contrib.slim.quantization import QuantizationFreezePass
-from paddle.fluid.framework import IrGraph, IrNode, Operator
+from typing import Any, Callable, Dict, List, Optional
+import numpy as np
+import paddle
+from paddle import fluid
+from paddle.fluid import core, framework
 from paddle.fluid.executor import global_scope
-
-import os
+from paddle.fluid.framework import (
+    IrGraph,
+    IrNode,
+    Operator,
+    OpProtoHolder,
+    convert_np_dtype_to_dtype_, )
+from paddle.static.quantization import (
+    QuantizationFreezePass,
+    QuantizationTransformPass, )
 
 
 class TensorConfig:
@@ -131,13 +133,13 @@ def create_fake_model(program_config):
     util_program = fluid.Program()
     main_block_desc = main_program_desc.block(0)
 
-    var_desc = main_block_desc.var(cpt.to_bytes("feed"))
+    var_desc = main_block_desc.var(b"feed")
     var_desc.set_type(core.VarDesc.VarType.FEED_MINIBATCH)
     var_desc.set_persistable(True)
 
     index = 0
     for name, tensor_config in program_config.inputs.items():
-        var_desc = main_block_desc.var(cpt.to_bytes(name))
+        var_desc = main_block_desc.var(name.encode())
         var_desc.set_type(core.VarDesc.VarType.LOD_TENSOR)
         var_desc.set_dtype(convert_np_dtype_to_dtype_(tensor_config.dtype))
         var_desc.set_shape(tensor_config.shape)
@@ -153,7 +155,7 @@ def create_fake_model(program_config):
 
     save_var_map = {}
     for name, tensor_config in program_config.weights.items():
-        var_desc = main_block_desc.var(cpt.to_bytes(name))
+        var_desc = main_block_desc.var(name.encode())
         var_desc.set_type(core.VarDesc.VarType.LOD_TENSOR)
         var_desc.set_dtype(convert_np_dtype_to_dtype_(tensor_config.dtype))
         var_desc.set_shape(tensor_config.shape)
@@ -164,7 +166,7 @@ def create_fake_model(program_config):
             shape=tensor_config.shape,
             type=core.VarDesc.VarType.LOD_TENSOR,
             name=name,
-            initializer=NumpyArrayInitializer(tensor_config.data))
+            initializer=paddle.nn.initializer.Assign(tensor_config.data))
     in_vars = []
     for name in sorted(save_var_map.keys()):
         in_vars.append(save_var_map[name])
@@ -188,7 +190,7 @@ def create_fake_model(program_config):
         for name, values in op_config.outputs.items():
             op_desc.set_output(name, values)
             for v in values:
-                var_desc = main_block_desc.var(cpt.to_bytes(v))
+                var_desc = main_block_desc.var(v.encode())
                 var_desc.set_type(core.VarDesc.VarType.LOD_TENSOR)
                 var_desc.set_dtype(convert_np_dtype_to_dtype_(np.float32))
                 if op_config.outputs_dtype is not None and v in op_config.outputs_dtype.keys(
@@ -201,7 +203,7 @@ def create_fake_model(program_config):
         op_desc.check_attrs()
 
     for index, name in enumerate(program_config.outputs):
-        var_desc = main_block_desc.var(cpt.to_bytes("fetch"))
+        var_desc = main_block_desc.var(b"fetch")
         var_desc.set_type(core.VarDesc.VarType.FETCH_LIST)
         var_desc.set_need_check_feed(True)
         op_desc = main_block_desc.append_op()
