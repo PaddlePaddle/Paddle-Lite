@@ -24,12 +24,7 @@ import time
 import logging
 import shutil
 import paddle
-import paddle.fluid as fluid
 import global_var_model as gl
-from paddle.fluid.initializer import NumpyArrayInitializer
-from paddle.fluid.core import PassVersionChecker
-import paddle.fluid.core as core
-from paddle import compat as cpt
 import paddle.inference as paddle_infer
 from typing import Optional, List, Callable, Dict, Any, Set
 from program_config import TensorConfig, OpConfig, ProgramConfig, create_fake_model, create_quant_model
