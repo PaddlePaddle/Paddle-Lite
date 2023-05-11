@@ -1216,10 +1216,10 @@ typedef enum {
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32 tensor.
    * * 1: size, a NNADAPTER_INT32 tensor of shape [1], the number of channels to
-   * sum over.
-   * * 2: bias, a NNADAPTER_INT32 tensor of shape [1].
-   * * 3: alpha, a NNADAPTER_FLOAT32 tensor of shape [1].
-   * * 4: beta, a NNADAPTER_FLOAT32 tensor of shape [1].
+   * sum over, defaults to 1.
+   * * 2: bias, a NNADAPTER_FLOAT32 tensor of shape [1], defaults to 1.f.
+   * * 3: alpha, a NNADAPTER_FLOAT32 tensor of shape [1], defaults to 1e-4.
+   * * 4: beta, a NNADAPTER_FLOAT32 tensor of shape [1], defaults to 0.75f.
    *
    * Outputs:
    * * 0: output, a tensor of the same shape and type as `input`.
