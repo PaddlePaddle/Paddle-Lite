@@ -58,9 +58,12 @@ if '${WITH_MKL}' == 'ON' and '${WITH_STATIC_MKL}' == 'OFF':
         shutil.copy('${MKLML_SHARED_LIB_DEPS}', LIB_PATH)
         PACKAGE_DATA['paddlelite.libs'] += ['msvcr120.dll']
 
-if '${WITH_MKL}' == 'ON' and '${WITH_STATIC_MKL}' == 'ON' and os.name != 'nt':
+if '${WITH_MKL}' == 'ON' and '${WITH_STATIC_MKL}' == 'ON':
     shutil.copy('${MKLML_SHARED_IOMP_LIB}', LIB_PATH)
-    PACKAGE_DATA['paddlelite.libs'] += ['libiomp5.so']
+    if os.name != 'nt':
+        PACKAGE_DATA['paddlelite.libs'] += ['libiomp5.so']
+    else:
+        PACKAGE_DATA['paddlelite.libs'] += ['libiomp5md.dll']
 
 if '${LITE_WITH_XPU}' == 'ON':
     shutil.copy('${XPUAPI_LIB}', LIB_PATH)
