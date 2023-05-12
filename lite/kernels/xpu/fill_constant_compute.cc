@@ -62,11 +62,16 @@ void FillConstantCompute::Run() {
       r = FillConstData<float>();
       break;
     }
+    case 6: {
+      r = FillConstData<float>();
+      break;
+    }
     default: {
-      LOG(FATAL) << "Attribute dtype in fill_constant op "
-                    "must be 1[int16] or 3[int64] or 2[int32] or 5[fp32] "
-                    "for xpu: "
-                 << param.dtype;
+      LOG(FATAL)
+          << "Attribute dtype in fill_constant op "
+             "must be 1[int16] or 3[int64] or 2[int32] or 5[fp32] 6[fp32]"
+             "for xpu: "
+          << param.dtype;
       break;
     }
   }

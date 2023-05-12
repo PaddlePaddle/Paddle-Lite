@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/xpu/cast_compute.h"
+#include "lite/kernels/xpu/flip_compute.h"
+#include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -22,48 +23,34 @@ namespace kernels {
 namespace xpu {
 
 template <typename InType>
-void CastCompute<InType>::Run() {
+void FlipCompute<InType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
-
   auto* x = param.X;
   auto* out = param.Out;
-  int out_dtype = param.out_dtype;
-  auto* in_data = x->template data<InType>();
+  auto& axis = param.axis;
+  int ndims = axis.size();
+  for (int i = 0; i < ndims; i++) {
+    if (axis[i] < 0) {
+      axis[i] = axis[i] + ndims;
+    }
+  }
+  const auto x_dims = x->dims();
+  std::vector<int> x_shape_host(x_dims.size(), 0);
+  for (int i = 0; i < x_dims.size(); ++i) {
+    x_shape_host[i] = x_dims[i];
+  }
+
   int numel = x->numel();
   if (numel <= 0) {
     return;
   }
 
-  int r = -1;
-  // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
-  // SIZE_T = 19;UINT8 = 20;INT8 = 21;
-  if (out_dtype == 5) {
-    auto* out_data = out->template mutable_data<float>(TARGET(kXPU));
-    r = xdnn::cast_v2<InType, float>(
-        ctx.GetRawContext(), in_data, out_data, numel);
-  } else if (out_dtype == 2) {
-    auto* out_data = out->template mutable_data<int>(TARGET(kXPU));
-    r = xdnn::cast_v2<InType, int>(
-        ctx.GetRawContext(), in_data, out_data, numel);
-  } else if (out_dtype == 3) {
-    auto* out_data = out->template mutable_data<int64_t>(TARGET(kXPU));
-    r = xdnn::cast_v2<InType, int64_t>(
-        ctx.GetRawContext(), in_data, out_data, numel);
-  } else if (out_dtype == 6) {
-    auto* out_data = out->template mutable_data<float>(TARGET(kXPU));
-    r = xdnn::cast_v2<InType, float>(
-        ctx.GetRawContext(), in_data, out_data, numel);
-  } else if (out_dtype == 0) {
-    auto* out_data = out->template mutable_data<bool>(TARGET(kXPU));
-    r = xdnn::cast_v2<InType, bool>(
-        ctx.GetRawContext(), in_data, out_data, numel);
-  } else {
-    LOG(FATAL) << "cast from in_type("
-               << lite_api::PrecisionToStr(
-                      lite_api::PrecisionTypeTrait<InType>::Type())
-               << ") to out_type(" << out_dtype << ") is not supported.";
-  }
+  int r = xdnn::flip<InType>(ctx.GetRawContext(),
+                             x->template data<InType>(),
+                             out->template mutable_data<InType>(TARGET(kXPU)),
+                             x_shape_host,
+                             axis);
   CHECK_EQ(r, 0);
 }
 
@@ -72,62 +59,72 @@ void CastCompute<InType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(cast,
+REGISTER_LITE_KERNEL(flip,
                      kXPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::CastCompute<float>,
-                     cast_fp32)
+                     paddle::lite::kernels::xpu::FlipCompute<float>,
+                     xflip_fp32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(cast,
+REGISTER_LITE_KERNEL(flip,
                      kXPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::CastCompute<int>,
-                     cast_i32)
+                     paddle::lite::kernels::xpu::FlipCompute<float16>,
+                     xflip_fp16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(flip,
+                     kXPU,
+                     kAny,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::FlipCompute<int>,
+                     xflip_i32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(cast,
+REGISTER_LITE_KERNEL(flip,
                      kXPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::CastCompute<int64_t>,
-                     cast_i64)
+                     paddle::lite::kernels::xpu::FlipCompute<int64_t>,
+                     xflip_i64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(cast,
+REGISTER_LITE_KERNEL(flip,
                      kXPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::CastCompute<uint8_t>,
-                     cast_u8)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kUInt8))})
+                     paddle::lite::kernels::xpu::FlipCompute<int16_t>,
+                     xflip_i16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(cast,
+REGISTER_LITE_KERNEL(flip,
                      kXPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::CastCompute<int8_t>,
-                     cast_i8)
+                     paddle::lite::kernels::xpu::FlipCompute<int8_t>,
+                     xflip_i8)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(cast,
+REGISTER_LITE_KERNEL(flip,
                      kXPU,
                      kAny,
                      kNCHW,
-                     paddle::lite::kernels::xpu::CastCompute<int8_t>,
-                     cast_bool)
+                     paddle::lite::kernels::xpu::FlipCompute<int8_t>,
+                     xflip_bool)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kAny))})
     .Finalize();
