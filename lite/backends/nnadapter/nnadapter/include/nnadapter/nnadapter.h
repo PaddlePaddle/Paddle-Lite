@@ -1202,6 +1202,33 @@ typedef enum {
   NNADAPTER_LP_NORMALIZATION,
 
   /**
+   * Local Response Normalization, normalizes over local input regions.
+   * The local region is defined across the channels, for example:
+   * For an element `X[n, c, d1, ..., dk]` in a tensor
+   * `X[n, i, d1, ..., dk]`
+   * where `max(0, c - floor((size - 1) / 2)) <= i <= min(C - 1, c + ceil((size
+   * - 1) / 2))`. `square_sum[n, c, d1, ..., dk] = sum(X[n, i, d1, ..., dk] ^
+   * 2)`, where `max(0, c - floor((size - 1) / 2)) <= i <= min(C - 1, c +
+   * ceil((size - 1) / 2))`.
+   * Y[n, c, d1, ..., dk] = X[n, c, d1, ..., dk] /
+   * (bias + alpha / size * square_sum[n, c, d1, ..., dk] ) ^ beta
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32 tensor.
+   * * 1: size, a NNADAPTER_INT32 tensor of shape [1], the number of channels to
+   * sum over, defaults to 1.
+   * * 2: bias, a NNADAPTER_FLOAT32 tensor of shape [1], defaults to 1.f.
+   * * 3: alpha, a NNADAPTER_FLOAT32 tensor of shape [1], defaults to 1e-4.
+   * * 4: beta, a NNADAPTER_FLOAT32 tensor of shape [1], defaults to 0.75f.
+   *
+   * Outputs:
+   * * 0: output, a tensor of the same shape and type as `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_LRN,
+
+  /**
    * Matrix product that behaves like numpy.matmul:
    * https://docs.scipy.org/doc/numpy-1.13.0/reference/generated/numpy.matmul.html.
    *

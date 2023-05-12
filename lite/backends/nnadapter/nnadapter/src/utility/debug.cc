@@ -428,6 +428,10 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         input_args = {"input", "axis", "p", "epsilon"};
         output_args = {"output"};
         break;
+      case NNADAPTER_LRN:
+        input_args = {"input", "size", "bias", "alpha", "beta"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_RANGE:
         input_args = {"start", "ends", "step"};
         output_args = {"output"};
@@ -734,6 +738,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(LOG);
     NNADAPTER_TYPE_TO_STRING(LOG_SOFTMAX);
     NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION);
+    NNADAPTER_TYPE_TO_STRING(LRN);
     NNADAPTER_TYPE_TO_STRING(MAT_MUL);
     NNADAPTER_TYPE_TO_STRING(MAX);
     NNADAPTER_TYPE_TO_STRING(MAX_POOL_2D);
