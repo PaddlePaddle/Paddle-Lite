@@ -363,7 +363,7 @@ using DivFloat16 = xpu::ElementwiseCompute<float16,
                                            xpu::DivFunctor<float16>,
                                            PRECISION(kFP16)>;
 using DivInt32 =
-    xpu::ElementwiseCompute<int, xpu::MaxFunctor<int>, PRECISION(kFloat)>;
+    xpu::ElementwiseCompute<int, xpu::DivFunctor<int>, PRECISION(kFloat)>;
 
 using MaxFloat32 =
     xpu::ElementwiseCompute<float, xpu::MaxFunctor<float>, PRECISION(kFloat)>;
