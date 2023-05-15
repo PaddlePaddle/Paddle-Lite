@@ -186,6 +186,14 @@ class TestReshapeOp(AutoScanTest):
                                    IgnoreReasons.PADDLELITE_NOT_SUPPORT,
                                    "Only test 0D-tensor on CPU(ARM/Host) now.")
 
+        def teller3(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "intel_openvino":
+                return True
+
+        self.add_ignore_check_case(teller3,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "intel_openvino report error.")
+
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=1000)
 
