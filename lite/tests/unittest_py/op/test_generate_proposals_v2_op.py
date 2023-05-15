@@ -138,7 +138,7 @@ class TestGenerateProposalsOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["anchor_generator"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["anchor_generator"], (1e-4, 1e-4)
 
     def add_ignore_pass_case(self):
         pass

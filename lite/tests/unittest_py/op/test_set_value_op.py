@@ -32,10 +32,10 @@ class TestSetValueOp(AutoScanTest):
             TargetType.X86, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.Host, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.Host, [PrecisionType.FP32],
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,

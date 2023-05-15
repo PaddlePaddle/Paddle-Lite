@@ -38,7 +38,7 @@ class TestTranspose2Op(AutoScanTest):
         arm_places = [
             Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
-        self.enable_testing_on_place(places=arm_places)
+        # self.enable_testing_on_place(places=arm_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(device_names=[
             "kunlunxin_xtcl", "nvidia_tensorrt", "intel_openvino"

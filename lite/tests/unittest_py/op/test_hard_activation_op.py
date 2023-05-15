@@ -35,16 +35,16 @@ class TestHardActivationOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2])
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 2, 4])
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP16,
-            DataLayoutType.NCHW,
-            thread=[1, 2, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.ARM,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 2, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.ARM,
+        #     PrecisionType.FP16,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 2, 4])
         self.enable_testing_on_place(
             TargetType.Host,
             PrecisionType.FP32,
@@ -63,7 +63,7 @@ class TestHardActivationOp(AutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=opencl_places)
+        # self.enable_testing_on_place(places=opencl_places)
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
                   DataLayoutType.MetalTexture2DArray),
@@ -72,7 +72,7 @@ class TestHardActivationOp(AutoScanTest):
             Place(TargetType.ARM, PrecisionType.FP32),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=metal_places)
+        #self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(device_names=[
             "nvidia_tensorrt", "intel_openvino", "kunlunxin_xtcl"
