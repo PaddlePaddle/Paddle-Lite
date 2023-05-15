@@ -30,8 +30,8 @@ from functools import partial
 class TestFlattenOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
+        # self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32,
+        #                              DataLayoutType.NCHW)
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(

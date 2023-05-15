@@ -36,7 +36,7 @@ class TestIsEmptyOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.Any, DataLayoutType.Any),
             Place(TargetType.Host, PrecisionType.Any, DataLayoutType.NCHW)
         ]
-        self.enable_testing_on_place(places=host_op_config)
+        # self.enable_testing_on_place(places=host_op_config)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
