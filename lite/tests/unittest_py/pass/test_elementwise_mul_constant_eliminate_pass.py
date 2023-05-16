@@ -72,6 +72,7 @@ class TestElementwiseMulConstantEliminateFuse(FusePassAutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=2, max_size=5))
+        fill_constant_shape = draw(st.sampled_from([fill_constant_shape, []]))
 
         axis = draw(
             st.integers(

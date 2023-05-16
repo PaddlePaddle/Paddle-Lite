@@ -56,7 +56,7 @@ class TestScaleactsFusePass(FusePassAutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=64), min_size=2, max_size=4))
+                    min_value=1, max_value=64), min_size=0, max_size=4))
         act_type = draw(st.sampled_from(['relu6']))
         threshold = draw(st.floats(min_value=0, max_value=1))
         alpha = draw(st.floats(min_value=0, max_value=1))

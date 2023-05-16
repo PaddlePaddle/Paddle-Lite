@@ -23,18 +23,15 @@ import unittest
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
+from test_elementwise_util import trim_trailing_singular_dims, check_input_shape_available
 import hypothesis.strategies as st
 
 
-class TestIdentifyDropoutEleminateFuse(FusePassAutoScanTest):
+class TestElementwiseScaleFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
             TargetType.ARM, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.X86, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
 
@@ -44,59 +41,46 @@ class TestIdentifyDropoutEleminateFuse(FusePassAutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
+        in_shape_x = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=0, max_size=4))
-        dropout_prob_data = draw(st.floats(min_value=0.0, max_value=1.0))
-        seed_data = draw(st.integers(min_value=0.0, max_value=1.0))
-        fix_seed = draw(st.booleans())
-
-        threshold = draw(st.floats(min_value=0, max_value=1))
-        scale = draw(st.floats(min_value=0.5, max_value=5))
-        offset = draw(st.floats(min_value=0, max_value=1))
-
-        hard_swish_op = OpConfig(
-            type="hard_swish",
+                    min_value=1, max_value=20), min_size=2, max_size=5))
+        in_shape_x = draw(st.sampled_from([in_shape_x, []]))
+        axis = -1
+        sigmoid_op = OpConfig(
+            type='sigmoid',
             inputs={"X": ["input_data"]},
-            outputs={"Out": ["hard_swish_output_data"]},
-            attrs={"threshold": threshold,
-                   "scale": scale,
-                   "offset": offset})
+            outputs={"Out": ["output_data"]},
+            attrs={})
+        elementwise_op = OpConfig(
+            type='elementwise_mul',
+            inputs={"X": ["output_data"],
+                    "Y": ["input_data"]},
+            outputs={"Out": ["elementwise_output_data"]},
+            attrs={"axis": axis})
 
-        dropout_op = OpConfig(
-            type="dropout",
-            inputs={"X": ["hard_swish_output_data"]},
-            outputs={"Out": ["output_data"],
-                     "Mask": ["output_data_mask"]},
-            attrs={
-                "dropout_implementation": "upscale_in_train",
-                "is_test": True,
-                "dropout_prob": dropout_prob_data,
-                "fix_seed": fix_seed,
-                "seed": seed_data
-            })
-
-        ops = [hard_swish_op, dropout_op]
+        ops = [sigmoid_op, elementwise_op]
         program_config = ProgramConfig(
             ops=ops,
             weights={},
-            inputs={"input_data": TensorConfig(shape=in_shape)},
-            outputs=["output_data"])
+            inputs={"input_data": TensorConfig(shape=in_shape_x)},
+            outputs=["elementwise_output_data"])
         return program_config
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        return self.get_predictor_configs(), ['hard_swish'], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ['swish'], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
+        target_str = self.get_target()
+        max_examples = 100
         self.run_and_statis(
             quant=False,
-            max_examples=25,
-            passes=["lite_identify_dropout_eliminate_pass"])
+            max_examples=max_examples,
+            passes=["lite_sigmoid_elementmul_fuse_pass"])
 
 
 if __name__ == "__main__":

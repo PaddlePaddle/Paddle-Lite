@@ -64,6 +64,9 @@ class TestElementwiseScaleFuse(FusePassAutoScanTest):
                 st.integers(
                     min_value=1, max_value=20), min_size=2, max_size=5))
 
+        in_shape_x = draw(st.sampled_from([in_shape_x, []]))
+        in_shape_y = draw(st.sampled_from([in_shape_y, []]))
+
         axis = draw(
             st.integers(
                 min_value=-1, max_value=max(len(in_shape_x), len(in_shape_y))))
