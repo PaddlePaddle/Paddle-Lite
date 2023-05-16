@@ -47,6 +47,7 @@ class TestStackOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=64), min_size=1, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape, []]))
         input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
         input_axis = draw(st.sampled_from([-1, 0, 1, 2, 3]))
         assume(input_axis >= -(len(in_shape) + 1))
