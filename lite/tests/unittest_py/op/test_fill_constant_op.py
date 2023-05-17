@@ -174,7 +174,10 @@ class TestFillConstantOp(AutoScanTest):
                 in_x_shape = list(program_config.inputs["value_data"].shape)
             if "shape_data" in program_config.inputs:
                 in_y_shape = list(program_config.inputs["shape_data"].shape)
-            if target_type != TargetType.ARM and target_type != TargetType.Host:
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
                 if len(in_x_shape) == 0 and len(in_y_shape) == 0:
                     return True
 

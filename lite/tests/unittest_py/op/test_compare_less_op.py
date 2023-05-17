@@ -117,7 +117,10 @@ class TestCompareLessOp(AutoScanTest):
             target_type = predictor_config.target()
             in_x_shape = list(program_config.inputs["data_x"].shape)
             in_y_shape = list(program_config.inputs["data_y"].shape)
-            if target_type != TargetType.ARM and target_type != TargetType.Host:
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
                 if len(in_x_shape) == 0 or len(in_y_shape) == 0:
                     return True
 

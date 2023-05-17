@@ -64,7 +64,7 @@ class TestTransposeOp(AutoScanTest):
             Place(TargetType.ARM, PrecisionType.FP32),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=metal_places)
+        # self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.FP16,

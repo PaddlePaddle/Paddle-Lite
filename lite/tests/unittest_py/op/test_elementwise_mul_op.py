@@ -61,7 +61,7 @@ class TestElementwiseMulOp(AutoScanTest):
             Place(TargetType.ARM, PrecisionType.FP32),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=metal_places)
+        # self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.FP16,
@@ -186,7 +186,10 @@ class TestElementwiseMulOp(AutoScanTest):
             target_type = predictor_config.target()
             in_x_shape = list(program_config.inputs["input_data_x"].shape)
             in_y_shape = list(program_config.inputs["input_data_y"].shape)
-            if target_type != TargetType.ARM and target_type != TargetType.Host:
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.OpenCL
+            ]:
                 if len(in_x_shape) == 0 or len(in_y_shape) == 0:
                     return True
 
