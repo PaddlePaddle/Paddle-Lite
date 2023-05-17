@@ -118,12 +118,13 @@ class TestStackOp(AutoScanTest):
 
         def _teller2(program_config, predictor_config):
             target_type = predictor_config.target()
-            in_x_shape = list(program_config.inputs["input_data"].shape)
+            stack_input1_shape = list(program_config.inputs["stack_input1"]
+                                      .shape)
             if target_type not in [
                     TargetType.ARM, TargetType.Host, TargetType.X86,
                     TargetType.Metal, TargetType.OpenCL
             ]:
-                if len(in_x_shape) == 0:
+                if len(stack_input1_shape) == 0:
                     return True
 
         self.add_ignore_check_case(_teller2,
