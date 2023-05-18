@@ -47,7 +47,7 @@ class TestArgSortOp(AutoScanTest):
         axis = draw(st.integers(min_value=-1, max_value=3))
         assume(axis < len(in_shape))
 
-        in_shape = draw(st.sampled_from([in_shape]))
+        in_shape = draw(st.sampled_from([in_shape, []]))
         if in_shape == []:
             axis = 0
 
@@ -68,17 +68,7 @@ class TestArgSortOp(AutoScanTest):
         return self.get_predictor_configs(), ["argsort"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            target_type = predictor_config.target()
-            in_x_shape = list(program_config.inputs["input_data"].shape)
-            #if target_type not in [TargetType.ARM, TargetType.Host, TargetType.X86, TargetType.Metal, TargetType.OpenCL]:
-            if len(in_x_shape) == 0:
-                return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLE_NOT_SUPPORT,
-            "ValueError: (InvalidArgument) axis(0) must be less than num_dims(0) in Paddle2.4."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

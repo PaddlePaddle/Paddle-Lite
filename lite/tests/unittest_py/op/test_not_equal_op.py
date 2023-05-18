@@ -44,11 +44,11 @@ class TestNotEqualOp(AutoScanTest):
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
         #output bool bugs will be fixed in the future
-        # self.enable_testing_on_place(
-        #     TargetType.Host,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -60,26 +60,33 @@ class TestNotEqualOp(AutoScanTest):
         in_shape_x = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=4, max_size=4))
-        in_shape_y = draw(
-            st.lists(
-                st.integers(
-                    min_value=1, max_value=8), min_size=4, max_size=4))
+                    min_value=1, max_value=4), min_size=4, max_size=4))
+        in_shape_x = draw(st.sampled_from([in_shape_x, []]))
+        in_shape_y = in_shape_x
         axis = draw(st.sampled_from([0, 1, 2, 3]))
+        if in_shape_x == []:
+            axis = 0
         not_equal_op = OpConfig(
             type="not_equal",
             inputs={"X": ["input_data_x"],
                     "Y": ["input_data_y"]},
             outputs={"Out": ["output_data"]},
             attrs={"axis": axis})
+        cast_out = OpConfig(
+            type="cast",
+            inputs={"X": ["output_data"], },
+            outputs={"Out": ["cast_data_out"], },
+            attrs={"in_dtype": int(0),
+                   "out_dtype": int(2)})
+        cast_out.outputs_dtype = {"cast_data_out": np.int32}
         program_config = ProgramConfig(
-            ops=[not_equal_op],
+            ops=[not_equal_op, cast_out],
             weights={},
             inputs={
                 "input_data_x": TensorConfig(shape=in_shape_x),
                 "input_data_y": TensorConfig(shape=in_shape_y)
             },
-            outputs=["output_data"])
+            outputs=["cast_data_out"])
         return program_config
 
     def sample_predictor_configs(self):

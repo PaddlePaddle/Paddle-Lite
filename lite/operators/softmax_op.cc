@@ -26,19 +26,18 @@ bool SoftmaxOp::CheckShape() const {
   auto x_dims = param_.x->dims();
   auto x_rank = x_dims.size();
   CHECK_OR_FALSE(param_.axis >= -static_cast<int>(x_rank) &&
-                 param_.axis < static_cast<int>(x_rank));
+                 param_.axis <= static_cast<int>(x_rank));
   return true;
 }
 
 bool SoftmaxOp::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
-  if (param_.eleminate_success) {
+  if (param_.eleminate_success && x_dims.size() >= 2) {
     param_.x->Resize({x_dims[0], x_dims[1]});
   }
   param_.output->Resize(param_.x->dims());
   auto out_lod = param_.output->mutable_lod();
   *out_lod = param_.x->lod();
-
   return true;
 }
 
@@ -53,11 +52,14 @@ bool SoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   } else {
     param_.axis = -1;
   }
+  // 0D Tensor
+  if (param_.x->dims().size() == 0) {
+    param_.axis = 0;
+  }
 
   if (opdesc.HasAttr("eleminate_success")) {
     param_.eleminate_success = opdesc.GetAttr<bool>("eleminate_success");
   }
-
   CHECK(param_.x);
   CHECK(param_.output);
   return true;
