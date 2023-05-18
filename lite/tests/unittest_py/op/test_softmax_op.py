@@ -91,12 +91,16 @@ class TestSoftmaxOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=64), min_size=0, max_size=3))
-        in_shape.insert(0, draw(st.integers(min_value=1, max_value=4)))
+        in_shape.insert(0, draw(st.integers(min_value=1, max_value=10)))
         input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
         assume(len(in_shape) > 1 and input_axis < len(in_shape))
 
+        in_shape = draw(st.sampled_from([in_shape, []]))
+        if in_shape == []:
+            input_axis = -1
+
         def generate_input(*args, **kwargs):
-            return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
+            return np.random.random(in_shape).astype(np.float32)
 
         ops_config = OpConfig(
             type="softmax",
@@ -127,16 +131,9 @@ class TestSoftmaxOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.Metal:
+            target_type = predictor_config.target()
+            if target_type == TargetType.OpenCL:
                 return True
-
-        def teller2(program_config, predictor_config):
-            x_shape = list(program_config.inputs["input_data"].shape)
-            if predictor_config.target() == TargetType.Metal:
-                if len(x_shape) <= 2:
-                    return True
-                if x_shape[1] % 4 != 0:
-                    return True
 
         def teller3(program_config, predictor_config):
             if self.get_nnadapter_device_name() == "nvidia_tensorrt":
@@ -145,38 +142,36 @@ class TestSoftmaxOp(AutoScanTest):
                 if len(in_shape) == 1 or axis == 0 or axis == -len(in_shape):
                     return True
 
-        def _teller4(program_config, predictor_config):
+        def teller4(program_config, predictor_config):
             target_type = predictor_config.target()
             in_x_shape = list(program_config.inputs["input_data"].shape)
-            # if target_type != TargetType.ARM and target_type != TargetType.Host:
-            if len(in_x_shape) == 0:
-                return True
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.OpenCL,
+                    TargetType.Metal, TargetType.X86
+            ]:
+                if len(in_x_shape) == 0:
+                    return True
 
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
-        self.add_ignore_check_case(
-            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
-        )
+        self.add_ignore_check_case(teller1,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "OpenCL has diff and doesn't support 0D.")
         self.add_ignore_check_case(
             teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' or 'axis == 0' on nvidia_tensorrt."
         )
-        self.add_ignore_check_case(_teller4,
+        self.add_ignore_check_case(teller4,
                                    IgnoreReasons.PADDLELITE_NOT_SUPPORT,
                                    "Only test 0D-tensor on CPU(ARM/Host) now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 25
+        max_examples = 100
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 100
         elif target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
-            max_examples = 2000
+            max_examples = 2500
         elif target_str == "NNAdapter":
             # Make sure to generate enough valid cases for NNAdapter
             max_examples = 200

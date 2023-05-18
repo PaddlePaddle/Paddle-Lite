@@ -49,8 +49,7 @@ class TestLogSoftmaxOp(AutoScanTest):
         input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
         assume(len(in_shape) > 1 and input_axis < len(in_shape))
 
-        # in_shape = draw(st.sampled_from([in_shape, []]))
-        in_shape = draw(st.sampled_from([in_shape]))
+        in_shape = draw(st.sampled_from([in_shape, []]))
         if in_shape == []:
             input_axis = -1
 
@@ -96,7 +95,10 @@ class TestLogSoftmaxOp(AutoScanTest):
         def _teller2(program_config, predictor_config):
             target_type = predictor_config.target()
             in_x_shape = list(program_config.inputs["input_data"].shape)
-            if target_type != TargetType.ARM and target_type != TargetType.Host:
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.OpenCL,
+                    TargetType.Metal, TargetType.X86
+            ]:
                 if len(in_x_shape) == 0:
                     return True
 

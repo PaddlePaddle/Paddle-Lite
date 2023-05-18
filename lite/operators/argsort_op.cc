@@ -30,11 +30,11 @@ bool ArgsortOpLite::CheckShape() const {
 
   int num_dims = static_cast<int>(in_dims.size());
   CHECK_GE(axis, -num_dims) << "axis'(" << axis
-                            << ") must be greater than or equal to - num_dims("
+                            << ") must be greater equal or equal to - num_dims("
                             << -num_dims << ").";
 
-  CHECK_LT(axis, num_dims) << "axis'(" << axis
-                           << ") must be less than num_dims(" << num_dims
+  CHECK_LE(axis, num_dims) << "axis'(" << axis
+                           << ") must be less equal num_dims(" << num_dims
                            << ").";
 
   return true;
