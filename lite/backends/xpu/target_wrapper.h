@@ -154,11 +154,6 @@ class TargetWrapper<TARGET(kXPU)> {
       if (ret != 0 || local_gm_ptr == nullptr) {
         VLOG(3) << "No Enough GM Workspace For Current Predictor.";
       } else {
-        void* old_ptr = xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()
-                            ->_gm_mgr.get_ptr();
-        if (old_ptr != nullptr) {
-          TargetWrapperXPU::Free(old_ptr);
-        }
         ret = xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()->_gm_mgr.set(
             local_gm_ptr, xpu_runtime_ptr->xpu_local_gm_size);
         if (ret != 0) {
