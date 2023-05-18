@@ -139,6 +139,9 @@ function compile_publish_inference_lib {
   fi
   python$PYTHON_VERSION -m pip install paddlepaddle==0.0.0 -f https://www.paddlepaddle.org.cn/whl/mac/cpu/develop.html
   # second, you need install PaddleSlim Dev use:
+  if python$PYTHON_VERSION -c "import paddleslim" >/dev/null 2>&1;then
+    python$PYTHON_VERSION -m pip uninstall -y paddleslim
+  fi
   git clone https://github.com/PaddlePaddle/PaddleSlim.git
   cd PaddleSlim
   python$PYTHON_VERSION -m pip install opencv-python==4.6.0.66
