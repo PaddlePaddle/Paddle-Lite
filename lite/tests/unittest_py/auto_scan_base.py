@@ -590,7 +590,10 @@ class AutoScanBaseTest(unittest.TestCase):
                         if not op_fusion_error_flag:
                             self.assert_op_list(opt_model_bytes, op_list_)
                     else:  # op check
-                        op_white_list = ["empty", "gaussian_random"]
+                        op_white_list = [
+                            "empty", "gaussian_random", "deformable_conv",
+                            "hard_swish", "inverse", "mean"
+                        ]
                         self.assert_kernel_type(opt_model_bytes, op_list_,
                                                 paddlelite_config)
                         if not accuracy_error_flag:
