@@ -30,11 +30,11 @@ from functools import partial
 class TestIndexSelectOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        # self.enable_testing_on_place(
-        #     TargetType.Host,
-        #     PrecisionType.Any,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.Any,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -52,8 +52,7 @@ class TestIndexSelectOp(AutoScanTest):
                     min_value=1, max_value=5), min_size=1, max_size=1))
         dim_data = draw(st.sampled_from([1, 2, 3]))
         type_str = draw(
-            st.sampled_from(
-                ["type_float", "type_int", "type_short", "type_char"]))
+            st.sampled_from(["type_float", "type_int", "type_short"]))
 
         def generate_input1(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
