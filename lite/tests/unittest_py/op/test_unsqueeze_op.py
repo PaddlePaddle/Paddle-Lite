@@ -163,7 +163,10 @@ class TestUnsqueezeOp(AutoScanTest):
         def _teller2(program_config, predictor_config):
             target_type = predictor_config.target()
             in_x_shape = list(program_config.inputs["X_data"].shape)
-            if target_type != TargetType.ARM and target_type != TargetType.Host:
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
                 if len(in_x_shape) == 0:
                     return True
 

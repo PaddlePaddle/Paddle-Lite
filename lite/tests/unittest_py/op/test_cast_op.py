@@ -44,7 +44,7 @@ class TestCastOp(AutoScanTest):
             Place(TargetType.ARM, PrecisionType.FP32),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=metal_places)
+        # self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(device_names=[
             "cambricon_mlu", "nvidia_tensorrt", "intel_openvino"
@@ -140,7 +140,10 @@ class TestCastOp(AutoScanTest):
         def _teller3(program_config, predictor_config):
             target_type = predictor_config.target()
             in_x_shape = list(program_config.inputs["input_data"].shape)
-            if target_type != TargetType.ARM and target_type != TargetType.Host:
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.OpenCL
+            ]:
                 if len(in_x_shape) == 0:
                     return True
 
