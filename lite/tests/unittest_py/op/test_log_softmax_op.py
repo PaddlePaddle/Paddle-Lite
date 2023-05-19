@@ -102,9 +102,9 @@ class TestLogSoftmaxOp(AutoScanTest):
                 if len(in_x_shape) == 0:
                     return True
 
-        self.add_ignore_check_case(_teller2,
-                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(ARM/Host/X86/Metal/OpenCL) now.")
 
     def test(self, *args, **kwargs):
         max_examples = 100

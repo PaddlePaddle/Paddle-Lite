@@ -42,7 +42,6 @@ class TestTopKV2Op(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-
         N = draw(st.integers(min_value=1, max_value=4))
         C = draw(st.integers(min_value=1, max_value=128))
         H = draw(st.integers(min_value=1, max_value=128))
@@ -52,17 +51,23 @@ class TestTopKV2Op(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=3, max_value=5), min_size=1, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape, []]))
         in_dtype = draw(st.sampled_from([np.float32]))
 
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
         k_data = draw(st.integers(min_value=1, max_value=2))
-
         axis_data = draw(st.integers(min_value=0, max_value=1))
-
         choose_k = draw(st.sampled_from(["k", "K"]))
         inputs = {"X": ["X_data"]}
+
+        if in_shape == []:
+            axis_data = 0
+            k_data = 1
+        else:
+            assume(k_data <= in_shape[-1])
+            assume(axis_data < len(in_shape))
 
         def generate_K_data():
             if (choose_k == "K"):
@@ -71,9 +76,6 @@ class TestTopKV2Op(AutoScanTest):
                 return a
             else:
                 return np.random.randint(1, 5, []).astype(np.int32)
-
-        assume(k_data <= in_shape[-1])
-        assume(axis_data < len(in_shape))
 
         # Lite does not have these two attributes
         largest_data = draw(st.booleans())

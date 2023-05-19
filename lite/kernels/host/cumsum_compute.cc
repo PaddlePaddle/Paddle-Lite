@@ -29,6 +29,11 @@ void CumsumCompute<T, PType>::Run() {
   const T* x_data = x->template data<T>();
   T* out_data = out->template mutable_data<T>();
 
+  if (x_dims.size() == 0) {
+    out_data[0] = x_data[0];
+    return;
+  }
+
   if (param.flatten || x_dims.size() == 1) {
     int64_t x_size = x->numel();
     if (param.reverse) {

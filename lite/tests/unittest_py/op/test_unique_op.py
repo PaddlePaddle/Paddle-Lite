@@ -63,6 +63,7 @@ class TestUniqueOp(AutoScanTest):
                     min_size=1,
                     max_size=1))
 
+        in_shape = draw(st.sampled_from([in_shape, []]))
         in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
 
         def generate_X_data():
@@ -77,6 +78,9 @@ class TestUniqueOp(AutoScanTest):
             st.sampled_from([[], [0], [1], [2], [3], [4], [5], [6], [7], [8]]))
         while len(axis) > 0 and axis[0] >= len(in_shape):
             axis[0] = axis[0] - 1
+
+        if in_shape == []:
+            axis = []
 
         outputs = ["Out_data"]
         outputs_config = {"Out": ["Out_data"]}
