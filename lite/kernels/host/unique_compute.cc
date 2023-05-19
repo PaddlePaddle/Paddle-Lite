@@ -395,7 +395,8 @@ void UniqueCompute<InT>::Run() {
     return;
   }
   if (x->numel() == 0) {
-    output->template mutable_data<InT>();
+    InT* out_ptr = output->template mutable_data<InT>();
+    out_ptr[0] = x->template data<InT>()[0];
     return;
   }
   if (axis_vec.empty()) {
