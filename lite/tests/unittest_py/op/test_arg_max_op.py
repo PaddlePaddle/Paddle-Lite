@@ -81,7 +81,8 @@ class TestArgMaxOp(AutoScanTest):
         # need Paddle Develop support
         # in_shape = draw(st.sampled_from([in_shape, []]))
         # if in_shape == []:
-        #     axis = 0
+        #     axis = draw(st.sampled_from([-1, 0, None]))
+
         arg_max_op = OpConfig(
             type="arg_max",
             inputs={"X": ["input_data"]},
@@ -126,10 +127,6 @@ class TestArgMaxOp(AutoScanTest):
                         0] != 1 or axis != 1 or keep_dims == False or set_dtype == 2:
                     return True
 
-        def _teller3(program_config, predictor_config):
-            if predictor_config.target() == TargetType.Metal:
-                return True
-
         def _teller4(program_config, predictor_config):
             if "intel_openvino" in self.get_nnadapter_device_name():
                 in_shape = program_config.inputs["input_data"].shape
@@ -167,10 +164,7 @@ class TestArgMaxOp(AutoScanTest):
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite is not supported on metal. We need to fix it as soon as possible."
         )
-        self.add_ignore_check_case(
-            _teller3, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
-        )
+
         self.add_ignore_check_case(
             _teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'len(in_shape) == 1' on intel OpenVINO.")

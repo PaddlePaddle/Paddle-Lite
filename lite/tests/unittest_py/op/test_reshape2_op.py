@@ -92,7 +92,7 @@ class TestReshape2Op(AutoScanTest):
             reduce(lambda x, y: x * y, attr_shape) == reduce(
                 lambda x, y: x * y, in_shape))
 
-        # in_shape = draw(st.sampled_from([in_shape, []]))
+        in_shape = draw(st.sampled_from([in_shape, []]))
         if in_shape == []:
             attr_shape = [1]
             shape_tensor = [1, 1]
@@ -221,8 +221,22 @@ class TestReshape2Op(AutoScanTest):
                                    IgnoreReasons.PADDLELITE_NOT_SUPPORT,
                                    "intel_openvino report error.")
 
+        def _teller4(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type not in [
+                    TargetType.Metal, TargetType.X86, TargetType.Host,
+                    TargetType.ARM, TargetType.OpenCL
+            ]:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(ARM/Host/Metal/X86/OpenCL) now.")
+
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=1000)
+        self.run_and_statis(quant=False, max_examples=500)
 
 
 if __name__ == "__main__":

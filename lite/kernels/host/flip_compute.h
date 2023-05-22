@@ -43,10 +43,17 @@ class FlipCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
     auto x = param.X;
     auto out = param.Out;
     auto flip_dims = param.axis;
-
     auto x_dims = x->dims();
     const int total_dims = x_dims.size();
+    auto numel = x->numel();
+    const T* x_data = x->template data<T>();
+    T* out_data = out->template mutable_data<T>();
     std::vector<bool> dim_bitset(64);
+    DDimLite x_strides;
+    if (total_dims == 0) {
+      out_data[0] = x_data[0];
+      return;
+    }
     for (size_t i = 0; i < flip_dims.size(); ++i) {
       int dim = flip_dims[i];
       if (flip_dims[i] < 0) {
@@ -54,10 +61,7 @@ class FlipCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
       }
       dim_bitset[dim] = true;
     }
-    auto x_strides = stride_flip(x_dims);
-    auto numel = x->numel();
-    const T* x_data = x->template data<T>();
-    T* out_data = out->template mutable_data<T>();
+    x_strides = stride_flip(x_dims);
     LITE_PARALLEL_BEGIN(i, tid, numel) {
       int64_t cur_indices = i;
       int64_t rem = 0;

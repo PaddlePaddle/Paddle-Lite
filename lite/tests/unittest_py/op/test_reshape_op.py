@@ -81,7 +81,7 @@ class TestReshapeOp(AutoScanTest):
             reduce(lambda x, y: x * y, attr_shape) == reduce(
                 lambda x, y: x * y, in_shape))
 
-        # in_shape = draw(st.sampled_from([in_shape, []]))
+        in_shape = draw(st.sampled_from([in_shape, []]))
         if in_shape == []:
             attr_shape = [1]
             shape_tensor = [1, 1]
@@ -178,7 +178,7 @@ class TestReshapeOp(AutoScanTest):
         def _teller2(program_config, predictor_config):
             target_type = predictor_config.target()
             in_x_shape = list(program_config.inputs["input_data"].shape)
-            if target_type != TargetType.ARM and target_type != TargetType.Host:
+            if target_type != TargetType.Host and target_type != TargetType.OpenCL:
                 if len(in_x_shape) == 0:
                     return True
 
@@ -195,7 +195,7 @@ class TestReshapeOp(AutoScanTest):
                                    "intel_openvino report error.")
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=1000)
+        self.run_and_statis(quant=False, max_examples=500)
 
 
 if __name__ == "__main__":

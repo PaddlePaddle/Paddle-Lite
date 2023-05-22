@@ -592,7 +592,7 @@ class AutoScanBaseTest(unittest.TestCase):
                     else:  # op check
                         op_white_list = [
                             "empty", "gaussian_random", "deformable_conv",
-                            "hard_swish", "inverse", "mean"
+                            "hard_swish", "inverse"
                         ]
                         self.assert_kernel_type(opt_model_bytes, op_list_,
                                                 paddlelite_config)
