@@ -37,7 +37,8 @@ typedef enum {
   CL_VER_1_1 = 2,
   CL_VER_1_2 = 3,
   CL_VER_2_0 = 4,
-  CL_VER_2_1 = 5
+  CL_VER_2_1 = 5,
+  CL_VER_3_0 = 6
 } OpenCLVersion;
 
 typedef enum {
