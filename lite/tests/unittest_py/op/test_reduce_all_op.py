@@ -47,12 +47,16 @@ class TestReduceAllOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=64), min_size=4, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape, []]))
         keep_dim = draw(st.booleans())
         axis = draw(st.integers(min_value=-1, max_value=3))
         assume(axis < len(in_shape))
         if isinstance(axis, int):
             axis = [axis]
-        reduce_all_data = True if axis == None or axis == [] else False
+        reduce_all_data = True if len(
+            in_shape) == 0 or axis == None or axis == [] else False
+        if len(in_shape) == 0:
+            axis = draw(st.sampled_from([[-1], []]))
 
         def generate_input(*args, **kwargs):
             return np.random.randint(

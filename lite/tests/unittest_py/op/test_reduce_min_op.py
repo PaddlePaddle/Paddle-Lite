@@ -52,6 +52,7 @@ class TestReduceMinOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=10), min_size=1, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape, []]))
         keep_dim = draw(st.booleans())
         axis_list = [
             draw(st.integers(
@@ -66,7 +67,10 @@ class TestReduceMinOp(AutoScanTest):
             axis_list = draw(
                 st.sampled_from([[0], [1], [2], [3], [0, 1], [1, 2], [2, 3]]))
 
-        reduce_all_data = True if axis_list == None or axis_list == [] else False
+        reduce_all_data = True if len(
+            in_shape) == 0 or axis_list == None or axis_list == [] else False
+        if len(in_shape) == 0:
+            axis_list = draw(st.sampled_from([[-1], []]))
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)

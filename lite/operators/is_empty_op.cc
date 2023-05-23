@@ -26,7 +26,7 @@ bool IsEmptyOp::CheckShape() const {
 }
 
 bool IsEmptyOp::InferShapeImpl() const {
-  param_.Out->Resize({1});
+  param_.Out->Resize(std::vector<int64_t>({}));
   return true;
 }
 

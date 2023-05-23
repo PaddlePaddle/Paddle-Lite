@@ -179,9 +179,9 @@ class TestArgMaxOp(AutoScanTest):
             _teller5, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' on kunlunxin_xtcl.")
 
-        self.add_ignore_check_case(_teller6,
-                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
+        self.add_ignore_check_case(
+            _teller6, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
 
         self.add_ignore_check_case(_teller7,
                                    IgnoreReasons.PADDLELITE_NOT_SUPPORT,

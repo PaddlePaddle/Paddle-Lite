@@ -55,7 +55,7 @@ class TestNormOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=128),
-                min_size=1,
+                min_size=0,
                 max_size=3))
         in_shape = in_num + in_c_h_w
         axis = draw(st.sampled_from([-1, 0, 1, 2, 3]))
@@ -82,7 +82,7 @@ class TestNormOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=50)
+        self.run_and_statis(quant=False, max_examples=500)
 
 
 if __name__ == "__main__":

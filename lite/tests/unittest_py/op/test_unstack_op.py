@@ -47,14 +47,14 @@ class TestUnstackOp(AutoScanTest):
         C = draw(st.integers(min_value=2, max_value=128))
         H = draw(st.integers(min_value=2, max_value=128))
         W = draw(st.integers(min_value=2, max_value=128))
-        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
+        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W], [N]]))
 
         in_dtype = draw(st.sampled_from([np.float32, np.int32]))
 
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
-        axis_data = draw(st.integers(min_value=0, max_value=2))
+        axis_data = draw(st.integers(min_value=0, max_value=len(in_shape) - 1))
         num_data = draw(st.integers(min_value=1, max_value=2))
 
         # declare multiple outputs
@@ -86,7 +86,7 @@ class TestUnstackOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=1000)
 
 
 if __name__ == "__main__":
