@@ -216,7 +216,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
                 "-DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}")
         IF(LITE_WITH_ARM AND ARM_TARGET_OS STREQUAL "qnx")
 	  # Solve the problem that the old version of protobuf does not support QNX + aarch64
-	  SET(PATCH_COMMAND sed -e "s/#elif defined(__QNX__)/#elif defined(__arm__) \\&\\& defined(__QNX__)/g" -i ${SOURCE_DIR}/src/google/protobuf/stubs/platform_macros.h)
+	  SET(PATCH_COMMAND sed -e "s/#elif defined(__QNX__)/#elif defined(__arm__) \\&\\& defined(__QNX__)/g" -i ${SOURCE_DIR}/src/google/protobuf/stubs/platform_macros.h && sed -i "s#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2)#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2) const#g" ${SOURCE_DIR}/src/google/protobuf/compiler/java/java_file.cc)
         ENDIF()
     ENDIF()
     IF(WIN32)
