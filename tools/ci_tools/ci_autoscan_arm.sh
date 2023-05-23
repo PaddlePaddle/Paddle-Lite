@@ -132,16 +132,13 @@ function compile_publish_inference_lib {
   # Step3. Install whl and its depends
   # check_paddle_version
 
-  # We use develop version for 0D-Tensor
-  # first, you need install MacM1 Paddle Dev version use: 
-  if python$PYTHON_VERSION -c "import paddle" >/dev/null 2>&1;then
-    python$PYTHON_VERSION -m pip uninstall -y paddlepaddle
-  fi
-  python$PYTHON_VERSION -m pip install paddlepaddle==0.0.0 -f https://www.paddlepaddle.org.cn/whl/mac/cpu/develop.html
+  # We use develop version or 2.5rc for 0D-Tensor
+  # first, you need install MacM1 Paddle 2.5rc version use: 
+  python$PYTHON_VERSION -m pip uninstall -y paddlepaddle
+  python$PYTHON_VERSION -m pip install paddlepaddle==2.5.0rc0 -i https://mirror.baidu.com/pypi/simple
   # second, you need install PaddleSlim Dev use:
-  if python$PYTHON_VERSION -c "import paddleslim" >/dev/null 2>&1;then
-    python$PYTHON_VERSION -m pip uninstall -y paddleslim
-  fi
+  python$PYTHON_VERSION -m pip uninstall -y paddleslim
+
   git clone https://github.com/PaddlePaddle/PaddleSlim.git
   cd PaddleSlim
   python$PYTHON_VERSION -m pip install opencv-python==4.6.0.66

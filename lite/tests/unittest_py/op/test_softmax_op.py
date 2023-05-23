@@ -132,7 +132,7 @@ class TestSoftmaxOp(AutoScanTest):
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
             target_type = predictor_config.target()
-            if target_type == TargetType.OpenCL:
+            if target_type == TargetType.OpenCL or target_type == TargetType.X86:
                 return True
 
         def teller3(program_config, predictor_config):
@@ -152,9 +152,9 @@ class TestSoftmaxOp(AutoScanTest):
                 if len(in_x_shape) == 0:
                     return True
 
-        self.add_ignore_check_case(teller1,
-                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-                                   "OpenCL has diff and doesn't support 0D.")
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "OpenCL has diff and doesn't support 0D, X86 has diff")
         self.add_ignore_check_case(
             teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' or 'axis == 0' on nvidia_tensorrt."

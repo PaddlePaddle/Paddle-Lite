@@ -63,10 +63,16 @@ void PReluCompute::Run() {
   auto mode = param.Prelu_mode;
   auto alpha_data = param.Prelu_alpha->data<float>();
   auto output_data = param.Out->mutable_data<float>();
-
-  int outer_size = x_dims[0];
-  int channel_size = x_dims[1];
-  int inner_size = x_dims.count(2, x_dims.size());
+  int outer_size = 1;
+  int channel_size = 1;
+  int inner_size = 1;
+  if (x_dims.size() == 0) {
+    output_data[0] = x_data[0] > 0.f ? x_data[0] : x_data[0] * alpha_data[0];
+    return;
+  }
+  outer_size = x_dims[0];
+  channel_size = x_dims[1];
+  inner_size = x_dims.count(2, x_dims.size());
   if (mode == "all" || mode == "channel") {
     int stride_size = inner_size * channel_size;
     for (int n = 0; n < outer_size; n++) {

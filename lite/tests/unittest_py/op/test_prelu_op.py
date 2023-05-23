@@ -36,6 +36,16 @@ class TestPreluOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP16,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -67,6 +77,11 @@ class TestPreluOp(AutoScanTest):
             alpha_shape = [1, in_shape[1], 1, 1]
         elif mode_data == 'element':
             alpha_shape = [1] + list(in_shape)[1:]
+
+        in_shape = draw(st.sampled_from([in_shape, []]))
+        if in_shape == []:
+            mode_data = "all"
+            alpha_shape = [1]
 
         def generate_input(*args, **kwargs):
             return np.random.random(kwargs['tensor_shape']).astype(np.float32)
@@ -102,7 +117,7 @@ class TestPreluOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":
