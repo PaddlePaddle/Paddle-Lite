@@ -72,7 +72,7 @@ void MetalImage::InitTexture() {
             });
         } break;
         case 0: {
-            for (int i=0; i<4; ++i) {
+            for (int i = 0; i < 4; ++i) {
                 dim.emplace_back(pad_to_four_dim_[i]);
             }
         } break;

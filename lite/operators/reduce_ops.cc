@@ -62,7 +62,7 @@ bool ReduceOp::InferShapeImpl() const {
     // CHECK(dims[i] <= x_rank && dims[i] + x_rank >= 0)
     //     << "dims[i] is " << dims[i] << ", x_rank is " << x_rank;
     if (dims[i] < 0) {
-      dims[i] = x_rank + dims[i]>=0 ? x_rank + dims[i] : 0;
+      dims[i] = x_rank + dims[i] >= 0 ? x_rank + dims[i] : 0;
     }
   }
   // recompute reduce_all
@@ -83,7 +83,6 @@ bool ReduceOp::InferShapeImpl() const {
     else {
       param_.Out->Resize(std::vector<int64_t>({}));
     }
-      
   } else {
     std::vector<int64_t> dims_vector(x_rank, 1);
     for (int i = 0; i < x_rank; i++) dims_vector[i] = x_dims[i];
