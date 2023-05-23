@@ -39,7 +39,7 @@ bool ReduceOp::CheckShape() const {
   auto dims = param_.dim;
   auto x_dims = param_.X->dims();
   int x_rank = x_dims.size();
-  return x_rank > 0;
+  return x_rank >= 0;
   // dim at least is [0]
   // CHECK_GT(dims.size(), 0)
   //     << "The input dim should be greater than 0. But received the dim = "
