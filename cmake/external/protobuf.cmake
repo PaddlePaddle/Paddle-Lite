@@ -219,6 +219,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             "-DCMAKE_GENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
             "-Dprotobuf_MSVC_STATIC_RUNTIME=${MSVC_STATIC_CRT}")
     ENDIF()
+    set(PROTOBUF_PATCH_COMMAND sed -i "s#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2)#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2) const#g" ${SOURCE_DIR}/src/google/protobuf/compiler/java/java_file.cc)
 
     if(LITE_WITH_ARM)
         ExternalProject_Add(
@@ -230,6 +231,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             GIT_REPOSITORY  ""
             GIT_TAG         ${PROTOBUF_TAG}
             SOURCE_DIR      ${SOURCE_DIR}
+            PATCH_COMMAND  ${PROTOBUF_PATCH_COMMAND}
             CMAKE_ARGS
                 ${OPTIONAL_ARGS}
                 -Dprotobuf_BUILD_TESTS=OFF
@@ -255,6 +257,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             GIT_REPOSITORY  ""
             GIT_TAG         ${PROTOBUF_TAG}
             SOURCE_DIR      ${SOURCE_DIR}
+            PATCH_COMMAND  ${PROTOBUF_PATCH_COMMAND}
             BUILD_ALWAYS 1
             CONFIGURE_COMMAND ${CMAKE_COMMAND} ${SOURCE_DIR}/cmake
                 ${OPTIONAL_ARGS}
