@@ -71,7 +71,6 @@ bool PNormOpLite::InferShapeImpl() const {
   std::vector<int64_t> reduce_dims;
   const bool asvector = param_.asvector;
   if (asvector) {
-    // reduce_dims.emplace_back(1);
     if (keepdim) {
       for (int64_t i = 1; i < x_dim.size(); ++i) {
         reduce_dims.emplace_back(1);
@@ -85,9 +84,6 @@ bool PNormOpLite::InferShapeImpl() const {
     for (int i = 0; i < x_dim.size(); ++i) {
       if (i != axis) reduce_dims.emplace_back(x_dim[i]);
     }
-    // if (reduce_dims.size() == 0) {
-    //   reduce_dims.emplace_back(1);
-    // }
   }
   x_dim[axis] = 1;
 

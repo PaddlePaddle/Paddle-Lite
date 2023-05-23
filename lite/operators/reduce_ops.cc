@@ -40,15 +40,6 @@ bool ReduceOp::CheckShape() const {
   auto x_dims = param_.X->dims();
   int x_rank = x_dims.size();
   return x_rank >= 0;
-  // dim at least is [0]
-  // CHECK_GT(dims.size(), 0)
-  //     << "The input dim should be greater than 0. But received the dim = "
-  //     << dims.size();
-  // for (int i = 0; i < dims.size(); i++) {
-  //   CHECK(dims[i] <= x_rank && dims[i] + x_rank >= 0)
-  //       << "dims[i] is " << dims[i] << ", x_rank is " << x_rank;
-  // }
-  // return true;
 }
 
 bool ReduceOp::InferShapeImpl() const {
