@@ -51,7 +51,7 @@ class TestReverseOp(AutoScanTest):
 
         in_shape = draw(st.sampled_from([in_shape]))
         if in_shape == []:
-            axis = 0
+            axis = draw(st.sampled_from([-1, 0]))
 
         if isinstance(axis, int):
             axis = [axis]

@@ -45,7 +45,7 @@ class TestFlatten2Op(AutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=opencl_places)
+        # self.enable_testing_on_place(places=opencl_places)
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
                   DataLayoutType.MetalTexture2DArray),

@@ -28,6 +28,7 @@ void UnbindCompute<T, PType>::Run() {
   for (auto out : dout) {
     out->set_lod(param.x->lod());
   }
+  param.axis = std::max(param.axis, 0);
   lite::host::math::unbind<T>(param.x, dout, param.axis);
 }
 

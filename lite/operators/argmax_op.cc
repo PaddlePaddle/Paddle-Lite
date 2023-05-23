@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/argmax_op.h"
+#include <algorithm>
 #include <vector>
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
@@ -24,8 +25,10 @@ namespace operators {
 bool ArgmaxOpLite::CheckShape() const {
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Out);
-  CHECK_OR_FALSE(param_.Axis < static_cast<int>((param_.X)->dims().size()));
-  CHECK_OR_FALSE(param_.Axis >= static_cast<int>(-(param_.X)->dims().size()));
+  if (param_.Axis != -1) {
+    CHECK_OR_FALSE(param_.Axis <= static_cast<int>((param_.X)->dims().size()));
+    CHECK_OR_FALSE(param_.Axis >= static_cast<int>(-(param_.X)->dims().size()));
+  }
   return true;
 }
 
@@ -36,6 +39,7 @@ bool ArgmaxOpLite::InferShapeImpl() const {
   if (axis < 0) {
     axis += x_rank;
   }
+  axis = std::max(axis, 0);
 
   std::vector<int64_t> out_dims;
   for (int64_t i = 0; i < axis; i++) out_dims.push_back(x_dims[i]);

@@ -79,16 +79,16 @@ class TestArgMaxOp(AutoScanTest):
         dtype = draw(st.sampled_from([-1, 2, 3]))
         assume(axis < len(in_shape))
         # need Paddle Develop support
-        # in_shape = draw(st.sampled_from([in_shape, []]))
-        # if in_shape == []:
-        #     axis = draw(st.sampled_from([-1, 0, None]))
+        in_shape = draw(st.sampled_from([in_shape, []]))
+        if in_shape == []:
+            axis = draw(st.sampled_from([0]))  # paddle error when -1
 
         arg_max_op = OpConfig(
             type="arg_max",
             inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"]},
             attrs={
-                "axis": axis,
+                "axis": int(axis),
                 "keepdims": keepdims,
                 "dtype": dtype,
                 "flatten": False
@@ -173,9 +173,9 @@ class TestArgMaxOp(AutoScanTest):
             _teller5, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' on kunlunxin_xtcl.")
 
-        self.add_ignore_check_case(_teller6,
-                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
+        self.add_ignore_check_case(
+            _teller6, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(ARM/Host/OpenCL/Metal/X86) now.")
 
         self.add_ignore_check_case(_teller7,
                                    IgnoreReasons.PADDLELITE_NOT_SUPPORT,

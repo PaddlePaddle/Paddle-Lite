@@ -63,7 +63,7 @@ class TestTopKV2Op(AutoScanTest):
         inputs = {"X": ["X_data"]}
 
         if in_shape == []:
-            axis_data = 0
+            axis_data = draw(st.sampled_from([-1, 0]))
             k_data = 1
         else:
             assume(k_data <= in_shape[-1])

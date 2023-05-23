@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/argsort_op.h"
-
+#include <algorithm>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -29,14 +29,15 @@ bool ArgsortOpLite::CheckShape() const {
   int axis = param_.axis;
 
   int num_dims = static_cast<int>(in_dims.size());
-  CHECK_GE(axis, -num_dims) << "axis'(" << axis
-                            << ") must be greater equal or equal to - num_dims("
-                            << -num_dims << ").";
+  if (axis != -1) {
+    CHECK_GE(axis, -num_dims)
+        << "axis'(" << axis << ") must be greater equal or equal to - num_dims("
+        << -num_dims << ").";
 
-  CHECK_LE(axis, num_dims) << "axis'(" << axis
-                           << ") must be less equal num_dims(" << num_dims
-                           << ").";
-
+    CHECK_LE(axis, num_dims) << "axis'(" << axis
+                             << ") must be less equal num_dims(" << num_dims
+                             << ").";
+  }
   return true;
 }
 
