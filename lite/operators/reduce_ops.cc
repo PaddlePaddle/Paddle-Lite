@@ -50,8 +50,6 @@ bool ReduceOp::InferShapeImpl() const {
   bool keep_dim = param_.keep_dim;
 
   for (int i = 0; i < dims.size(); i++) {
-    // CHECK(dims[i] <= x_rank && dims[i] + x_rank >= 0)
-    //     << "dims[i] is " << dims[i] << ", x_rank is " << x_rank;
     if (dims[i] < 0) {
       dims[i] = x_rank + dims[i] >= 0 ? x_rank + dims[i] : 0;
     }

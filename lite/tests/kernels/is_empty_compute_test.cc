@@ -37,7 +37,7 @@ class IsEmptyComputeTester : public arena::TestCase {
     const auto* x = scope->FindTensor(x_);
     auto* out = scope->NewTensor(out_);
 
-    out->Resize(DDim({1}));
+    out->Resize(DDim({}));
     auto* out_data = out->mutable_data<bool>();
     out_data[0] = (x->numel() == 0) ? true : false;
   }

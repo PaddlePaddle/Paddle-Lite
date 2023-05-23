@@ -151,6 +151,19 @@ class TestReduceMaxOp(AutoScanTest):
                                    IgnoreReasons.PADDLELITE_NOT_SUPPORT,
                                    "Expected kernel_type false.")
 
+        def _teller4(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
+                if program_config.attr["reduce_max"]:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
+
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         max_examples = 300
