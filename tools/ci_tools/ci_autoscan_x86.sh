@@ -6,8 +6,8 @@ set -e
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
-# Python version，scikit learn need >= 3.8
-PYTHON_VERSION=3.8
+# Python version
+PYTHON_VERSION=3.7
 # Absolute path of Paddle-Lite source code.
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
@@ -112,6 +112,7 @@ function compile_publish_inference_lib {
   git clone https://github.com/PaddlePaddle/PaddleSlim.git
   cd PaddleSlim
   python$PYTHON_VERSION -m pip install opencv-python==4.6.0.66
+  python$PYTHON_VERSION -m pip install scikit-learn
   python$PYTHON_VERSION setup.py install
   cd ../
   rm -rf PaddleSlim
