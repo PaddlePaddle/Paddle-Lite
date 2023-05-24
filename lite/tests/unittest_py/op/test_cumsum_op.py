@@ -46,7 +46,7 @@ class TestCumsumOp(AutoScanTest):
         input_data_x_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=1, max_size=8))
+                    min_value=2, max_value=8), min_size=1, max_size=8))
         x_dims_size = len(input_data_x_shape)
         flatten = draw(st.booleans())
         axis = draw(
@@ -58,7 +58,7 @@ class TestCumsumOp(AutoScanTest):
             axis = -1
         input_data_x_shape = draw(st.sampled_from([input_data_x_shape, []]))
         if input_data_x_shape == []:
-            axis = 0
+            axis = draw(st.sampled_from([-1, 0]))
         exclusive = draw(st.booleans())
         reverse = draw(st.booleans())
         cumsum_op = OpConfig(

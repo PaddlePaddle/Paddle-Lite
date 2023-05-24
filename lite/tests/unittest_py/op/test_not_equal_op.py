@@ -43,7 +43,6 @@ class TestNotEqualOp(AutoScanTest):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(device_names=["cambricon_mlu"])
-        #output bool bugs will be fixed in the future
         self.enable_testing_on_place(
             TargetType.Host,
             PrecisionType.FP32,
@@ -65,7 +64,7 @@ class TestNotEqualOp(AutoScanTest):
         in_shape_y = in_shape_x
         axis = draw(st.sampled_from([0, 1, 2, 3]))
         if in_shape_x == []:
-            axis = 0
+            axis = draw(st.sampled_from([0, -1]))
         not_equal_op = OpConfig(
             type="not_equal",
             inputs={"X": ["input_data_x"],

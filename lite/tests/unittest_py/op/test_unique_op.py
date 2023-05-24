@@ -80,7 +80,7 @@ class TestUniqueOp(AutoScanTest):
             axis[0] = axis[0] - 1
 
         if in_shape == []:
-            axis = []
+            axis = []  # paddle ony support axis is none when 0D input
 
         outputs = ["Out_data"]
         outputs_config = {"Out": ["Out_data"]}

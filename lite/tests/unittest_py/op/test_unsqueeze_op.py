@@ -98,7 +98,7 @@ class TestUnsqueezeOp(AutoScanTest):
                 st.integers(
                     min_value=0, max_value=3), min_size=1, max_size=2))
         if in_shape == []:
-            axes_data = [0]
+            axes_data = draw(st.sampled_from([[0], [-1]]))
 
         inputs = {"X": ["X_data"]}
         choose_axes = draw(
