@@ -184,8 +184,8 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
     SET(OPTIONAL_ARGS "")
     SET(SOURCE_DIR "${PADDLE_SOURCE_DIR}/third-party/protobuf-host")
     set(PATCH_COMMAND "")
-
-    SET(PATCH_COMMAND_PROTOBUF_HOST sed -e "s#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2)#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2) const#g" -i ${SOURCE_DIR}/src/google/protobuf/compiler/java/java_file.cc)
+    set(PATCH_COMMAND_PROTOBUF_HOST sed -e "s#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2)#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2) const#g" -i ${PADDLE_SOURCE_DIR}/third-party/protobuf-host/src/google/protobuf/compiler/java/java_file.cc)
+    set(PATCH_COMMAND_PROTOBUF_MOBILE sed -e "s#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2)#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2) const#g" -i ${PADDLE_SOURCE_DIR}/third-party/protobuf-mobile/src/google/protobuf/compiler/java/java_file.cc)
     IF(BUILD_FOR_HOST)
         # set for server compile.
         if(NOT LITE_WITH_ARM)
@@ -205,6 +205,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
         SET(PROTOBUF_REPO "")
         SET(PROTOBUF_TAG "mobile")
         SET(SOURCE_DIR "${PADDLE_SOURCE_DIR}/third-party/protobuf-mobile")
+        
         SET(OPTIONAL_ARGS "-Dprotobuf_WITH_ZLIB=OFF"
                 ${CROSS_COMPILE_CMAKE_ARGS}
                 "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
@@ -217,7 +218,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
                 "-DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}")
         IF(LITE_WITH_ARM AND ARM_TARGET_OS STREQUAL "qnx")
 	  # Solve the problem that the old version of protobuf does not support QNX + aarch64
-	  SET(PATCH_COMMAND ${PATCH_COOMAND} && sed -e "s/#elif defined(__QNX__)/#elif defined(__arm__) \\&\\& defined(__QNX__)/g" -i ${SOURCE_DIR}/src/google/protobuf/stubs/platform_macros.h)
+	  SET(PATCH_COMMAND ${PATCH_COMMAND_PROTOBUF_MOBILE} && sed -e "s/#elif defined(__QNX__)/#elif defined(__arm__) \\&\\& defined(__QNX__)/g" -i ${SOURCE_DIR}/src/google/protobuf/stubs/platform_macros.h)
         ENDIF()
     ENDIF()
     IF(WIN32)
@@ -226,7 +227,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             "-DCMAKE_GENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
             "-Dprotobuf_MSVC_STATIC_RUNTIME=${MSVC_STATIC_CRT}")
     ENDIF()
-    
+
     if(LITE_WITH_ARM)
         ExternalProject_Add(
             ${TARGET_NAME}
