@@ -28,7 +28,7 @@ ExternalProject_Add(
     # we changed the source code to adapt for windows compiling
     #         git diffs : (1) unsupported/Eigen/CXX11/src/Tensor/TensorBlockV2.h
     ######################################################################################################
-    URL             https://paddlelite-data.bj.bcebos.com/third_party_libs/eigen-git-mirror-master-831e8ca3b933d7d7ca262dc74c330a2af95bfb57.zip
+    URL             http://paddlelite-data.bj.bcebos.com/third_party_libs/eigen-git-mirror-master-9ab917e9db99f5907d086aa73d5f9103-gcc12.zip
     DOWNLOAD_DIR          ${EIGEN_SOURCECODE_DIR}
     DOWNLOAD_NO_PROGRESS  1
     PREFIX          ${EIGEN_SOURCE_DIR}
