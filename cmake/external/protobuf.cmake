@@ -184,7 +184,9 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
     SET(OPTIONAL_ARGS "")
     SET(SOURCE_DIR "${PADDLE_SOURCE_DIR}/third-party/protobuf-host")
     set(PATCH_COMMAND "")
+    
     set(PATCH_COMMAND_PROTOBUF_HOST sed -e "s#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2)#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2) const#g" -i ${PADDLE_SOURCE_DIR}/third-party/protobuf-host/src/google/protobuf/compiler/java/java_file.cc)
+    
     set(PATCH_COMMAND_PROTOBUF_MOBILE sed -e "s#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2)#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2) const#g" -i ${PADDLE_SOURCE_DIR}/third-party/protobuf-mobile/src/google/protobuf/compiler/java/java_file.cc)
     IF(BUILD_FOR_HOST)
         # set for server compile.
