@@ -208,15 +208,12 @@ class ReduceProdComputeTester : public arena::TestCase {
       }
     }
     std::stable_sort(dim_.begin(), dim_.end());
-
+    std::vector<int64_t> out_dims;
     if (reduce_all_ || dim_.size() == 0) {
       if (keep_dim_) {
-        out->Resize({static_cast<int64_t>(x_rank), 1});
-      } else {
-        out->Resize({1});
+        out_dims = std::vector<int64_t>(x_rank, 1);
       }
     } else {
-      std::vector<int64_t> out_dims;
       for (size_t i = 0; i < x_dims_.size(); i++) {
         out_dims.push_back(x_dims_[i]);
       }

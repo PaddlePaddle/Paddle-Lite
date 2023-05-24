@@ -232,16 +232,15 @@ class ReduceAllComputeTester : public arena::TestCase {
       }
     }
     reduce_all_ = (reduce_all_ || full_dim);
-    if (dim_.size() == 0) {
+    if (dim_.size() == 0 || x_rank == 0) {
       reduce_all_ = true;
     }
 
     std::vector<int64_t> out_dims;
     if (reduce_all_) {
-      if (keep_dim_)
+      if (keep_dim_) {
         out_dims = std::vector<int64_t>(x_rank, 1);
-      else
-        out_dims = std::vector<int64_t>{1};
+      }
     } else {
       size_t out_rank = keep_dim_ ? x_rank : x_rank - dim_.size();
       out_dims.resize(out_rank);

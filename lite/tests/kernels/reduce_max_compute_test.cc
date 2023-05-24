@@ -283,16 +283,13 @@ class ReduceMaxComputeTester : public arena::TestCase {
     }
 
     std::stable_sort(dim_.begin(), dim_.end());
-    if (dim_.size() == 0) {
+    if (dim_.size() == 0 || x_rank == 0) {
       reduce_all_ = true;
     }
     std::vector<int64_t> out_dims;
     if (reduce_all_) {
       if (keep_dim_) {
-        out_dims.push_back(x_rank);
-        out_dims.push_back(1);
-      } else {
-        out_dims.push_back(1);
+        out_dims = std::vector<int64_t>(x_rank, 1);
       }
     } else {
       for (size_t i = 0; i < x_dims_.size(); i++) {

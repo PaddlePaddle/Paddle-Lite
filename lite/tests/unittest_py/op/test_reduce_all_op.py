@@ -107,7 +107,7 @@ class TestReduceAllOp(AutoScanTest):
                     TargetType.ARM, TargetType.Host, TargetType.X86,
                     TargetType.Metal, TargetType.OpenCL
             ]:
-                if program_config.attr["reduce_max"]:
+                if program_config.attr["reduce_all"]:
                     return True
 
         self.add_ignore_check_case(
