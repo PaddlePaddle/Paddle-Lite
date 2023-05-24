@@ -184,7 +184,8 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
     SET(OPTIONAL_ARGS "")
     SET(SOURCE_DIR "${PADDLE_SOURCE_DIR}/third-party/protobuf-host")
     set(PATCH_COMMAND "")
-    SET(PATCH_COMMAND sed -i "s#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2)#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2) const#g" ${SOURCE_DIR}/src/google/protobuf/compiler/java/java_file.cc)
+
+    SET(PATCH_COMMAND_PROTOBUF_HOST sed -e "s#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2)#bool operator ()(const FieldDescriptor\\* f1, const FieldDescriptor\\* f2) const#g" -i ${SOURCE_DIR}/src/google/protobuf/compiler/java/java_file.cc)
     IF(BUILD_FOR_HOST)
         # set for server compile.
         if(NOT LITE_WITH_ARM)
@@ -254,12 +255,13 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
                 ${OPTIONAL_CACHE_ARGS}
         )
     else()
+        message(STATUS "_______________________________${PATCH_COMMAND_PROTOBUF_HOST}")
         ExternalProject_Add(
             ${TARGET_NAME}
             ${EXTERNAL_PROJECT_LOG_ARGS}
             PREFIX          ${SOURCE_DIR}
             UPDATE_COMMAND  ""
-	    PATCH_COMMAND   ${PATCH_COMMAND}
+	    PATCH_COMMAND   ${PATCH_COMMAND_PROTOBUF_HOST}
             GIT_REPOSITORY  ""
             GIT_TAG         ${PROTOBUF_TAG}
             SOURCE_DIR      ${SOURCE_DIR}
