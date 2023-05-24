@@ -255,7 +255,6 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
                 ${OPTIONAL_CACHE_ARGS}
         )
     else()
-        message(STATUS "_______________________________${PATCH_COMMAND_PROTOBUF_HOST}")
         ExternalProject_Add(
             ${TARGET_NAME}
             ${EXTERNAL_PROJECT_LOG_ARGS}
