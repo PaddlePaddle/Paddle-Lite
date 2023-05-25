@@ -73,11 +73,8 @@ class TestTransposeSoftmaxTransposeFusePass(FusePassAutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        # dim = draw(st.sampled_from([0, 2, 3, 4]))
-        dim = draw(st.sampled_from([2, 3, 4]))
+        dim = draw(st.sampled_from([0, 2, 3, 4]))
         transpose_type = draw(st.sampled_from(["transpose", "transpose2"]))
-
-        #default dim = 4
         transpose1_input_shape = draw(
             st.lists(
                 st.integers(

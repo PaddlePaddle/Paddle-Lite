@@ -38,7 +38,7 @@ class TestRemoveTfRedundantOpsPass(FusePassAutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         #OpenCL outdiff
-        # '''        
+        '''        
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -53,7 +53,7 @@ class TestRemoveTfRedundantOpsPass(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        # '''
+        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,

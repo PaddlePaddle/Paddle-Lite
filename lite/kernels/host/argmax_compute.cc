@@ -36,7 +36,6 @@ void ArgmaxCompute<T>::Run() {
   }
   axis = std::max(axis, 0);
   if (param.X->dims().size() == 0) {
-    auto x_data = input->template data<T>();
     auto out_data = output->template mutable_data<T>();
     out_data[0] = 0;  // same with paddle
     return;
