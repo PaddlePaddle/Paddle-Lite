@@ -37,7 +37,7 @@ class TestPreluOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 2])
         self.enable_testing_on_place(
-            TargetType.Host,
+            TargetType.ARM,
             PrecisionType.FP16,
             DataLayoutType.NCHW,
             thread=[1, 2])

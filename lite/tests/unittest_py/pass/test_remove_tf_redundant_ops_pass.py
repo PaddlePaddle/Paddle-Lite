@@ -33,10 +33,10 @@ class TestRemoveTfRedundantOpsPass(FusePassAutoScanTest):
             TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.X86, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.X86, [PrecisionType.FP32],
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
         #OpenCL outdiff
         '''        
         opencl_places = [

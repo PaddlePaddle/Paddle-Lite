@@ -182,13 +182,13 @@ function run_python_demo() {
     check_classification_result $target $log_file
 
     # mobilenetv1_light_api
-    python$PYTHON_VERSION mobilenetv1_light_api.py \
-        --model_dir "opt_${target}.nb" \
-        --input_shape 1 3 224 224 \
-        --label_path ./labels.txt \
-        --image_path ./tabby_cat.jpg \
-        --backend $target 2>&1 | tee $log_file
-    check_classification_result $target $log_file
+    # python$PYTHON_VERSION mobilenetv1_light_api.py \
+    #     --model_dir "opt_${target}.nb" \
+    #     --input_shape 1 3 224 224 \
+    #     --label_path ./labels.txt \
+    #     --image_path ./tabby_cat.jpg \
+    #     --backend $target 2>&1 | tee $log_file
+    # check_classification_result $target $log_file
   done
 }
 

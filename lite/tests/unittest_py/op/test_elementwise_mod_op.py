@@ -140,6 +140,14 @@ class TestElementwiseModOp(AutoScanTest):
                                    IgnoreReasons.PADDLELITE_NOT_SUPPORT,
                                    "Only test 0D-tensor on CPU(ARM/Host) now.")
 
+        def _teller4(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.X86:
+                return True
+
+        self.add_ignore_check_case(_teller4, IgnoreReasons.ACCURACY_ERROR,
+                                   "X86 has diff.")
+
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)
 

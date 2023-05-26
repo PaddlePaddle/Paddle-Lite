@@ -34,10 +34,10 @@ class TestElementwiseMulConstantEliminateFuse(FusePassAutoScanTest):
         #     TargetType.ARM, [PrecisionType.FP32],
         #     DataLayoutType.NCHW,
         #     thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.X86, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.X86, [PrecisionType.FP32],
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(

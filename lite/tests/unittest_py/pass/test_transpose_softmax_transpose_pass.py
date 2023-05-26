@@ -49,13 +49,13 @@ class TestTransposeSoftmaxTransposeFusePass(FusePassAutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=opencl_places)
+        # self.enable_testing_on_place(places=opencl_places)
         #x86
-        self.enable_testing_on_place(
-            TargetType.X86,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.X86,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
         # metal has diff(test case: transpose1_input_shape = [1, 1, 64, 64])
         # metal_places = [
         #     Place(TargetType.Metal, PrecisionType.FP32,

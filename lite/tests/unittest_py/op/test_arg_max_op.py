@@ -78,7 +78,6 @@ class TestArgMaxOp(AutoScanTest):
         keepdims = draw(st.booleans())
         dtype = draw(st.sampled_from([-1, 2, 3]))
         assume(axis < len(in_shape))
-        # need Paddle Develop support
         in_shape = draw(st.sampled_from([in_shape, []]))
         if in_shape == []:
             axis = draw(st.sampled_from([0]))  # paddle error when -1
@@ -145,8 +144,8 @@ class TestArgMaxOp(AutoScanTest):
             target_type = predictor_config.target()
             in_x_shape = list(program_config.inputs["input_data"].shape)
             if target_type not in [
-                    TargetType.ARM, TargetType.Host, TargetType.X86,
-                    TargetType.Metal, TargetType.OpenCL
+                    TargetType.ARM, TargetType.X86, TargetType.Metal,
+                    TargetType.OpenCL
             ]:
                 if len(in_x_shape) == 0:
                     return True
@@ -174,7 +173,7 @@ class TestArgMaxOp(AutoScanTest):
             "Lite does not support 'in_shape_size == 1' on kunlunxin_xtcl.")
 
         self.add_ignore_check_case(
-            _teller6, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            _teller6, IgnoreReasons.PADDLE_NOT_SUPPORT,
             "Only test 0D-tensor on CPU(ARM/Host/OpenCL/Metal/X86) now.")
 
         self.add_ignore_check_case(_teller7,

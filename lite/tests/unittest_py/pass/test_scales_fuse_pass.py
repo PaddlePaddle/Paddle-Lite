@@ -137,7 +137,7 @@ class TestScalesFusePass(FusePassAutoScanTest):
         max_examples = 25
         if target_str in ["Metal"]:
             # Make sure to generate enough valid cases for specific targets
-            max_examples = 200
+            max_examples = 400
         self.run_and_statis(
             quant=False,
             max_examples=max_examples,

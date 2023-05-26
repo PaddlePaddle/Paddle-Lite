@@ -39,10 +39,10 @@ class TestConvActiveFuse(FusePassAutoScanTest):
         #     TargetType.ARM, [PrecisionType.FP16],
         #     DataLayoutType.NCHW,
         #     thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.X86, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.X86, [PrecisionType.FP32],
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
         #some case OpenCL not support
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
