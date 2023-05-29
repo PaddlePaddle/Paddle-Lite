@@ -115,6 +115,7 @@ function compile_publish_inference_lib {
   cd PaddleSlim
   python$PYTHON_VERSION -m pip install opencv-python==4.6.0.66
   python$PYTHON_VERSION -m pip install scikit-learn
+  python$PYTHON_VERSION -m pip install matplotlib
   python$PYTHON_VERSION setup.py install
   cd ../
   rm -rf PaddleSlim
