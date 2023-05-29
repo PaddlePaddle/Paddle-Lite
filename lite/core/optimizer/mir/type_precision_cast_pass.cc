@@ -348,7 +348,7 @@ void PrecisionCastPass::AddCastInst(const Type& from,
       std::move(inst_node->AsStmt().kernels().front());
   auto updated_op_info = *inst_node->AsStmt().mutable_op_info();
 
-  // inst_node->AsStmt().ResetOp(updated_op_info, graph->valid_places());
+  inst_node->AsStmt().ResetOp(updated_op_info, graph->valid_places());
   inst_node->AsStmt().kernels().clear();
   inst_node->AsStmt().kernels().emplace_back(
       std::move(original_selected_kernel));

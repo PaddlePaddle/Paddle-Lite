@@ -105,7 +105,7 @@ function compile_publish_inference_lib {
   # We use develop version or 2.5rc for 0D-Tensor
   # first, you need install MacM1 Paddle 2.5rc version use: 
   python$PYTHON_VERSION -m pip uninstall -y paddlepaddle
-  python$PYTHON_VERSION -m pip install paddlepaddle==2.5.0rc0 -i https://pypi.tuna.tsinghua.edu.cn/simple
+  python$PYTHON_VERSION -m pip install paddlepaddle==2.5.0rc0 -i https://pypi.tuna.tsinghua.edu.cn/simple --no-cache-dir
 
   # second, you need install PaddleSlim Dev use:
   python$PYTHON_VERSION -m pip uninstall -y paddleslim

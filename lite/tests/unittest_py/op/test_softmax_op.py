@@ -152,6 +152,12 @@ class TestSoftmaxOp(AutoScanTest):
                 if len(in_x_shape) == 0:
                     return True
 
+        def teller5(program_config, predictor_config):
+            precision_type = predictor_config.precision()
+            target_type = predictor_config.target()
+            if precision_type == PrecisionType.FP16 and target_type == TargetType.ARM:
+                return True
+
         self.add_ignore_check_case(
             teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "OpenCL has diff and doesn't support 0D, X86 has diff")
@@ -162,6 +168,8 @@ class TestSoftmaxOp(AutoScanTest):
         self.add_ignore_check_case(teller4,
                                    IgnoreReasons.PADDLELITE_NOT_SUPPORT,
                                    "Only test 0D-tensor on CPU(ARM/Host) now.")
+        self.add_ignore_check_case(teller5, IgnoreReasons.ACCURACY_ERROR,
+                                   "ARM FP16 has diff.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

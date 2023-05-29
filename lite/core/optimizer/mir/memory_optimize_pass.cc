@@ -78,8 +78,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
                                             "cast",
                                             "expand",
                                             "share_data",
-                                            "viterbi_decode",
-                                            "softmax"};
+                                            "viterbi_decode"};
 
   auto insert_invalid_op_nodes_for_specific_target = [&](
       std::set<std::string> op_node_set, TargetType specific_target) {
