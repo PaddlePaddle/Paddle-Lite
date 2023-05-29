@@ -232,7 +232,7 @@ class ReduceAllComputeTester : public arena::TestCase {
       }
     }
     reduce_all_ = (reduce_all_ || full_dim);
-    if (dim_.size() == 0 || x_rank == 0) {
+    if (dim_.size() == 0 || x_rank == 0 || dim_.size() == x_rank) {
       reduce_all_ = true;
     }
 
@@ -240,6 +240,8 @@ class ReduceAllComputeTester : public arena::TestCase {
     if (reduce_all_) {
       if (keep_dim_) {
         out_dims = std::vector<int64_t>(x_rank, 1);
+      } else {
+        out_dims = std::vector<int64_t>();
       }
     } else {
       size_t out_rank = keep_dim_ ? x_rank : x_rank - dim_.size();
@@ -344,6 +346,8 @@ void test_reduce_all(Place place, float abs_err) {
                   default:
                     x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
                 }
+                // 0d output tensor is not supported in NNAdapter Now
+                if (dims == 2 && dim.size() > 1) continue;
 
                 int last_dim = dim.back();
                 if (dim.back() < 0) {

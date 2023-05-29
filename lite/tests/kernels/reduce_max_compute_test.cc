@@ -283,13 +283,15 @@ class ReduceMaxComputeTester : public arena::TestCase {
     }
 
     std::stable_sort(dim_.begin(), dim_.end());
-    if (dim_.size() == 0 || x_rank == 0) {
+    if (dim_.size() == 0 || x_rank == 0 || dim_.size() == x_rank) {
       reduce_all_ = true;
     }
     std::vector<int64_t> out_dims;
     if (reduce_all_) {
       if (keep_dim_) {
         out_dims = std::vector<int64_t>(x_rank, 1);
+      } else {
+        out_dims = std::vector<int64_t>();
       }
     } else {
       for (size_t i = 0; i < x_dims_.size(); i++) {
@@ -310,8 +312,8 @@ class ReduceMaxComputeTester : public arena::TestCase {
       if (!keep_dim_ && out_dims.empty()) {
         out_dims.push_back(1);
       }
-      out->Resize(DDim(out_dims));
     }
+    out->Resize(DDim(out_dims));
 
     auto* out_data = out->mutable_data<float>();
 

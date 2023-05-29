@@ -229,6 +229,8 @@ class ReduceSumComputeTester : public arena::TestCase {
     if (reduce_all_) {
       if (keep_dim_) {
         out_dims = std::vector<int64_t>(x_rank, 1);
+      } else {
+        out_dims = std::vector<int64_t>();
       }
     } else {
       for (int i = 0; i < x_dims_.size(); i++) {
