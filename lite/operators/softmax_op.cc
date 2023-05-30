@@ -25,8 +25,9 @@ bool SoftmaxOp::CheckShape() const {
   CHECK_OR_FALSE(param_.output);
   auto x_dims = param_.x->dims();
   auto x_rank = x_dims.size();
-  CHECK_OR_FALSE(param_.axis >= -static_cast<int>(x_rank) &&
-                 param_.axis <= static_cast<int>(x_rank));
+  if (param_.axis != -1)
+    CHECK_OR_FALSE(param_.axis >= -static_cast<int>(x_rank) &&
+                   param_.axis <= static_cast<int>(x_rank));
   return true;
 }
 
@@ -52,11 +53,6 @@ bool SoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   } else {
     param_.axis = -1;
   }
-  // 0D Tensor
-  if (param_.x->dims().size() == 0) {
-    param_.axis = 0;
-  }
-
   if (opdesc.HasAttr("eleminate_success")) {
     param_.eleminate_success = opdesc.GetAttr<bool>("eleminate_success");
   }
