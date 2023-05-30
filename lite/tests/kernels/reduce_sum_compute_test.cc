@@ -328,6 +328,8 @@ void test_reduce_sum(Place place,
                 if (std::find(dim.begin(), dim.end(), 0) == dim.end() &&
                     !keep_dim)
                   continue;
+                // 0d output tensor is not supported in NNAdapter Now
+                if (reduce_all) continue;
 #endif
                 auto x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
                 std::unique_ptr<arena::TestCase> tester(
