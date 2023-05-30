@@ -16,6 +16,7 @@
 
 #include <vector>
 #include "layers/spatial_transformer.h"
+#include "layers/vae_decoder.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -39,40 +40,26 @@ class XPUUpDecoderCompute : public KernelLite<TARGET(kXPU), PType> {
   virtual ~XPUUpDecoderCompute() = default;
 
  private:
-  std::vector<xft::xftVec<float>> xft_resblock_gn_weight_;
-  std::vector<xft::xftVec<float>> xft_resblock_gn_bias_;
-  std::vector<xft::xftVec<float>> xft_resblock_conv_bias_;
-  std::vector<xft::xftTensor<int16_t, 4>> xft_resblock_conv_weights_;
+  xft::UpDecoderParam up_decoder_param_;
 
-  std::vector<const int16_t *> arg_resblock_conv_filter_int16_;
-  std::vector<const float *> resblock_conv_filter_max_;
-  std::vector<const float *> resblock_input_max_;
+  std::vector<std::vector<xft::xftVec<float>>> xft_res_gn_weight_;
+  std::vector<std::vector<xft::xftVec<float>>> xft_res_gn_bias_;
+  std::vector<std::vector<xft::xftVec<float>>> xft_res_conv_bias_;
+  std::vector<std::vector<xft::xftTensor<int16_t, 4>>> xft_res_conv_weight_;
+
+  std::vector<std::vector<const int16_t *>> res_conv_filter_int16_;
+  std::vector<std::vector<const float *>> res_conv_filter_max_;
+  std::vector<std::vector<const float *>> res_conv_input_max_;
+
   XPUScratchPadGuard resblock_conv_filter_max_guard_;
   XPUScratchPadGuard post_conv_filter_max_guard_;
 
-  template <typename T>
-  std::vector<const T *> *GetWeight() {
-    LOG(FATAL) << "Invalid Weight Type";
-    return nullptr;
-  }
-
-  template <typename T>
-  std::vector<const T *> *GetFilter() {
-    LOG(FATAL) << "Invalid Weight Type";
-    return nullptr;
-  }
-
-  std::vector<const int16_t *> *GetFilter() {
-    return &arg_resblock_conv_filter_int16_;
-  }
-
-  void PreparePostConvFilterMax(const std::vector<lite::Tensor *> &weight_max,
-                                int max_ptr_len,
-                                std::vector<const float *> *max_xpu_ptrs);
-  void PrepareResblockConvFilterMax(
+  void PrepareResConvFilterMax(
       const std::vector<lite::Tensor *> &filter_max,
+      const std::vector<int> &extra_info,
       int max_ptr_len,
-      std::vector<const float *> *max_xpu_ptrs);
+      int conv_offset,
+      std::vector<std::vector<const float *>> *max_xpu_ptrs);
 };
 
 }  // namespace xpu
