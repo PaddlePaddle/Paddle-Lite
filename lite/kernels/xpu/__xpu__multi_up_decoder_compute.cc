@@ -300,7 +300,7 @@ void XPUMultiUpDecoderCompute<InType, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   const InType* in1 = param.input1->template data<InType>();
-  InType* out = param.output->template mutable_data<InType>();
+  InType* out = param.output->template mutable_data<InType>(TARGET(kXPU));
   int batch = static_cast<int>(param.input1->dims()[0]);
   int channel = static_cast<int>(param.input1->dims()[1]);
   int nh = static_cast<int>(param.input1->dims()[2]);

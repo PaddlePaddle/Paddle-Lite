@@ -516,14 +516,16 @@ class XPUMultiUpDecoderFusePass : public ProgramPass {
   // TODO(shenyijun01): Currently, the multi-up--decoder op will be fused by
   // fixed pattern with fixed num of up-decoders.
   const std::vector<std::vector<int>> num_resblock_per_up_decoder = {
-      {4, 3, 3, 3, 3}, {4, 3, 3, 3}};
+      {4, 3, 3, 3, 3}, {4, 3, 3, 3}, {3}};
   const std::vector<std::vector<bool>> has_post_interp_conv_per_up_decoder = {
-      {true, true, true, true, false}, {true, true, true, false}};
+      {true, true, true, true, false}, {true, true, true, false}, {false}};
   const std::vector<std::vector<bool>>
       has_post_interp_conv_input_max_per_up_decoder = {
-          {false, false, false, false, false}, {false, false, false, false}};
+          {false, false, false, false, false},
+          {false, false, false, false},
+          {false}};
   const std::vector<std::vector<bool>> has_input_max_per_up_decoder = {
-      {false, false, false, true, true}, {false, false, true, true}};
+      {false, false, false, true, true}, {false, false, true, true}, {false}};
 
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     for (int i = 0; i < num_resblock_per_up_decoder.size(); ++i) {
