@@ -132,6 +132,7 @@ set(COMMON_FLAGS
     -Wno-error=literal-suffix
     -Wno-error=sign-compare
     -Wno-error=unused-local-typedefs
+    -Wno-error=array-bounds #Warning in gcc12
     -Wno-error=parentheses-equality # Warnings in pybind11
     -Wno-error=ignored-attributes  # Warnings in Eigen, gcc 6.3
     -Wno-error=terminate  # Warning in PADDLE_ENFORCE
