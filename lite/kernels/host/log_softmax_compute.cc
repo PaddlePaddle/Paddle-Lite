@@ -35,9 +35,17 @@ void LogSoftmaxCompute::Run() {
   if (axis < 0) {
     axis += x_rank;
   }
-  int axis_size = x_dims_[axis];
-  int outer_num = x_dims_.Slice(0, axis).production();
-  int inner_num = x_dims_.Slice(axis + 1, x_rank).production();
+  int axis_size = 1;
+  int outer_num = 1;
+  int inner_num = 1;
+  if (x_rank > 0) {
+    axis_size = x_dims_[axis];
+    outer_num = x_dims_.Slice(0, axis).production();
+    inner_num = x_dims_.Slice(axis + 1, x_rank).production();
+  } else {
+    out_data[0] = 0;
+    return;
+  }
   int compute_size = outer_num * inner_num;
   for (int i = 0; i < compute_size; i++) {
     int idx_inner = i % inner_num;

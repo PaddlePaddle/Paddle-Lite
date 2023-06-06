@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/unbind_op.h"
+#include <algorithm>
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -24,8 +25,12 @@ bool UnbindOp::CheckShape() const {
   CHECK_GT_OR_FALSE(param_.output.size(), 1UL);
   auto x_dims = param_.x->dims();
   auto x_rank = x_dims.size();
-  CHECK_OR_FALSE(param_.axis >= -static_cast<int>(x_rank) &&
-                 param_.axis < static_cast<int>(x_rank));
+  if (x_rank == 0) {
+    CHECK(param_.axis == 0 || param_.axis == -1);
+  } else {
+    CHECK_OR_FALSE(param_.axis >= -static_cast<int>(x_rank) &&
+                   param_.axis < static_cast<int>(x_rank));
+  }
   return true;
 }
 
@@ -35,6 +40,7 @@ bool UnbindOp::InferShapeImpl() const {
 
   std::vector<int64_t> outs_dims;
   param_.axis = param_.axis >= 0 ? param_.axis : param_.axis + in_dims.size();
+  param_.axis = std::max(param_.axis, 0);
   for (int i = 0; i < in_dims.size(); i++) {
     if (i == param_.axis) continue;
     outs_dims.push_back(in_dims[i]);

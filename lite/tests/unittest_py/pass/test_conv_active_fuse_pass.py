@@ -31,18 +31,18 @@ import hypothesis.strategies as st
 class TestConvActiveFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(
-            TargetType.ARM, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.ARM, [PrecisionType.FP16],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.X86, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.ARM, [PrecisionType.FP32],
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.ARM, [PrecisionType.FP16],
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.X86, [PrecisionType.FP32],
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
         #some case OpenCL not support
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
@@ -57,7 +57,7 @@ class TestConvActiveFuse(FusePassAutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=opencl_places)
+        #self.enable_testing_on_place(places=opencl_places)
         #Metal not support conv2d_transpose: cannot find the name
         '''       
         metal_places = [

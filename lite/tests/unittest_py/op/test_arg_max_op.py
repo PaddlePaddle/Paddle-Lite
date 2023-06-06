@@ -78,16 +78,16 @@ class TestArgMaxOp(AutoScanTest):
         keepdims = draw(st.booleans())
         dtype = draw(st.sampled_from([-1, 2, 3]))
         assume(axis < len(in_shape))
-        # need Paddle Develop support
-        # in_shape = draw(st.sampled_from([in_shape, []]))
-        # if in_shape == []:
-        #     axis = 0
+        in_shape = draw(st.sampled_from([in_shape, []]))
+        if in_shape == []:
+            axis = draw(st.sampled_from([0]))  # paddle error when -1
+
         arg_max_op = OpConfig(
             type="arg_max",
             inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"]},
             attrs={
-                "axis": axis,
+                "axis": int(axis),
                 "keepdims": keepdims,
                 "dtype": dtype,
                 "flatten": False
@@ -126,10 +126,6 @@ class TestArgMaxOp(AutoScanTest):
                         0] != 1 or axis != 1 or keep_dims == False or set_dtype == 2:
                     return True
 
-        def _teller3(program_config, predictor_config):
-            if predictor_config.target() == TargetType.Metal:
-                return True
-
         def _teller4(program_config, predictor_config):
             if "intel_openvino" in self.get_nnadapter_device_name():
                 in_shape = program_config.inputs["input_data"].shape
@@ -148,8 +144,8 @@ class TestArgMaxOp(AutoScanTest):
             target_type = predictor_config.target()
             in_x_shape = list(program_config.inputs["input_data"].shape)
             if target_type not in [
-                    TargetType.ARM, TargetType.Host, TargetType.X86,
-                    TargetType.Metal, TargetType.OpenCL
+                    TargetType.ARM, TargetType.X86, TargetType.Metal,
+                    TargetType.OpenCL
             ]:
                 if len(in_x_shape) == 0:
                     return True
@@ -167,10 +163,7 @@ class TestArgMaxOp(AutoScanTest):
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite is not supported on metal. We need to fix it as soon as possible."
         )
-        self.add_ignore_check_case(
-            _teller3, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
-        )
+
         self.add_ignore_check_case(
             _teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'len(in_shape) == 1' on intel OpenVINO.")
@@ -180,8 +173,8 @@ class TestArgMaxOp(AutoScanTest):
             "Lite does not support 'in_shape_size == 1' on kunlunxin_xtcl.")
 
         self.add_ignore_check_case(
-            _teller6, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "0D-tensor is not supported on this target now.")
+            _teller6, IgnoreReasons.PADDLE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(ARM/Host/OpenCL/Metal/X86) now.")
 
         self.add_ignore_check_case(_teller7,
                                    IgnoreReasons.PADDLELITE_NOT_SUPPORT,

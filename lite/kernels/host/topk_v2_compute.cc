@@ -39,12 +39,20 @@ void TopkV2Compute::Run() {
   if (param.k_is_tensor) {
     k = param.KTensor->data<int>()[0];
   }
-  int outer_size = x_dims.count(0, axis);
-  int axis_size = x_dims[axis];
-  int inner_size = x_dims.count(axis + 1, dim_size);
+  int outer_size = 1;
+  int axis_size = 1;
+  int inner_size = 1;
+  if (x_dims.size() > 0) {
+    outer_size = x_dims.count(0, axis);
+    axis_size = x_dims[axis];
+    inner_size = x_dims.count(axis + 1, dim_size);
+  } else {
+    out_val[0] = x_data[0];
+    out_ind[0] = 0;
+    return;
+  }
   int sum_size = axis_size * inner_size;
   int out_sum_size = k * inner_size;
-
   for (int i = 0; i < outer_size; i++) {
     for (int tmp_j = 0; tmp_j < inner_size; tmp_j++) {
       // we need sort outer_size * inner_size times

@@ -73,9 +73,14 @@ class TransposeCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto& param = *param_.get_mutable<param_t>();
     auto* x = param.x;
     auto* out = param.output;
-    out->template mutable_data<T>();
+    auto* x_ptr = x->template data<T>();
+    auto* out_ptr = out->template mutable_data<T>();
     int ndims = param.axis.size();
     auto& context = ctx_->As<X86Context>();
+    if (!param.x->dims().size()) {
+      out_ptr[0] = x_ptr[0];
+      return;
+    }
     TransCompute<lite::TargetType::kX86, T>(
         ndims, context, *x, out, param.axis);
   }
@@ -92,9 +97,14 @@ class Transpose2Compute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     auto& param = *param_.get_mutable<param_t>();
     auto* x = param.x;
     auto* out = param.output;
-    out->template mutable_data<T>();
+    auto* x_ptr = x->template data<T>();
+    auto* out_ptr = out->template mutable_data<T>();
     int ndims = param.axis.size();
     auto& context = ctx_->As<X86Context>();
+    if (!param.x->dims().size()) {
+      out_ptr[0] = x_ptr[0];
+      return;
+    }
     TransCompute<lite::TargetType::kX86, T>(
         ndims, context, *x, out, param.axis);
   }

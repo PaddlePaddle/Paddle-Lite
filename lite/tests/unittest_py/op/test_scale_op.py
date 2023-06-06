@@ -231,7 +231,7 @@ class TestScaleOp(AutoScanTest):
         max_examples = 1000
         if target_str in ["OpenCL", "Metal"]:
             # Make sure to generate enough valid cases for specific targets
-            max_examples = 2000
+            max_examples = 3000
         elif target_str in ["NNAdapter"]:
             # Make sure to generate enough valid cases for specific targets
             max_examples = 300

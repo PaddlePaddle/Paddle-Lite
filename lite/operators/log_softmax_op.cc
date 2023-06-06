@@ -26,7 +26,7 @@ bool LogSoftmaxOp::CheckShape() const {
   auto x_dims = param_.x->dims();
   auto x_rank = x_dims.size();
   CHECK_OR_FALSE(param_.axis >= -static_cast<int>(x_rank) &&
-                 param_.axis < static_cast<int>(x_rank));
+                 param_.axis <= static_cast<int>(x_rank));
   return true;
 }
 
@@ -46,6 +46,10 @@ bool LogSoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
     param_.axis = opdesc.GetAttr<int>("axis");
   } else {
     param_.axis = -1;
+  }
+
+  if (param_.x->dims().size() == 0) {
+    param_.axis = 0;
   }
 
   CHECK(param_.x);

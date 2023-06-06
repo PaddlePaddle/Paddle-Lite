@@ -31,9 +31,6 @@ bool UniqueOp::InferShapeImpl() const {
   if (param_.return_counts) CHECK(param_.Counts);
   DDim in_dims = param_.X->dims();
   if (!param_.is_sorted) {
-    CHECK_EQ(in_dims.size(), 1) << "The Input(X) should be 1-D Tensor,"
-                                << "But now dims of Input(X) is "
-                                << in_dims.size();
     param_.Out->Resize({1});  // need infer
     param_.Index->Resize(in_dims);
     return true;
@@ -46,10 +43,10 @@ bool UniqueOp::InferShapeImpl() const {
     if (axis_value < 0) {
       axis_value += in_dims.size();
     }
-    CHECK_LT(axis_value, in_dims.size()) << "The axis(%d) should be less than"
+    CHECK_LE(axis_value, in_dims.size()) << "The axis(%d) should be less equal"
                                          << "the dimension size(%d) of x.";
     param_.Out->Resize({1});  // need infer
-    if (param_.return_inverse) {
+    if (param_.return_inverse && in_dims.size() > 0) {
       param_.Index->Resize({in_dims[axis_value]});
     }
   }

@@ -58,7 +58,7 @@ class TestGreaterOp(AutoScanTest):
 
         in_shape_x = draw(st.sampled_from([in_shape_x, []]))
         if in_shape_x == []:
-            axis = 0
+            axis = draw(st.sampled_from([-1, 0]))
 
         if axis == -1:
             in_shape_y = in_shape_x

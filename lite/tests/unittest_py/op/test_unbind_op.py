@@ -45,7 +45,7 @@ class TestUnbindOp(AutoScanTest):
         C = draw(st.integers(min_value=2, max_value=128))
         H = draw(st.integers(min_value=2, max_value=128))
         W = draw(st.integers(min_value=2, max_value=128))
-        in_shape = draw(st.sampled_from([[N, C, H, W]]))
+        in_shape = draw(st.sampled_from([[N, C, H, W], [N]]))
 
         # host only register float32 and int64
         in_dtype = draw(st.sampled_from([np.float32, np.int64]))
@@ -54,6 +54,9 @@ class TestUnbindOp(AutoScanTest):
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
         axis_data = draw(st.integers(min_value=1, max_value=3))
+
+        if len(in_shape) == 1:
+            axis_data = draw(st.sampled_from([0, -1]))
 
         output_string = ["out"] * in_shape[axis_data]
         for i in range(in_shape[axis_data]):

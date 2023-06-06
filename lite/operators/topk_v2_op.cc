@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/operators/topk_v2_op.h"
+#include <algorithm>
 #include "lite/core/op_registry.h"
+
 namespace paddle {
 namespace lite {
 namespace operators {
@@ -28,24 +30,29 @@ bool TopkV2Op::CheckShape() const {
 bool TopkV2Op::InferShapeImpl() const {
   auto out_dims = param_.X->dims();
   int dim_size = out_dims.size();
-  auto axis_valid =
-      ((param_.axis >= (-1 * dim_size)) && (param_.axis < dim_size));
-  CHECK_EQ(axis_valid, true) << "the axis of topk_v2 must be ["
-                             << (-1 * dim_size) << ", " << dim_size
-                             << "but you set axis is" << param_.axis;
+  if (param_.axis != -1) {
+    auto axis_valid =
+        ((param_.axis >= (-1 * dim_size)) && (param_.axis <= dim_size));
+    CHECK_EQ(axis_valid, true) << "the axis of topk_v2 must be ["
+                               << (-1 * dim_size) << ", " << dim_size
+                               << "], but you set axis is" << param_.axis;
+  }
   if (param_.axis < 0) {
     param_.axis += dim_size;
   }
+  param_.axis = std::max(param_.axis, 0);
   int k = -1;
   if (param_.k_is_tensor) {
     k = param_.KTensor->data<int>()[0];
   } else {
     k = param_.K;
   }
-  CHECK_GE(out_dims[param_.axis], k) << "input of topk_v2 op must have >=" << k
-                                     << " columns in axis of "
-                                     << out_dims[param_.axis];
-  out_dims[param_.axis] = k;
+  if (out_dims.size() > 0) {
+    CHECK_GE(out_dims[param_.axis], k)
+        << "input of topk_v2 op must have >=" << k << " columns in axis of "
+        << out_dims[param_.axis];
+    out_dims[param_.axis] = k;
+  }
   auto out = param_.Out;
   out->Resize(out_dims);
   out->set_lod(param_.X->lod());
