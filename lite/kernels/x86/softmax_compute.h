@@ -58,25 +58,27 @@ class SoftmaxCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
     auto* x = param.x;
     auto* output = param.output;
-    output->template mutable_data<T>();
+    auto out_ptr = output->template mutable_data<T>();
 
     const int rank = x->dims().size();
     const int axis = CanonicalAxis(param.axis, rank);
-    int axis_dim = x->dims()[axis];
+    int axis_dim = 0;
     if (rank == 2 && axis == 1) {
+      axis_dim = x->dims()[axis];
       lite::x86::math::SoftmaxFunctor<lite::TargetType::kX86, T, true>()(
           context, axis_dim, x, output);
+    } else if (rank == 0) {
+      output->Resize(x->dims());
+      out_ptr[0] = 1;
     } else {
       const int n = SizeToAxis(axis, x->dims());
       const int d = SizeFromAxis(axis, x->dims());
-
       DDim x_dims = x->dims();
       DDim out_dims = output->dims();
-
       DDim shape_2d(std::vector<DDim::value_type>{n, d});
       x->Resize(shape_2d);
       output->Resize(shape_2d);
-
+      axis_dim = x->dims()[axis];
       lite::x86::math::SoftmaxFunctor<lite::TargetType::kX86, T, true>()(
           context, axis_dim, x, output);
       x->Resize(x_dims);

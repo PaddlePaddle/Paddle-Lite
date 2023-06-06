@@ -53,6 +53,11 @@ class TestGatherNdOp(AutoScanTest):
             st.sampled_from([[value0], [value0, value1],
                              [value0, value1, value2]]))
         index_type = draw(st.sampled_from(["int32", "int64"]))
+        test_0d = draw(st.sampled_from([False, True]))
+
+        if test_0d == True:
+            in_shape = draw(st.integers(min_value=2, max_value=20))
+            index = [1]
 
         def generate_index(*args, **kwargs):
             if index_type == "int32":
@@ -68,8 +73,7 @@ class TestGatherNdOp(AutoScanTest):
                 return np.random.randint(kwargs["low"], kwargs["high"],
                                          kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return (kwargs["high"] - kwargs["low"]) * np.random.random(
-                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
+                return np.random.random(kwargs["shape"]).astype(np.float32)
 
         input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
 

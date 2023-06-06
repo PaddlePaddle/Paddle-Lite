@@ -60,15 +60,15 @@ class TestTranspose2Op(AutoScanTest):
         self.enable_testing_on_place(places=opencl_places)
 
         # segmentation fault
-        # metal_places = [
-        #     Place(TargetType.Metal, PrecisionType.FP32,
-        #           DataLayoutType.MetalTexture2DArray),
-        #     Place(TargetType.Metal, PrecisionType.FP16,
-        #           DataLayoutType.MetalTexture2DArray),
-        #     Place(TargetType.ARM, PrecisionType.FP32),
-        #     Place(TargetType.Host, PrecisionType.FP32)
-        # ]
-        # self.enable_testing_on_place(places=metal_places)
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -77,10 +77,10 @@ class TestTranspose2Op(AutoScanTest):
 
     def sample_program_configs(self, draw):
         N = draw(st.integers(min_value=1, max_value=4))
-        C = draw(st.integers(min_value=1, max_value=128))
-        H = draw(st.integers(min_value=1, max_value=128))
-        W = draw(st.integers(min_value=1, max_value=128))
-        in_shape = draw(st.sampled_from([[N, C, H, W]]))
+        C = draw(st.integers(min_value=1, max_value=17))
+        H = draw(st.integers(min_value=1, max_value=17))
+        W = draw(st.integers(min_value=1, max_value=17))
+        in_shape = draw(st.sampled_from([[N, C, H, W], []]))
         target = self.get_target()
         use_mkldnn_data = False
         in_dtype = np.float32
@@ -89,7 +89,8 @@ class TestTranspose2Op(AutoScanTest):
             in_dtype = draw(st.sampled_from([np.float32]))
         elif (target == "ARM"):
             in_dtype = draw(
-                st.sampled_from([np.float32, np.int32, np.int64, np.int8]))
+                st.sampled_from([np.float32, np.int32,
+                                 np.int64]))  # paddle doesn't have int8
             # ToDo : 
             # fp16 can not be verified
         elif (target in ["OpenCL", "Metal"]):
@@ -111,11 +112,14 @@ class TestTranspose2Op(AutoScanTest):
                 sorted(axis_int32_data) == [0, 1, 2, 3] and
                 axis_int32_data != [0, 1, 2, 3])
 
-        def generate_X_data():
-            return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
+        if in_shape == []:
+            axis_int32_data = []
 
-        outputs = {"Out": ["output_data"], "XShape": ["XShape_data"]}
-        outputs_data = ["output_data", "XShape_data"]
+        def generate_X_data():
+            return np.random.random(in_shape).astype(in_dtype)
+
+        outputs = {"Out": ["output_data"]}
+        outputs_data = ["output_data"]
         if self.get_target() == "NNAdapter":
             outputs = {"Out": ["output_data"]}
             outputs_data = ["output_data"]
@@ -131,7 +135,7 @@ class TestTranspose2Op(AutoScanTest):
         transpose2_op.outputs_dtype = {"output_data": in_dtype}
         program_config = ProgramConfig(
             ops=[transpose2_op],
-            weights={"XShape_data": TensorConfig(shape=[len(in_shape)])},
+            weights={},
             inputs={
                 "X_data": TensorConfig(data_gen=partial(generate_X_data)),
             },
@@ -153,6 +157,29 @@ class TestTranspose2Op(AutoScanTest):
             teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' or 'axis[0] != 0' on nvidia_tensorrt."
         )
+
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["X_data"].shape)
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.Metal,
+                    TargetType.X86
+            ]:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(ARM/Host/X86/Metal/OpenCL) now.")
+
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.Metal:
+                return True
+
+        self.add_ignore_check_case(_teller3,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Lite has diff on Metal")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

@@ -44,10 +44,18 @@ class ArgsortCompute
     if (axis < 0) {
       axis += dim_size;
     }
-
-    int outer_size = x_dims.count(0, axis);
-    int axis_size = x_dims[axis];
-    int inner_size = x_dims.count(axis + 1, dim_size);
+    int outer_size = 1;
+    int axis_size = 1;
+    int inner_size = 1;
+    if (x_dims.size() > 0) {
+      outer_size = x_dims.count(0, axis);
+      axis_size = x_dims[axis];
+      inner_size = x_dims.count(axis + 1, dim_size);
+    } else {
+      out_ind[0] = 0;
+      out_val[0] = x_data[0];
+      return;
+    }
     int sort_size = axis_size * inner_size;
     LITE_PARALLEL_BEGIN(n, tid, outer_size) {
       const DataType* in_data = x_data + n * sort_size;

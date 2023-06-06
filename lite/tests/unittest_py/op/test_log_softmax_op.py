@@ -49,8 +49,7 @@ class TestLogSoftmaxOp(AutoScanTest):
         input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
         assume(len(in_shape) > 1 and input_axis < len(in_shape))
 
-        # in_shape = draw(st.sampled_from([in_shape, []]))
-        in_shape = draw(st.sampled_from([in_shape]))
+        in_shape = draw(st.sampled_from([in_shape, []]))
         if in_shape == []:
             input_axis = -1
 
@@ -103,9 +102,9 @@ class TestLogSoftmaxOp(AutoScanTest):
                 if len(in_x_shape) == 0:
                     return True
 
-        self.add_ignore_check_case(_teller2,
-                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(ARM/Host/X86/Metal/OpenCL) now.")
 
     def test(self, *args, **kwargs):
         max_examples = 100

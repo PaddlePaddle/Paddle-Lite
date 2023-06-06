@@ -69,8 +69,21 @@ class TestScatterNdAddOp(AutoScanTest):
         index_np = np.vstack(
             [np.random.randint(
                 0, s, size=100) for s in in_shape]).T.astype(index_type)
+
+        test_update_0d = draw(st.sampled_from([True, False]))
+        if test_update_0d:
+            in_shape = draw(
+                st.lists(
+                    st.integers(
+                        min_value=2, max_value=8),
+                    min_size=1,
+                    max_size=1))
+            index_np = np.array([1]).reshape([1]).astype(index_type)
+
         update_shape = judge_update_shape(in_shape, index_np.shape)
-        assume(index_np.shape[-1] <= len(in_shape))
+
+        if test_update_0d == False:
+            assume(index_np.shape[-1] <= len(in_shape))
 
         def generate_data(*args, **kwargs):
             if kwargs["type"] == "int32":
@@ -80,8 +93,7 @@ class TestScatterNdAddOp(AutoScanTest):
                 return np.random.randint(kwargs["low"], kwargs["high"],
                                          kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return kwargs["high"] * np.random.random(kwargs[
-                    "shape"]).astype(np.float32) + kwargs["low"]
+                return np.random.random(kwargs["shape"]).astype(np.float32)
 
         def generate_index_data(*args, **kwargs):
             return index_np
@@ -130,7 +142,7 @@ class TestScatterNdAddOp(AutoScanTest):
         max_examples = 25
         if target_str == "Host":
             # Make sure to generate enough valid cases for Host
-            max_examples = 220
+            max_examples = 400
         self.run_and_statis(
             quant=False, min_success_num=25, max_examples=max_examples)
 

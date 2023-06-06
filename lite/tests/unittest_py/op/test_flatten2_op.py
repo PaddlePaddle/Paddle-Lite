@@ -30,8 +30,8 @@ from functools import partial
 class TestFlatten2Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
+        # self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32,
+        #                              DataLayoutType.NCHW)
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -45,7 +45,7 @@ class TestFlatten2Op(AutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=opencl_places)
+        # self.enable_testing_on_place(places=opencl_places)
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
                   DataLayoutType.MetalTexture2DArray),

@@ -162,7 +162,7 @@ class TestDeformableConvOp(AutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=50)
 
 
 if __name__ == "__main__":

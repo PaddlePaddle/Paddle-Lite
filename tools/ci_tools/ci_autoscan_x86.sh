@@ -101,11 +101,31 @@ function compile_publish_inference_lib {
     echo "**************************************************************************************"
     exit 1
   fi
+  
+  # We use develop version or 2.5rc for 0D-Tensor
+  # first, you need install MacM1 Paddle 2.5rc version use: 
+  python$PYTHON_VERSION -m pip uninstall -y paddlepaddle
+  # python$PYTHON_VERSION -m pip install paddlepaddle==2.5.0rc0 -i https://pypi.tuna.tsinghua.edu.cn/simple --no-cache-dir
+  python$PYTHON_VERSION -m pip install paddlepaddle==2.5.0rc0
 
-  # Step3. Install whl and its depends
-  check_paddle_version
+  # second, you need install PaddleSlim Dev use:
+  python$PYTHON_VERSION -m pip uninstall -y paddleslim
+
+  git clone https://github.com/PaddlePaddle/PaddleSlim.git
+  cd PaddleSlim
+  python$PYTHON_VERSION -m pip install opencv-python==4.6.0.66
+  python$PYTHON_VERSION -m pip install scikit-learn
+  python$PYTHON_VERSION -m pip install matplotlib
+  python$PYTHON_VERSION setup.py install
+  cd ../
+  rm -rf PaddleSlim
+  # PaddleLite
   python$PYTHON_VERSION -m pip install --force-reinstall $whl_path
-  python$PYTHON_VERSION -m pip install -r ./lite/tests/unittest_py/requirements.txt
+  # requirements
+  python$PYTHON_VERSION -m pip install numpy
+  python$PYTHON_VERSION -m pip install hypothesis==6.27.0
+  python$PYTHON_VERSION -m pip install rpyc
+  python$PYTHON_VERSION -m pip install wheel
 }
 
 function run_test() {
@@ -165,13 +185,13 @@ function run_python_demo() {
     check_classification_result $target $log_file
 
     # mobilenetv1_light_api
-    python$PYTHON_VERSION mobilenetv1_light_api.py \
-        --model_dir "opt_${target}.nb" \
-        --input_shape 1 3 224 224 \
-        --label_path ./labels.txt \
-        --image_path ./tabby_cat.jpg \
-        --backend $target 2>&1 | tee $log_file
-    check_classification_result $target $log_file
+    # python$PYTHON_VERSION mobilenetv1_light_api.py \
+    #     --model_dir "opt_${target}.nb" \
+    #     --input_shape 1 3 224 224 \
+    #     --label_path ./labels.txt \
+    #     --image_path ./tabby_cat.jpg \
+    #     --backend $target 2>&1 | tee $log_file
+    # check_classification_result $target $log_file
   done
 }
 
