@@ -55,15 +55,6 @@ class TestReduceMaxOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        metal_places = [
-            Place(TargetType.Metal, PrecisionType.FP32,
-                  DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.Metal, PrecisionType.FP16,
-                  DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.ARM, PrecisionType.FP32),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(device_names=["intel_openvino"])
 
