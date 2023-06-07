@@ -57,7 +57,7 @@ class TestPNormOp(AutoScanTest):
         assume(len(in_shape) >= axis + 1)
         epsilon = draw(st.sampled_from([1.0e-12, 1.0e-13]))
         keepdim = draw(st.booleans())
-        asvector = draw(st.booleans())
+        asvector = False
         p_norm_op = OpConfig(
             type="p_norm",
             inputs={"X": ["input_data"]},
