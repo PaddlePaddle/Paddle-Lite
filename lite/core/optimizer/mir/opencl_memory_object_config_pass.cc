@@ -315,6 +315,27 @@ void OpenCLMemoryObjectConfigPass::CorrectArgumentPlace(SSAGraph* graph) {
       }
     }
 
+    if (inst.place().layout == DATALAYOUT(kNCHW)) {
+      // buffer unsupport case isomerism cpu
+      const std::vector<std::string> buffer_unsupport_int_ops{"scale"};
+      if (std::find(buffer_unsupport_int_ops.begin(),
+                    buffer_unsupport_int_ops.end(),
+                    op_type) != buffer_unsupport_int_ops.end()) {
+        for (std::list<Node*>::iterator i = x->inlinks.begin();
+             i != x->inlinks.end();
+             ++i) {
+          std::string in_name =
+              get_argname((*i)->arg()->name, inst.op_info()->inputs());
+          if (in_name == "X" && (*i)->arg()->type) {
+            if ((*i)->arg()->type->precision() != PRECISION(kFP16) &&
+                (*i)->arg()->type->precision() != PRECISION(kFloat)) {
+              change_image2d_to_cpu = true;
+            }
+          }
+        }
+      }
+    }
+
     if (change_image2d_to_cpu) {
       UpdateTargetToCPU(x, graph->valid_places());
     } else if (change_image2d_to_buffer) {
