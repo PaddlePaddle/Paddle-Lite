@@ -127,9 +127,9 @@ class TestStackOp(AutoScanTest):
                 if len(stack_input1_shape) == 0:
                     return True
 
-        self.add_ignore_check_case(_teller2,
-                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

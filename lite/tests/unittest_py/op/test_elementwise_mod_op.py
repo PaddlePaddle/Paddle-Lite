@@ -136,9 +136,9 @@ class TestElementwiseModOp(AutoScanTest):
                 if len(in_x_shape) == 0 or len(in_y_shape) == 0:
                     return True
 
-        self.add_ignore_check_case(_teller3,
-                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
 
         def _teller4(program_config, predictor_config):
             target_type = predictor_config.target()

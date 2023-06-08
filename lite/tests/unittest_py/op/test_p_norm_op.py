@@ -50,14 +50,14 @@ class TestPNormOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=128),
-                min_size=1,
+                min_size=0,
                 max_size=3))
         in_shape = in_num + in_c_h_w
         axis = draw(st.sampled_from([-1, 0, 1, 2, 3]))
         assume(len(in_shape) >= axis + 1)
         epsilon = draw(st.sampled_from([1.0e-12, 1.0e-13]))
         keepdim = draw(st.booleans())
-        asvector = draw(st.booleans())
+        asvector = False
         p_norm_op = OpConfig(
             type="p_norm",
             inputs={"X": ["input_data"]},

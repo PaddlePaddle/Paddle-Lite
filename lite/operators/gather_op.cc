@@ -52,7 +52,10 @@ bool GatherOp::InferShapeImpl() const {
       inner_dim_size *= input_dim[i];
       out_dim_vec.push_back(input_dim[i]);
     }
-    out_dim_vec.push_back(index_size);
+    auto index_rank = param_.Index->dims().size();
+    if (index_rank) {
+      out_dim_vec.push_back(index_size);
+    }
     for (int i = axis_index + 1; i < input_dim.size(); i++) {
       outer_dim_size *= input_dim[i];
       out_dim_vec.push_back(input_dim[i]);

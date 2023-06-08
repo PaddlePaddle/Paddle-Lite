@@ -178,7 +178,7 @@ class TestDropoutOp(AutoScanTest):
 
         # self.add_ignore_check_case(_teller2,
         #                            IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-        #                            "Only test 0D-tensor on CPU(ARM/Host) now.")
+        #                            "0D-tensor is not supported on this target now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

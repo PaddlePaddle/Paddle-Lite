@@ -182,9 +182,9 @@ class TestReshapeOp(AutoScanTest):
                 if len(in_x_shape) == 0:
                     return True
 
-        self.add_ignore_check_case(_teller2,
-                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-                                   "Only test 0D-tensor on CPU(ARM/Host) now.")
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
 
         def teller3(program_config, predictor_config):
             if self.get_nnadapter_device_name() == "intel_openvino":

@@ -71,8 +71,11 @@ void MetalImage::InitTexture() {
                 dim.emplace_back(pad_to_four_dim_[i]);
             });
         } break;
-        case 0:
-            break;
+        case 0: {
+            for (int i = 0; i < 4; ++i) {
+                dim.emplace_back(pad_to_four_dim_[i]);
+            }
+        } break;
         default:
             LOG(FATAL) << "metal_image: Dim size is error";
     }
