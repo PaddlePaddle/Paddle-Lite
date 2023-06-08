@@ -100,7 +100,8 @@ class SoftplusCompute : public KernelLite<TARGET(kXPU), PType> {
   virtual ~SoftplusCompute() = default;
 };
 
-class AbsCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class AbsCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::ActivationParam;
 
