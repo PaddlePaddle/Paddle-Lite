@@ -24,6 +24,7 @@
 #include "lite/backends/xpu/xpu_l3_strategy.h"
 #include "lite/backends/xpu/xpu_quantizer.h"
 #include "lite/backends/xpu/xpu_scratch.h"
+#include "lite/utils/env.h"
 
 namespace paddle {
 namespace lite {
@@ -147,10 +148,27 @@ struct XPURunTimeOption {
       xpu_dump_tensor_path = config->xpu_dump_tensor_path;
       need_dump_xpu_info = true;
     }
+    xpu_fc_autotune_level = config->xpu_fc_autotune_level;
+    if (!config->xpu_fc_autotune_file.empty()) {
+      xpu_fc_autotune_file = config->xpu_fc_autotune_file;
+    }
+    xpu_fc_autotune_writeback = config->xpu_fc_autotune_writeback;
+    quant_post_dynamic_activation_method =
+        config->quant_post_dynamic_activation_method;
+    transformer_softmax_optimize_level =
+        config->transformer_softmax_optimize_level;
+    quant_post_static_gelu_out_threshold =
+        config->quant_post_static_gelu_out_threshold;
+    api_l3_reserve = static_cast<size_t>(
+        GetIntFromEnv("API_L3_SIZE_RES", config->api_l3_reserve));
+    CHECK_LE(api_l3_reserve, xpu_local_l3_size)
+        << "api_l3_reserve should <= local_l3_size";
     // Perdictor clone need set device.
     XPU_CALL(xpu_set_device(xpu_dev_num));
   }
 
+  // usually use XPU_VISIBLE_DEVICES, it's not neccessary
+  int xpu_dev_num{0};
   // set by config
   size_t xpu_local_l3_size{std::numeric_limits<size_t>::max()};
   bool xpu_local_l3_autotune{true};
@@ -158,12 +176,19 @@ struct XPURunTimeOption {
   int xpu_cluster_num{0};
   int xpu_sdnn_num{0};
   bool xpu_enable_multi_stream{false};
-  int xpu_dev_num{0};
   // encoder config
-  std::string multi_encoder_precision;
+  std::string multi_encoder_precision{"int16"};
   std::string compute_precision;
   bool multi_encoder_adaptive_seqlen{false};
   bool local_quant{false};
+  int xpu_fc_autotune_level{0};
+  std::string xpu_fc_autotune_file{""};
+  bool xpu_fc_autotune_writeback{false};
+  // kl1 : 0 per  tensor, 1 per batch, 2 per head
+  // kl2 : 0 per tensor, else local_quant(per_16)
+  int quant_post_dynamic_activation_method{0};
+  int transformer_softmax_optimize_level{0};
+  float quant_post_static_gelu_out_threshold{10.f};
   // dump tensor
   std::string xpu_dump_tensor_path{""};
   std::string xpu_dump_log_path{""};

@@ -147,6 +147,69 @@ class LITE_API PaddlePredictor {
   lite_api::PowerMode mode_{lite_api::LITE_POWER_NO_BIND};
 };
 
+// reference XpuConfig in PaddlePaddle
+// paddle/fluid/inference/api/paddle_analysis_config.h
+struct LITE_API LiteXpuConfig {
+  // Select which xpu device to run model.
+  int device_id{0};
+
+  // Available l3 size (Byte)
+  // For kunlun1, max l3_size is 16773120 Byte
+  // For kunlun2, max l3_size is 67104768 Byte
+  size_t l3_size{0};
+  // If l3_ptr is not nullptr, it is used as l3 buffer.
+  // If l3_ptr is nullptr, new l3 buffer will be created.
+  void* l3_ptr{nullptr};
+  // Available l3 size for autotune.
+  // If l3_autotune_size is 0, autotune is closed.
+  // Note: The remaining l3 size (l3_size - l3_autotune_size) is for
+  // kernels (both paddle/xdnn kernels)
+  size_t l3_autotune_size{0};
+
+  // Stream for execution.
+  // If stream is nullptr, default stream will be used.
+  void* stream{nullptr};
+
+  // Conv autotune level. Default 0 means no autotune.
+  // Note: Paddle-Lite only.
+  int conv_autotune_level{0};
+  // Base conv autotune info is read from conv_autotune_file.
+  // Note: Paddle-Lite only.
+  std::string conv_autotune_file;
+  // Whether write new conv autotune info to conv_autotune_file.
+  // Note: Paddle-Lite only.
+  bool conv_autotune_file_writeback{false};
+
+  // Fc autotune level. The Optional values are 0-9. Default 0 means no
+  // autotune. Note: Paddle-Lite only.
+  int fc_autotune_level{0};
+  // Base fc autotune info is read from fc_autotune_file.
+  // Note: Paddle-Lite only.
+  std::string fc_autotune_file;
+  // Whether write new fc autotune info to fc_autotune_file.
+  // Note: Paddle-Lite only.
+  bool fc_autotune_file_writeback{false};
+
+  // Gemm compute precision. Optional values are 0(int8),1(int16),2(int31).
+  // Note: "gemm_compute_precision" has no effect on quanted ops of quant model
+  int gemm_compute_precision{1};
+  // Which method to optimize softmax in transformer structure. Optional values
+  // are 0,1,2. Note: Paddle-Lite only.
+  int transformer_softmax_optimize_level{0};
+  // Whether enable adaptive_seqlen optimize on transformer encoder.
+  // Note: Paddle-Lite only.
+  bool transformer_encoder_adaptive_seqlen{true};
+
+  // Gelu out max threshold is limited to quant_post_static_gelu_out_threshold
+  // if use static post-quantization.
+  // Note: Paddle-Lite only.
+  float quant_post_static_gelu_out_threshold{10.f};
+  // Activation method if use dynamic post-quantization.
+  // For kunlun1, optional values are 0(per_tensor),1(per_batch),2(per_head).
+  // For kunlun2, optional values are 0(per_tensor) or non-zero(every_16).
+  // Note: Paddle-Lite only.
+  int quant_post_dynamic_activation_method{0};
+};
 /// Base class for all the configs.
 class LITE_API ConfigBase {
   std::string model_dir_;
@@ -325,6 +388,8 @@ class LITE_API ConfigBase {
   nnadapter_model_cache_buffers() const {
     return nnadapter_model_cache_buffers_;
   }
+  // use this api to replace all set_xpu_xxx
+  void set_xpu_config(const LiteXpuConfig& xpu_config);
   // XPU only, set the size of the workspace memory from L3 cache for the
   // current thread.
   // **DEPRECATED**, use set_xpu_l3_cache_method() in the future

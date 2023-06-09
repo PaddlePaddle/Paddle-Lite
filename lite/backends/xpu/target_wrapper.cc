@@ -65,11 +65,9 @@ void TargetWrapperXPU::ScatterL3Cache(
   }
   CHECK(xpu_runtime_ptr->xpu_l3_planner);
   size_t total_block_l3_size = 0, xdnn_ctx_l3_size = 0;
-  xpu_runtime_ptr->api_l3_reserve = GetIntFromEnv("API_L3_SIZE_RES");
 
   // When set "API_L3_SIZE_RES", be careful that it should not be greater than
   // l3_size.
-  CHECK_GT(l3_size, xpu_runtime_ptr->api_l3_reserve);
   int8_t* api_l3_ptr = reinterpret_cast<int8_t*>(l3_ptr) + l3_size -
                        xpu_runtime_ptr->api_l3_reserve;
   size_t lite_l3_left = l3_size - xpu_runtime_ptr->api_l3_reserve;
@@ -172,7 +170,6 @@ void TargetWrapperXPU::FreeL3Cache() {
           nullptr, 0));
     }
     if (xpu_runtime_ptr->xpu_local_l3_autotune) {
-      xpu_runtime_ptr->api_l3_reserve = GetIntFromEnv("API_L3_SIZE_RES");
       CHECK_GT(xpu_runtime_ptr->xpu_local_l3_size,
                xpu_runtime_ptr->api_l3_reserve);
       if (xpu_runtime_ptr->api_l3_reserve) {
