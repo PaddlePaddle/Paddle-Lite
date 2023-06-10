@@ -102,7 +102,7 @@ class TargetWrapper<TARGET(kXPU)> {
     }
 
     if (!xpu_runtime_ptr->xpu_enable_multi_stream) {
-      LOG(INFO) << "all threads share the default xpu stream";
+      LOG(INFO) << "all thread(s) share the default xpu stream";
     } else {
       // use different stream per thread
       xpu_runtime_ptr->xpu_stream.CreatXPUStream();

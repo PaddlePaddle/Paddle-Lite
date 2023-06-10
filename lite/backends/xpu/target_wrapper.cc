@@ -170,7 +170,7 @@ void TargetWrapperXPU::FreeL3Cache() {
           nullptr, 0));
     }
     if (xpu_runtime_ptr->xpu_local_l3_autotune) {
-      CHECK_GT(xpu_runtime_ptr->xpu_local_l3_size,
+      CHECK_GE(xpu_runtime_ptr->xpu_local_l3_size,
                xpu_runtime_ptr->api_l3_reserve);
       if (xpu_runtime_ptr->api_l3_reserve) {
         xpu_runtime_ptr->xpu_l3_planner->run_autotune(

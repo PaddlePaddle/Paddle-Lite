@@ -646,6 +646,7 @@ void ConfigBase::set_xpu_dump_log_path(const std::string &dump_log_path) {
 #endif
 }
 
+// user's LiteXpuConfig -> configbase's XPURunTimeOption
 void ConfigBase::set_xpu_config(const LiteXpuConfig &xpu_config) {
 #ifdef LITE_WITH_XPU
   lite::XPURunTimeOption *xpu_runtime_opt =
@@ -658,6 +659,9 @@ void ConfigBase::set_xpu_config(const LiteXpuConfig &xpu_config) {
   if (xpu_config.l3_ptr) {
     LOG(WARNING) << "lite ignore the pre allocated L3 buffer, and malloc "
                     "itself on every inference";
+  }
+  if (xpu_config.stream) {
+    xpu_runtime_opt->xpu_stream.SetXPUStream(xpu_config.stream);
   }
   // l3_autotune_size is for lite framework, the remaining is for api_l3_reserve
   CHECK_LE(xpu_config.l3_autotune_size, xpu_config.l3_size)

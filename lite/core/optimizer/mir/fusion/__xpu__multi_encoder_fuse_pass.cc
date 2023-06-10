@@ -856,6 +856,7 @@ class XPUSingleEncoderFuser : public FuseBase {
             << ", max_qkv_output: " << max_qkv_output;
 
     if (act_type_ == "gelu") {
+#ifdef LITE_WITH_XPU
       // use gelu10 according to whitepaper http://arxiv.org/abs/2004.09602
       float gelu_limit_value =
           GetDoubleFromEnv("QUANT_GELU_OUT_THRESHOLD",
@@ -867,6 +868,7 @@ class XPUSingleEncoderFuser : public FuseBase {
 
       input_max[9] = std::min(gelu_limit_value, input_max[9]);
       input_max[10] = std::min(gelu_limit_value, input_max[10]);
+#endif
     }
     if (matmul_quant) {
       auto matmul_offset = quant_mul_ops.size();

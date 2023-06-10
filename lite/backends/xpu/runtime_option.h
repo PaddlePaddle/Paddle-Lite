@@ -98,12 +98,11 @@ class XPUStream {
     xpu_stream_origin_ = xpu_stream_;
   }
 
-  void* GetXPUStream() { return xpu_stream_; }
+  void* GetXPUStream() const { return xpu_stream_; }
   void SetXPUDevid(int devid) { devid_ = devid; }
   void SetXPUStream(void* xpu_stream) {
-    CHECK(xpu_stream != nullptr) << "Not set default stream.";
     // TODO(quwei): Check  devid in current stream.
-    if (xpu_stream_origin_ != nullptr) {
+    if ((xpu_stream_origin_ != nullptr) && (xpu_stream_origin_ != xpu_stream)) {
       CHECK(xpu_stream_destroy(xpu_stream_origin_) == 0)
           << "xpu stream destroy failed.";
       LOG(WARNING) << "Thread 0x" << std::hex << std::this_thread::get_id()
@@ -123,6 +122,7 @@ class XPUStream {
 };
 
 struct XPURunTimeOption {
+  // config to predictor's XPURunTimeOption config
   void Set(const XPURunTimeOption* config) {
     xpu_local_l3_size = config->xpu_local_l3_size;
     xpu_local_l3_autotune = config->xpu_local_l3_autotune;
@@ -132,6 +132,9 @@ struct XPURunTimeOption {
     xpu_enable_multi_stream = config->xpu_enable_multi_stream;
     xpu_dev_num = config->xpu_dev_num;
     xpu_stream.SetXPUDevid(xpu_dev_num);
+    if (config->xpu_stream.GetXPUStream()) {
+      xpu_stream.SetXPUStream(config->xpu_stream.GetXPUStream());
+    }
     if (!config->multi_encoder_precision.empty()) {
       multi_encoder_precision = config->multi_encoder_precision;
     }
