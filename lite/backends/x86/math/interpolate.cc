@@ -13,8 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/x86/math/interpolate.h"
+
 #include <string>
 #include <vector>
+
 #include "lite/backends/x86/math/math_function.h"
 
 namespace paddle {
@@ -523,6 +525,72 @@ void nearest_interp(const float* input_data,
   }
 }
 
+void bicubic_interp(const float* input_data,
+                    float* output_data,
+                    const float ratio_h,
+                    const float ratio_w,
+                    const int n,
+                    const int c,
+                    const int in_h,
+                    const int in_w,
+                    const int out_h,
+                    const int out_w,
+                    const bool align_corners) {
+  int total_count = n * c;
+#ifdef PADDLE_WITH_MKLML
+#if !defined(WIN32)
+#pragma omp parallel for collapse(3)
+#else
+#pragma omp parallel for
+#endif  // WIN32
+#endif  // PADDLE_WITH_MKLML
+  for (int i = 0; i < total_count; ++i) {
+    for (int h = 0; h < out_h; ++h) {
+      for (int w = 0; w < out_w; ++w) {
+        const float* input_data_ptr = input_data + i * in_h * in_w;
+        float* output_data_ptr =
+            output_data + i * out_h * out_w + h * out_w + w;
+
+        float y_n = align_corners ? ratio_h * h : ratio_h * (h + 0.5) - 0.5;
+        float x_n = align_corners ? ratio_w * w : ratio_w * (w + 0.5) - 0.5;
+        int input_y = floorf(y_n);
+        int input_x = floorf(x_n);
+        const float y_t = y_n - input_y;
+        const float x_t = x_n - input_x;
+
+        float coefficients[4];
+        // interp 4 times in x direction
+        for (int ii = 0; ii < 4; ++ii) {
+          int access_y = std::max(std::min(input_y - 1 + ii, in_h - 1), 0);
+
+          int access_x_0 =
+              std::max(std::min(input_x - 1, in_w - 1), static_cast<int>(0));
+          int access_x_1 =
+              std::max(std::min(input_x + 0, in_w - 1), static_cast<int>(0));
+          int access_x_2 =
+              std::max(std::min(input_x + 1, in_w - 1), static_cast<int>(0));
+          int access_x_3 =
+              std::max(std::min(input_x + 2, in_w - 1), static_cast<int>(0));
+
+          coefficients[ii] =
+              cubic_interp(input_data_ptr[access_y * in_w + access_x_0],
+                           input_data_ptr[access_y * in_w + access_x_1],
+                           input_data_ptr[access_y * in_w + access_x_2],
+                           input_data_ptr[access_y * in_w + access_x_3],
+                           x_t);
+        }
+
+        // interp y direction
+        *output_data_ptr = cubic_interp(coefficients[0],
+                                        coefficients[1],
+                                        coefficients[2],
+                                        coefficients[3],
+                                        y_t);
+      }
+    }
+  }
+}
+
 inline std::vector<int> get_new_shape(
     std::vector<const lite::Tensor*> list_new_shape_tensor) {
   // get tensor from
@@ -725,6 +793,18 @@ void interpolate_v2(lite::Tensor* input,
                     align_mode);
   } else if ("Nearest" == interpolate_type) {
     nearest_interp(input_data,
+                   output_data,
+                   ratio_h,
+                   ratio_w,
+                   n,
+                   c,
+                   in_h,
+                   in_w,
+                   out_h,
+                   out_w,
+                   align_corners);
+  } else if ("Bicubic" == interpolate_type) {
+    bicubic_interp(input_data,
                    output_data,
                    ratio_h,
                    ratio_w,

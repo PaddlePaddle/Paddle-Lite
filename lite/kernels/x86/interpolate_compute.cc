@@ -13,8 +13,10 @@
 // limitations under the License.
 
 #include "lite/kernels/x86/interpolate_compute.h"
+
 #include <string>
 #include <vector>
+
 #include "lite/backends/x86/math/interpolate.h"
 
 namespace paddle {
@@ -118,6 +120,38 @@ void NearestInterpComputeV2::Run() {
                                   interp_method);
 }
 
+void BicubicInterpComputeV2::Run() {
+  auto& param = Param<operators::InterpolateParam>();
+  // required input
+  lite::Tensor* X = param.X;
+  // optional inputs
+  lite::Tensor* OutSize = param.OutSize;
+  auto SizeTensor = param.SizeTensor;
+  auto Scale = param.Scale;
+  // output
+  lite::Tensor* Out = param.Out;
+  // optional attributes
+  float scale = param.scale;
+  int out_w = param.out_w;
+  int out_h = param.out_h;
+  int align_mode = param.align_mode;
+  // required attributes
+  bool align_corners = param.align_corners;
+  std::string interp_method = "Bicubic";
+  lite::x86::math::interpolate_v2(X,
+                                  OutSize,
+                                  SizeTensor,
+                                  Scale,
+                                  Out,
+                                  scale,
+                                  param.scale_v,
+                                  out_h,
+                                  out_w,
+                                  align_mode,
+                                  align_corners,
+                                  interp_method);
+}
+
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite
@@ -173,6 +207,21 @@ REGISTER_LITE_KERNEL(nearest_interp_v2,
                      kFloat,
                      kNCHW,
                      paddle::lite::kernels::x86::NearestInterpComputeV2,
+                     def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(bicubic_interp_v2,
+                     kX86,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::x86::BicubicInterpComputeV2,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("OutSize",

@@ -13,9 +13,11 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/interpolate_compute.h"
+
 #include <iostream>
 #include <memory>
 #include <vector>
+
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -170,6 +172,50 @@ void NearestInterpCompute<InType, PType>::PrepareForRun() {
   }
 }
 
+// Only fp32 support for XPU1
+template <typename InType, PrecisionType PType>
+void BicubicInterpCompute<InType, PType>::Run() {
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  lite::Tensor* X = param.X;
+  int n = X->dims()[0];
+  int c = X->dims()[1];
+  int in_h = X->dims()[2];
+  int in_w = X->dims()[3];
+
+  lite::Tensor* Out = param.Out;
+  int out_h = Out->dims()[2];
+  int out_w = Out->dims()[3];
+  int align_mode = param.align_mode;
+  bool align_corners = param.align_corners;
+
+  int trans_mode = -1;
+  if (align_corners == true) {
+    trans_mode = 0;
+  } else if ((align_corners == false) && (align_mode == 0)) {
+    trans_mode = 1;
+  } else {
+    trans_mode = 2;
+  }
+
+  int r =
+      xdnn::bicubic_resize2d<InType>(ctx.GetRawContext(),
+                                     X->data<InType>(),
+                                     Out->mutable_data<InType>(TARGET(kXPU)),
+                                     n,
+                                     c,
+                                     in_h,
+                                     in_w,
+                                     out_h,
+                                     out_w,
+                                     trans_mode,
+                                     true,
+                                     -1.0f,
+                                     -1.0f);
+
+  CHECK_EQ(r, 0);
+}
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite
@@ -184,6 +230,8 @@ using BiliInterp_INT8 = xpu::BilinearInterpCompute<int8_t, PRECISION(kInt8)>;
 using NearInterp_FP32 = xpu::NearestInterpCompute<float, PRECISION(kFloat)>;
 using NearInterp_FP16 = xpu::NearestInterpCompute<float16, PRECISION(kFP16)>;
 using NearInterp_INT8 = xpu::NearestInterpCompute<int8_t, PRECISION(kInt8)>;
+
+using BicubicInterp_FP32 = xpu::BicubicInterpCompute<float, PRECISION(kFloat)>;
 
 REGISTER_LITE_KERNEL(bilinear_interp, kXPU, kFloat, kNCHW, BiliInterp_FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -329,4 +377,14 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(bicubic_interp_v2, kXPU, kFloat, kNCHW, BicubicInterp_FP32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("OutSize",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("SizeTensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
