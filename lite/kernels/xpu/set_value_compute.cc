@@ -55,13 +55,12 @@ void SetValueCompute::Run() {
         param.Input->template data<__precision__>(),                        \
         value_ptr,                                                          \
         param.Out->template mutable_data<__precision__>(TARGET(kXPU)),      \
-        std::vector<int>(param.Input->dims().data().begin(),                \
-                         param.Input->dims().data().end()),                 \
+        param.Input->dims().Vectorize(),                                    \
         {static_cast<int>(__data__.size())},                                \
-        std::vector<int>(__starts__.begin(), __starts__.end()),             \
-        std::vector<int>(__ends__.begin(), __ends__.end()),                 \
-        std::vector<int>(__steps__.begin(), __steps__.end()),               \
-        std::vector<int>(param.axes.begin(), param.axes.end()));            \
+        __starts__,                                                         \
+        __ends__,                                                           \
+        __steps__,                                                          \
+        param.axes);                                                        \
     CHECK_EQ(r, 0);                                                         \
     return;                                                                 \
   }
@@ -216,7 +215,7 @@ REGISTER_LITE_KERNEL(set_value,
                      kAny,
                      kNCHW,
                      paddle::lite::kernels::xpu::SetValueCompute,
-                     fp32)
+                     DISABLE_XPU1FP32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
     .BindInput("ValueTensor",
@@ -235,7 +234,7 @@ REGISTER_LITE_KERNEL(set_value,
                      kAny,
                      kNCHW,
                      paddle::lite::kernels::xpu::SetValueCompute,
-                     int32)
+                     DISABLE_XPU1Int32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindInput("ValueTensor",
@@ -254,7 +253,7 @@ REGISTER_LITE_KERNEL(set_value,
                      kAny,
                      kNCHW,
                      paddle::lite::kernels::xpu::SetValueCompute,
-                     int64)
+                     DISABLE_XPU1Int64)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("ValueTensor",

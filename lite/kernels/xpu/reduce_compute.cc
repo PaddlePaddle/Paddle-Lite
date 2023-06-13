@@ -171,23 +171,6 @@ struct ReduceMinFunctor {
   }
 };
 
-template <typename InType, typename OutType>
-struct ReduceMaxMixFunctor {
-  inline int operator()(xdnn::Context* ctx,
-                        const InType* x,
-                        OutType* out,
-                        const std::vector<int>& xshape,
-                        const std::vector<int>& dims,
-                        const float* max_x,
-                        const float* max_y) const {
-    int ret = 0;
-
-    ret = xdnn::reduce_max<int64_t>(ctx, x, out, xshape, dims);
-    CHECK_EQ(ret, 0);
-    return ret;
-  }
-};
-
 template <typename T>
 struct ReduceMaxFunctor {
   inline int operator()(xdnn::Context* ctx,
@@ -346,11 +329,10 @@ using ReduceMaxFloat16 = xpu::ReduceCompute<float16,
                                             float16,
                                             xpu::ReduceMaxFunctor<float16>,
                                             PRECISION(kFP16)>;
-using ReduceMaxInt32Int64 =
-    xpu::ReduceCompute<int64_t,
-                       int64_t,
-                       xpu::ReduceMaxMixFunctor<int64_t, int64_t>,
-                       PRECISION(kFloat)>;
+using ReduceMaxInt64 = xpu::ReduceCompute<int64_t,
+                                          int64_t,
+                                          xpu::ReduceMaxFunctor<int64_t>,
+                                          PRECISION(kFloat)>;
 
 using ReduceMinFloat32 = xpu::ReduceCompute<float,
                                             float,
@@ -451,8 +433,8 @@ REGISTER_LITE_KERNEL(reduce_max,
                      kXPU,
                      kFloat,
                      kNCHW,
-                     ReduceMaxInt32Int64,
-                     DISABLE_XPU1_ReduceMaxInt32)
+                     ReduceMaxInt64,
+                     DISABLE_XPU1_ReduceMaxInt64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .Finalize();
