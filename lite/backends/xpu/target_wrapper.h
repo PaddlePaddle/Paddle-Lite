@@ -91,46 +91,61 @@ class TargetWrapper<TARGET(kXPU)> {
     xpu_runtime_ptr->xpu_tls_raw_ctx->CreatXDNNContext(
         xpu_runtime_ptr->xpu_dev_num);
     CHECK(xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext());
-
+    xdnn::Context* xdnn_context =
+        xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext();
     if (xpu_runtime_ptr->xpu_cluster_num != 0) {
-      xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()->set_ncluster(
-          xpu_runtime_ptr->xpu_cluster_num);
+      xdnn_context->set_ncluster(xpu_runtime_ptr->xpu_cluster_num);
     }
 
     if (xpu_runtime_ptr->xpu_sdnn_num != 0) {
-      xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()->set_nsdnn(
-          xpu_runtime_ptr->xpu_sdnn_num);
+      xdnn_context->set_nsdnn(xpu_runtime_ptr->xpu_sdnn_num);
     }
 
     if (!xpu_runtime_ptr->xpu_enable_multi_stream) {
-      VLOG(3) << "all threads share the default xpu stream";
+      LOG(INFO) << "all thread(s) share the default xpu stream";
     } else {
       // use different stream per thread
       xpu_runtime_ptr->xpu_stream.CreatXPUStream();
       CHECK(xpu_runtime_ptr->xpu_stream.GetXPUStream());
     }
 
-    xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()->xpu_stream =
-        xpu_runtime_ptr->xpu_stream.GetXPUStream();
-    if (xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()->dev().type() ==
-        xdnn::kXPU1) {
+    xdnn_context->xpu_stream = xpu_runtime_ptr->xpu_stream.GetXPUStream();
+    if (xdnn_context->dev().type() == xdnn::kXPU1) {
       LOG(INFO) << "running in KunLun1";
-    } else if (xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()
-                   ->dev()
-                   .type() == xdnn::kXPU2) {
+    } else if (xdnn_context->dev().type() == xdnn::kXPU2) {
       LOG(INFO) << "running in KunLun2";
-    } else if (xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()
-                   ->dev()
-                   .type() == xdnn::kXPU3) {
+    } else if (xdnn_context->dev().type() == xdnn::kXPU3) {
       LOG(INFO) << "running in KunLun3";
     } else {
       LOG(FATAL) << "running in unknown XPU device: "
-                 << static_cast<int>(
-                        xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()
-                            ->dev()
-                            .type());
+                 << static_cast<int>(xdnn_context->dev().type());
     }
-
+    if (xpu_runtime_ptr->xpu_fc_autotune_level > 0) {
+      xdnn_context->set_option(
+          "XPU_FC_AUTOTUNE",
+          std::to_string(xpu_runtime_ptr->xpu_fc_autotune_level).c_str());
+    }
+    if (!xpu_runtime_ptr->xpu_fc_autotune_file.empty()) {
+      xdnn_context->set_option("XPU_FC_AUTOTUNE_FILE",
+                               xpu_runtime_ptr->xpu_fc_autotune_file.c_str());
+    }
+    if (xpu_runtime_ptr->xpu_fc_autotune_writeback) {
+      xdnn_context->set_option(
+          "XPU_FC_AUTOTUNE_WRITEBACK",
+          std::to_string(xpu_runtime_ptr->xpu_fc_autotune_writeback).c_str());
+    }
+    if (xpu_runtime_ptr->quant_post_dynamic_activation_method > 0) {
+      xdnn_context->set_option(
+          "XPU_PRECISION_MODE",
+          std::to_string(xpu_runtime_ptr->quant_post_dynamic_activation_method)
+              .c_str());
+    }
+    if (xpu_runtime_ptr->transformer_softmax_optimize_level > 0) {
+      xdnn_context->set_option(
+          "XPU_SOFTMAX_OPT",
+          std::to_string(xpu_runtime_ptr->transformer_softmax_optimize_level)
+              .c_str());
+    }
     if (xpu_runtime_ptr->xpu_l3_planner == nullptr) {
       xpu_runtime_ptr->xpu_l3_planner = new XPUL3Planner;
     }
@@ -154,8 +169,8 @@ class TargetWrapper<TARGET(kXPU)> {
       if (ret != 0 || local_gm_ptr == nullptr) {
         VLOG(3) << "No Enough GM Workspace For Current Predictor.";
       } else {
-        ret = xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()->_gm_mgr.set(
-            local_gm_ptr, xpu_runtime_ptr->xpu_local_gm_size);
+        ret = xdnn_context->_gm_mgr.set(local_gm_ptr,
+                                        xpu_runtime_ptr->xpu_local_gm_size);
         if (ret != 0) {
           LOG(WARNING) << "XPU GM Mgr Init Fail, Please Check Configuration.";
           TargetWrapperXPU::Free(local_gm_ptr);
@@ -164,7 +179,7 @@ class TargetWrapper<TARGET(kXPU)> {
       }
     }
 
-    return xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext();
+    return xdnn_context;
   }
 
   static void MallocL3Cache(
