@@ -149,7 +149,7 @@ class LITE_API PaddlePredictor {
 
 // reference XpuConfig in PaddlePaddle
 // paddle/fluid/inference/api/paddle_analysis_config.h
-struct LITE_API LiteXpuConfig {
+struct LITE_API XpuConfig {
   // Select which xpu device to run model.
   int device_id{0};
 
@@ -389,7 +389,7 @@ class LITE_API ConfigBase {
     return nnadapter_model_cache_buffers_;
   }
   // use this api to replace all set_xpu_xxx
-  void set_xpu_config(const LiteXpuConfig& xpu_config);
+  void set_xpu_config(const XpuConfig& xpu_config);
   // XPU only, set the size of the workspace memory from L3 cache for the
   // current thread.
   // **DEPRECATED**, use set_xpu_l3_cache_method() in the future

@@ -646,8 +646,8 @@ void ConfigBase::set_xpu_dump_log_path(const std::string &dump_log_path) {
 #endif
 }
 
-// user's LiteXpuConfig -> configbase's XPURunTimeOption
-void ConfigBase::set_xpu_config(const LiteXpuConfig &xpu_config) {
+// user's XpuConfig -> configbase's XPURunTimeOption
+void ConfigBase::set_xpu_config(const XpuConfig &xpu_config) {
 #ifdef LITE_WITH_XPU
   lite::XPURunTimeOption *xpu_runtime_opt =
       reinterpret_cast<lite::XPURunTimeOption *>(
