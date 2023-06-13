@@ -856,15 +856,19 @@ class XPUSingleEncoderFuser : public FuseBase {
             << ", max_qkv_output: " << max_qkv_output;
 
     if (act_type_ == "gelu") {
+#ifdef LITE_WITH_XPU
       // use gelu10 according to whitepaper http://arxiv.org/abs/2004.09602
       float gelu_limit_value =
-          GetDoubleFromEnv("QUANT_GELU_OUT_THRESHOLD", 10.f);
+          GetDoubleFromEnv("QUANT_GELU_OUT_THRESHOLD",
+                           lite::TargetWrapperXPU::xpu_runtime_ptr
+                               ->quant_post_static_gelu_out_threshold);
       CHECK_GT(gelu_limit_value, 0.f)
           << "QUANT_GELU_OUT_THRESHOLD should be an positive float value: "
           << gelu_limit_value;
 
       input_max[9] = std::min(gelu_limit_value, input_max[9]);
       input_max[10] = std::min(gelu_limit_value, input_max[10]);
+#endif
     }
     if (matmul_quant) {
       auto matmul_offset = quant_mul_ops.size();
@@ -2147,8 +2151,9 @@ class XPUMultiEncoderFuser {
         CHECK(lite::TargetWrapperXPU::xpu_runtime_ptr)
             << "xpu_runtime_ptr null in pass";
         // For R200+int16+local quant, use the fp16 weight.
-        if (GetBoolFromEnv("XPU_LOCAL_QUANT") ||
-            lite::TargetWrapperXPU::xpu_runtime_ptr->local_quant) {
+        if (GetBoolFromEnv(
+                "XPU_LOCAL_QUANT",
+                lite::TargetWrapperXPU::xpu_runtime_ptr->local_quant)) {
           std::unique_ptr<float16[]> weight_qkv_trans_fp16(
               new float16[qkv_len]);
           paddle::lite::xpu::math::ConvertFP32ToFP16(
@@ -2202,17 +2207,18 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     // lite/backends/xpu/target_wrapper.cc is only compiled iff
     // LITE_WITH_XPU==ON. To suppress linkage error, we use
     // #ifdef here. Any better idea?
-    if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
-        lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision ==
-            "int31") {
+    if (GetStringFromEnv(
+            "XPU_ENCODER_PRECISION",
+            lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision) ==
+        "int31") {
       fc_precision = "int31";
       VLOG(3)
           << "Use int31 in XPUMultiEncoderOp, "
           << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision="
           << lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision;
-    } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
-               lite::TargetWrapperXPU::xpu_runtime_ptr
-                       ->multi_encoder_precision == "int8") {
+    } else if (GetStringFromEnv("XPU_ENCODER_PRECISION",
+                                lite::TargetWrapperXPU::xpu_runtime_ptr
+                                    ->multi_encoder_precision) == "int8") {
       fc_precision = "int8";
       VLOG(3)
           << "Use int8 in XPUMultiEncoderOp, "
