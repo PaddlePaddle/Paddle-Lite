@@ -60,8 +60,7 @@ struct ReduceSumMixFunctor {
                         const float* max_y) const {
     int ret = 0;
     XPUScratchPadGuard cast_guard_x = TargetWrapperXPU::MallocScratchPad(1 * 4);
-    if (std::is_same<InType, int32_t>::value &&
-        std::is_same<OutType, int64_t>::value) {
+    if (!std::is_same<InType, OutType>::value) {
       int nsize = 1;
       int nsize_x = 1;
       std::vector<int> size_shape(xshape.begin(), xshape.end());
@@ -75,18 +74,20 @@ struct ReduceSumMixFunctor {
         nsize_x *= item;
       }
 
-      cast_guard_x->Reserve(nsize_x * sizeof(int32_t));
-      ret = xdnn::cast_v2<int32_t, int64_t>(
-          ctx, x, reinterpret_cast<int64_t*>(cast_guard_x->addr_), nsize_x);
+      cast_guard_x->Reserve(nsize_x * sizeof(OutType));
+      ret = xdnn::cast_v2<InType, OutType>(
+          ctx, x, reinterpret_cast<OutType*>(cast_guard_x->addr_), nsize_x);
       CHECK_EQ(ret, 0);
 
-      ret = xdnn::reduce_sum<int64_t>(
+      ret = xdnn::reduce_sum<OutType>(
           ctx,
-          reinterpret_cast<int64_t*>(cast_guard_x->addr_),
+          reinterpret_cast<OutType*>(cast_guard_x->addr_),
           out,
           xshape,
           dims);
       CHECK_EQ(ret, 0);
+    } else {
+      LOG(FATAL) << "outtype and intype should be different.";
     }
     return ret;
   }
