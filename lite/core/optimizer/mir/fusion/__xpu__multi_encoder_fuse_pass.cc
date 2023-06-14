@@ -1906,7 +1906,7 @@ class XPUMultiEncoderFuser {
           if (is_qkv_already_fusion_) {
             end = i + 1;
           }
-          scope->NewTensor(update_tag);
+          scope->MutableParent()->NewTensor(update_tag);
           // Update weight, including tranpose\convert type\fuse qkv
           // weight\findmax.
           update_weight(scope,

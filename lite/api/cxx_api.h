@@ -245,7 +245,7 @@ class LITE_API Predictor {
   std::map<TargetType, std::shared_ptr<void>> target_configs_;
   std::shared_ptr<cpp::ProgramDesc> program_desc_;
   std::shared_ptr<Scope> scope_;
-  Scope* exec_scope_;
+  Scope* exec_scope_{nullptr};
   std::shared_ptr<RuntimeProgram> program_;
   bool program_generated_{false};
   std::vector<std::string> input_names_;
