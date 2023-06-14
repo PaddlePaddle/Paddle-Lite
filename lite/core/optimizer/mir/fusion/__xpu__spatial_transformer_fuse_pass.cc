@@ -773,4 +773,5 @@ class XPUSpatialTransformerfusePass : public ProgramPass {
 
 REGISTER_MIR_PASS(__xpu__spatial_transformer_fuse_pass,
                   paddle::lite::mir::XPUSpatialTransformerfusePass)
-    .BindTargets({TARGET(kXPU)});
+    .BindTargets({TARGET(kXPU)})
+    .BindKernel("__xpu__spatial_transformer");

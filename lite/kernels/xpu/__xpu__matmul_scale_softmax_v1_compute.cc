@@ -47,6 +47,7 @@ void XpuMatmulScaleSoftmaxV1Compute<InType, PType>::Run() {
                                           {batch, head_num, seqlen, head_dim});
   xft::STScaleSoftmaxParam st_param;
   st_param.alpha = param.alpha;
+  st_param.matmul_trans_info = param.matmul_trans_info;
   int r = xft::st_fc_scale_softmax_fusion<InType, int16_t>(ctx.GetRawContext(),
                                                            in_q_tensor,
                                                            in_k_tensor,

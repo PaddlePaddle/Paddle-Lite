@@ -556,4 +556,5 @@ class XPUMultiUpDecoderFusePass : public ProgramPass {
 
 REGISTER_MIR_PASS(__xpu__multi_up_decoder_fuse_pass,
                   paddle::lite::mir::XPUMultiUpDecoderFusePass)
-    .BindTargets({TARGET(kXPU)});
+    .BindTargets({TARGET(kXPU)})
+    .BindKernel("__xpu__multi_up_decoder");

@@ -2007,6 +2007,7 @@ struct XpuMatmulScaleSoftmaxV1Param : ParamBase {
   lite::Tensor* mat_v{nullptr};
   lite::Tensor* output{nullptr};
   float alpha{1};
+  std::vector<int> matmul_trans_info{0, 0, 0, 0};
 };
 
 struct XPUEmbeddingWithEltwiseAddParam : ParamBase {
