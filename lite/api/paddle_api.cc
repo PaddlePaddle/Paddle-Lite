@@ -434,38 +434,10 @@ void ConfigBase::set_nnadapter_model_cache_buffers(
 #endif
 }
 
-CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
-                               size_t program_buffer_size,
-                               const char *params_buffer,
-                               size_t params_buffer_size) {
-  program_ = std::string(program_buffer, program_buffer + program_buffer_size);
-  params_ = std::string(params_buffer, params_buffer + params_buffer_size);
-}
-
-CxxModelBuffer::CxxModelBuffer(std::string &&program_buffer,
-                               std::string &&params_buffer) {
-  program_ = std::forward<std::string>(program_buffer);
-  params_ = std::forward<std::string>(params_buffer);
-}
-
-const std::string &CxxModelBuffer::get_program() const {
-  CHECK(!program_.empty());
-  return program_;
-}
-
-const std::string &CxxModelBuffer::get_params() const { return params_; }
-
-bool CxxModelBuffer::is_empty() const { return program_.empty(); }
-
-const CxxModelBuffer &CxxConfig::get_model_buffer() const {
-  CHECK(model_buffer_) << "Cannot get an empty model buffer.";
-  return *model_buffer_;
-}
-
 // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
-void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
+void ConfigBase::set_xpu_workspace_l3_size_per_thread(int l3_size) {
 #ifdef LITE_WITH_XPU
-  CxxConfig::set_xpu_l3_cache_method(l3_size, false);
+  ConfigBase::set_xpu_l3_cache_method(l3_size, false);
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_workspace_l3_size_per_thread' is ignored, please "
@@ -477,7 +449,7 @@ void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
 // local_l3 > 0, locked == false : USE local l3
 // locked == true : USE Shared L3
 // default : locked = false, local_l3 = max_l3_size;
-void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
+void ConfigBase::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 #ifdef LITE_WITH_XPU
   static std::mutex set_l3_mutex;
   const std::lock_guard<std::mutex> lock(set_l3_mutex);
@@ -508,7 +480,7 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 #endif
 }
 
-void CxxConfig::set_xpu_l3_cache_autotune(bool autotune) {
+void ConfigBase::set_xpu_l3_cache_autotune(bool autotune) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -520,7 +492,7 @@ void CxxConfig::set_xpu_l3_cache_autotune(bool autotune) {
 #endif
 }
 
-void CxxConfig::set_xpu_gm_workspace_method(size_t gm_size) {
+void ConfigBase::set_xpu_gm_workspace_method(size_t gm_size) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -532,7 +504,7 @@ void CxxConfig::set_xpu_gm_workspace_method(size_t gm_size) {
 #endif
 }
 
-void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
+void ConfigBase::set_xpu_dev_per_thread(int dev_no) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -543,7 +515,7 @@ void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 #endif
 }
 
-void CxxConfig::enable_xpu_multi_stream() {
+void ConfigBase::enable_xpu_multi_stream() {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -556,9 +528,9 @@ void CxxConfig::enable_xpu_multi_stream() {
 }
 
 // **DEPRECATED**, use set_xpu_multi_encoder_method() in the future
-void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
+void ConfigBase::set_xpu_multi_encoder_precision(const std::string &precision) {
 #ifdef LITE_WITH_XPU
-  CxxConfig::set_xpu_multi_encoder_method(precision, false);
+  ConfigBase::set_xpu_multi_encoder_method(precision, false);
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_xpu_multi_encoder_precision' is "
@@ -566,8 +538,8 @@ void CxxConfig::set_xpu_multi_encoder_precision(const std::string &precision) {
 #endif
 }
 
-void CxxConfig::set_xpu_multi_encoder_method(const std::string &precision,
-                                             bool adaptive_seqlen) {
+void ConfigBase::set_xpu_multi_encoder_method(const std::string &precision,
+                                              bool adaptive_seqlen) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -582,7 +554,7 @@ void CxxConfig::set_xpu_multi_encoder_method(const std::string &precision,
 #endif
 }
 
-void CxxConfig::set_xpu_local_quant(bool local_quant) {
+void ConfigBase::set_xpu_local_quant(bool local_quant) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -594,7 +566,7 @@ void CxxConfig::set_xpu_local_quant(bool local_quant) {
 #endif
 }
 
-void CxxConfig::set_xpu_compute_precision(const std::string &precision) {
+void ConfigBase::set_xpu_compute_precision(const std::string &precision) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -606,8 +578,8 @@ void CxxConfig::set_xpu_compute_precision(const std::string &precision) {
 #endif
 }
 
-void CxxConfig::set_xpu_conv_autotune(bool autotune,
-                                      const std::string &autotune_file) {
+void ConfigBase::set_xpu_conv_autotune(bool autotune,
+                                       const std::string &autotune_file) {
 #ifdef LITE_WITH_XPU
   LOG(WARNING)
       << "This function "
@@ -622,7 +594,7 @@ void CxxConfig::set_xpu_conv_autotune(bool autotune,
 #endif
 }
 
-void CxxConfig::set_xpu_cluster_num(const int num) {
+void ConfigBase::set_xpu_cluster_num(const int num) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -634,7 +606,7 @@ void CxxConfig::set_xpu_cluster_num(const int num) {
 #endif
 }
 
-void CxxConfig::set_xpu_sdnn_num(const int num) {
+void ConfigBase::set_xpu_sdnn_num(const int num) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -646,7 +618,7 @@ void CxxConfig::set_xpu_sdnn_num(const int num) {
 #endif
 }
 
-void CxxConfig::set_xpu_dump_tensor_path(const std::string &dump_tensor_path) {
+void ConfigBase::set_xpu_dump_tensor_path(const std::string &dump_tensor_path) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -660,7 +632,7 @@ void CxxConfig::set_xpu_dump_tensor_path(const std::string &dump_tensor_path) {
 #endif
 }
 
-void CxxConfig::set_xpu_dump_log_path(const std::string &dump_log_path) {
+void ConfigBase::set_xpu_dump_log_path(const std::string &dump_log_path) {
 #ifdef LITE_WITH_XPU
   reinterpret_cast<lite::XPURunTimeOption *>(
       target_configs()[TARGET(kXPU)].get())
@@ -672,6 +644,109 @@ void CxxConfig::set_xpu_dump_log_path(const std::string &dump_log_path) {
                   "'set_xpu_dump_log_path' is ignored, please "
                   "rebuild it with LITE_WITH_XPU=ON.";
 #endif
+}
+
+// user's XpuConfig -> configbase's XPURunTimeOption
+void ConfigBase::set_xpu_config(const XpuConfig &xpu_config) {
+#ifdef LITE_WITH_XPU
+  lite::XPURunTimeOption *xpu_runtime_opt =
+      reinterpret_cast<lite::XPURunTimeOption *>(
+          target_configs()[TARGET(kXPU)].get());
+  CHECK_GE(xpu_config.device_id, 0) << "xpu_config.device_id should >= 0";
+  xpu_runtime_opt->xpu_dev_num = xpu_config.device_id;
+  // just use local L3 , no lock
+  set_xpu_l3_cache_method(xpu_config.l3_size, false);
+  if (xpu_config.l3_ptr) {
+    LOG(WARNING) << "lite ignore the pre allocated L3 buffer, and malloc "
+                    "itself on every inference";
+  }
+  if (xpu_config.stream) {
+    xpu_runtime_opt->xpu_stream.SetXPUStream(xpu_config.stream);
+  }
+  // l3_autotune_size is for lite framework, the remaining is for api_l3_reserve
+  CHECK_LE(xpu_config.l3_autotune_size, xpu_config.l3_size)
+      << "the l3_autotune_size should not greater than l3_size";
+  xpu_runtime_opt->api_l3_reserve =
+      xpu_config.l3_size - xpu_config.l3_autotune_size;
+  if (std::getenv("API_L3_SIZE_RES") || std::getenv("XPU_FC_AUTOTUNE") ||
+      std::getenv("XPU_FC_AUTOTUNE_FILE") ||
+      std::getenv("XPU_FC_AUTOTUNE_WRITEBACK") ||
+      std::getenv("XPU_PRECISION_MODE") || std::getenv("XPU_LOCAL_QUANT") ||
+      std::getenv("XPU_ENCODER_PRECISION") ||
+      std::getenv("QUANT_GELU_OUT_THRESHOLD")) {
+    LOG(WARNING) << "envs(except XPU_VISIBLE_DEVICES) are redundant when using "
+                    "set_xpu_config";
+  }
+  if (xpu_config.stream) {
+    LOG(WARNING) << "lite ignore pre allocated stream, and create stream "
+                    "itself when needed";
+  }
+  CHECK_GE(xpu_config.fc_autotune_level, 0) << "fc_autotune_level should >= 0";
+  CHECK_LT(xpu_config.fc_autotune_level, 10) << "fc_autotune_level should < 10";
+  xpu_runtime_opt->xpu_fc_autotune_level = xpu_config.fc_autotune_level;
+  if (!xpu_config.fc_autotune_file.empty()) {
+    xpu_runtime_opt->xpu_fc_autotune_file = xpu_config.fc_autotune_file;
+  }
+  if (xpu_config.fc_autotune_file_writeback) {
+    CHECK(!xpu_config.fc_autotune_file.empty())
+        << "need config fc_autotune_file if fc_autotune_file_writeback ON";
+    xpu_runtime_opt->xpu_fc_autotune_writeback =
+        xpu_config.fc_autotune_file_writeback;
+  }
+  // to indicate the un-quanted fc's compute precision
+  std::vector<std::string> encoder_compute_precision{"int8", "int16", "int31"};
+  CHECK(xpu_config.gemm_compute_precision >= 0 &&
+        xpu_config.gemm_compute_precision < 3)
+      << "gemm_compute_precision should be [0/1/2]";
+  set_xpu_multi_encoder_method(
+      encoder_compute_precision[xpu_config.gemm_compute_precision],
+      xpu_config.transformer_encoder_adaptive_seqlen);
+  xpu_runtime_opt->transformer_softmax_optimize_level =
+      xpu_config.transformer_softmax_optimize_level;
+  xpu_runtime_opt->quant_post_static_gelu_out_threshold =
+      xpu_config.quant_post_static_gelu_out_threshold;
+  CHECK(xpu_config.quant_post_dynamic_activation_method >= 0 &&
+        xpu_config.quant_post_dynamic_activation_method < 3)
+      << "quant_post_dynamic_activation_method should be [0/1/2]";
+  // kunlun1: 0 per tensor, 1 per batch, 2 per head
+  // kunlun2: 0 per tensor, non-zero local quant
+  xpu_runtime_opt->local_quant =
+      xpu_config.quant_post_dynamic_activation_method > 0;
+  xpu_runtime_opt->quant_post_dynamic_activation_method =
+      xpu_config.quant_post_dynamic_activation_method;
+#else
+  LOG(WARNING) << "The invoking of the function "
+                  "'set_xpu_config' is ignored, please "
+                  "rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+CxxModelBuffer::CxxModelBuffer(const char *program_buffer,
+                               size_t program_buffer_size,
+                               const char *params_buffer,
+                               size_t params_buffer_size) {
+  program_ = std::string(program_buffer, program_buffer + program_buffer_size);
+  params_ = std::string(params_buffer, params_buffer + params_buffer_size);
+}
+
+CxxModelBuffer::CxxModelBuffer(std::string &&program_buffer,
+                               std::string &&params_buffer) {
+  program_ = std::forward<std::string>(program_buffer);
+  params_ = std::forward<std::string>(params_buffer);
+}
+
+const std::string &CxxModelBuffer::get_program() const {
+  CHECK(!program_.empty());
+  return program_;
+}
+
+const std::string &CxxModelBuffer::get_params() const { return params_; }
+
+bool CxxModelBuffer::is_empty() const { return program_.empty(); }
+
+const CxxModelBuffer &CxxConfig::get_model_buffer() const {
+  CHECK(model_buffer_) << "Cannot get an empty model buffer.";
+  return *model_buffer_;
 }
 
 template <class T>

@@ -90,13 +90,12 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
     // init quant type, encode precision
     CHECK(lite::TargetWrapperXPU::xpu_runtime_ptr)
         << "xpu_runtime_ptr null in pass";
-    local_quant_ = GetBoolFromEnv("XPU_LOCAL_QUANT") ||
-                   lite::TargetWrapperXPU::xpu_runtime_ptr->local_quant;
-    encode_precision_ =
-        lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision;
-    if (encode_precision_.empty()) {
-      encode_precision_ = GetStringFromEnv("XPU_ENCODER_PRECISION", "int16");
-    }
+    local_quant_ =
+        GetBoolFromEnv("XPU_LOCAL_QUANT",
+                       lite::TargetWrapperXPU::xpu_runtime_ptr->local_quant);
+    encode_precision_ = GetStringFromEnv(
+        "XPU_ENCODER_PRECISION",
+        lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision);
     xpu_int8_compute_autotune_ = GetBoolFromEnv("XPU_INT8_AUTOTUNE", false);
     xpu_full_quantization_ = GetBoolFromEnv("XPU_FULL_QUANTIZATION", true);
     fetch_tensor_in_xpu_ = GetBoolFromEnv("FETCH_TENSOR_IN_XPU", false);

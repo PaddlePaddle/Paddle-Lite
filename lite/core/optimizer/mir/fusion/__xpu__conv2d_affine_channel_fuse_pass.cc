@@ -275,7 +275,6 @@ class XPUConv2dAffineChannelFuser : public FuseBase {
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* max_output_tensor = scope->NewTensor(max_output_name);
     max_output_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
-    max_output_tensor->set_persistable(true);
     op_desc.SetOutput("OutputMax", {max_output_name});
 
     auto conv_op = LiteOpRegistry::Global().Create("__xpu__conv2d");

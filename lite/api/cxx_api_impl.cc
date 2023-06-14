@@ -46,8 +46,9 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   threads_ = config.threads();
   raw_predictor_->SetTargetConfigs(config.target_configs());
 #ifdef LITE_WITH_XPU
-  CHECK(config.target_configs().at(TARGET(kXPU)).get()) << "no xpu config set";
-  class LoadPredictorConfig load_xpu_config_guard(
+  CHECK(config.target_configs().count(TARGET(kXPU)))
+      << "XPU runtime option is not initialized!";
+  XPULoadRunTimeOptionGuard xpu_load_runtime_option_guard(
       reinterpret_cast<paddle::lite::XPURunTimeOption *>(
           config.target_configs().at(TARGET(kXPU)).get()));
 #endif
