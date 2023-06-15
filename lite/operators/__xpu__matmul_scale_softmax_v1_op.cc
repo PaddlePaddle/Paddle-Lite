@@ -75,6 +75,8 @@ bool XpuMatmulScaleSoftmaxV1Op::AttachImpl(const cpp::OpDesc& op_desc,
   param_.output =
       scope->FindVar(op_desc.Output("Out").front())->GetMutable<Tensor>();
   param_.alpha = op_desc.GetAttr<float>("alpha");
+  param_.matmul_trans_info =
+      op_desc.GetAttr<std::vector<int>>("MatmulTransInfo");
   return true;
 }
 

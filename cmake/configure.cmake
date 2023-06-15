@@ -140,6 +140,10 @@ if (LITE_WITH_XPU)
     add_definitions("-DLITE_WITH_XPU")
 endif()
 
+if (XPU_WITH_XFT)
+    add_definitions("-DXPU_WITH_XFT")
+endif()
+
 if (LITE_WITH_OPENCL)
     add_definitions("-DLITE_WITH_OPENCL")
 endif()
