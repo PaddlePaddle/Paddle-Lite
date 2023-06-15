@@ -67,10 +67,10 @@ bool ReduceOp::InferShapeImpl() const {
   }
   reduce_all = (reduce_all || full_dim);
   if (reduce_all) {
-    if (keep_dim)
+    if (keep_dim) {
       param_.Out->Resize(std::vector<int64_t>(x_rank, 1));
-    else {
-      param_.Out->Resize(std::vector<int64_t>({}));
+    } else {
+      param_.Out->Resize(std::vector<int64_t>({1}));
     }
   } else {
     std::vector<int64_t> dims_vector(x_rank, 1);
