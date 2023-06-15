@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,7 +43,9 @@ void SetValueCompute::PrepareForRun() {
   OBTAIN_VALUE(float, param.fp16_values)
 }
 
-void SetValueCompute::Run() {
+void SetValueCompute::SetValue(const std::vector<int64_t>& starts,
+                               const std::vector<int64_t>& ends,
+                               const std::vector<int64_t>& steps) {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 #define SET_VALUE(__precision__, __starts__, __ends__, __steps__, __data__) \
@@ -86,6 +88,18 @@ void SetValueCompute::Run() {
     return;                                                            \
   }
 
+  SET_VALUE_WITH_TENSOR(float, starts, ends, steps, PrecisionType::kFloat)
+  SET_VALUE_WITH_TENSOR(int, starts, ends, steps, PrecisionType::kInt32)
+  SET_VALUE_WITH_TENSOR(int64_t, starts, ends, steps, PrecisionType::kInt64)
+
+  SET_VALUE(float, starts, ends, steps, param.fp32_values)
+  SET_VALUE(int32_t, starts, ends, steps, param.int32_values)
+  SET_VALUE(int64_t, starts, ends, steps, param.int64_values)
+}
+
+void SetValueCompute::Run() {
+  auto& param = this->template Param<param_t>();
+
   auto set_value_x_shape = param.Input->dims().Vectorize();
   if (param.StartsTensorList.size() > 0) {
     auto starts = GetDataFromTensorList(param.StartsTensorList);
@@ -93,52 +107,16 @@ void SetValueCompute::Run() {
       auto ends = GetDataFromTensorList(param.EndsTensorList);
       if (param.StepsTensorList.size() > 0) {
         auto steps = GetDataFromTensorList(param.StepsTensorList);
-
-        SET_VALUE_WITH_TENSOR(float, starts, ends, steps, PrecisionType::kFloat)
-        SET_VALUE_WITH_TENSOR(int, starts, ends, steps, PrecisionType::kInt32)
-        SET_VALUE_WITH_TENSOR(
-            int64_t, starts, ends, steps, PrecisionType::kInt64)
-
-        SET_VALUE(float, starts, ends, steps, param.fp32_values)
-        SET_VALUE(int32_t, starts, ends, steps, param.int32_values)
-        SET_VALUE(int64_t, starts, ends, steps, param.int64_values)
+        SetValue(starts, ends, steps);
       } else {
-        SET_VALUE_WITH_TENSOR(
-            float, starts, ends, param.steps, PrecisionType::kFloat)
-        SET_VALUE_WITH_TENSOR(
-            int, starts, ends, param.steps, PrecisionType::kInt32)
-        SET_VALUE_WITH_TENSOR(
-            int64_t, starts, ends, param.steps, PrecisionType::kInt64)
-
-        SET_VALUE(float, starts, ends, param.steps, param.fp32_values)
-        SET_VALUE(int32_t, starts, ends, param.steps, param.int32_values)
-        SET_VALUE(int64_t, starts, ends, param.steps, param.int64_values)
+        SetValue(starts, ends, param.steps);
       }
     } else {
       if (param.StepsTensorList.size() > 0) {
         auto steps = GetDataFromTensorList(param.StepsTensorList);
-
-        SET_VALUE_WITH_TENSOR(
-            float, starts, param.ends, steps, PrecisionType::kFloat)
-        SET_VALUE_WITH_TENSOR(
-            int, starts, param.ends, steps, PrecisionType::kInt32)
-        SET_VALUE_WITH_TENSOR(
-            int64_t, starts, param.ends, steps, PrecisionType::kInt64)
-
-        SET_VALUE(float, starts, param.ends, steps, param.fp32_values)
-        SET_VALUE(int32_t, starts, param.ends, steps, param.int32_values)
-        SET_VALUE(int64_t, starts, param.ends, steps, param.int64_values)
+        SetValue(starts, param.ends, steps);
       } else {
-        SET_VALUE_WITH_TENSOR(
-            float, starts, param.ends, param.steps, PrecisionType::kFloat)
-        SET_VALUE_WITH_TENSOR(
-            int, starts, param.ends, param.steps, PrecisionType::kInt32)
-        SET_VALUE_WITH_TENSOR(
-            int64_t, starts, param.ends, param.steps, PrecisionType::kInt64)
-
-        SET_VALUE(float, starts, param.ends, param.steps, param.fp32_values)
-        SET_VALUE(int32_t, starts, param.ends, param.steps, param.int32_values)
-        SET_VALUE(int64_t, starts, param.ends, param.steps, param.int64_values)
+        SetValue(starts, param.ends, param.steps);
       }
     }
   } else {
@@ -146,60 +124,16 @@ void SetValueCompute::Run() {
       auto ends = GetDataFromTensorList(param.EndsTensorList);
       if (param.StepsTensorList.size() > 0) {
         auto steps = GetDataFromTensorList(param.StepsTensorList);
-
-        SET_VALUE_WITH_TENSOR(
-            float, param.starts, ends, steps, PrecisionType::kFloat)
-        SET_VALUE_WITH_TENSOR(
-            int, param.starts, ends, steps, PrecisionType::kInt32)
-        SET_VALUE_WITH_TENSOR(
-            int64_t, param.starts, ends, steps, PrecisionType::kInt64)
-
-        SET_VALUE(float, param.starts, ends, steps, param.fp32_values)
-        SET_VALUE(int32_t, param.starts, ends, steps, param.int32_values)
-        SET_VALUE(int64_t, param.starts, ends, steps, param.int64_values)
+        SetValue(param.starts, ends, steps);
       } else {
-        SET_VALUE_WITH_TENSOR(
-            float, param.starts, ends, param.steps, PrecisionType::kFloat)
-        SET_VALUE_WITH_TENSOR(
-            int, param.starts, ends, param.steps, PrecisionType::kInt32)
-        SET_VALUE_WITH_TENSOR(
-            int64_t, param.starts, ends, param.steps, PrecisionType::kInt64)
-
-        SET_VALUE(float, param.starts, ends, param.steps, param.fp32_values)
-        SET_VALUE(int32_t, param.starts, ends, param.steps, param.int32_values)
-        SET_VALUE(int64_t, param.starts, ends, param.steps, param.int64_values)
+        SetValue(param.starts, ends, param.steps);
       }
     } else {
       if (param.StepsTensorList.size() > 0) {
         auto steps = GetDataFromTensorList(param.StepsTensorList);
-
-        SET_VALUE_WITH_TENSOR(
-            float, param.starts, param.ends, steps, PrecisionType::kFloat)
-        SET_VALUE_WITH_TENSOR(
-            int, param.starts, param.ends, steps, PrecisionType::kInt32)
-        SET_VALUE_WITH_TENSOR(
-            int64_t, param.starts, param.ends, steps, PrecisionType::kInt64)
-
-        SET_VALUE(float, param.starts, param.ends, steps, param.fp32_values)
-        SET_VALUE(int32_t, param.starts, param.ends, steps, param.int32_values)
-        SET_VALUE(int64_t, param.starts, param.ends, steps, param.int64_values)
+        SetValue(param.starts, param.ends, steps);
       } else {
-        SET_VALUE_WITH_TENSOR(
-            float, param.starts, param.ends, param.steps, PrecisionType::kFloat)
-        SET_VALUE_WITH_TENSOR(
-            int, param.starts, param.ends, param.steps, PrecisionType::kInt32)
-        SET_VALUE_WITH_TENSOR(int64_t,
-                              param.starts,
-                              param.ends,
-                              param.steps,
-                              PrecisionType::kInt64)
-
-        SET_VALUE(
-            float, param.starts, param.ends, param.steps, param.fp32_values)
-        SET_VALUE(
-            int32_t, param.starts, param.ends, param.steps, param.int32_values)
-        SET_VALUE(
-            int64_t, param.starts, param.ends, param.steps, param.int64_values)
+        SetValue(param.starts, param.ends, param.steps);
       }
     }
   }
