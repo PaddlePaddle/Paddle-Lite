@@ -274,8 +274,15 @@ void TypeTargetTransformPass::AddInputIoCopyInst(
   // So there will be a new Argument node and a new IoCopy Statement Node.
 
   CHECK(in->IsArg());
-  auto io_copy_output_name =
-      string_format("%s/target_trans", in->AsArg().name.c_str());
+  bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
+  std::string io_copy_output_name;
+  if (in_persist) {
+    io_copy_output_name =
+        string_format("%s/target_trans_persistable", in->AsArg().name.c_str());
+  } else {
+    io_copy_output_name =
+        string_format("%s/target_trans", in->AsArg().name.c_str());
+  }
 
   if (copied_nodes->count(in->AsArg().name)) {
     // Remove the old link
@@ -292,7 +299,13 @@ void TypeTargetTransformPass::AddInputIoCopyInst(
     // TODO(MyPandaShaoxiang) should set same place with input?
     auto* io_copy_output_arg = graph->NewArgumentNode(io_copy_output_name);
     // Create the new var manually.
-    auto new_var = inst_node->AsStmt().op()->scope()->Var(io_copy_output_name);
+    Variable* new_var = nullptr;
+    if (in_persist) {
+      new_var = inst_node->AsStmt().op()->scope()->MutableParent()->Var(
+          io_copy_output_name);
+    } else {
+      new_var = inst_node->AsStmt().op()->scope()->Var(io_copy_output_name);
+    }
     // Set the place for io_copy_output_arg node, the target should be equal to
     // to.target()
     // The precision and layout should be equal to from.precision(),
@@ -316,7 +329,6 @@ void TypeTargetTransformPass::AddInputIoCopyInst(
     }
     auto* io_copy_inst = graph->NewInstructNode();
 
-    bool in_persist = in->AsArg().is_weight || in->AsArg().is_persist;
     std::string io_copy_type = in_persist ? "io_copy_once" : "io_copy";
     io_copy_output_arg->AsArg().is_persist = in_persist;
     // create Op and kernels.

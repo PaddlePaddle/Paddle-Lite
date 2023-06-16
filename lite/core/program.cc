@@ -718,7 +718,12 @@ void Program::PrepareWorkspace(
       // Create tensors or weights from variable description.
       if (!var_desc->Persistable()) {
         vars_.push_back(var_name);
-        auto* var = exec_scope_->Var(var_name);
+        Variable* var = nullptr;
+        if (var_name.find("/target_trans_persistable") != std::string::npos) {
+          var = scope_->Var(var_name);
+        } else {
+          var = exec_scope_->Var(var_name);
+        }
         if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
           const auto& var_data_type =
               VarDescType2PrecisionType(var_desc->GetDataType());
