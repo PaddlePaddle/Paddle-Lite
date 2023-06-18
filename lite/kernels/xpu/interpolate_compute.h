@@ -47,6 +47,19 @@ class NearestInterpCompute : public KernelLite<TARGET(kXPU), PType> {
   XPUScratchPadGuard quant_output_max_value_guard_;
 };
 
+template <typename InType, PrecisionType PType>
+class BicubicInterpCompute : public KernelLite<TARGET(kXPU), PType> {
+ public:
+  using param_t = operators::InterpolateParam;
+  void PrepareForRun() override;
+  void Run() override;
+  virtual ~BicubicInterpCompute() = default;
+
+ private:
+  XPUScratchPadGuard quant_input_max_value_guard_;
+  XPUScratchPadGuard quant_output_max_value_guard_;
+};
+
 }  // namespace xpu
 }  // namespace kernels
 }  // namespace lite

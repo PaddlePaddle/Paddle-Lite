@@ -133,6 +133,15 @@ class MatmulScaleSoftmaxV1fuser : public FuseBase {
       op_desc.SetAttr<float>("alpha", 1.0f);
     }
 
+    auto* matmul_0_op_info = matched.at("matmul_v2_0")->stmt()->op_info();
+    auto* matmul_1_op_info = matched.at("matmul_v2_1")->stmt()->op_info();
+    std::vector<int> b_mm_trans_x_y;
+    b_mm_trans_x_y.push_back(matmul_0_op_info->GetAttr<bool>("trans_x"));
+    b_mm_trans_x_y.push_back(matmul_0_op_info->GetAttr<bool>("trans_y"));
+    b_mm_trans_x_y.push_back(matmul_1_op_info->GetAttr<bool>("trans_x"));
+    b_mm_trans_x_y.push_back(matmul_1_op_info->GetAttr<bool>("trans_y"));
+    op_desc.SetAttr<std::vector<int>>("MatmulTransInfo", b_mm_trans_x_y);
+
     auto& valid_places =
         matched.at("matmul_v2_0")->stmt()->op()->valid_places();
     auto new_op = LiteOpRegistry::Global().Create(op_desc.Type());
