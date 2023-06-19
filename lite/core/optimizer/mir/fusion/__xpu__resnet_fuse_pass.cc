@@ -1233,12 +1233,12 @@ class XPUResNet50Fuser : public xpu::XPUFuseBase {
           TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
       DirectedLink(max_filter_node, matched.at("top_conv"));
       auto* max_filter_t = scope->MutableParent()->NewTensor(max_name);
-      max_filter_t->Resize({4});
+      int max_ptr_size = TargetWrapperXPU::GetRawContext()->max_ptr_size();
+      max_filter_t->Resize({max_ptr_size});
       float* max_ptr = max_filter_t->mutable_data<float>();
-      max_ptr[0] = max_f;
-      max_ptr[1] = max_f;
-      max_ptr[2] = max_f;
-      max_ptr[3] = max_f;
+      for (int i = 0; i < max_ptr_size; ++i) {
+        max_ptr[i] = max_f;
+      }
     }
     op_desc.SetInput("MaxFilter", max_filter_name);
 
