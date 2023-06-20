@@ -19,6 +19,7 @@
 #include <mutex>  //NOLINT
 #include <string>
 #include <vector>
+
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/backends/xpu/xpu_l3_cache_block.h"
 #include "lite/backends/xpu/xpu_l3_strategy.h"
@@ -99,6 +100,13 @@ class XPUStream {
   }
 
   void* GetXPUStream() const { return xpu_stream_; }
+
+  void GetXPUStreamInfo() const {
+    LOG(INFO) << "thread 0x" << std::hex << std::this_thread::get_id()
+              << " Get context xpu stream: " << xpu_stream_;
+    return;
+  }
+
   void SetXPUDevid(int devid) { devid_ = devid; }
   void SetXPUStream(void* xpu_stream) {
     // TODO(quwei): Check  devid in current stream.

@@ -22,6 +22,7 @@
 #include <string>
 #include <thread>  // NOLINT
 #include <vector>
+
 #include "lite/backends/xpu/runtime_option.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/backends/xpu/xpu_l3_cache_block.h"
@@ -100,16 +101,14 @@ class TargetWrapper<TARGET(kXPU)> {
     if (xpu_runtime_ptr->xpu_sdnn_num != 0) {
       xdnn_context->set_nsdnn(xpu_runtime_ptr->xpu_sdnn_num);
     }
-
-    if (!xpu_runtime_ptr->xpu_enable_multi_stream) {
-      LOG(INFO) << "all thread(s) share the default xpu stream";
-    } else {
-      // use different stream per thread
+    if (xpu_runtime_ptr->xpu_enable_multi_stream) {
+      // create different stream per thread
       xpu_runtime_ptr->xpu_stream.CreatXPUStream();
       CHECK(xpu_runtime_ptr->xpu_stream.GetXPUStream());
     }
-
     xdnn_context->xpu_stream = xpu_runtime_ptr->xpu_stream.GetXPUStream();
+    xpu_runtime_ptr->xpu_stream.GetXPUStreamInfo();
+
     if (xdnn_context->dev().type() == xdnn::kXPU1) {
       LOG(INFO) << "running in KunLun1";
     } else if (xdnn_context->dev().type() == xdnn::kXPU2) {
