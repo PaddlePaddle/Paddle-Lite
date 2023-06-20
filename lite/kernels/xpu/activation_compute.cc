@@ -121,13 +121,14 @@ void SoftplusCompute<T, PType>::Run() {
   CHECK_EQ(r, 0);
 }
 
-void AbsCompute::Run() {
+template <typename T, PrecisionType PType>
+void AbsCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::abs(ctx.GetRawContext(),
-                    param.X->data<float>(),
-                    param.Out->mutable_data<float>(TARGET(kXPU)),
+                    param.X->template data<T>(),
+                    param.Out->template mutable_data<T>(TARGET(kXPU)),
                     param.X->numel());
   CHECK_EQ(r, 0);
 }
@@ -439,10 +440,17 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    abs, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::AbsCompute, def)
+using absFP32 =
+    paddle::lite::kernels::xpu::AbsCompute<float, PRECISION(kFloat)>;
+using absInt32 =
+    paddle::lite::kernels::xpu::AbsCompute<int32_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(abs, kXPU, kFloat, kNCHW, absFP32, DISABLE_XPU1_absFP32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+REGISTER_LITE_KERNEL(abs, kXPU, kFloat, kNCHW, absInt32, DISABLE_XPU1_absInt32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
