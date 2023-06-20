@@ -45,6 +45,14 @@ class NearestInterpComputeV2
   virtual ~NearestInterpComputeV2() = default;
 };
 
+class BicubicInterpComputeV2
+    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  void Run() override;
+
+  virtual ~BicubicInterpComputeV2() = default;
+};
+
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite
