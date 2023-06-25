@@ -21,7 +21,10 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T, typename Functor, PrecisionType PType>
+template <typename inType,
+          typename outType,
+          typename Functor,
+          PrecisionType PType>
 class ReduceCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
   using param_t = operators::ReduceParam;
