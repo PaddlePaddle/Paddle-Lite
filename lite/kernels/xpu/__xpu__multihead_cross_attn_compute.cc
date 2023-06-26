@@ -85,6 +85,7 @@ void XPUMhcaCompute<InType, PType>::PrepareForRun() {
 
 template <typename InType, PrecisionType PType>
 void XPUMhcaCompute<InType, PType>::Run() {
+  LOG(FATAL) << "Not implemented yet.";
   // TODO(shenyijun): The compute of this op will be adapted to XFT interface
   // later on.
   //
