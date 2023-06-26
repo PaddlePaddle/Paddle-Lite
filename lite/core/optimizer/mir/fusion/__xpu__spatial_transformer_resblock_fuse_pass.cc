@@ -39,11 +39,13 @@ class SpatialTransformerResBlockfuser : public FuseBase {
   explicit SpatialTransformerResBlockfuser(bool conv_fix,
                                            bool input_max,
                                            bool output_unsqueeze_shape,
-                                           bool has_silu_fc_input)
+                                           bool has_silu_fc_input,
+                                           bool include_silu)
       : conv_fix_(conv_fix),
         input_max_(input_max),
         output_unsqueeze_shape_(output_unsqueeze_shape),
-        has_silu_fc_input_(has_silu_fc_input) {}
+        has_silu_fc_input_(has_silu_fc_input),
+        include_silu_(include_silu) {}
 
   void BuildPattern() override {
     auto* input_1 = VarNode("input_1")
@@ -72,12 +74,19 @@ class SpatialTransformerResBlockfuser : public FuseBase {
     PMNode* unsqueeze_out = nullptr;
 
     if (has_silu_fc_input_) {
-      input_2 = VarNode("input_2")->assert_is_op_input("silu", "X")->AsInput();
-      silu = OpNode("silu", "silu")->AsIntermediate();
-      silu_out = VarNode("silu_out")
-                     ->assert_is_op_output("silu", "Out")
-                     ->assert_is_op_input("__xpu__fc", "Input")
-                     ->AsIntermediate();
+      if (include_silu_) {
+        input_2 =
+            VarNode("input_2")->assert_is_op_input("silu", "X")->AsInput();
+        silu = OpNode("silu", "silu")->AsIntermediate();
+        silu_out = VarNode("silu_out")
+                       ->assert_is_op_output("silu", "Out")
+                       ->assert_is_op_input("__xpu__fc", "Input")
+                       ->AsIntermediate();
+      } else {
+        input_2 = VarNode("input_2")
+                      ->assert_is_op_input("__xpu__fc", "Input")
+                      ->AsInput();
+      }
       fc_weight = VarNode("fc_weight")
                       ->assert_is_op_input("__xpu__fc", "Filter")
                       ->AsInput();
@@ -168,7 +177,7 @@ class SpatialTransformerResBlockfuser : public FuseBase {
 
     std::vector<PMNode*> gn_silu1_input{input_1, gn_scale_1, gn_bias_1};
     std::vector<PMNode*> gn_silu2_input{conv_out_1, gn_scale_2, gn_bias_2};
-    std::vector<PMNode*> fc_input{silu_out, fc_weight, fc_bias};
+    std::vector<PMNode*> fc_input{fc_weight, fc_bias};
     std::vector<PMNode*> fc_output{fc_out, fc_max};
     std::vector<PMNode*> conv1_input{gn_silu_out_1, conv_filter_1, conv_bias_1};
     if (has_silu_fc_input_) conv1_input.push_back(unsqueeze_out);
@@ -185,7 +194,12 @@ class SpatialTransformerResBlockfuser : public FuseBase {
       conv3_input >> *conv_3 >> conv3_output;
     }
     if (has_silu_fc_input_) {
-      *input_2 >> *silu >> *silu_out;
+      if (include_silu_) {
+        *input_2 >> *silu >> *silu_out;
+        fc_input.push_back(silu_out);
+      } else {
+        fc_input.push_back(input_2);
+      }
       fc_input >> *fc >> fc_output;
       *fc_out >> *unsqueeze >> *unsqueeze_out;
       if (output_unsqueeze_shape_) {
@@ -321,6 +335,7 @@ class SpatialTransformerResBlockfuser : public FuseBase {
     op_desc.SetAttr<std::vector<float>>("GNEps", gn_eps);
     op_desc.SetAttr<bool>("ConvFix", conv_fix_);
     op_desc.SetAttr<bool>("HasSiluFCInput", has_silu_fc_input_);
+    op_desc.SetAttr<bool>("IncludeSilu", include_silu_);
 
     auto resblock_op = LiteOpRegistry::Global().Create(op_desc.Type());
     resblock_op->Attach(op_desc, scope);
@@ -363,6 +378,7 @@ class SpatialTransformerResBlockfuser : public FuseBase {
   bool input_max_;
   bool output_unsqueeze_shape_;
   bool has_silu_fc_input_;
+  bool include_silu_;
   void UpdateWeight(Scope* scope,
                     const std::vector<std::string>& fc_weight_names,
                     const std::vector<std::string>& fc_weight_max_names,
@@ -519,20 +535,27 @@ class XPUSpatialTransformerResBlockfusePass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     for (auto conv_fix : {false, true}) {
       for (auto output_unsqueeze_shape : {true, false}) {
-        for (auto has_silu_fc_input : {false, true}) {
-          if (conv_fix == true) {
-            for (auto input_max : {false, true}) {
+        for (auto has_silu_fc_input : {true, false}) {
+          for (auto include_silu : {true, false}) {
+            if (conv_fix == true) {
+              for (auto input_max : {false, true}) {
+                fusion::SpatialTransformerResBlockfuser fuser(
+                    conv_fix,
+                    input_max,
+                    output_unsqueeze_shape,
+                    has_silu_fc_input,
+                    include_silu);
+                fuser(graph.get());
+              }
+            } else {
               fusion::SpatialTransformerResBlockfuser fuser(
                   conv_fix,
-                  input_max,
+                  false,
                   output_unsqueeze_shape,
-                  has_silu_fc_input);
+                  has_silu_fc_input,
+                  include_silu);
               fuser(graph.get());
             }
-          } else {
-            fusion::SpatialTransformerResBlockfuser fuser(
-                conv_fix, false, output_unsqueeze_shape, has_silu_fc_input);
-            fuser(graph.get());
           }
         }
       }

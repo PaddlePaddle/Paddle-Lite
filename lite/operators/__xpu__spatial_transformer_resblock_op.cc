@@ -49,6 +49,7 @@ bool XPUSpatialTransformerResBlockOp::InferShapeImpl() const {
 bool XPUSpatialTransformerResBlockOp::AttachImpl(const cpp::OpDesc& op_desc,
                                                  lite::Scope* scope) {
   param_.has_silu_fc_input = op_desc.GetAttr<bool>("HasSiluFCInput");
+  param_.include_silu = op_desc.GetAttr<bool>("IncludeSilu");
   param_.input1 = scope->FindTensor(op_desc.Input("Input1").front());
   if (param_.has_silu_fc_input) {
     param_.input2 = scope->FindTensor(op_desc.Input("Input2").front());
