@@ -26,6 +26,9 @@
 #ifdef LITE_WITH_METAL
 #include "lite/backends/metal/target_wrapper.h"
 #endif
+#ifdef LITE_WITH_ARM_DNN_LIBRARY
+#include "arm_dnn_library/arm_dnn_library.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -172,6 +175,11 @@ class DeviceInfo {
   }
   bool ExtendWorkspace(size_t size);
 
+#ifdef LITE_WITH_ARM_DNN_LIBRARY
+  void* device() { return device_; }
+  void* context() { return context_; }
+#endif
+
  private:
   int core_num_;
   std::vector<int> max_freqs_;
@@ -222,7 +230,14 @@ class DeviceInfo {
   // Enum class L3CacheSetMethod is declared in `lite/api/paddle_api.h`
   L3CacheSetMethod l3_cache_method_{L3CacheSetMethod::kDeviceL3Cache};
   int absolute_l3cache_size_{-1};
-  DeviceInfo() = default;
+#ifdef LITE_WITH_ARM_DNN_LIBRARY
+  void* device_{nullptr};
+  void* context_{nullptr};
+#endif
+  DeviceInfo();
+  ~DeviceInfo();
+  DeviceInfo(const DeviceInfo&) = delete;
+  DeviceInfo& operator=(const DeviceInfo&) = delete;
 };
 #endif  // LITE_WITH_ARM
 

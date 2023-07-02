@@ -21,7 +21,7 @@ namespace lite {
 namespace operators {
 
 bool PadOpLite::CheckShape() const {
-  CHECK_GT_OR_FALSE(param_.X->dims().size(), 1);
+  CHECK_GE_OR_FALSE(param_.X->dims().size(), 1);
   CHECK_OR_FALSE(param_.Out);
   CHECK_EQ(param_.paddings.size(), param_.X->dims().size() * 2);
   for (int i = 0; i < param_.paddings.size(); i++) {

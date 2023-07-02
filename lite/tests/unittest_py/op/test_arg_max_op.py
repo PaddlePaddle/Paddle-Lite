@@ -78,13 +78,16 @@ class TestArgMaxOp(AutoScanTest):
         keepdims = draw(st.booleans())
         dtype = draw(st.sampled_from([-1, 2, 3]))
         assume(axis < len(in_shape))
+        in_shape = draw(st.sampled_from([in_shape, []]))
+        if in_shape == []:
+            axis = draw(st.sampled_from([0]))  # paddle error when -1
 
         arg_max_op = OpConfig(
             type="arg_max",
             inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"]},
             attrs={
-                "axis": axis,
+                "axis": int(axis),
                 "keepdims": keepdims,
                 "dtype": dtype,
                 "flatten": False
@@ -123,10 +126,6 @@ class TestArgMaxOp(AutoScanTest):
                         0] != 1 or axis != 1 or keep_dims == False or set_dtype == 2:
                     return True
 
-        def _teller3(program_config, predictor_config):
-            if predictor_config.target() == TargetType.Metal:
-                return True
-
         def _teller4(program_config, predictor_config):
             if "intel_openvino" in self.get_nnadapter_device_name():
                 in_shape = program_config.inputs["input_data"].shape
@@ -141,6 +140,21 @@ class TestArgMaxOp(AutoScanTest):
                 if len(in_shape) == 1:
                     return True
 
+        def _teller6(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type not in [
+                    TargetType.ARM, TargetType.X86, TargetType.Metal,
+                    TargetType.OpenCL
+            ]:
+                if len(in_x_shape) == 0:
+                    return True
+
+        def _teller7(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.OpenCL or target_type == TargetType.Metal:
+                return True
+
         self.add_ignore_check_case(
             _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'int-precision output' or 'in_shape_size == 1' or 'axis == 0' on NvidiaTensorrt."
@@ -149,10 +163,7 @@ class TestArgMaxOp(AutoScanTest):
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite is not supported on metal. We need to fix it as soon as possible."
         )
-        self.add_ignore_check_case(
-            _teller3, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
-        )
+
         self.add_ignore_check_case(
             _teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'len(in_shape) == 1' on intel OpenVINO.")
@@ -160,6 +171,18 @@ class TestArgMaxOp(AutoScanTest):
         self.add_ignore_check_case(
             _teller5, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' on kunlunxin_xtcl.")
+
+        self.add_ignore_check_case(
+            _teller6, IgnoreReasons.PADDLE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(ARM/Host/OpenCL/Metal/X86) now.")
+
+        self.add_ignore_check_case(_teller7,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "ArgMax ERROR INFO: False is not true : \
+                                   Expected kernel_type of op arg_max is \
+                                   (TargetType.OpenCL,PrecisionType.FP16,DataLayoutType.ImageDefault), \
+                                   but now it's (TargetType.ARM,PrecisionType.Any,DataLayoutType.NCHW)."
+                                   )
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

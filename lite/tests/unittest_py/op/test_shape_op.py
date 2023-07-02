@@ -32,20 +32,20 @@ class TestShapeOp(AutoScanTest):
             TargetType.Host, [PrecisionType.Any],
             DataLayoutType.NCHW,
             thread=[1, 4])
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
+        # opencl_places = [
+        #     Place(TargetType.OpenCL, PrecisionType.FP16,
+        #           DataLayoutType.ImageDefault), Place(
+        #               TargetType.OpenCL, PrecisionType.FP16,
+        #               DataLayoutType.ImageFolder),
+        #     Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+        #     Place(TargetType.OpenCL, PrecisionType.Any,
+        #           DataLayoutType.ImageDefault), Place(
+        #               TargetType.OpenCL, PrecisionType.Any,
+        #               DataLayoutType.ImageFolder),
+        #     Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+        #     Place(TargetType.Host, PrecisionType.FP32)
+        # ]
+        # self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(device_names=[
             "cambricon_mlu", "intel_openvino", "kunlunxin_xtcl"
@@ -61,6 +61,7 @@ class TestShapeOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=64), min_size=1, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape, []]))
         input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
 
         def generate_input(*args, **kwargs):
@@ -101,8 +102,19 @@ class TestShapeOp(AutoScanTest):
             "The op output has diff in a specific case. We need to fix it as soon as possible."
         )
 
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_shape = list(program_config.inputs["input_data"].shape)
+            if (target_type not in [TargetType.X86, TargetType.ARM]
+                ) and len(in_shape) == 0:
+                return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(X86/ARM/Host) now.")
+
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

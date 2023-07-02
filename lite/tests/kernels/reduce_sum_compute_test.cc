@@ -228,12 +228,9 @@ class ReduceSumComputeTester : public arena::TestCase {
     std::vector<int64_t> out_dims;
     if (reduce_all_) {
       if (keep_dim_) {
-        out_dims.resize(x_rank);
-        for (int i = 0; i < x_rank; ++i) {
-          out_dims[i] = 1;
-        }
+        out_dims = std::vector<int64_t>(x_rank, 1);
       } else {
-        out_dims.push_back(1);
+        out_dims = std::vector<int64_t>();
       }
     } else {
       for (int i = 0; i < x_dims_.size(); i++) {
@@ -331,6 +328,8 @@ void test_reduce_sum(Place place,
                 if (std::find(dim.begin(), dim.end(), 0) == dim.end() &&
                     !keep_dim)
                   continue;
+                // 0d output tensor is not supported in NNAdapter Now
+                if (reduce_all) continue;
 #endif
                 auto x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
                 std::unique_ptr<arena::TestCase> tester(

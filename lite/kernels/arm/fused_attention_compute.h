@@ -34,6 +34,7 @@ class FusedAttentionCompute : public KernelLite<TARGET(kARM), PType> {
   virtual ~FusedAttentionCompute() = default;
 
  private:
+  DDim last_shape_;
   operators::ActivationParam act_param_;
   int fc_m_;
   int fc_k_;

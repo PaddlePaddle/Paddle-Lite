@@ -30,13 +30,15 @@ namespace kernels {
 namespace opencl {
 
 class ElementwiseAddCompute
-    : public KernelLite<TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)> {
+    : public KernelLite<TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kNCHW)> {
  public:
   using param_t = operators::ElementwiseParam;
 
   void PrepareForRun() override;
 
   void Run() override;
+
+  void ReInitWhenNeeded() override;
 
   std::string doc() const override {
     return "ElementwiseAdd using cl::Buffer, kFloat";
@@ -50,7 +52,7 @@ class ElementwiseAddCompute
   }
 #endif
 
- protected:
+ private:
   void UpdateParams();
 
   size_t batch_{1};
@@ -58,8 +60,12 @@ class ElementwiseAddCompute
   size_t num_{1};
   param_t* ele_param_{nullptr};
   std::string kernel_func_name_{"elementwise_add"};
-  std::string build_options_{"-DCL_DTYPE_float"};
+  std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
+  cl::NDRange global_work_size_;
+  cl::Kernel kernel_;
+  bool first_epoch_for_reinit_{true};
+  DDim last_x_dims_;
 };
 
 }  // namespace opencl

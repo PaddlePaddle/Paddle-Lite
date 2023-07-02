@@ -1055,22 +1055,22 @@ function mediatek_apu_prepare_device() {
     $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
     $remote_device_run $remote_device_name push "$nnadapter_device_lib_path" "$remote_device_work_dir"
 
-    # Use high performance mode
+    # Use high performance mode. Only some devices are supported, so it is disabled by default.
     $remote_device_run $remote_device_name root
     if [[ $? -ne 0 ]]; then
         echo "$remote_device_name hasn't the root permission!"
         exit 1
     fi
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
-    $remote_device_run $remote_device_name shell "echo 800000 > /proc/gpufreq/gpufreq_opp_freq"
-    $remote_device_run $remote_device_name shell "echo dvfs_debug 0 > /sys/kernel/debug/vpu/power"
-    $remote_device_run $remote_device_name shell "echo 0 > /sys/devices/platform/soc/10012000.dvfsrc/helio-dvfsrc/dvfsrc_force_vcore_dvfs_opp"
-    $remote_device_run $remote_device_name shell "echo 0 > /sys/module/mmdvfs_pmqos/parameters/force_step"
-    $remote_device_run $remote_device_name shell "echo 0 > /proc/sys/kernel/printk"
+    #$remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+    #$remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
+    #$remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor"
+    #$remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor"
+    #$remote_device_run $remote_device_name shell "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
+    #$remote_device_run $remote_device_name shell "echo 800000 > /proc/gpufreq/gpufreq_opp_freq"
+    #$remote_device_run $remote_device_name shell "echo dvfs_debug 0 > /sys/kernel/debug/vpu/power"
+    #$remote_device_run $remote_device_name shell "echo 0 > /sys/devices/platform/soc/10012000.dvfsrc/helio-dvfsrc/dvfsrc_force_vcore_dvfs_opp"
+    #$remote_device_run $remote_device_name shell "echo 0 > /sys/module/mmdvfs_pmqos/parameters/force_step"
+    #$remote_device_run $remote_device_name shell "echo 0 > /proc/sys/kernel/printk"
 }
 
 function mediatek_apu_build_target() {

@@ -166,6 +166,7 @@ REGISTER_OPERATION(LP_NORMALIZATION,
                    ValidateLpNormalization,
                    PrepareLpNormalization,
                    ExecuteLpNormalization)
+REGISTER_OPERATION(LRN, ValidateLrn, PrepareLrn, ExecuteLrn)
 REGISTER_OPERATION(MAT_MUL, ValidateMatMul, PrepareMatMul, ExecuteMatMul)
 REGISTER_OPERATION(MAX,
                    ValidateElementwise,
@@ -220,6 +221,10 @@ REGISTER_OPERATION(ROI_ALIGN,
                    PrepareRoiAlign,
                    ExecuteRoiAlign)
 REGISTER_OPERATION(ROLL, ValidateRoll, PrepareRoll, ExecuteRoll)
+REGISTER_OPERATION(RSQRT,
+                   ValidateUnaryActivations,
+                   PrepareUnaryActivations,
+                   ExecuteUnaryActivations)
 REGISTER_OPERATION(SHAPE, ValidateShape, PrepareShape, ExecuteShape)
 REGISTER_OPERATION(SIGMOID,
                    ValidateUnaryActivations,

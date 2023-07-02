@@ -306,6 +306,7 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
       case NNADAPTER_TANH:
       case NNADAPTER_SIN:
       case NNADAPTER_COS:
+      case NNADAPTER_RSQRT:
         input_args = {"input"};
         output_args = {"output"};
         break;
@@ -425,6 +426,10 @@ NNADAPTER_EXPORT std::string Visualize(core::Model* model) {
         break;
       case NNADAPTER_LP_NORMALIZATION:
         input_args = {"input", "axis", "p", "epsilon"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_LRN:
+        input_args = {"input", "size", "bias", "alpha", "beta"};
         output_args = {"output"};
         break;
       case NNADAPTER_RANGE:
@@ -733,6 +738,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(LOG);
     NNADAPTER_TYPE_TO_STRING(LOG_SOFTMAX);
     NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION);
+    NNADAPTER_TYPE_TO_STRING(LRN);
     NNADAPTER_TYPE_TO_STRING(MAT_MUL);
     NNADAPTER_TYPE_TO_STRING(MAX);
     NNADAPTER_TYPE_TO_STRING(MAX_POOL_2D);
@@ -758,6 +764,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(RESIZE_LINEAR);
     NNADAPTER_TYPE_TO_STRING(ROI_ALIGN);
     NNADAPTER_TYPE_TO_STRING(ROLL);
+    NNADAPTER_TYPE_TO_STRING(RSQRT);
     NNADAPTER_TYPE_TO_STRING(SHAPE);
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
     NNADAPTER_TYPE_TO_STRING(SIN);

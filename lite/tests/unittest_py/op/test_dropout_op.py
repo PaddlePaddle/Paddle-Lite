@@ -101,10 +101,14 @@ class TestDropoutOp(AutoScanTest):
         def gen_input_data_seed():
             return np.array([seed]).astype(np.int32)
 
+        def generate_input(*args, **kwargs):
+            return np.random.random(size=input_data_x_shape).astype(np.float32)
+
         def GenOpInputs():
             inputs = {"X": ["input_data_x"]}
             inputs_tensor = {
-                "input_data_x": TensorConfig(shape=input_data_x_shape)
+                "input_data_x": TensorConfig(data_gen=partial(
+                    generate_input, shape=input_data_x_shape))
             }
             if draw(st.booleans()):
                 inputs["Seed"] = ["input_data_seed"]
@@ -150,8 +154,6 @@ class TestDropoutOp(AutoScanTest):
         return self.get_predictor_configs(), ["dropout"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
-
         def _teller1(program_config, predictor_config):
             target_type = predictor_config.target()
             in_x_shape = list(program_config.inputs["input_data_x"].shape)
@@ -166,6 +168,17 @@ class TestDropoutOp(AutoScanTest):
             _teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
         )
+
+        # def _teller2(program_config, predictor_config):
+        #     target_type = predictor_config.target()
+        #     in_x_shape = list(program_config.inputs["input_data"].shape)
+        #     if target_type not in [TargetType.ARM, TargetType.Host, TargetType.X86, TargetType.Metal, TargetType.OpenCL]:
+        #         if len(in_x_shape) == 0:
+        #             return True
+
+        # self.add_ignore_check_case(_teller2,
+        #                            IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+        #                            "0D-tensor is not supported on this target now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

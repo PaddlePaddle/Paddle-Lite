@@ -18,6 +18,7 @@
 #include "driver/huawei_ascend_npu/optimizer/fix_no_inputs_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_quantized_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_reduce_ops_scalar_output.h"
+#include "optimizer/convert_adaptive_pool2d_into_pool2d.h"
 #include "optimizer/fuse_conv2d_activation_into_conv2d.h"
 #include "optimizer/fuse_conv2d_add_into_conv2d.h"
 #include "optimizer/fuse_conv2d_batch_norm_into_conv2d.h"
@@ -238,6 +239,9 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FuseMatMulDequantAddIntoFullyConnectedDequant(model);
     FuseMatMulAddIntoFullyConnected(model, true);
     FuseReshapeTransposeReshapeIntoChannelShuffle(model);
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(6, 0, 0)
+    ConvertAdaptivePool2dIntoPool2d(model);
+#endif
     FixQuantizedOps(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph

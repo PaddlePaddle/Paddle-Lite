@@ -20,6 +20,8 @@ import enum
 import unittest
 import paddle
 import copy
+import os
+import paddlelite
 from typing import Optional, List, Callable, Dict, Any, Set
 from paddlelite.lite import *
 
@@ -98,6 +100,17 @@ class AutoScanTest(AutoScanBaseTest):
         # 2. run inference
         config = ParsePaddleLiteConfig(self, pred_config)
         config.set_model_buffer(model, len(model), params, len(params))
+
+        #  2.1 metal configs
+        if "valid_targets" in pred_config:
+            for place_str in pred_config["valid_targets"]:
+                infos = ''.join(place_str.split()).split(",")
+                if len(infos) > 0 and infos[0] == "Metal":
+                    module_path = os.path.dirname(paddlelite.__file__)
+                    config.set_metal_lib_path(module_path +
+                                              "/libs/lite.metallib")
+                    config.set_metal_use_mps(True)
+                    break
         predictor = create_paddle_predictor(config)
 
         # 3. optimized model

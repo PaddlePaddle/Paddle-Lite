@@ -70,13 +70,14 @@ class TestClipOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
+        in_shape_tmp = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=8), min_size=1, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape_tmp, []]))
         min_val = float(np.random.randint(0, 100) / 100)
         max_val = min_val + 0.5
-        min_max_shape = draw(st.integers(min_value=1, max_value=20))
+        min_max_shape = draw(st.integers(min_value=1, max_value=1))
         case_type = draw(st.sampled_from(["c1", "c2"]))
 
         def generate_input(*args, **kwargs):
@@ -151,6 +152,20 @@ class TestClipOp(AutoScanTest):
         self.add_ignore_check_case(
             teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support '3 input tensors' on intel_openvino.")
+
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

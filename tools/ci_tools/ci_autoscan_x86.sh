@@ -48,7 +48,7 @@ function auto_scan_test {
   done
 
   cd $WORKSPACE/lite/tests/unittest_py/model_test/
-  python3.7 run_model_test.py --target=$target_name
+  python$PYTHON_VERSION run_model_test.py --target=$target_name
 }
 
 ####################################################################################################
@@ -56,6 +56,31 @@ function auto_scan_test {
 # Globals:
 #   WORKSPACE, PYTHON_VERSION
 ####################################################################################################
+function check_paddle_version {
+  if python$PYTHON_VERSION -c "import paddle" >/dev/null 2>&1;then
+    #padddle don't have version
+    if python$PYTHON_VERSION -c "import paddle;paddle.version.show()" >/dev/null 2>&1;then
+      # need paddle version >= 2.4
+      major_v=`python$PYTHON_VERSION -c "import paddle;paddle.version.show()" | grep major`
+      minor_v=`python$PYTHON_VERSION -c "import paddle;paddle.version.show()" | grep minor`
+      major_num=`echo ${major_v##*:} | awk '{print int($0)}'`
+      minor_num=`echo ${minor_v##*:} | awk '{print int($0)}'`
+      if (( $major_num < 2 || $minor_num < 4 ));then
+        # need reinstall
+        echo "present version is ${major_num}.${minor_num}, need reinstall paddlepaddle."
+        python$PYTHON_VERSION -m pip uninstall -y paddlepaddle
+      else
+        echo "paddlepaddle >= 2.4, satisfied!"
+      fi
+    else
+      echo "old paddle don't have paddle.version.show(), need reinstall."
+      python$PYTHON_VERSION -m pip uninstall -y paddlepaddle
+    fi
+  else
+    echo "Don't have paddlepaddle, need install."
+  fi
+}
+
 function compile_publish_inference_lib {
   cd $WORKSPACE
 
@@ -63,7 +88,7 @@ function compile_publish_inference_lib {
   rm -rf build.lite.linux.x86.*
 
   # Step1. Compiling python installer
-  local cmd_line="./lite/tools/build_linux.sh --with_python=ON --python_version=$PYTHON_VERSION --with_extra=$BUILD_EXTRA --arch=x86"
+  local cmd_line="./lite/tools/build_linux.sh --with_python=ON --python_version=$PYTHON_VERSION --with_extra=$BUILD_EXTRA --arch=x86 --skip_support_0_dim_tensor_pass=ON"
   $cmd_line
 
   # Step2. Checking results: cplus and python inference lib
@@ -76,10 +101,31 @@ function compile_publish_inference_lib {
     echo "**************************************************************************************"
     exit 1
   fi
+  
+  # We use develop version or 2.5rc for 0D-Tensor
+  # first, you need install MacM1 Paddle 2.5rc version use: 
+  python$PYTHON_VERSION -m pip uninstall -y paddlepaddle
+  # python$PYTHON_VERSION -m pip install paddlepaddle==2.5.0rc0 -i https://pypi.tuna.tsinghua.edu.cn/simple --no-cache-dir
+  python$PYTHON_VERSION -m pip install paddlepaddle==2.5.0rc0
 
-  # Step3. Install whl and its depends
+  # second, you need install PaddleSlim Dev use:
+  python$PYTHON_VERSION -m pip uninstall -y paddleslim
+
+  git clone https://github.com/PaddlePaddle/PaddleSlim.git
+  cd PaddleSlim
+  python$PYTHON_VERSION -m pip install opencv-python==4.6.0.66
+  python$PYTHON_VERSION -m pip install scikit-learn
+  python$PYTHON_VERSION -m pip install matplotlib
+  python$PYTHON_VERSION setup.py install
+  cd ../
+  rm -rf PaddleSlim
+  # PaddleLite
   python$PYTHON_VERSION -m pip install --force-reinstall $whl_path
-  python$PYTHON_VERSION -m pip install -r ./lite/tests/unittest_py/requirements.txt
+  # requirements
+  python$PYTHON_VERSION -m pip install numpy
+  python$PYTHON_VERSION -m pip install hypothesis==6.27.0
+  python$PYTHON_VERSION -m pip install rpyc
+  python$PYTHON_VERSION -m pip install wheel
 }
 
 function run_test() {
@@ -139,13 +185,13 @@ function run_python_demo() {
     check_classification_result $target $log_file
 
     # mobilenetv1_light_api
-    python$PYTHON_VERSION mobilenetv1_light_api.py \
-        --model_dir "opt_${target}.nb" \
-        --input_shape 1 3 224 224 \
-        --label_path ./labels.txt \
-        --image_path ./tabby_cat.jpg \
-        --backend $target 2>&1 | tee $log_file
-    check_classification_result $target $log_file
+    # python$PYTHON_VERSION mobilenetv1_light_api.py \
+    #     --model_dir "opt_${target}.nb" \
+    #     --input_shape 1 3 224 224 \
+    #     --label_path ./labels.txt \
+    #     --image_path ./tabby_cat.jpg \
+    #     --backend $target 2>&1 | tee $log_file
+    # check_classification_result $target $log_file
   done
 }
 

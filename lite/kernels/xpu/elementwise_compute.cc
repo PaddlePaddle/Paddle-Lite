@@ -29,15 +29,81 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+template <class T, class Functor, PrecisionType PType>
+void ElementwiseCompute<T, Functor, PType>::PrepareForRun() {
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
+  if (param.enable_int8) {
+    quant_x_max_value_guard_ =
+        TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
+    std::vector<float> cpu_quant_x_max_value(max_ptr_size, param.x_input_scale);
+    lite::TargetWrapperXPU::MemcpySync(quant_x_max_value_guard_->addr_,
+                                       cpu_quant_x_max_value.data(),
+                                       sizeof(float) * max_ptr_size,
+                                       IoDirection::HtoD);
+    quant_y_max_value_guard_ =
+        TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
+    std::vector<float> cpu_quant_y_max_value(max_ptr_size, param.y_input_scale);
+    lite::TargetWrapperXPU::MemcpySync(quant_y_max_value_guard_->addr_,
+                                       cpu_quant_y_max_value.data(),
+                                       sizeof(float) * max_ptr_size,
+                                       IoDirection::HtoD);
+
+    quant_z_max_value_guard_ =
+        TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
+    std::vector<float> cpu_quant_z_max_value(max_ptr_size, param.output_scale);
+    lite::TargetWrapperXPU::MemcpySync(quant_z_max_value_guard_->addr_,
+                                       cpu_quant_z_max_value.data(),
+                                       sizeof(float) * max_ptr_size,
+                                       IoDirection::HtoD);
+    broadcast_y_guard_ =
+        TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
+  }
+}
+
 template <typename T>
 struct AddFunctor {
   inline int operator()(xdnn::Context* ctx,
                         const T* x,
                         const T* y,
                         T* z,
-                        const std::vector<int>& xshape,
-                        const std::vector<int>& yshape) const {
+                        const std::vector<int64_t>& xshape,
+                        const std::vector<int64_t>& yshape,
+                        const float* max_x,
+                        const float* max_y,
+                        float* max_z) const {
     return xdnn::broadcast_add<T>(ctx, x, y, z, xshape, yshape);
+  }
+};
+
+template <>
+struct AddFunctor<int8_t> {
+  inline int operator()(xdnn::Context* ctx,
+                        const int8_t* x,
+                        const int8_t* y,
+                        int8_t* z,
+                        const std::vector<int64_t>& xshape,
+                        const std::vector<int64_t>& yshape,
+                        const float* max_x,
+                        const float* max_y,
+                        float* max_z) const {
+    CHECK_EQ(xshape.size(), yshape.size());
+    int64_t len = 1;
+    for (size_t i = 0; i < xshape.size(); i++) {
+      CHECK_EQ(xshape[i], yshape[i]);
+      len *= xshape[i];
+    }
+    return xdnn::add_activation_fusion<int8_t>(
+        ctx,
+        x,
+        y,
+        z,
+        len,
+        max_x,
+        max_y,
+        max_z,
+        {xdnn::Activation_t::LINEAR, 0.000000});
   }
 };
 
@@ -47,8 +113,11 @@ struct SubFunctor {
                         const T* x,
                         const T* y,
                         T* z,
-                        const std::vector<int>& xshape,
-                        const std::vector<int>& yshape) const {
+                        const std::vector<int64_t>& xshape,
+                        const std::vector<int64_t>& yshape,
+                        const float* max_x,
+                        const float* max_y,
+                        float* max_z) const {
     return xdnn::broadcast_sub<T>(ctx, x, y, z, xshape, yshape);
   }
 };
@@ -59,9 +128,37 @@ struct MulFunctor {
                         const T* x,
                         const T* y,
                         T* z,
-                        const std::vector<int>& xshape,
-                        const std::vector<int>& yshape) const {
+                        const std::vector<int64_t>& xshape,
+                        const std::vector<int64_t>& yshape,
+                        const float* max_x,
+                        const float* max_y,
+                        float* max_z) const {
     return xdnn::broadcast_mul<T>(ctx, x, y, z, xshape, yshape);
+  }
+};
+
+template <>
+struct MulFunctor<int8_t> {
+  inline int operator()(xdnn::Context* ctx,
+                        const int8_t* x,
+                        const int8_t* y,
+                        int8_t* z,
+                        const std::vector<int64_t>& xshape,
+                        const std::vector<int64_t>& yshape,
+                        const float* max_x,
+                        const float* max_y,
+                        float* max_z) const {
+    return xdnn::mul_activation_fusion<int8_t>(
+        ctx,
+        x,
+        y,
+        z,
+        xshape,
+        yshape,
+        max_x,
+        max_y,
+        max_z,
+        {xdnn::Activation_t::LINEAR, 0.000000});
   }
 };
 
@@ -71,8 +168,11 @@ struct DivFunctor {
                         const T* x,
                         const T* y,
                         T* z,
-                        const std::vector<int>& xshape,
-                        const std::vector<int>& yshape) const {
+                        const std::vector<int64_t>& xshape,
+                        const std::vector<int64_t>& yshape,
+                        const float* max_x,
+                        const float* max_y,
+                        float* max_z) const {
     return xdnn::broadcast_div<T>(ctx, x, y, z, xshape, yshape);
   }
 };
@@ -83,8 +183,11 @@ struct MaxFunctor {
                         const T* x,
                         const T* y,
                         T* z,
-                        const std::vector<int>& xshape,
-                        const std::vector<int>& yshape) const {
+                        const std::vector<int64_t>& xshape,
+                        const std::vector<int64_t>& yshape,
+                        const float* max_x,
+                        const float* max_y,
+                        float* max_z) const {
     return xdnn::broadcast_max<T>(ctx, x, y, z, xshape, yshape);
   }
 };
@@ -95,8 +198,11 @@ struct MinFunctor {
                         const T* x,
                         const T* y,
                         T* z,
-                        const std::vector<int>& xshape,
-                        const std::vector<int>& yshape) const {
+                        const std::vector<int64_t>& xshape,
+                        const std::vector<int64_t>& yshape,
+                        const float* max_x,
+                        const float* max_y,
+                        float* max_z) const {
     return xdnn::broadcast_min<T>(ctx, x, y, z, xshape, yshape);
   }
 };
@@ -107,8 +213,11 @@ struct ModFunctor {
                         const T* x,
                         const T* y,
                         T* z,
-                        const std::vector<int>& xshape,
-                        const std::vector<int>& yshape) const {
+                        const std::vector<int64_t>& xshape,
+                        const std::vector<int64_t>& yshape,
+                        const float* max_x,
+                        const float* max_y,
+                        float* max_z) const {
     return xdnn::broadcast_mod<T>(ctx, x, y, z, xshape, yshape);
   }
 };
@@ -119,8 +228,11 @@ struct FloordivFunctor {
                         const T* x,
                         const T* y,
                         T* z,
-                        const std::vector<int>& xshape,
-                        const std::vector<int>& yshape) const {
+                        const std::vector<int64_t>& xshape,
+                        const std::vector<int64_t>& yshape,
+                        const float* max_x,
+                        const float* max_y,
+                        float* max_z) const {
     return xdnn::broadcast_floordiv<T>(ctx, x, y, z, xshape, yshape);
   }
 };
@@ -131,25 +243,28 @@ struct PowFunctor {
                         const T* x,
                         const T* y,
                         T* z,
-                        const std::vector<int>& xshape,
-                        const std::vector<int>& yshape) const {
+                        const std::vector<int64_t>& xshape,
+                        const std::vector<int64_t>& yshape,
+                        const float* max_x,
+                        const float* max_y,
+                        float* max_z) const {
     return xdnn::broadcast_pow<T>(ctx, x, y, z, xshape, yshape);
   }
 };
 
 void set_shape(int axis,
-               std::vector<int>* larger_shape,
-               std::vector<int>* smaller_shape,
+               std::vector<int64_t>* larger_shape,
+               std::vector<int64_t>* smaller_shape,
                const DDimLite& larger_dim,
                const DDimLite& smaller_dim) {
   const int axis_tmp =
-      (axis == -1 ? static_cast<int>(larger_dim.size() - smaller_dim.size())
+      (axis == -1 ? static_cast<int64_t>(larger_dim.size() - smaller_dim.size())
                   : axis);
   for (size_t i = 0; i < larger_dim.size(); i++) {
-    (*larger_shape)[i] = static_cast<int>(larger_dim[i]);
+    (*larger_shape)[i] = static_cast<int64_t>(larger_dim[i]);
   }
   for (size_t i = 0; i < smaller_dim.size(); ++i) {
-    (*smaller_shape)[i + axis_tmp] = static_cast<int>(smaller_dim[i]);
+    (*smaller_shape)[i + axis_tmp] = static_cast<int64_t>(smaller_dim[i]);
     CHECK_EQ(((*larger_shape)[i + axis_tmp] == (*smaller_shape)[i + axis_tmp] ||
               (*larger_shape)[i + axis_tmp] == 1 ||
               (*smaller_shape)[i + axis_tmp] == 1),
@@ -163,17 +278,19 @@ void ElementwiseCompute<T, Functor, PType>::Run() {
   auto& ctx = this->ctx_->template As<XPUContext>();
   const Tensor* x = param.X;
   const Tensor* y = param.Y;
-
   auto& x_dim = x->dims();
   auto& y_dim = y->dims();
 
-  std::vector<int> x_shape(param.Out->dims().size(), 1);
-  std::vector<int> y_shape(param.Out->dims().size(), 1);
+  std::vector<int64_t> x_shape(param.Out->dims().size(), 1);
+  std::vector<int64_t> y_shape(param.Out->dims().size(), 1);
+  float* quant_x_max = nullptr;
+  float* quant_y_max = nullptr;
+  float* quant_z_max = nullptr;
 
   if (x_dim.size() == y_dim.size()) {
     for (size_t i = 0; i < x_dim.size(); i++) {
-      x_shape[i] = static_cast<int>(x_dim[i]);
-      y_shape[i] = static_cast<int>(y_dim[i]);
+      x_shape[i] = static_cast<int64_t>(x_dim[i]);
+      y_shape[i] = static_cast<int64_t>(y_dim[i]);
       CHECK_EQ((x_shape[i] == y_shape[i] || x_shape[i] == 1 || y_shape[i] == 1),
                true);
     }
@@ -183,13 +300,22 @@ void ElementwiseCompute<T, Functor, PType>::Run() {
     set_shape(param.axis, &y_shape, &x_shape, y_dim, x_dim);
   }
 
+  if (param.enable_int8) {
+    quant_x_max = reinterpret_cast<float*>(quant_x_max_value_guard_->addr_);
+    quant_y_max = reinterpret_cast<float*>(quant_y_max_value_guard_->addr_);
+    quant_z_max = reinterpret_cast<float*>(quant_z_max_value_guard_->addr_);
+  }
+
   Functor elt_func;
   int ret = elt_func(ctx.GetRawContext(),
                      x->template data<T>(),
                      y->template data<T>(),
                      param.Out->template mutable_data<T>(TARGET(kXPU)),
                      x_shape,
-                     y_shape);
+                     y_shape,
+                     quant_x_max,
+                     quant_y_max,
+                     quant_z_max);
 
   CHECK_EQ(ret, 0);
   return;
@@ -237,7 +363,7 @@ using DivFloat16 = xpu::ElementwiseCompute<float16,
                                            xpu::DivFunctor<float16>,
                                            PRECISION(kFP16)>;
 using DivInt32 =
-    xpu::ElementwiseCompute<int, xpu::MaxFunctor<int>, PRECISION(kFloat)>;
+    xpu::ElementwiseCompute<int, xpu::DivFunctor<int>, PRECISION(kFloat)>;
 
 using MaxFloat32 =
     xpu::ElementwiseCompute<float, xpu::MaxFunctor<float>, PRECISION(kFloat)>;
@@ -483,4 +609,20 @@ REGISTER_LITE_KERNEL(elementwise_pow, kXPU, kFloat, kNCHW, PowInt64, int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .Finalize();
+
+using AddInt8 =
+    xpu::ElementwiseCompute<int8_t, xpu::AddFunctor<int8_t>, PRECISION(kInt8)>;
+REGISTER_LITE_KERNEL(elementwise_add, kXPU, kInt8, kNCHW, AddInt8, Int8)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
+    .Finalize();
+
+using MulInt8 =
+    xpu::ElementwiseCompute<int8_t, xpu::MulFunctor<int8_t>, PRECISION(kInt8)>;
+REGISTER_LITE_KERNEL(elementwise_mul, kXPU, kInt8, kNCHW, MulInt8, Int8)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
     .Finalize();

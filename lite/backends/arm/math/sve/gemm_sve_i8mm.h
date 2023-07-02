@@ -60,7 +60,8 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
                            bool is_transB,
                            const float* scale,
                            const operators::ActivationParam act_param,
-                           ARMContext* ctx);
+                           ARMContext* ctx,
+                           bool packed_b = false);
 
 }  // namespace sve
 }  // namespace math

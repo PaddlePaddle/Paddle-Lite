@@ -89,10 +89,11 @@ class TestScaleOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
+        in_shape_tmp = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=8), min_size=1, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape_tmp, []]))
         bias = draw(st.floats(min_value=-5, max_value=5))
         bias_after_scale = draw(st.booleans())
         scale = draw(st.floats(min_value=-5, max_value=5))
@@ -112,17 +113,27 @@ class TestScaleOp(AutoScanTest):
 
             if dtype == "int32":
                 if low == high:
-                    return low * np.ones(shape).astype(np.int32)
+                    if shape == []:
+                        return np.ones(shape).astype(np.int32)
+                    else:
+                        return low * np.ones(shape).astype(np.int32)
                 else:
                     return np.random.randint(low, high, shape).astype(np.int32)
             elif dtype == "int64":
                 if low == high:
-                    return low * np.ones(shape).astype(np.int64)
+                    if shape == []:
+                        return np.ones(shape).astype(np.int64)
+                    else:
+                        return low * np.ones(shape).astype(np.int64)
                 else:
                     return np.random.randint(low, high, shape).astype(np.int64)
             elif dtype == "float32":
-                return (high - low
-                        ) * np.random.random(shape).astype(np.float32) + low
+                if shape == []:
+                    return np.random.random(shape).astype(np.float32)
+                else:
+                    return (
+                        high - low
+                    ) * np.random.random(shape).astype(np.float32) + low
 
         input_dict = {"X": ["input_data"]}
         input_data_dict = {
@@ -185,6 +196,16 @@ class TestScaleOp(AutoScanTest):
                 if len(in_shape) == 1:
                     return True
 
+        def _teller5(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
+                if len(in_x_shape) == 0:
+                    return True
+
         self.add_ignore_check_case(
             teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op in a specific case. We need to fix it as soon as possible."
@@ -201,12 +222,16 @@ class TestScaleOp(AutoScanTest):
             teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' on nvidia_tensorrt.")
 
+        self.add_ignore_check_case(
+            _teller5, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
+
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 100
+        max_examples = 1000
         if target_str in ["OpenCL", "Metal"]:
             # Make sure to generate enough valid cases for specific targets
-            max_examples = 2000
+            max_examples = 3000
         elif target_str in ["NNAdapter"]:
             # Make sure to generate enough valid cases for specific targets
             max_examples = 300

@@ -225,6 +225,7 @@ bool LinearInterpolateV2Op::AttachImpl(const cpp::OpDesc& op_desc,
 } /* namespace paddle */
 
 REGISTER_LITE_OP(bilinear_interp_v2, paddle::lite::operators::InterpolateV2Op);
+REGISTER_LITE_OP(bicubic_interp_v2, paddle::lite::operators::InterpolateV2Op);
 REGISTER_LITE_OP(nearest_interp_v2, paddle::lite::operators::InterpolateV2Op);
 REGISTER_LITE_OP(linear_interp_v2,
                  paddle::lite::operators::LinearInterpolateV2Op);

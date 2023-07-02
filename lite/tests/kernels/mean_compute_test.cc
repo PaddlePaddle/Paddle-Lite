@@ -37,7 +37,7 @@ class MeanComputeTester : public arena::TestCase {
     auto input = scope->FindTensor(input_);
     auto output = scope->NewTensor(output_);
 
-    std::vector<int64_t> out_dims{1};
+    std::vector<int64_t> out_dims{};
     output->Resize(out_dims);
 
     auto input_data = input->data<float>();

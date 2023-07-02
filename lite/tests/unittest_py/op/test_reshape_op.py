@@ -66,35 +66,98 @@ class TestReshapeOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=10), min_size=4, max_size=4))
-
+                    min_value=5, max_value=10), min_size=4, max_size=4))
         attr_shape = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=max(in_shape)),
                 min_size=1,
                 max_size=len(in_shape)))
+
+        shape_tensor = []
+        for i in range(len(attr_shape) - 1, -1, -1):
+            shape_tensor.append(attr_shape[i])
         assume(
             reduce(lambda x, y: x * y, attr_shape) == reduce(
                 lambda x, y: x * y, in_shape))
 
-        with_shape = draw(st.sampled_from([True, False]))
+        in_shape = draw(st.sampled_from([in_shape, []]))
+        if in_shape == []:
+            attr_shape = [1]
+            shape_tensor = [1, 1]
+
+        # The parameter shape in ReshapeOp must be set
+        with_shape_attr = draw(st.sampled_from([True]))
+        with_shape_tensor = draw(st.sampled_from([True, False]))
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
 
-        build_ops = OpConfig(
-            type="reshape",
-            inputs={"X": ["input_data"], },
-            outputs={"Out": ["output_data"], },
-            attrs={"shape": attr_shape, })
-        program_config = ProgramConfig(
-            ops=[build_ops],
-            weights={},
-            inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input)),
-            },
-            outputs=["output_data"])
+        def generate_shape(*args, **kwargs):
+            return np.asarray(shape_tensor).astype(np.int32)
+
+        if (with_shape_attr and with_shape_tensor):
+            build_ops = OpConfig(
+                type="reshape",
+                inputs={"X": ["input_data"],
+                        "Shape": ["input_shape"]},
+                outputs={"Out": ["output_data"], },
+                attrs={"shape": attr_shape, })
+            program_config = ProgramConfig(
+                ops=[build_ops],
+                weights={},
+                inputs={
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input)),
+                    "input_shape":
+                    TensorConfig(data_gen=partial(generate_shape)),
+                },
+                outputs=["output_data"])
+        elif (with_shape_attr):
+            build_ops = OpConfig(
+                type="reshape",
+                inputs={"X": ["input_data"]},
+                outputs={"Out": ["output_data"], },
+                attrs={"shape": attr_shape, })
+            program_config = ProgramConfig(
+                ops=[build_ops],
+                weights={},
+                inputs={
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input)),
+                },
+                outputs=["output_data"])
+        elif (with_shape_tensor):
+            build_ops = OpConfig(
+                type="reshape",
+                inputs={"X": ["input_data"],
+                        "Shape": ["input_shape"]},
+                outputs={"Out": ["output_data"], },
+                attrs={})
+            program_config = ProgramConfig(
+                ops=[build_ops],
+                weights={},
+                inputs={
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input)),
+                    "input_shape":
+                    TensorConfig(data_gen=partial(generate_shape)),
+                },
+                outputs=["output_data"])
+        else:
+            build_ops = OpConfig(
+                type="reshape",
+                inputs={"X": ["input_data"]},
+                outputs={"Out": ["output_data"], },
+                attrs={})
+            program_config = ProgramConfig(
+                ops=[build_ops],
+                weights={},
+                inputs={
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input)),
+                },
+                outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
@@ -112,8 +175,27 @@ class TestReshapeOp(AutoScanTest):
             teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support change batch on nvidia_tensorrt.")
 
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type != TargetType.Host and target_type != TargetType.OpenCL:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
+
+        def teller3(program_config, predictor_config):
+            if self.get_nnadapter_device_name() == "intel_openvino":
+                return True
+
+        self.add_ignore_check_case(teller3,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "intel_openvino report error.")
+
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=200)
+        self.run_and_statis(quant=False, max_examples=500)
 
 
 if __name__ == "__main__":

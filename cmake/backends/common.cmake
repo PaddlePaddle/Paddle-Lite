@@ -34,6 +34,9 @@ if(LITE_WITH_ARM)
     include(ccache)
     include(external/protobuf)  # download, build, install protobuf
   endif()
+  if(LITE_WITH_ARM_DNN_LIBRARY)
+    include(external/arm_dnn_library)
+  endif()
 else()
   include(coveralls)
   include(external/gflags)      # download, build, install gflags

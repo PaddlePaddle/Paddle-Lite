@@ -50,6 +50,14 @@ void CastCompute<InType>::Run() {
     auto* out_data = out->template mutable_data<int64_t>(TARGET(kXPU));
     r = xdnn::cast_v2<InType, int64_t>(
         ctx.GetRawContext(), in_data, out_data, numel);
+  } else if (out_dtype == 6) {
+    auto* out_data = out->template mutable_data<float>(TARGET(kXPU));
+    r = xdnn::cast_v2<InType, float>(
+        ctx.GetRawContext(), in_data, out_data, numel);
+  } else if (out_dtype == 0) {
+    auto* out_data = out->template mutable_data<bool>(TARGET(kXPU));
+    r = xdnn::cast_v2<InType, bool>(
+        ctx.GetRawContext(), in_data, out_data, numel);
   } else {
     LOG(FATAL) << "cast from in_type("
                << lite_api::PrecisionToStr(

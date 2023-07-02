@@ -36,7 +36,8 @@ void gemm_s8(bool is_transA,
              GemmBiasDirection bias_direction,
              const float* scale,
              const operators::ActivationParam act_param,
-             ARMContext* ctx) {
+             ARMContext* ctx,
+             bool packed_b) {
   if (N == 1) {
     gemv_int8(A, B, C, is_transA, M, K, scale, is_bias, bias, act_param, ctx);
 
@@ -96,7 +97,8 @@ void gemm_s8(bool is_transA,
                            is_transB,
                            scale,
                            act_param,
-                           ctx);
+                           ctx,
+                           packed_b);
 }
 
 template void gemm_s8<float>(bool is_transA,
@@ -112,7 +114,8 @@ template void gemm_s8<float>(bool is_transA,
                              GemmBiasDirection bias_direction,
                              const float* scale,
                              const operators::ActivationParam act_param,
-                             ARMContext* ctx);
+                             ARMContext* ctx,
+                             bool packed_b);
 
 template void gemm_s8<int8_t>(bool is_transA,
                               bool is_transB,
@@ -127,7 +130,8 @@ template void gemm_s8<int8_t>(bool is_transA,
                               GemmBiasDirection bias_direction,
                               const float* scale,
                               const operators::ActivationParam act_param,
-                              ARMContext* ctx);
+                              ARMContext* ctx,
+                              bool packed_b);
 
 #if defined(__aarch64__) && defined(LITE_WITH_ARM8_SVE2)
 template <typename Dtype>
@@ -144,7 +148,8 @@ void gemm_sve(bool is_transA,
               GemmBiasDirection bias_direction,
               const float* scale,
               const operators::ActivationParam act_param,
-              ARMContext* ctx) {
+              ARMContext* ctx,
+              bool packed_b) {
   if (N == 1) {
     gemv_int8(A, B, C, is_transA, M, K, scale, is_bias, bias, act_param, ctx);
     return;
@@ -205,7 +210,8 @@ void gemm_sve(bool is_transA,
       is_transB,
       scale,
       act_param,
-      ctx);
+      ctx,
+      false);
 }
 
 template void gemm_sve<float>(bool is_transA,
@@ -221,7 +227,8 @@ template void gemm_sve<float>(bool is_transA,
                               GemmBiasDirection bias_direction,
                               const float* scale,
                               const operators::ActivationParam act_param,
-                              ARMContext* ctx);
+                              ARMContext* ctx,
+                              bool packed_b);
 
 template void gemm_sve<int8_t>(bool is_transA,
                                bool is_transB,
@@ -236,7 +243,8 @@ template void gemm_sve<int8_t>(bool is_transA,
                                GemmBiasDirection bias_direction,
                                const float* scale,
                                const operators::ActivationParam act_param,
-                               ARMContext* ctx);
+                               ARMContext* ctx,
+                               bool packed_b);
 #endif
 
 }  // namespace math

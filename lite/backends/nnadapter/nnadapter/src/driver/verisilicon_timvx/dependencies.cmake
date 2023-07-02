@@ -78,6 +78,7 @@ ExternalProject_Add(
                       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                       -DEXTERNAL_VIV_SDK=${NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT}
                       -DCMAKE_INSTALL_PREFIX=${VERISILICON_TIMVX_INSTALL_DIR}
+                      -DTIM_VX_ENABLE_TENSOR_CACHE=OFF                      
                       ${CROSS_COMPILE_CMAKE_ARGS}
 )
 

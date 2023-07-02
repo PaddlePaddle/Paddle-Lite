@@ -45,10 +45,20 @@ class TestExpandV2Op(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.sampled_from([[1, 1, 1], [2, 1, 4]]))
+        in_shape = draw(st.sampled_from([[1, 1, 1], [2, 1, 4], []]))
         Shape = draw(st.sampled_from([[2, 4, 4], [3, 2, 3, 4]]))
         expand_shape = draw(st.sampled_from([[2, 5, 4], [2, 3, 4]]))
         with_Shape = draw(st.sampled_from([True, False]))
+        attr_shape = draw(
+            st.sampled_from([[2, 3, 4], [2, 4, 4], [2, 2, 3, 4], [3, 2, 5, 4]
+                             ]))
+        if in_shape == []:
+            Shape = draw(st.sampled_from([[2, 4, 4], [3, 2, 3, 4], []]))
+            expand_shape = draw(
+                st.sampled_from([[2, 5, 4], [2, 3, 4], [1, 1, 1]]))
+            attr_shape = draw(
+                st.sampled_from([[2, 3, 4], [2, 4, 4], [2, 2, 3, 4],
+                                 [3, 2, 5, 4], []]))
 
         #todo daming5432 input vector tensor
         with_expand_shape = draw(st.booleans())
@@ -61,7 +71,7 @@ class TestExpandV2Op(AutoScanTest):
             return np.array(Shape).astype(np.int32)
 
         def generate_expand_shape(i, *args, **kwargs):
-            return np.array([expand_shape[i]]).astype(np.int32)
+            return np.array(expand_shape[i]).astype(np.int32)
 
         def generate_input(*args, **kwargs):
             if kwargs["type"] == "int32":
@@ -71,8 +81,7 @@ class TestExpandV2Op(AutoScanTest):
                 return np.random.randint(kwargs["low"], kwargs["high"],
                                          kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return (kwargs["high"] - kwargs["low"]) * np.random.random(
-                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
+                return np.random.random(kwargs["shape"]).astype(np.float32)
 
         input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
 
@@ -139,9 +148,6 @@ class TestExpandV2Op(AutoScanTest):
                 }
             return [inputs1, inputs2]
 
-        attr_shape = draw(
-            st.sampled_from([[2, 3, 4], [2, 4, 4], [2, 2, 3, 4], [3, 2, 5, 4]
-                             ]))
         inputs = gnerate_inputs(with_Shape, with_expand_shape)
         expand_v2_op = OpConfig(
             type="expand_v2",
@@ -161,7 +167,19 @@ class TestExpandV2Op(AutoScanTest):
         return self.get_predictor_configs(), ["expand_v2"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

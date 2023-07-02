@@ -74,6 +74,7 @@ lite_option(LITE_ON_TINY_PUBLISH               "Publish tiny predictor lib."    
 lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL        "Build the model optimize tool"                                        OFF)
 lite_option(LITE_WITH_BENCHMARK_TEST           "Build benchmark test cases"                                           OFF)
 lite_option(LITE_THREAD_POOL                   "Enable thread pool in lite"                                           OFF)
+lite_option(LITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS "Skip support_0_dim_tensor_pass"                                      OFF)
 # publish options
 lite_option(LITE_BUILD_EXTRA                   "Enable extra algorithm support in Lite, both kernels and operators"   OFF)
 lite_option(LITE_BUILD_TAILOR                  "Enable tailoring library according to model"                          OFF)
@@ -86,6 +87,7 @@ lite_option(LITE_WITH_ARM8_SVE2                "Enable SVE2 instructions in ARMv
 lite_option(LITE_WITH_ARM82_INT8_SDOT          "when compile with arm v8.2 int8, it's ON."                            OFF)
 lite_option(LITE_WITH_CODE_META_INFO           "include git version in the header file."                              ON)
 lite_option(WITH_NODE_RAW_FS                   "(Only available when compiling by Emscripten) Whether build with NODERAWFS"               OFF)
+lite_option(LITE_WITH_ARM_DNN_LIBRARY          "Use Arm DNN library instead of built-in math library."                OFF)
 
 find_package(Git REQUIRED)
 find_package(Threads REQUIRED)

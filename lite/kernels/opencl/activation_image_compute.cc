@@ -256,22 +256,6 @@ class ActivationComputeImageDefault
       CL_CHECK_FATAL(status);
     }
 
-#ifdef LITE_WITH_LOG
-    const auto& x_dims = act_param_->X->dims();
-    const auto& y_dims = act_param_->Out->dims();  // useless: check dim only
-    VLOG(4) << TargetToStr(act_param_->X->target());
-    VLOG(4) << TargetToStr(act_param_->Out->target());
-    VLOG(4) << "x_img_shape_(w,h):" << x_img_shape_[0] << " "
-            << x_img_shape_[1];
-    VLOG(4) << "x_dims[" << x_dims.size() << "D]:" << x_dims[0] << " "
-            << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
-    VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
-            << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
-    VLOG(4) << "threshold:" << threshold_;
-    VLOG(4) << "scale:" << scale_;
-    VLOG(4) << "kernel func name:" << kernel_func_name_;
-#endif
-
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     status = EnqueueNDRangeKernel(context,
@@ -348,20 +332,6 @@ class SqrtComputeImageDefault : public ActivationComputeImageDefault {
     CL_CHECK_FATAL(status);
     status = kernel.setArg(1, *out_img);
     CL_CHECK_FATAL(status);
-
-#ifdef LITE_WITH_LOG
-    const auto& x_dims = act_param_->X->dims();
-    const auto& y_dims = act_param_->Out->dims();  // useless: check dim only
-    VLOG(4) << TargetToStr(act_param_->X->target());
-    VLOG(4) << TargetToStr(act_param_->Out->target());
-    VLOG(4) << "x_img_shape_(w,h):" << x_img_shape_[0] << " "
-            << x_img_shape_[1];
-    VLOG(4) << "x_dims[" << x_dims.size() << "D]:" << x_dims[0] << " "
-            << x_dims[1] << " " << x_dims[2] << " " << x_dims[3];
-    VLOG(4) << "y_dims[" << y_dims.size() << "D]:" << y_dims[0] << " "
-            << y_dims[1] << " " << y_dims[2] << " " << y_dims[3];
-    VLOG(4) << "kernel func name:" << kernel_func_name_;
-#endif
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);

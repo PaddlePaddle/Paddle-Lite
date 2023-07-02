@@ -27,8 +27,6 @@ bool ScatterNdAddOp::InferShapeImpl() const {
   auto input_dims_size = input_dims.size();
   CHECK_LE(index_dims[index_dims_size - 1], input_dims_size)
       << "Input(Index).shape[-1] should be no greater than Input(X).rank";
-  CHECK_GE(input_dims_size, 2L)
-      << "The rank of Input(Index) should be greater than 1";
   std::vector<int64_t> r_updates_dims;
   for (int64_t i = 0; i < index_dims_size - 1; ++i) {
     r_updates_dims.emplace_back(index_dims[i]);

@@ -49,6 +49,10 @@ class TestLogSoftmaxOp(AutoScanTest):
         input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
         assume(len(in_shape) > 1 and input_axis < len(in_shape))
 
+        in_shape = draw(st.sampled_from([in_shape, []]))
+        if in_shape == []:
+            input_axis = -1
+
         def generate_input(*args, **kwargs):
             return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
 
@@ -87,6 +91,20 @@ class TestLogSoftmaxOp(AutoScanTest):
             teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' or 'axis == 0' on nvidia_tensorrt."
         )
+
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(ARM/Host/X86/Metal/OpenCL) now.")
 
     def test(self, *args, **kwargs):
         max_examples = 100

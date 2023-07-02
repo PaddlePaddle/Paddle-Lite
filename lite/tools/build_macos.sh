@@ -31,11 +31,14 @@ WITH_LTO=OFF
 WITH_TESTING=OFF
 BUILD_ARM82_FP16=OFF
 BUILD_ARM82_INT8_SDOT=OFF
+SKIP_SUPPORT_0_DIM_TENSOR_PASS=OFF
 PYTHON_EXECUTABLE_OPTION=""
 PY_VERSION=""
 workspace=$PWD/$(dirname $0)/../../
 OPTMODEL_DIR=""
 IOS_DEPLOYMENT_TARGET=11.0
+# use Arm DNN library instead of built-in math library, defaults to OFF.
+WITH_ARM_DNN_LIBRARY=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -126,6 +129,7 @@ function build_opt {
     fi
     cmake .. \
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
+      -DLITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS=$SKIP_SUPPORT_0_DIM_TENSOR_PASS \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
       -DLITE_WITH_X86=${with_x86} \
@@ -205,8 +209,10 @@ function make_armosx {
             -DARM_TARGET_ARCH_ABI=$arch \
             -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
             -DLITE_WITH_CV=$BUILD_CV \
+            -DLITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS=$SKIP_SUPPORT_0_DIM_TENSOR_PASS \
             -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
+            -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY \
             -DARM_TARGET_OS=armmacos
     if [ "${WITH_BENCHMARK}" == "ON" ]; then
         make benchmark_bin -j$NUM_PROC
@@ -279,8 +285,10 @@ function make_x86 {
             -DLITE_BUILD_TAILOR=${BUILD_TAILOR} \
             -DLITE_OPTMODEL_DIR=${OPTMODEL_DIR} \
             -DLITE_WITH_LOG=${WITH_LOG} \
+            -DLITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS=$SKIP_SUPPORT_0_DIM_TENSOR_PASS \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_WITH_LTO=${WITH_LTO} \
+            -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY \
             -DCMAKE_BUILD_TYPE=Release \
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
@@ -379,6 +387,10 @@ function main {
                 WITH_LOG="${i#*=}"
                 shift
                 ;;
+            --skip_support_0_dim_tensor_pass=*)
+                SKIP_SUPPORT_0_DIM_TENSOR_PASS="${i#*=}"
+                shift
+                ;;
             # controls whether to include FP16 kernels, default is OFF
             --with_arm82_fp16=*)
                 BUILD_ARM82_FP16="${i#*=}"
@@ -437,6 +449,11 @@ function main {
                 ;;
             --ios_deployment_target=*)
                 IOS_DEPLOYMENT_TARGET="${i#*=}"
+                shift
+                ;;
+             # use Arm DNN library
+            --with_arm_dnn_library=*)
+                WITH_ARM_DNN_LIBRARY="${i#*=}"
                 shift
                 ;;
             arm64)

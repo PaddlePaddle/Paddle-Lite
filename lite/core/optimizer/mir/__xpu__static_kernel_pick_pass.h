@@ -43,6 +43,18 @@ namespace mir {
 class XPUStaticKernelPickPass : public mir::StmtPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+  void InitKernelPickInfo() {
+    // clear kernel pick info to avoid crash when
+    // init two models respectively
+    xpu_input_type_.clear();
+    xpu_output_type_.clear();
+    xpu_special_op_.clear();
+    xpu_use_int8_optimizer_ = false;
+    xpu_use_fp16_optimizer_ = false;
+    xpu_int8_compute_autotune_ = false;
+    xpu_full_quantization_ = true;
+    fetch_tensor_in_xpu_ = false;
+  }
 
   const core::KernelPickFactor& kernel_pick_factors() const {
     return kernel_pick_factors_;
@@ -62,12 +74,15 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
     if (cur_dev_attr <= 1) {
       VLOG(4) << "Currents XPU device : XPU1";
       xpu_disable_flag_ = "DISABLE_XPU1";
+      xpu_device_version_ = "XPU1";
     } else if (cur_dev_attr >= 2 && cur_dev_attr <= 299) {
       VLOG(4) << "Currents XPU device : XPU2";
       xpu_disable_flag_ = "DISABLE_XPU2";
+      xpu_device_version_ = "XPU2";
     } else if (cur_dev_attr >= 300 && cur_dev_attr <= 599) {
       VLOG(4) << "Currents XPU device : XPU3";
       xpu_disable_flag_ = "DISABLE_XPU3";
+      xpu_device_version_ = "XPU3";
     } else {
       VLOG(4) << "invaid XPU device";
       xpu_disable_flag_ = "NONE";
@@ -75,13 +90,16 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
     // init quant type, encode precision
     CHECK(lite::TargetWrapperXPU::xpu_runtime_ptr)
         << "xpu_runtime_ptr null in pass";
-    local_quant_ = GetBoolFromEnv("XPU_LOCAL_QUANT") ||
-                   lite::TargetWrapperXPU::xpu_runtime_ptr->local_quant;
-    encode_precision_ =
-        lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision;
-    if (encode_precision_.empty()) {
-      encode_precision_ = GetStringFromEnv("XPU_ENCODER_PRECISION", "int16");
-    }
+    local_quant_ =
+        GetBoolFromEnv("XPU_LOCAL_QUANT",
+                       lite::TargetWrapperXPU::xpu_runtime_ptr->local_quant);
+    encode_precision_ = GetStringFromEnv(
+        "XPU_ENCODER_PRECISION",
+        lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision);
+    xpu_int8_compute_autotune_ = GetBoolFromEnv("XPU_INT8_AUTOTUNE", false);
+    xpu_full_quantization_ = GetBoolFromEnv("XPU_FULL_QUANTIZATION", true);
+    fetch_tensor_in_xpu_ = GetBoolFromEnv("FETCH_TENSOR_IN_XPU", false);
+    kernel_use_host_ = false;
 #endif
   }
 
@@ -125,6 +143,12 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
             kMax /
             static_cast<int>(core::KernelPickFactor::Factor::TargetFirst);
         score += target_score;
+        if (instruct.op_info()->Type() == "fetch" &&
+            kernel.target() == TARGET(kXPU) && !fetch_tensor_in_xpu_) {
+          score = 0;
+          VLOG(4)
+              << "By default, the output tensor of fetch op is not on the xpu";
+        }
         VLOG(4) << "[TargetConsidered score]:" << target_score;
       }
       VLOG(4) << "[score s1]:" << score;
@@ -206,6 +230,16 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
         VLOG(4) << "[score s5]:" << score;
       }
 
+      // temp add : xpu kernel multiclass output in cpu.
+      if (instruct.op_info()->Type() != "multiclass_nms3" && kernel_use_host_ &&
+          kernel.target() == TARGET(kXPU)) {
+        score = 0;
+      }
+
+      if (instruct.op_info()->Type() == "multiclass_nms3") {
+        kernel_use_host_ = true;
+      }
+
       if (weight * score > final_score) {
         final_score = weight * score;
         winner_place = place;
@@ -253,7 +287,10 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
   void NodeInputPrecision(lite::mir::Node* node,
                           const std::unique_ptr<SSAGraph>& graph);
   void InplaceNodeInputPrecision(lite::mir::Node* node);
-  void SpecialNodeInputPrecision(lite::mir::Node* node);
+  void SpecialNodeInputPrecision(lite::mir::Node* node,
+                                 const bool collect_int8,
+                                 const bool collect_fp16,
+                                 bool* has_collected);
 
   void NodeOutputPrecision(const std::unique_ptr<SSAGraph>& graph,
                            lite::mir::Node* node);
@@ -282,6 +319,19 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
       size_t* score,
       bool* type_match);
   void CollectXPUSpecialOPType(const std::unique_ptr<SSAGraph>& graph);
+  void GeneralInt8OpScore(lite::mir::Node* node,
+                          const lite::KernelBase& kernel,
+                          bool* type_match,
+                          size_t* score);
+  void SetEnableInt8Attribute(const std::unique_ptr<SSAGraph>& graph);
+  void strategiesInt8OP(lite::mir::Node* op_node, bool* quant_int8);
+  void strategiesconcatOP(const std::unique_ptr<SSAGraph>& graph,
+                          lite::mir::Node* op_node,
+                          bool* quant_int8);
+  void SliceForceNotUseXPU(lite::mir::Node* node,
+                           const lite::KernelBase& kernel,
+                           bool* type_match,
+                           size_t* score);
 
  private:
   core::KernelPickFactor kernel_pick_factors_;
@@ -300,12 +350,48 @@ class XPUStaticKernelPickPass : public mir::StmtPass {
                                               "squeeze",
                                               "squeeze2",
                                               "unsqueeze",
-                                              "unsqueeze2"};
+                                              "unsqueeze2",
+                                              "flatten_contiguous_range"};
   bool xpu_use_int8_optimizer_{false};
-  std::set<std::string> xpu_int8_special_op_{"__xpu__fc", "__xpu__conv2d"};
+  const std::set<std::string> xpu_int8_special_op_{"__xpu__fc",
+                                                   "__xpu__conv2d"};
+  // Temp add: owing to slim bug,this op is not support int8 compute.
+  const std::set<std::string> xpu_disable_int_op_{"matmul_v2",
+                                                  "conv2d_transpose"};
+
+  const std::set<std::string> xpu_int8_general_op_not_need_sacale_{
+      "nearest_interp",
+      "nearest_interp_v2",
+      "transpose",
+      "transpose2",
+      "split",
+      "clip",
+      "slice",
+      "shape"};
+
+  const std::set<std::string> xpu_int8_general_op_{"pool2d",
+                                                   "elementwise_add",
+                                                   "elementwise_mul",
+                                                   "concat",
+                                                   "reduce_mean",
+                                                   "bilinear_interp",
+                                                   "bilinear_interp_v2",
+                                                   "nearest_interp",
+                                                   "nearest_interp_v2",
+                                                   "transpose",
+                                                   "transpose2",
+                                                   "split",
+                                                   "clip",
+                                                   "slice",
+                                                   "shape"};
 
   bool local_quant_{false};
   std::string encode_precision_;
+  bool kernel_use_host_ = false;
+  bool xpu_int8_compute_autotune_{false};
+  bool xpu_full_quantization_{true};
+  bool fetch_tensor_in_xpu_{false};
+  std::string xpu_device_version_{};
 };
 
 }  // namespace mir

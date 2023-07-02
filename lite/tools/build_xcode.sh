@@ -23,6 +23,8 @@ workspace=$PWD/$(dirname $0)/../../
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
 IOS_DEPLOYMENT_TARGET=9.0
+# use Arm DNN library instead of built-in math library, defaults to OFF.
+WITH_ARM_DNN_LIBRARY=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -86,6 +88,7 @@ function make_xcode {
             -DLITE_BUILD_EXTRA=$WITH_EXTRA \
             -DLITE_WITH_CV=$WITH_CV \
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
+            -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY \
             -DARM_TARGET_OS=$os \
             -G "Xcode"
 
@@ -156,6 +159,11 @@ function main {
                 ;;
             --ios_deployment_target=*)
                 IOS_DEPLOYMENT_TARGET="${i#*=}"
+                shift
+                ;;
+            # use Arm DNN library
+             --with_arm_dnn_library=*)
+                WITH_ARM_DNN_LIBRARY="${i#*=}"
                 shift
                 ;;
             help)

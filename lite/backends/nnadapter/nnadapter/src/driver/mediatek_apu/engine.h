@@ -33,10 +33,12 @@ class Context {
  public:
   explicit Context(void* device, const char* properties);
   ~Context();
+  bool relax_fp32_to_fp16() { return relax_fp32_to_fp16_; }
 
  private:
   void* device_{nullptr};
   void* context_{nullptr};
+  bool relax_fp32_to_fp16_{true};
 };
 
 class Program {

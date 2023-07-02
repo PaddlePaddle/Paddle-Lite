@@ -14,6 +14,10 @@
 
 #pragma once
 
+#include <vector>
+
+#include "utility/modeling.h"
+
 namespace nnadapter {
 namespace operation {
 
@@ -37,30 +41,39 @@ namespace operation {
   }                                                                         \
   /* Starts */                                                              \
   auto starts_operand = input_operands[2];                                  \
-  auto starts_count =                                                       \
-      starts_operand->length / static_cast<uint32_t>(sizeof(int32_t));      \
-  NNADAPTER_CHECK_EQ(starts_count, axes_count);                             \
-  auto starts = reinterpret_cast<int32_t*>(starts_operand->buffer);         \
-  for (uint32_t i = 0; i < starts_count; i++) {                             \
-    NNADAPTER_VLOG(5) << "starts[" << i << "] = " << starts[i];             \
+  int32_t* starts = nullptr;                                                \
+  if (IsConstantOperand(starts_operand)) {                                  \
+    auto starts_count = starts_operand->length / sizeof(int32_t);           \
+    starts = reinterpret_cast<int32_t*>(starts_operand->buffer);            \
+    for (size_t i = 0; i < starts_count; i++) {                             \
+      NNADAPTER_VLOG(5) << "starts[" << i << "]: " << starts[i];            \
+    }                                                                       \
+  } else {                                                                  \
+    NNADAPTER_VLOG(5) << "starts: " << OperandToString(starts_operand);     \
   }                                                                         \
   /* Ends */                                                                \
   auto ends_operand = input_operands[3];                                    \
-  auto ends_count =                                                         \
-      ends_operand->length / static_cast<uint32_t>(sizeof(int32_t));        \
-  NNADAPTER_CHECK_EQ(ends_count, axes_count);                               \
-  auto ends = reinterpret_cast<int32_t*>(ends_operand->buffer);             \
-  for (uint32_t i = 0; i < ends_count; i++) {                               \
-    NNADAPTER_VLOG(5) << "ends[" << i << "] = " << ends[i];                 \
+  int32_t* ends = nullptr;                                                  \
+  if (IsConstantOperand(ends_operand)) {                                    \
+    auto ends_count = ends_operand->length / sizeof(int32_t);               \
+    ends = reinterpret_cast<int32_t*>(ends_operand->buffer);                \
+    for (size_t i = 0; i < ends_count; i++) {                               \
+      NNADAPTER_VLOG(5) << "ends[" << i << "]: " << ends[i];                \
+    }                                                                       \
+  } else {                                                                  \
+    NNADAPTER_VLOG(5) << "ends: " << OperandToString(ends_operand);         \
   }                                                                         \
   /* Steps */                                                               \
   auto steps_operand = input_operands[4];                                   \
-  auto steps_count =                                                        \
-      steps_operand->length / static_cast<uint32_t>(sizeof(int32_t));       \
-  NNADAPTER_CHECK_EQ(steps_count, axes_count);                              \
-  auto steps = reinterpret_cast<int32_t*>(steps_operand->buffer);           \
-  for (uint32_t i = 0; i < steps_count; i++) {                              \
-    NNADAPTER_VLOG(5) << "steps[" << i << "] = " << steps[i];               \
+  int32_t* steps = nullptr;                                                 \
+  if (IsConstantOperand(steps_operand)) {                                   \
+    auto steps_count = steps_operand->length / sizeof(int32_t);             \
+    steps = reinterpret_cast<int32_t*>(steps_operand->buffer);              \
+    for (size_t i = 0; i < steps_count; i++) {                              \
+      NNADAPTER_VLOG(5) << "steps[" << i << "]: " << steps[i];              \
+    }                                                                       \
+  } else {                                                                  \
+    NNADAPTER_VLOG(5) << "steps: " << OperandToString(steps_operand);       \
   }                                                                         \
   /* Output */                                                              \
   auto output_operand = output_operands[0];                                 \

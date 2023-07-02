@@ -31,12 +31,24 @@ int ConvertSlice(Converter* converter, core::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto start_idx_tensor = converter->AddConstantTensor(
-      std::vector<int32_t>(starts, starts + starts_count));
-  auto end_idx_tensor = converter->AddConstantTensor(
-      std::vector<int32_t>(ends, ends + ends_count));
-  auto strides_idx_tensor = converter->AddConstantTensor(
-      std::vector<int32_t>(steps, steps + steps_count));
+  std::shared_ptr<Tensor> start_idx_tensor;
+  std::shared_ptr<Tensor> end_idx_tensor;
+  std::shared_ptr<Tensor> strides_idx_tensor;
+  if (IsConstantOperand(starts_operand)) {
+    auto starts_count = starts_operand->length / sizeof(int32_t);
+    start_idx_tensor = converter->AddConstantTensor(
+        std::vector<int32_t>(starts, starts + starts_count));
+  }
+  if (IsConstantOperand(ends_operand)) {
+    auto ends_count = ends_operand->length / sizeof(int32_t);
+    end_idx_tensor = converter->AddConstantTensor(
+        std::vector<int32_t>(ends, ends + ends_count));
+  }
+  if (IsConstantOperand(steps_operand)) {
+    auto steps_count = steps_operand->length / sizeof(int32_t);
+    strides_idx_tensor = converter->AddConstantTensor(
+        std::vector<int32_t>(steps, steps + steps_count));
+  }
 
   // The following process is:
   // Given:

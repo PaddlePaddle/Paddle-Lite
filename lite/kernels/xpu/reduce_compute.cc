@@ -22,13 +22,86 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+template <typename inType,
+          typename outType,
+          typename Functor,
+          PrecisionType PType>
+void ReduceCompute<inType, outType, Functor, PType>::PrepareForRun() {
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
+  if (param.enable_int8) {
+    quant_x_max_value_guard_ =
+        TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
+    std::vector<float> cpu_quant_x_max_value(max_ptr_size, param.input_scale);
+    lite::TargetWrapperXPU::MemcpySync(quant_x_max_value_guard_->addr_,
+                                       cpu_quant_x_max_value.data(),
+                                       sizeof(float) * max_ptr_size,
+                                       IoDirection::HtoD);
+    quant_out_max_value_guard_ =
+        TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
+    std::vector<float> cpu_quant_out_max_value(max_ptr_size,
+                                               param.output_scale);
+    lite::TargetWrapperXPU::MemcpySync(quant_out_max_value_guard_->addr_,
+                                       cpu_quant_out_max_value.data(),
+                                       sizeof(float) * max_ptr_size,
+                                       IoDirection::HtoD);
+  }
+}
+
+template <typename InType, typename OutType>
+struct ReduceSumMixFunctor {
+  inline int operator()(xdnn::Context* ctx,
+                        const InType* x,
+                        OutType* out,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& dims,
+                        const float* max_x,
+                        const float* max_y) const {
+    int ret = 0;
+    XPUScratchPadGuard cast_guard_x = TargetWrapperXPU::MallocScratchPad(1 * 4);
+    if (!std::is_same<InType, OutType>::value) {
+      int nsize = 1;
+      int nsize_x = 1;
+      std::vector<int> size_shape(xshape.begin(), xshape.end());
+      for (int32_t i = 0; i < dims.size(); ++i) {
+        size_shape[dims[i]] = 1;
+      }
+      for (auto item : size_shape) {
+        nsize *= item;
+      }
+      for (auto item : xshape) {
+        nsize_x *= item;
+      }
+
+      cast_guard_x->Reserve(nsize_x * sizeof(OutType));
+      ret = xdnn::cast_v2<InType, OutType>(
+          ctx, x, reinterpret_cast<OutType*>(cast_guard_x->addr_), nsize_x);
+      CHECK_EQ(ret, 0);
+
+      ret = xdnn::reduce_sum<OutType>(
+          ctx,
+          reinterpret_cast<OutType*>(cast_guard_x->addr_),
+          out,
+          xshape,
+          dims);
+      CHECK_EQ(ret, 0);
+    } else {
+      LOG(FATAL) << "outtype and intype should be different.";
+    }
+    return ret;
+  }
+};
+
 template <typename T>
 struct ReduceSumFunctor {
   inline int operator()(xdnn::Context* ctx,
                         const T* x,
                         T* out,
                         const std::vector<int>& xshape,
-                        const std::vector<int>& dims) const {
+                        const std::vector<int>& dims,
+                        const float* max_x,
+                        const float* max_y) const {
     return xdnn::reduce_sum<T>(ctx, x, out, xshape, dims);
   }
 };
@@ -39,8 +112,37 @@ struct ReduceMeanFunctor {
                         const T* x,
                         T* out,
                         const std::vector<int>& xshape,
-                        const std::vector<int>& dims) const {
+                        const std::vector<int>& dims,
+                        const float* max_x,
+                        const float* max_y) const {
     return xdnn::reduce_mean<T>(ctx, x, out, xshape, dims);
+  }
+};
+
+// ReduceMeanFunctor int8
+template <>
+struct ReduceMeanFunctor<int8_t> {
+  inline int operator()(xdnn::Context* ctx,
+                        const int8_t* x,
+                        int8_t* out,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& dims,
+                        const float* max_x,
+                        float* max_y) const {
+    return xdnn::avg_pool2d<int8_t>(ctx,
+                                    x,
+                                    out,
+                                    xshape[0],
+                                    xshape[1],
+                                    xshape[2],
+                                    xshape[3],
+                                    {xshape[2], xshape[3]},
+                                    {1},
+                                    {0},
+                                    true,
+                                    true,
+                                    max_x,
+                                    max_y);
   }
 };
 
@@ -50,7 +152,9 @@ struct ReduceProdFunctor {
                         const T* x,
                         T* out,
                         const std::vector<int>& xshape,
-                        const std::vector<int>& dims) const {
+                        const std::vector<int>& dims,
+                        const float* max_x,
+                        const float* max_y) const {
     return xdnn::reduce_prod<T>(ctx, x, out, xshape, dims);
   }
 };
@@ -61,7 +165,9 @@ struct ReduceMinFunctor {
                         const T* x,
                         T* out,
                         const std::vector<int>& xshape,
-                        const std::vector<int>& dims) const {
+                        const std::vector<int>& dims,
+                        const float* max_x,
+                        const float* max_y) const {
     return xdnn::reduce_min<T>(ctx, x, out, xshape, dims);
   }
 };
@@ -72,7 +178,9 @@ struct ReduceMaxFunctor {
                         const T* x,
                         T* out,
                         const std::vector<int>& xshape,
-                        const std::vector<int>& dims) const {
+                        const std::vector<int>& dims,
+                        const float* max_x,
+                        const float* max_y) const {
     return xdnn::reduce_max<T>(ctx, x, out, xshape, dims);
   }
 };
@@ -83,7 +191,9 @@ struct ReduceAllFunctor {
                         const T* x,
                         T* out,
                         const std::vector<int>& xshape,
-                        const std::vector<int>& dims) const {
+                        const std::vector<int>& dims,
+                        const float* max_x,
+                        const float* max_y) const {
     return xdnn::reduce_all<int8_t>(ctx,
                                     reinterpret_cast<const int8_t*>(x),
                                     reinterpret_cast<int8_t*>(out),
@@ -98,7 +208,9 @@ struct ReduceAnyFunctor {
                         const T* x,
                         T* out,
                         const std::vector<int>& xshape,
-                        const std::vector<int>& dims) const {
+                        const std::vector<int>& dims,
+                        const float* max_x,
+                        const float* max_y) const {
     return xdnn::reduce_any<int8_t>(ctx,
                                     reinterpret_cast<const int8_t*>(x),
                                     reinterpret_cast<int8_t*>(out),
@@ -107,8 +219,11 @@ struct ReduceAnyFunctor {
   }
 };
 
-template <class T, class Functor, PrecisionType PType>
-void ReduceCompute<T, Functor, PType>::Run() {
+template <typename inType,
+          typename outType,
+          typename Functor,
+          PrecisionType PType>
+void ReduceCompute<inType, outType, Functor, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
   auto x_dims = param.X->dims();
@@ -134,14 +249,33 @@ void ReduceCompute<T, Functor, PType>::Run() {
     x_shape.push_back(static_cast<int>(x_dims[i]));
   }
 
+  float* quant_x_max = nullptr;
+  float* quant_y_max = nullptr;
   Functor elt_func;
-  int ret = elt_func(ctx.GetRawContext(),
-                     param.X->template data<T>(),
-                     param.Out->template mutable_data<T>(TARGET(kXPU)),
-                     x_shape,
-                     dims);
 
-  CHECK_EQ(ret, 0);
+  if (!param.enable_int8) {
+    int ret = elt_func(ctx.GetRawContext(),
+                       param.X->template data<inType>(),
+                       param.Out->template mutable_data<outType>(TARGET(kXPU)),
+                       x_shape,
+                       dims,
+                       quant_x_max,
+                       quant_y_max);
+    CHECK_EQ(ret, 0);
+  } else {
+    quant_x_max = reinterpret_cast<float*>(quant_x_max_value_guard_->addr_);
+    quant_y_max = reinterpret_cast<float*>(quant_out_max_value_guard_->addr_);
+    int ret = elt_func(ctx.GetRawContext(),
+                       param.X->template data<inType>(),
+                       param.Out->template mutable_data<outType>(TARGET(kXPU)),
+                       x_shape,
+                       dims,
+                       quant_x_max,
+                       quant_y_max);
+    CHECK_EQ(ret, 0);
+  }
+
+  return;
 }
 
 }  // namespace xpu
@@ -150,33 +284,63 @@ void ReduceCompute<T, Functor, PType>::Run() {
 }  // namespace paddle
 
 namespace xpu = paddle::lite::kernels::xpu;
-using ReduceAll =
-    xpu::ReduceCompute<bool, xpu::ReduceAllFunctor<bool>, PRECISION(kFloat)>;
-using ReduceAny =
-    xpu::ReduceCompute<bool, xpu::ReduceAnyFunctor<bool>, PRECISION(kFloat)>;
-using ReduceMeanFloat32 =
-    xpu::ReduceCompute<float, xpu::ReduceMeanFunctor<float>, PRECISION(kFloat)>;
+using ReduceAll = xpu::
+    ReduceCompute<bool, bool, xpu::ReduceAllFunctor<bool>, PRECISION(kFloat)>;
+using ReduceAny = xpu::
+    ReduceCompute<bool, bool, xpu::ReduceAnyFunctor<bool>, PRECISION(kFloat)>;
+using ReduceMeanFloat32 = xpu::ReduceCompute<float,
+                                             float,
+                                             xpu::ReduceMeanFunctor<float>,
+                                             PRECISION(kFloat)>;
 using ReduceMeanFloat16 = xpu::ReduceCompute<float16,
+                                             float16,
                                              xpu::ReduceMeanFunctor<float16>,
                                              PRECISION(kFP16)>;
-using ReduceSumFloat32 =
-    xpu::ReduceCompute<float, xpu::ReduceSumFunctor<float>, PRECISION(kFloat)>;
+using ReduceMeanInt8 = xpu::ReduceCompute<int8_t,
+                                          int8_t,
+                                          xpu::ReduceMeanFunctor<int8_t>,
+                                          PRECISION(kInt8)>;
+using ReduceSumFloat32 = xpu::ReduceCompute<float,
+                                            float,
+                                            xpu::ReduceSumFunctor<float>,
+                                            PRECISION(kFloat)>;
 using ReduceSumFloat16 = xpu::ReduceCompute<float16,
+                                            float16,
                                             xpu::ReduceSumFunctor<float16>,
                                             PRECISION(kFP16)>;
-using ReduceProdFloat32 =
-    xpu::ReduceCompute<float, xpu::ReduceProdFunctor<float>, PRECISION(kFloat)>;
+using ReduceSumInt32Int64 =
+    xpu::ReduceCompute<int32_t,
+                       int64_t,
+                       xpu::ReduceSumMixFunctor<int32_t, int64_t>,
+                       PRECISION(kFloat)>;
+
+using ReduceProdFloat32 = xpu::ReduceCompute<float,
+                                             float,
+                                             xpu::ReduceProdFunctor<float>,
+                                             PRECISION(kFloat)>;
 using ReduceProdFloat16 = xpu::ReduceCompute<float16,
+                                             float16,
                                              xpu::ReduceProdFunctor<float16>,
                                              PRECISION(kFP16)>;
-using ReduceMaxFloat32 =
-    xpu::ReduceCompute<float, xpu::ReduceMaxFunctor<float>, PRECISION(kFloat)>;
+using ReduceMaxFloat32 = xpu::ReduceCompute<float,
+                                            float,
+                                            xpu::ReduceMaxFunctor<float>,
+                                            PRECISION(kFloat)>;
 using ReduceMaxFloat16 = xpu::ReduceCompute<float16,
+                                            float16,
                                             xpu::ReduceMaxFunctor<float16>,
                                             PRECISION(kFP16)>;
-using ReduceMinFloat32 =
-    xpu::ReduceCompute<float, xpu::ReduceMinFunctor<float>, PRECISION(kFloat)>;
+using ReduceMaxInt64 = xpu::ReduceCompute<int64_t,
+                                          int64_t,
+                                          xpu::ReduceMaxFunctor<int64_t>,
+                                          PRECISION(kFloat)>;
+
+using ReduceMinFloat32 = xpu::ReduceCompute<float,
+                                            float,
+                                            xpu::ReduceMinFunctor<float>,
+                                            PRECISION(kFloat)>;
 using ReduceMinFloat16 = xpu::ReduceCompute<float16,
+                                            float16,
                                             xpu::ReduceMinFunctor<float16>,
                                             PRECISION(kFP16)>;
 
@@ -205,6 +369,12 @@ REGISTER_LITE_KERNEL(reduce_mean,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(
+    reduce_mean, kXPU, kInt8, kNCHW, ReduceMeanInt8, ReduceMeanInt8)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(reduce_sum, kXPU, kFloat, kNCHW, ReduceSumFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -218,6 +388,16 @@ REGISTER_LITE_KERNEL(reduce_sum,
                      DISABLE_XPU1_ReduceSumFloat16)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(reduce_sum,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     ReduceSumInt32Int64,
+                     DISABLE_XPU1_ReduceSumInt32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(reduce_prod, kXPU, kFloat, kNCHW, ReduceProdFloat32, def)
@@ -248,6 +428,16 @@ REGISTER_LITE_KERNEL(reduce_max,
                      DISABLE_XPU1_ReduceMaxFloat16)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(reduce_max,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     ReduceMaxInt64,
+                     DISABLE_XPU1_ReduceMaxInt64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(reduce_min, kXPU, kFloat, kNCHW, ReduceMinFloat32, def)

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/clip_op.h"
+#include <vector>
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
 
@@ -40,6 +41,12 @@ bool ClipOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
 
   param_.min = op_desc.GetAttr<float>("min");
   param_.max = op_desc.GetAttr<float>("max");
+
+  if (op_desc.HasAttr("enable_int8") && op_desc.GetAttr<bool>("enable_int8")) {
+    param_.enable_int8 = true;
+    param_.input_scale = op_desc.GetAttr<std::vector<float>>("X0_scale")[0];
+    param_.output_scale = op_desc.GetAttr<std::vector<float>>("Out0_scale")[0];
+  }
 
   return true;
 }

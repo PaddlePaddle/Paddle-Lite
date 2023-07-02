@@ -31,6 +31,8 @@ WITH_AVX=ON
 WITH_OPENCL=OFF
 # options of compiling Metal lib for Mac OS.
 WITH_METAL=OFF
+# controls whether to block temporary 0dim pass, default is OFF
+SKIP_SUPPORT_0_DIM_TENSOR_PASS=OFF
 # options of compiling rockchip NPU lib.
 WITH_ROCKCHIP_NPU=OFF
 ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
@@ -95,6 +97,8 @@ WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 # option of benchmark, default is OFF
 WITH_BENCHMARK=OFF
+# use Arm DNN library instead of built-in math library, defaults to OFF.
+WITH_ARM_DNN_LIBRARY=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -247,6 +251,8 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
                         -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
                         -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
+                        -DLITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS=$SKIP_SUPPORT_0_DIM_TENSOR_PASS \
+                        -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY \
                         -DLITE_ON_TINY_PUBLISH=$WITH_TINY_PUBLISH"
 
 }
@@ -537,6 +543,10 @@ function main {
                 WITH_AVX="${i#*=}"
                 shift
                 ;;
+            --skip_support_0_dim_tensor_pass=*)
+                SKIP_SUPPORT_0_DIM_TENSOR_PASS="${i#*=}"
+                shift
+                ;;
             # compiling lib which can operate on opencl and cpu.
             --with_opencl=*)
                 WITH_OPENCL="${i#*=}"
@@ -790,6 +800,11 @@ function main {
             # ON or OFF, default OFF
             --with_train=*)
                 WITH_TRAIN="${i#*=}"
+                shift
+                ;;
+            # use Arm DNN library
+             --with_arm_dnn_library=*)
+                WITH_ARM_DNN_LIBRARY="${i#*=}"
                 shift
                 ;;
             # compiling result contains both light_api and cxx_api lib.

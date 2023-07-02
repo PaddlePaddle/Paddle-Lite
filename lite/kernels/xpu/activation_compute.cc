@@ -107,13 +107,28 @@ void EluCompute<T, PType>::Run() {
   CHECK_EQ(r, 0);
 }
 
-void AbsCompute::Run() {
+template <typename T, PrecisionType PType>
+void SoftplusCompute<T, PType>::Run() {
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+
+  int r = xdnn::softplus(ctx.GetRawContext(),
+                         param.X->template data<T>(),
+                         param.Out->template mutable_data<T>(TARGET(kXPU)),
+                         param.X->numel(),
+                         param.softplus_beta,
+                         param.softplus_threshold);
+  CHECK_EQ(r, 0);
+}
+
+template <typename T, PrecisionType PType>
+void AbsCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
   int r = xdnn::abs(ctx.GetRawContext(),
-                    param.X->data<float>(),
-                    param.Out->mutable_data<float>(TARGET(kXPU)),
+                    param.X->template data<T>(),
+                    param.Out->template mutable_data<T>(TARGET(kXPU)),
                     param.X->numel());
   CHECK_EQ(r, 0);
 }
@@ -389,15 +404,6 @@ using siluFP32 =
     paddle::lite::kernels::xpu::SiluCompute<float, PRECISION(kFloat)>;
 using siluFP16 =
     paddle::lite::kernels::xpu::SiluCompute<float16, PRECISION(kFP16)>;
-REGISTER_LITE_KERNEL(silu, kXPU, kFloat, kNCHW, siluFP32, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .Finalize();
-REGISTER_LITE_KERNEL(silu, kXPU, kFP16, kNCHW, siluFP16, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .Finalize();
-
 using eluFP32 =
     paddle::lite::kernels::xpu::EluCompute<float, PRECISION(kFloat)>;
 using eluFP16 =
@@ -410,11 +416,41 @@ REGISTER_LITE_KERNEL(elu, kXPU, kFP16, kNCHW, eluFP16, DISABLE_XPU1_eluFP16)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
-
-REGISTER_LITE_KERNEL(
-    abs, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::AbsCompute, def)
+REGISTER_LITE_KERNEL(silu, kXPU, kFloat, kNCHW, siluFP32, silu_fp32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+REGISTER_LITE_KERNEL(silu, kXPU, kFP16, kNCHW, siluFP16, silu_fp16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+using softplusFP32 =
+    paddle::lite::kernels::xpu::SoftplusCompute<float, PRECISION(kFloat)>;
+using softplusFP16 =
+    paddle::lite::kernels::xpu::SoftplusCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(
+    softplus, kXPU, kFloat, kNCHW, softplusFP32, DISABLE_XPU1_softplusFP32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
+    softplus, kXPU, kFP16, kNCHW, softplusFP16, DISABLE_XPU1_softplusFP16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+using absFP32 =
+    paddle::lite::kernels::xpu::AbsCompute<float, PRECISION(kFloat)>;
+using absInt32 =
+    paddle::lite::kernels::xpu::AbsCompute<int32_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(abs, kXPU, kFloat, kNCHW, absFP32, DISABLE_XPU1_absFP32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+REGISTER_LITE_KERNEL(abs, kXPU, kFloat, kNCHW, absInt32, DISABLE_XPU1_absInt32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(

@@ -31,20 +31,6 @@ class TestGatherOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2])
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(
             device_names=["cambricon_mlu", "intel_openvino"])
@@ -58,12 +44,19 @@ class TestGatherOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=4, max_value=4), min_size=2, max_size=2))
+                    min_value=4, max_value=4), min_size=1, max_size=2))
+
         axis = draw(st.integers(min_value=0, max_value=len(in_shape) - 1))
+
         index = draw(
             st.sampled_from([[0], [2], [3], [1, 2], [1, 2, 3], [
                 in_shape[axis] - 1
             ], [in_shape[axis] - 2, in_shape[axis] - 1]]))
+
+        if len(in_shape) == 1:
+            axis = 0
+            index = draw(st.sampled_from([0, 1, 2]))
+
         axis_type = draw(st.sampled_from(["int32", "int64"]))
         index_type = draw(st.sampled_from(["int32", "int64"]))
         with_tenor_axis = draw(st.booleans())
@@ -159,6 +152,20 @@ class TestGatherOp(AutoScanTest):
             _teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case on opencl. We need to fix it as soon as possible."
         )
+
+        def _teller4(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_shape = list(program_config.inputs["input_data"].shape)
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
+                if len(in_shape) == 1:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

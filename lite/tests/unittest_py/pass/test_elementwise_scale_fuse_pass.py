@@ -64,6 +64,9 @@ class TestElementwiseScaleFuse(FusePassAutoScanTest):
                 st.integers(
                     min_value=1, max_value=20), min_size=2, max_size=5))
 
+        in_shape_x = draw(st.sampled_from([in_shape_x, []]))
+        in_shape_y = draw(st.sampled_from([in_shape_y, []]))
+
         axis = draw(
             st.integers(
                 min_value=-1, max_value=max(len(in_shape_x), len(in_shape_y))))
@@ -115,9 +118,13 @@ class TestElementwiseScaleFuse(FusePassAutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
+        target_str = self.get_target()
+        max_examples = 100
+        if target_str == "OpenCL":
+            max_examples = 1000
         self.run_and_statis(
             quant=False,
-            max_examples=1000,
+            max_examples=max_examples,
             passes=["lite_elementwise_scale_fuse_pass"])
 
 

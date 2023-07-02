@@ -89,6 +89,26 @@ NNADAPTER_EXPORT int PrepareSlice(core::Operation* operation) {
 
   // Infer the shape and type of output operands
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
+
+  if (IsTemporaryShapeOperand(starts_operand) ||
+      IsTemporaryShapeOperand(ends_operand) ||
+      IsTemporaryShapeOperand(steps_operand)) {
+    output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
+    for (uint32_t i = 0; i < axes_count; i++) {
+      output_operand->type.dimensions.data[axes[i]] = NNADAPTER_UNKNOWN;
+      output_operand->type.dimensions.dynamic_data[i][axes[i]] =
+          NNADAPTER_UNKNOWN;
+    }
+    NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+    return NNADAPTER_NO_ERROR;
+  }
+
+  if (IsTemporaryVariableOperand(starts_operand) ||
+      IsTemporaryVariableOperand(ends_operand) ||
+      IsTemporaryVariableOperand(steps_operand)) {
+    NNADAPTER_LOG(FATAL) << "Start or end or step is not supported as variable";
+  }
+
   auto infer_output_shape = [&](int32_t* output_dimensions) {
     for (size_t i = 0; i < axes_count; ++i) {
       int dim = output_dimensions[axes[i]];
@@ -103,12 +123,10 @@ NNADAPTER_EXPORT int PrepareSlice(core::Operation* operation) {
       }
     }
   };
-
   infer_output_shape(output_operand->type.dimensions.data);
   for (uint32_t i = 0; i < input_operand->type.dimensions.dynamic_count; i++) {
     infer_output_shape(output_operand->type.dimensions.dynamic_data[i]);
   }
-
   if (IsTemporaryShapeOperand(input_operand)) {
     output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
     auto& temporary_shape = *(GetTemporaryShape(input_operand));

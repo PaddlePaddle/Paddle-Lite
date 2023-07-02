@@ -81,7 +81,7 @@ class TestSwishOp(AutoScanTest):
         C = draw(st.integers(min_value=1, max_value=128))
         H = draw(st.integers(min_value=1, max_value=128))
         W = draw(st.integers(min_value=1, max_value=128))
-        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
+        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W], []]))
         beta_data = draw(st.floats(min_value=0.0, max_value=1.0))
         if self.get_target() == "NNAdapter":
             beta_data = 1.0
@@ -90,6 +90,7 @@ class TestSwishOp(AutoScanTest):
             inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"]},
             attrs={"beta": beta_data})
+
         program_config = ProgramConfig(
             ops=[swish_op],
             weights={},
@@ -110,7 +111,7 @@ class TestSwishOp(AutoScanTest):
         def teller1(program_config, predictor_config):
             x_shape = list(program_config.inputs["input_data"].shape)
             if predictor_config.target() == TargetType.Metal:
-                if x_shape[0] != 1 or len(x_shape) != 4:
+                if (len(x_shape) > 0 and x_shape[0] != 1) or len(x_shape) != 4:
                     return True
 
         self.add_ignore_check_case(
@@ -128,6 +129,20 @@ class TestSwishOp(AutoScanTest):
             teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' on nvidia_tensorrt.")
 
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
+
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         if target_str == "Metal":
@@ -135,7 +150,7 @@ class TestSwishOp(AutoScanTest):
         elif self.get_nnadapter_device_name() == "kunlunxin_xtcl":
             self.run_and_statis(quant=False, max_examples=300)
         else:
-            self.run_and_statis(quant=False, max_examples=25)
+            self.run_and_statis(quant=False, max_examples=300)
 
 
 if __name__ == "__main__":

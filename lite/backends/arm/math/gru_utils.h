@@ -505,7 +505,8 @@ struct GRUUnitFunctor {
                                lite::arm::math::GemmNoBias,
                                scales.data(),
                                act_param,
-                               ctx);
+                               ctx,
+                               false);
 
       for (int i = 0; i < batch_size; i++) {
         float* dest = value.gate_value + i * frame_size * 3;
@@ -554,7 +555,8 @@ struct GRUUnitFunctor {
                                lite::arm::math::GemmNoBias,
                                scales.data(),
                                act_param,
-                               ctx);
+                               ctx,
+                               false);
 
       for (int i = 0; i < batch_size; i++) {
         float* dest = value.gate_value + frame_size * 2 + i * frame_size * 3;

@@ -342,7 +342,8 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                                   false,
                                                   scale_group,
                                                   act_param,
-                                                  &ctx);
+                                                  &ctx,
+                                                  false);
     }
     if (!flag_1x1s1p1) {
       lite::arm::math::col2im<int>(col_data,
@@ -443,7 +444,8 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                                   false,
                                                   scale_group,
                                                   act_param,
-                                                  &ctx);
+                                                  &ctx,
+                                                  false);
     }
     if (!flag_1x1s1p1) {
       lite::arm::math::col2im<int>(col_data,

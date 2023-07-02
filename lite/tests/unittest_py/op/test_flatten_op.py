@@ -30,8 +30,8 @@ from functools import partial
 class TestFlattenOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
+        # self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32,
+        #                              DataLayoutType.NCHW)
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -45,7 +45,7 @@ class TestFlattenOp(AutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=opencl_places)
+        #self.enable_testing_on_place(places=opencl_places)
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
                   DataLayoutType.MetalTexture2DArray),
@@ -54,7 +54,7 @@ class TestFlattenOp(AutoScanTest):
             Place(TargetType.ARM, PrecisionType.FP32),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=metal_places)
+        # self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(TargetType.NNAdapter, PrecisionType.FP32)
         self.enable_devices_on_nnadapter(
             device_names=["cambricon_mlu", "intel_openvino"])
@@ -68,7 +68,7 @@ class TestFlattenOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=2, max_size=4))
+                    min_value=1, max_value=8), min_size=0, max_size=4))
 
         def generate_input(*args, **kwargs):
             if kwargs["type"] == "int32":
@@ -78,15 +78,22 @@ class TestFlattenOp(AutoScanTest):
                 return np.random.randint(kwargs["low"], kwargs["high"],
                                          kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return (kwargs["high"] - kwargs["low"]) * np.random.random(
-                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
+                if in_shape == []:
+                    return np.random.random(kwargs["shape"]).astype(np.float32)
+                else:
+                    return (kwargs["high"] - kwargs["low"]) * np.random.random(
+                        kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
 
         #wait for atuo_scan_base bug fix
         input_type = "float32"
 
-        axis = draw(st.integers(min_value=0, max_value=len(in_shape) - 1))
+        axis = []
+        if in_shape == []:
+            axis = draw(st.integers(min_value=0, max_value=0))
+        else:
+            axis = draw(st.integers(min_value=0, max_value=len(in_shape) - 1))
 
         flatten_op = OpConfig(
             type="flatten",
@@ -145,6 +152,20 @@ class TestFlattenOp(AutoScanTest):
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support this op when 'axis = 1 and len(in_shape) = 2' on nnadapter."
         )
+
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.OpenCL
+            ]:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

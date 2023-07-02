@@ -1413,6 +1413,18 @@ typedef struct Device {
   - 输出：
     - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
 
+- NNADAPTER_LRN
+
+  局部响应正则化层，用于对局部输入区域正则化，执行一种侧向抑制，具体实现参考论文：https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf
+  - 输入：
+    - 0 ： input ，输入操作数，类型： NNADAPTER_FLOAT32。
+    - 1 ： size ，累加的通道数，形状： [1] ，类型： NNADAPTER_INT32 ，取值：任意整数，默认是 5 
+    - 2 ： bias ，位移，形状： [1] ，类型： NNADAPTER_FLOAT32 ，取值：任意浮点数，默认是 1.f 。
+    - 3 ： alpha ，缩放参数，形状： [1] ，类型： NNADAPTER_FLOAT32 ，取值：任意浮点数，默认是 1e-4 。
+    - 4 ： beta ，指数参数，形状： [1] ，类型： NNADAPTER_FLOAT32 ，取值：任意浮点数，默认是 0.75f 。
+  - 输出：
+    - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
+
 - NNADAPTER_MAT_MUL
 
   计算两个操作数的乘积，计算方法与 numpy.matmul https://docs.scipy.org/doc/numpy-1.13.0/reference/generated/numpy.matmul.html 相同。
@@ -1687,6 +1699,14 @@ typedef struct Device {
     - 1 ： shifts ，表示张量元素移动的位置数，给定的单个或多个轴，形状：任意一维操作数，类型： NNADAPTER_INT32 。
     - 2 ： axes ，表示滚动的单个或多个轴，形状：任意一维操作数，类型： NNADAPTER_INT32 。
   - 输出 ：
+    - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
+
+- NNADAPTER_RSQRT
+
+  逐元素计算平方根的倒数： `output` = 1 / (sqrt(`input`)) 。
+  - 输入：
+    - 0 ： input ，输入操作数，类型： NNADAPTER_FLOAT32 、 NNADAPTER_QUANT_INT8_SYMM_PER_LAYER 。
+  - 输出：
     - 0 ： output ，输出操作数，与输入操作数 `input` 的形状和类型相同。
 
 - NNADAPTER_SHAPE

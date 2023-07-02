@@ -28,6 +28,8 @@ OPTMODEL_DIR=""
 WITH_STRIP=OFF
 IOS_DEPLOYMENT_TARGET=9.0
 BUILD_ARM82_FP16=OFF
+# use Arm DNN library instead of built-in math library, defaults to OFF.
+WITH_ARM_DNN_LIBRARY=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -103,6 +105,7 @@ function make_ios {
             -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
             -DLITE_WITH_CV=$WITH_CV \
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
+            -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY \
             -DARM_TARGET_OS=$os
 
     if [ "${WITH_XCODE}" == "ON" ]; then
@@ -199,6 +202,11 @@ function main {
             # controls whether to include FP16 kernels, default is OFF
             --with_arm82_fp16=*)
                 BUILD_ARM82_FP16="${i#*=}"
+                shift
+                ;;
+            # use Arm DNN library
+             --with_arm_dnn_library=*)
+                WITH_ARM_DNN_LIBRARY="${i#*=}"
                 shift
                 ;;
             help)

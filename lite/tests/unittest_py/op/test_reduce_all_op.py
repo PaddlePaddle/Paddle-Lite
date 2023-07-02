@@ -47,12 +47,16 @@ class TestReduceAllOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=64), min_size=4, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape, []]))
         keep_dim = draw(st.booleans())
         axis = draw(st.integers(min_value=-1, max_value=3))
         assume(axis < len(in_shape))
         if isinstance(axis, int):
             axis = [axis]
-        reduce_all_data = True if axis == None or axis == [] else False
+        reduce_all_data = True if len(
+            in_shape) == 0 or axis == None or axis == [] else False
+        if len(in_shape) == 0:
+            axis = draw(st.sampled_from([[-1], []]))
 
         def generate_input(*args, **kwargs):
             return np.random.randint(
@@ -97,7 +101,18 @@ class TestReduceAllOp(AutoScanTest):
         return self.get_predictor_configs(), ["reduce_all"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller4(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
+                if program_config.attr["reduce_all"]:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

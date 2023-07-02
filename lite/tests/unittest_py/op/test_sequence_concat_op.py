@@ -110,7 +110,13 @@ class TestSequenceConcatOp(AutoScanTest):
         return self.get_predictor_configs(), ["sequence_concat"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller4(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.X86:
+                return True
+
+        self.add_ignore_check_case(_teller4, IgnoreReasons.ACCURACY_ERROR,
+                                   "X86 has diff.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

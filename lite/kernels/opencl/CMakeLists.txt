@@ -162,6 +162,8 @@ lite_cc_test(test_max_image_opencl SRCS max_image_compute_test.cc
 ######################
 # basic
 add_kernel(activation_opencl_buffer OPENCL basic SRCS activation_buffer_compute.cc)
+add_kernel(layer_norm_opencl_buffer OPENCL basic SRCS layer_norm_buffer_compute.cc)
+add_kernel(softmax_opencl_buffer OPENCL basic SRCS softmax_buffer_compute.cc)
 #add_kernel(conv_opencl_buffer OPENCL basic SRCS conv_buffer_compute.cc)
 #add_kernel(depthwise_conv2d_opencl OPENCL basic SRCS depthwise_conv2d_buffer_compute.cc)
 add_kernel(pool_opencl_buffer OPENCL basic SRCS pool_buffer_compute.cc)
@@ -169,7 +171,7 @@ add_kernel(concat_opencl_buffer OPENCL basic SRCS concat_buffer_compute.cc)
 add_kernel(fc_opencl_buffer OPENCL basic SRCS fc_buffer_compute.cc)
 # NOTE(ysh329): use fc as `mul`, and mul is not used.
 #add_kernel(mul_opencl_buffer OPENCL basic SRCS mul_buffer_compute.cc)
-#add_kernel(elementwise_add_opencl_buffer OPENCL basic SRCS elementwise_add_buffer_compute.cc)
+add_kernel(elementwise_add_opencl_buffer OPENCL basic SRCS elementwise_add_buffer_compute.cc)
 #add_kernel(fusion_elementwise_add_activation_opencl_buffer
 #           OPENCL basic SRCS fusion_elementwise_add_activation_buffer_compute.cc)
 add_kernel(io_copy_opencl_buffer OPENCL basic SRCS io_copy_buffer_compute.cc)

@@ -55,6 +55,11 @@ cpp::OpDesc SigmoidElementmulFuser::GenOpDesc(const key2nodes_t& matched) {
   op_desc.SetAttr<float>("beta", 1);
   op_desc.SetOutput("Out", {matched.at("Out")->arg()->name});
 
+  auto ew_mul_op_desc = *matched.at("elementwise_mul")->stmt()->op_info();
+  if (ew_mul_op_desc.HasAttr("Out0_scale")) {
+    op_desc.SetAttr<std::vector<float>>(
+        "Out0_scale", ew_mul_op_desc.GetAttr<std::vector<float>>("Out0_scale"));
+  }
   return op_desc;
 }
 

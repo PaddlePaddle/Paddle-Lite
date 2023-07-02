@@ -22,8 +22,9 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+template <PrecisionType PType>
 class UnsqueezeCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
+    : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kAny)> {
  public:
   void Run() override;
 

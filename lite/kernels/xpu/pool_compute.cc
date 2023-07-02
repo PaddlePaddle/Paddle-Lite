@@ -24,6 +24,33 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
+
+template <typename InType, PrecisionType PType>
+void Pool2DCompute<InType, PType>::PrepareForRun() {
+  auto& param = this->template Param<param_t>();
+  auto& ctx = this->ctx_->template As<XPUContext>();
+  int max_ptr_size = ctx.GetRawContext()->max_ptr_size();
+  if (param.enable_int8) {
+    quant_input_max_value_guard_ =
+        TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
+    std::vector<float> cpu_quant_input_max_value(max_ptr_size,
+                                                 param.input_scale);
+    lite::TargetWrapperXPU::MemcpySync(quant_input_max_value_guard_->addr_,
+                                       cpu_quant_input_max_value.data(),
+                                       sizeof(float) * max_ptr_size,
+                                       IoDirection::HtoD);
+
+    quant_output_max_value_guard_ =
+        TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
+    std::vector<float> cpu_quant_output_max_value(max_ptr_size,
+                                                  param.output_scale);
+    lite::TargetWrapperXPU::MemcpySync(quant_output_max_value_guard_->addr_,
+                                       cpu_quant_output_max_value.data(),
+                                       sizeof(float) * max_ptr_size,
+                                       IoDirection::HtoD);
+  }
+}
+
 template <typename InType, PrecisionType PType>
 void Pool2DCompute<InType, PType>::Run() {
   auto& param = this->template Param<param_t>();
@@ -52,7 +79,14 @@ void Pool2DCompute<InType, PType>::Run() {
     ksize[0] = x_dims[2];
     ksize[1] = x_dims[3];
   }
-
+  float* quant_input_max =
+      param.enable_int8
+          ? reinterpret_cast<float*>(quant_input_max_value_guard_->addr_)
+          : nullptr;
+  float* quant_output_max =
+      param.enable_int8
+          ? reinterpret_cast<float*>(quant_output_max_value_guard_->addr_)
+          : nullptr;
   if (param.adaptive) {
     if (param.pooling_type == "avg") {
       int r = xdnn::adaptive_avg_pool2d(
@@ -65,7 +99,9 @@ void Pool2DCompute<InType, PType>::Run() {
           x_dims[3],
           ksize[0],
           ksize[1],
-          true);
+          true,
+          quant_input_max,
+          quant_output_max);
       CHECK_EQ(r, 0);
     } else {
       int r = xdnn::adaptive_max_pool2d(
@@ -79,7 +115,9 @@ void Pool2DCompute<InType, PType>::Run() {
           x_dims[3],
           ksize[0],
           ksize[1],
-          true);
+          true,
+          quant_input_max,
+          quant_output_max);
       CHECK_EQ(r, 0);
     }
   } else {
@@ -96,7 +134,9 @@ void Pool2DCompute<InType, PType>::Run() {
           param.strides,
           paddings,
           !param.exclusive,
-          true);
+          true,
+          quant_input_max,
+          quant_output_max);
       CHECK_EQ(r, 0);
     } else {
       if (param.pad_zero == true) {
@@ -113,8 +153,8 @@ void Pool2DCompute<InType, PType>::Run() {
             param.strides,
             paddings,
             true,
-            nullptr,
-            nullptr,
+            quant_input_max,
+            quant_output_max,
             false);
         CHECK_EQ(r, 0);
       } else {
@@ -130,7 +170,9 @@ void Pool2DCompute<InType, PType>::Run() {
             ksize,
             param.strides,
             paddings,
-            true);
+            true,
+            quant_input_max,
+            quant_output_max);
         CHECK_EQ(r, 0);
       }
     }
@@ -147,7 +189,8 @@ using pool2d_fp32 =
     paddle::lite::kernels::xpu::Pool2DCompute<float, PRECISION(kFloat)>;
 using pool2d_fp16 =
     paddle::lite::kernels::xpu::Pool2DCompute<float16, PRECISION(kFP16)>;
-
+using pool2d_int8 =
+    paddle::lite::kernels::xpu::Pool2DCompute<int8_t, PRECISION(kInt8)>;
 using max_pool2d_with_index_fp32 =
     paddle::lite::kernels::xpu::Pool2DCompute<float, PRECISION(kFloat)>;
 
@@ -160,6 +203,11 @@ REGISTER_LITE_KERNEL(
     pool2d, kXPU, kFP16, kNCHW, pool2d_fp16, DISABLE_XPU1_pool2d_FP16)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(pool2d, kXPU, kInt8, kNCHW, pool2d_int8, pool2d_INT8)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt8))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(

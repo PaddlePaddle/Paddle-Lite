@@ -49,6 +49,10 @@ class TestReverseOp(AutoScanTest):
                     min_value=1, max_value=10), min_size=4, max_size=4))
         axis = draw(st.sampled_from([0, [1], [0, 1]]))
 
+        in_shape = draw(st.sampled_from([in_shape]))
+        if in_shape == []:
+            axis = draw(st.sampled_from([-1, 0]))
+
         if isinstance(axis, int):
             axis = [axis]
 
@@ -73,14 +77,7 @@ class TestReverseOp(AutoScanTest):
         return self.get_predictor_configs(), ["reverse"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.X86:
-                return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on x86. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

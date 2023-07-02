@@ -46,6 +46,8 @@ WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 # option of benchmark, default is OFF
 WITH_BENCHMARK=OFF
+# use Arm DNN library instead of built-in math library, defaults to OFF.
+WITH_ARM_DNN_LIBRARY=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -142,6 +144,7 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
                         -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
                         -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
+                        -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY \
                         -DLITE_ON_TINY_PUBLISH=$WITH_TINY_PUBLISH"
 
 }
@@ -402,6 +405,11 @@ function main {
             # ON or OFF, default OFF
             --with_train=*)
                 WITH_TRAIN="${i#*=}"
+                shift
+                ;;
+            # use Arm DNN library
+             --with_arm_dnn_library=*)
+                WITH_ARM_DNN_LIBRARY="${i#*=}"
                 shift
                 ;;
             # compiling result contains both light_api and cxx_api lib.

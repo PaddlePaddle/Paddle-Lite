@@ -74,10 +74,11 @@ class TestSigmoidOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
+        in_shape_tmp = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=64), min_size=1, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape_tmp, []]))
 
         def generate_input(*args, **kwargs):
             return np.random.normal(1.0, 6.0, in_shape).astype(np.float32)
@@ -127,6 +128,20 @@ class TestSigmoidOp(AutoScanTest):
             teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' on nvidia_tensorrt.")
 
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
+
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         if target_str == "Metal":
@@ -134,7 +149,7 @@ class TestSigmoidOp(AutoScanTest):
         elif self.get_nnadapter_device_name() == "kunlunxin_xtcl":
             self.run_and_statis(quant=False, max_examples=200)
         else:
-            self.run_and_statis(quant=False, max_examples=25)
+            self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

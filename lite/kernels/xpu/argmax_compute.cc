@@ -22,6 +22,15 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+void ArgmaxCompute::PrepareForRun() {
+  auto& param = this->template Param<param_t>();
+  if (param.dtype == 2) {
+    auto out = param.Out;
+    out_int64_xpu_guard_ =
+        TargetWrapperXPU::MallocScratchPad(out->numel() * sizeof(int64_t));
+  }
+}
+
 void ArgmaxCompute::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
@@ -45,19 +54,16 @@ void ArgmaxCompute::Run() {
     CHECK_EQ(r, 0);
   } else if (param.dtype == 2) {
     // int32
-    Tensor out_int64;
-    out_int64.Resize(out->dims());
+    out_int64_xpu_guard_->Reserve(out->numel() * sizeof(int64_t));
+    int64_t* out_int64_data =
+        reinterpret_cast<int64_t*>(out_int64_xpu_guard_->addr_);
     int r = xdnn::argmax<float, int64_t>(
-        ctx.GetRawContext(),
-        x->data<float>(),
-        out_int64.mutable_data<int64_t>(TARGET(kXPU)),
-        x_dims,
-        axis);
+        ctx.GetRawContext(), x->data<float>(), out_int64_data, x_dims, axis);
     CHECK_EQ(r, 0);
     r = xdnn::cast_v2<int64_t, int>(ctx.GetRawContext(),
-                                    out_int64.data<int64_t>(),
+                                    out_int64_data,
                                     out->mutable_data<int>(TARGET(kXPU)),
-                                    out_int64.numel());
+                                    static_cast<int>(out->numel()));
     CHECK_EQ(r, 0);
   } else {
     LOG(FATAL) << "argmax unsupported param type for xpu: " << param.dtype;

@@ -46,6 +46,7 @@ class TestflipOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=8), min_size=3, max_size=3))
+        in_shape = draw(st.sampled_from([in_shape, []]))
 
         def generate_input(*args, **kwargs):
             if kwargs["type"] == "int32":
@@ -55,12 +56,17 @@ class TestflipOp(AutoScanTest):
                 return np.random.randint(kwargs["low"], kwargs["high"],
                                          kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return (kwargs["high"] - kwargs["low"]) * np.random.random(
-                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
+                if in_shape == []:
+                    return np.random.random(kwargs["shape"]).astype(np.float32)
+                else:
+                    return (kwargs["high"] - kwargs["low"]) * np.random.random(
+                        kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         input_type = draw(st.sampled_from(["float32", "int64"]))  # "int32"
 
         axis = draw(st.sampled_from([[0, 1, 2], [1], [0, 2], [2, 1], [0, 1]]))
+        if in_shape == []:
+            axis = []
 
         flip_op = OpConfig(
             type="flip",

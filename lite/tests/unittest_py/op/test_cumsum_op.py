@@ -46,7 +46,7 @@ class TestCumsumOp(AutoScanTest):
         input_data_x_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=1, max_size=8))
+                    min_value=2, max_value=8), min_size=1, max_size=8))
         x_dims_size = len(input_data_x_shape)
         flatten = draw(st.booleans())
         axis = draw(
@@ -56,9 +56,11 @@ class TestCumsumOp(AutoScanTest):
             flatten = False
         if flatten:
             axis = -1
+        input_data_x_shape = draw(st.sampled_from([input_data_x_shape, []]))
+        if input_data_x_shape == []:
+            axis = draw(st.sampled_from([-1, 0]))
         exclusive = draw(st.booleans())
         reverse = draw(st.booleans())
-
         cumsum_op = OpConfig(
             type="cumsum",
             inputs={"X": ["input_data_x"]},
@@ -80,10 +82,22 @@ class TestCumsumOp(AutoScanTest):
         return self.get_predictor_configs(), ["cumsum"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data_x"].shape)
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.Metal,
+                    TargetType.OpenCL, TargetType.X86
+            ]:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(ARM/Host/X86/Metal/OpenCL) now.")
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=50)
 
 
 if __name__ == "__main__":

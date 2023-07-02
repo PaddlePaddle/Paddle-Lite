@@ -52,7 +52,7 @@ class TestFcOp(AutoScanTest):
         C = draw(st.integers(min_value=1, max_value=128))
         H = draw(st.integers(min_value=1, max_value=128))
         W = draw(st.integers(min_value=1, max_value=128))
-        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
+        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W], []]))
         threshold_data = draw(st.floats(min_value=0.0, max_value=1.0))
         thresholded_relu_op = OpConfig(
             type="thresholded_relu",
@@ -70,10 +70,22 @@ class TestFcOp(AutoScanTest):
         return self.get_predictor_configs(), [""], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data"].shape)
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

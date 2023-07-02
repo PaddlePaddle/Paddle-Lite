@@ -101,7 +101,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     auto output_count = cache->output_types.size();
     NNADAPTER_VLOG(3) << "Model output count: " << output_count;
     NNADAPTER_CHECK_GT(output_count, 0);
-    output_tensors_.resize(input_count);
+    output_tensors_.resize(output_count);
     output_types_ = cache->output_types;
     for (size_t i = 0; i < output_count; i++) {
       const auto& type = cache->output_types[i];

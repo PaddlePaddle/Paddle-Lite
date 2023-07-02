@@ -792,8 +792,7 @@ class XPUSingleEncoderFuser : public FuseBase {
     for (int i = 0; i < quant_mul_ops.size(); ++i) {
       if (op_is_quantized[i]) {
         auto op_info = matched.at(quant_mul_ops[i])->stmt()->op_info();
-        input_max[i * 2] =
-            127 * op_info->GetAttr<std::vector<float>>("X0_scale")[0];
+        input_max[i * 2] = op_info->GetAttr<std::vector<float>>("X0_scale")[0];
         input_max[i * 2 + 1] = matched.at(mul_add_ops[i])
                                    ->stmt()
                                    ->op_info()
@@ -814,7 +813,7 @@ class XPUSingleEncoderFuser : public FuseBase {
           int weight_scale_size = per_tensor ? 1 : weight_scales.size();
           std::vector<float> weight_max;
           for (int j = 0; j < weight_scale_size; j++) {
-            weight_max.push_back(127 * weight_scales[j]);
+            weight_max.push_back(weight_scales[j]);
           }
           // create max tensor
           weight_max_tensor =
@@ -857,15 +856,19 @@ class XPUSingleEncoderFuser : public FuseBase {
             << ", max_qkv_output: " << max_qkv_output;
 
     if (act_type_ == "gelu") {
+#ifdef LITE_WITH_XPU
       // use gelu10 according to whitepaper http://arxiv.org/abs/2004.09602
       float gelu_limit_value =
-          GetDoubleFromEnv("QUANT_GELU_OUT_THRESHOLD", 10.f);
+          GetDoubleFromEnv("QUANT_GELU_OUT_THRESHOLD",
+                           lite::TargetWrapperXPU::xpu_runtime_ptr
+                               ->quant_post_static_gelu_out_threshold);
       CHECK_GT(gelu_limit_value, 0.f)
           << "QUANT_GELU_OUT_THRESHOLD should be an positive float value: "
           << gelu_limit_value;
 
       input_max[9] = std::min(gelu_limit_value, input_max[9]);
       input_max[10] = std::min(gelu_limit_value, input_max[10]);
+#endif
     }
     if (matmul_quant) {
       auto matmul_offset = quant_mul_ops.size();
@@ -874,15 +877,11 @@ class XPUSingleEncoderFuser : public FuseBase {
         input_max[matmul_offset * 2 + 0] =
             max_qkv_output != 0
                 ? max_qkv_output
-                : 127 *
-                      qk_matmul_op_info->GetAttr<std::vector<float>>(
-                          "X0_scale")[0];
+                : qk_matmul_op_info->GetAttr<std::vector<float>>("X0_scale")[0];
         input_max[matmul_offset * 2 + 1] =
             max_qkv_output != 0
                 ? max_qkv_output
-                : 127 *
-                      qk_matmul_op_info->GetAttr<std::vector<float>>(
-                          "Y0_scale")[0];
+                : qk_matmul_op_info->GetAttr<std::vector<float>>("Y0_scale")[0];
         input_max[matmul_offset * 2 + 2] =
             matched.at("qk_softmax")
                 ->stmt()
@@ -897,14 +896,12 @@ class XPUSingleEncoderFuser : public FuseBase {
       if (op_is_quantized[matmul_offset + 1]) {
         auto qkv_matmul_op_info = matched.at("qkv_matmul")->stmt()->op_info();
         input_max[matmul_offset * 2 + 3] =
-            127 *
             qkv_matmul_op_info->GetAttr<std::vector<float>>("X0_scale")[0];
         input_max[matmul_offset * 2 + 4] =
             max_qkv_output != 0
                 ? max_qkv_output
-                : 127 *
-                      qkv_matmul_op_info->GetAttr<std::vector<float>>(
-                          "Y0_scale")[0];
+                : qkv_matmul_op_info->GetAttr<std::vector<float>>(
+                      "Y0_scale")[0];
         input_max[matmul_offset * 2 + 5] =
             qkv_matmul_op_info->GetAttr<float>("out_threshold");
 
@@ -1909,7 +1906,7 @@ class XPUMultiEncoderFuser {
           if (is_qkv_already_fusion_) {
             end = i + 1;
           }
-          scope->NewTensor(update_tag);
+          scope->MutableParent()->NewTensor(update_tag);
           // Update weight, including tranpose\convert type\fuse qkv
           // weight\findmax.
           update_weight(scope,
@@ -2154,8 +2151,9 @@ class XPUMultiEncoderFuser {
         CHECK(lite::TargetWrapperXPU::xpu_runtime_ptr)
             << "xpu_runtime_ptr null in pass";
         // For R200+int16+local quant, use the fp16 weight.
-        if (GetBoolFromEnv("XPU_LOCAL_QUANT") ||
-            lite::TargetWrapperXPU::xpu_runtime_ptr->local_quant) {
+        if (GetBoolFromEnv(
+                "XPU_LOCAL_QUANT",
+                lite::TargetWrapperXPU::xpu_runtime_ptr->local_quant)) {
           std::unique_ptr<float16[]> weight_qkv_trans_fp16(
               new float16[qkv_len]);
           paddle::lite::xpu::math::ConvertFP32ToFP16(
@@ -2209,17 +2207,18 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     // lite/backends/xpu/target_wrapper.cc is only compiled iff
     // LITE_WITH_XPU==ON. To suppress linkage error, we use
     // #ifdef here. Any better idea?
-    if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int31" ||
-        lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision ==
-            "int31") {
+    if (GetStringFromEnv(
+            "XPU_ENCODER_PRECISION",
+            lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision) ==
+        "int31") {
       fc_precision = "int31";
       VLOG(3)
           << "Use int31 in XPUMultiEncoderOp, "
           << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision="
           << lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision;
-    } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
-               lite::TargetWrapperXPU::xpu_runtime_ptr
-                       ->multi_encoder_precision == "int8") {
+    } else if (GetStringFromEnv("XPU_ENCODER_PRECISION",
+                                lite::TargetWrapperXPU::xpu_runtime_ptr
+                                    ->multi_encoder_precision) == "int8") {
       fc_precision = "int8";
       VLOG(3)
           << "Use int8 in XPUMultiEncoderOp, "
@@ -2272,8 +2271,7 @@ class XPUMultiEncoderFusePass : public ProgramPass {
         }
       }
     }
-
-    for (auto& act_type : {"gelu"}) {
+    for (auto& act_type : {"gelu", "__xpu__quick_gelu"}) {
       for (auto& input_pos : {"X"}) {
         for (auto& qkv_ln_2_out_pos : {"X"}) {
           for (auto& matmul_type : matmul_types) {

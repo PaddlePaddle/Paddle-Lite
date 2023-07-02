@@ -80,7 +80,7 @@ class TestScalesFusePass(FusePassAutoScanTest):
         in_shape_x = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=64), min_size=2, max_size=4))
+                    min_value=1, max_value=64), min_size=0, max_size=4))
         scale1 = draw(st.floats(min_value=0.5, max_value=5))
         bias1 = draw(st.floats(min_value=0, max_value=1))
         scale2 = draw(st.floats(min_value=0.5, max_value=5))
@@ -137,7 +137,7 @@ class TestScalesFusePass(FusePassAutoScanTest):
         max_examples = 25
         if target_str in ["Metal"]:
             # Make sure to generate enough valid cases for specific targets
-            max_examples = 200
+            max_examples = 400
         self.run_and_statis(
             quant=False,
             max_examples=max_examples,

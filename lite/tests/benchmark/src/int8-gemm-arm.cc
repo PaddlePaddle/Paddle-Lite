@@ -110,7 +110,8 @@ static void test_gemm_s8(const benchmark::State &state_in,
                                      has_bias,
                                      scale.data<float>(),
                                      act_param,
-                                     &ctx);
+                                     &ctx,
+                                     false);
   }
   float op_ratio = 2;
 

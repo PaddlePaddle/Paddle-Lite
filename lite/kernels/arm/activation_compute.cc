@@ -17,6 +17,9 @@
 #ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
+#ifdef LITE_WITH_ARM_DNN_LIBRARY
+#include "arm_dnn_library/arm_dnn_library.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -56,9 +59,16 @@ void PReluCompute<PRECISION(kFP16)>::Run() {
   auto alpha_data = param.Prelu_alpha->data<float16_t>();
   auto output_data = param.Out->mutable_data<float16_t>();
 
-  int outer_size = x_dims[0];
-  int channel_size = x_dims[1];
-  int inner_size = x_dims.count(2, x_dims.size());
+  int outer_size = 1;
+  int channel_size = 1;
+  int inner_size = 1;
+  if (x_dims.size() == 0) {
+    output_data[0] = x_data[0] > 0.f ? x_data[0] : x_data[0] * alpha_data[0];
+    return;
+  }
+  outer_size = x_dims[0];
+  channel_size = x_dims[1];
+  inner_size = x_dims.count(2, x_dims.size());
 
   lite::arm::math::fp16::act_prelu<float16_t>(x_data,
                                               output_data,
@@ -98,8 +108,13 @@ void ReluCompute<PRECISION(kFloat)>::Run() {
   auto x_dims = param.X->dims();
   auto x_data = param.X->data<float>();
   auto output_data = param.Out->mutable_data<float>();
+#ifdef LITE_WITH_ARM_DNN_LIBRARY
+  armdnnlibrary::relu<float>(
+      ctx.context(), x_data, output_data, x_dims.production());
+#else
   lite::arm::math::act_relu<float>(
       x_data, output_data, x_dims.production(), ctx.threads());
+#endif
 }
 
 template <>
@@ -111,11 +126,16 @@ void PReluCompute<PRECISION(kFloat)>::Run() {
   auto mode = param.Prelu_mode;
   auto alpha_data = param.Prelu_alpha->data<float>();
   auto output_data = param.Out->mutable_data<float>();
-
-  int outer_size = x_dims[0];
-  int channel_size = x_dims[1];
-  int inner_size = x_dims.count(2, x_dims.size());
-
+  int outer_size = 1;
+  int channel_size = 1;
+  int inner_size = 1;
+  if (x_dims.size() == 0) {
+    output_data[0] = x_data[0] > 0.f ? x_data[0] : x_data[0] * alpha_data[0];
+    return;
+  }
+  outer_size = x_dims[0];
+  channel_size = x_dims[1];
+  inner_size = x_dims.count(2, x_dims.size());
   lite::arm::math::act_prelu<float>(x_data,
                                     output_data,
                                     outer_size,

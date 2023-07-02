@@ -15,6 +15,7 @@
 #pragma once
 
 #include <vector>
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace operation {

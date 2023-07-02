@@ -22,8 +22,9 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void FlattenContiguousRangeCompute::Run() {
-  auto& param = Param<operators::FlattenContiguousRangeParam>();
+template <PrecisionType PType>
+void FlattenContiguousRangeCompute<PType>::Run() {
+  auto& param = this->template Param<operators::FlattenContiguousRangeParam>();
   auto x = param.x;
   auto out = param.out;
   auto out_dims = out->dims();
@@ -36,12 +37,13 @@ void FlattenContiguousRangeCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(flatten_contiguous_range,
-                     kXPU,
-                     kAny,
-                     kAny,
-                     paddle::lite::kernels::xpu::FlattenContiguousRangeCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    flatten_contiguous_range,
+    kXPU,
+    kAny,
+    kAny,
+    paddle::lite::kernels::xpu::FlattenContiguousRangeCompute<PRECISION(kAny)>,
+    def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kAny),

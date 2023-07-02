@@ -95,15 +95,15 @@ for config in all_configs:
                 os.getcwd(), config[URL], config[MODEL_NAME],
                 config[FILE_NAME], input_info_str)
         elif args.target == "ARM":
-            command = "python3.8 {}/model_test_base.py --target=ARM --url={} --model_name={} --file_name={} {}".format(
+            command = "python3.9 {}/model_test_base.py --target=ARM --url={} --model_name={} --file_name={} {}".format(
                 os.getcwd(), config[URL], config[MODEL_NAME],
                 config[FILE_NAME], input_info_str)
         elif args.target == "OpenCL":
-            command = "python3.8 {}/model_test_base.py --target=OpenCL --url={} --model_name={} --file_name={} {}".format(
+            command = "python3.9 {}/model_test_base.py --target=OpenCL --url={} --model_name={} --file_name={} {}".format(
                 os.getcwd(), config[URL], config[MODEL_NAME],
                 config[FILE_NAME], input_info_str)
         elif args.target == "Metal":
-            command = "python3.8 {}/model_test_base.py --target=Metal --url={} --model_name={} --file_name={} {}".format(
+            command = "python3.9 {}/model_test_base.py --target=Metal --url={} --model_name={} --file_name={} {}".format(
                 os.getcwd(), config[URL], config[MODEL_NAME],
                 config[FILE_NAME], input_info_str)
     print(command)

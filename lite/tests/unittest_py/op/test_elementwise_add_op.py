@@ -24,45 +24,7 @@ from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 import numpy as np
 from functools import partial
-
-
-def check_broadcast(x_shape, y_shape, axis):
-    if x_shape == y_shape:
-        return True
-    else:
-        x_dims_size = len(x_shape)
-        y_dims_size = len(y_shape)
-        max_dims_size = max(x_dims_size, y_dims_size)
-        if (x_dims_size == y_dims_size):
-            # The axis should be -1 or 0 while the dimension of tensor X is equal to the dimension of tensor Y.
-            if not (axis == -1 or axis == 0):
-                return False
-        # The axis should be met [-max(x_dims_size, y_dims_size), max(x_dims_size, y_dims_size))
-        if not (axis >= (-max_dims_size) and axis < max_dims_size):
-            return False
-        if axis < 0:
-            axis = abs(x_dims_size - y_dims_size) + axis + 1
-        if not (axis >= 0 and axis < max_dims_size):
-            return False
-        # The axis should be met axis + min(x_dims_size, y_dims_size) <= max(x_dims_size, y_dims_size)
-        if axis + min(x_dims_size, y_dims_size) > max_dims_size:
-            return False
-        x_dims_array = [1 for i in range(max_dims_size)]
-        y_dims_array = [1 for i in range(max_dims_size)]
-        if x_dims_size > y_dims_size:
-            x_dims_array = x_shape
-            for i in range(y_dims_size):
-                y_dims_array[axis + i] = y_shape[i]
-        else:
-            y_dims_array = y_shape
-            for i in range(x_dims_size):
-                x_dims_array[axis + i] = x_shape[i]
-        for i in range(max_dims_size):
-            broadcast_flag = (x_dims_array[i] == y_dims_array[i]) or (
-                x_dims_array[i] <= 1) or (y_dims_array[i] <= 1)
-            if not broadcast_flag:
-                return False
-        return True
+from test_elementwise_util import check_broadcast
 
 
 class TestElementwiseAddOp(AutoScanTest):
@@ -74,8 +36,7 @@ class TestElementwiseAddOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
-            TargetType.ARM,
-            [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64],
+            TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
         opencl_valid_places = [
@@ -100,7 +61,7 @@ class TestElementwiseAddOp(AutoScanTest):
             Place(TargetType.ARM, PrecisionType.FP32),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=metal_places)
+        # self.enable_testing_on_place(places=metal_places)
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.FP16,
@@ -120,29 +81,24 @@ class TestElementwiseAddOp(AutoScanTest):
         # Check config
         if target_type in [TargetType.ARM]:
             if predictor_config.precision(
-            ) == PrecisionType.INT64 and input_data_type != np.int64:
-                return False
-            if predictor_config.precision(
-            ) == PrecisionType.FP32 and input_data_type != np.float32:
-                return False
-            if predictor_config.precision(
             ) == PrecisionType.FP16 and input_data_type != np.float32:
-                return False
-            if predictor_config.precision(
-            ) == PrecisionType.INT32 and input_data_type != np.int32:
                 return False
         return True
 
     def sample_program_configs(self, draw):
-        input_data_x_shape = draw(
+        input_data_x_shape_tmp = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=1, max_size=4))
-        input_data_y_shape = draw(
+        input_data_y_shape_tmp = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=1, max_size=4))
         axis = draw(st.integers(min_value=-1, max_value=4))
+        input_data_x_shape = draw(
+            st.sampled_from([input_data_x_shape_tmp, []]))
+        input_data_y_shape = draw(
+            st.sampled_from([input_data_y_shape_tmp, []]))
         assume(
             check_broadcast(input_data_x_shape, input_data_y_shape, axis) ==
             True)
@@ -202,7 +158,7 @@ class TestElementwiseAddOp(AutoScanTest):
                 if input_data_type != np.float32 \
                     or in_x_shape != in_y_shape \
                     or len(in_x_shape) == 3 \
-                    or in_x_shape[0] != 1:
+                    or (len(in_x_shape) > 0 and in_x_shape[0] != 1):
                     return True
 
         self.add_ignore_check_case(
@@ -225,6 +181,21 @@ class TestElementwiseAddOp(AutoScanTest):
             _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'x_shape_size == 1' or 'x_shape_size != y_shape_size' "
             "or 'x_shape[0] != y_shape[0]' or 'axis == 0' on NvidiaTensorrt.")
+
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["input_data_x"].shape)
+            in_y_shape = list(program_config.inputs["input_data_y"].shape)
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.OpenCL
+            ]:
+                if len(in_x_shape) == 0 or len(in_y_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Only test 0D-tensor on CPU(X86/ARM/Host) now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

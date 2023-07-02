@@ -13,6 +13,7 @@
 // limitations under the License.
 #pragma once
 
+#include <string>
 #include "lite/api/paddle_place.h"
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/backends/xpu/xpu_scratch.h"
@@ -31,6 +32,27 @@ class XPUBuffer : public Buffer {
     xpu_l3_cache_block_ = lite::TargetWrapperXPU::CreateL3CacheBlock();
   }
 
+  std::string GetMemStr(size_t bytes) {
+    const char* suffixes[7];
+    suffixes[0] = "B";
+    suffixes[1] = "KB";
+    suffixes[2] = "MB";
+    suffixes[3] = "GB";
+    suffixes[4] = "TB";
+    suffixes[5] = "PB";
+    suffixes[6] = "EB";
+    uint s = 0;  // which suffix to use
+    double count = bytes;
+    while (count >= 1024 && s < 7) {
+      s++;
+      count /= 1024;
+    }
+
+    std::stringstream ss;
+    ss << count << " " << suffixes[s];
+    return ss.str();
+  }
+
   void ResetLazy(TargetType target, size_t size) override {
     CHECK(target == TargetType::kXPU);
     CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
@@ -39,11 +61,19 @@ class XPUBuffer : public Buffer {
         void* xpu_stream = TargetWrapperXPU::get_xpu_stream();
         XPU_CALL(xpu_wait(xpu_stream));
         XPU_CALL(xpu_free(global_mem_data_));
+        if (global_mem_space_ > 100 * 1024 * 1024)  // 100MB
+          VLOG(3) << "[XPU BUFFER] ResetLazy FREE  "
+                  << GetMemStr(global_mem_space_)
+                  << " addr:" << static_cast<const void*>(global_mem_data_);
         global_mem_data_ = nullptr;
       }
 
       XPU_CALL(xpu_current_device(&devid_));
       global_mem_data_ = lite::TargetWrapperXPU::Malloc(size);
+
+      if (global_mem_space_ > 100 * 1024 * 1024)  // 100MB
+        VLOG(3) << "[XPU BUFFER] MALLOC " << GetMemStr(size)
+                << " addr:" << static_cast<const void*>(global_mem_data_);
       global_mem_space_ = size;
     }
 
@@ -71,6 +101,10 @@ class XPUBuffer : public Buffer {
       XPU_CALL(xpu_set_device(devid_));
       XPU_CALL(xpu_wait(xpu_stream_));
       XPU_CALL(xpu_free(global_mem_data_));
+
+      if (global_mem_space_ > 100 * 1024 * 1024)  // 100MB
+        VLOG(3) << "[XPU BUFFER] FINAL FREE  " << GetMemStr(global_mem_space_)
+                << " addr:" << static_cast<const void*>(global_mem_data_);
     }
 
     global_mem_data_ = nullptr;

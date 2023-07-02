@@ -63,10 +63,16 @@ void PReluCompute::Run() {
   auto mode = param.Prelu_mode;
   auto alpha_data = param.Prelu_alpha->data<float>();
   auto output_data = param.Out->mutable_data<float>();
-
-  int outer_size = x_dims[0];
-  int channel_size = x_dims[1];
-  int inner_size = x_dims.count(2, x_dims.size());
+  int outer_size = 1;
+  int channel_size = 1;
+  int inner_size = 1;
+  if (x_dims.size() == 0) {
+    output_data[0] = x_data[0] > 0.f ? x_data[0] : x_data[0] * alpha_data[0];
+    return;
+  }
+  outer_size = x_dims[0];
+  channel_size = x_dims[1];
+  inner_size = x_dims.count(2, x_dims.size());
   if (mode == "all" || mode == "channel") {
     int stride_size = inner_size * channel_size;
     for (int n = 0; n < outer_size; n++) {
@@ -151,6 +157,17 @@ void LogCompute::Run() {
   }
 }
 
+void Log1pCompute::Run() {
+  auto& param = this->Param<param_t>();
+  CHECK(param.X);
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
+  for (int i = 0; i < x_dims.production(); i++) {
+    output_data[i] = std::log(x_data[i] + 1);
+  }
+}
+
 void ExpCompute::Run() {
   auto& param = this->Param<param_t>();
   CHECK(param.X);
@@ -170,6 +187,17 @@ void FloorCompute::Run() {
   auto output_data = param.Out->mutable_data<float>();
   for (int i = 0; i < x_dims.production(); i++) {
     output_data[i] = std::floor(x_data[i]);
+  }
+}
+
+void CeilCompute::Run() {
+  auto& param = this->Param<param_t>();
+  CHECK(param.X);
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float>();
+  auto output_data = param.Out->mutable_data<float>();
+  for (int i = 0; i < x_dims.production(); i++) {
+    output_data[i] = std::ceil(x_data[i]);
   }
 }
 
@@ -368,12 +396,22 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 REGISTER_LITE_KERNEL(
+    log1p, kHost, kFloat, kNCHW, paddle::lite::kernels::host::Log1pCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
     exp, kHost, kFloat, kNCHW, paddle::lite::kernels::host::ExpCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 REGISTER_LITE_KERNEL(
     floor, kHost, kFloat, kNCHW, paddle::lite::kernels::host::FloorCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+REGISTER_LITE_KERNEL(
+    ceil, kHost, kFloat, kNCHW, paddle::lite::kernels::host::CeilCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

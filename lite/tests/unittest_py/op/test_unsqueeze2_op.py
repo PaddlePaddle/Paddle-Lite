@@ -66,7 +66,7 @@ class TestUnsqueeze2Op(AutoScanTest):
         C = draw(st.integers(min_value=1, max_value=128))
         H = draw(st.integers(min_value=1, max_value=128))
         W = draw(st.integers(min_value=1, max_value=128))
-        in_shape = draw(st.sampled_from([[N, C, H, W]]))
+        in_shape = draw(st.sampled_from([[N, C, H, W], []]))
 
         in_dtype = np.float32
         target = self.get_target()
@@ -83,6 +83,9 @@ class TestUnsqueeze2Op(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=0, max_value=3), min_size=1, max_size=2))
+        if in_shape == []:
+            axes_data = draw(st.sampled_from([[0], [-1]]))
+
         inputs = {"X": ["X_data"]}
         choose_axes = draw(
             st.sampled_from(["axes", "AxesTensor", "AxesTensorList"]))
@@ -90,14 +93,20 @@ class TestUnsqueeze2Op(AutoScanTest):
         def generate_AxesTensor_data():
             if (choose_axes == "AxesTensor"):
                 inputs["AxesTensor"] = ["AxesTensor_data"]
-                return np.array(axes_data).astype(np.int32)
+                if in_shape == []:
+                    return np.array([0]).astype(np.int32)
+                else:
+                    return np.array(axes_data).astype(np.int32)
             else:
                 return np.random.randint(1, 5, []).astype(np.int32)
 
         def generate_AxesTensorList_data():
             if (choose_axes == "AxesTensorList"):
                 #inputs["AxesTensorList"] = ["AxesTensorList_data"]
-                return np.array(axes_data).astype(np.int32)
+                if in_shape == []:
+                    return np.array([0]).astype(np.int32)
+                else:
+                    return np.array(axes_data).astype(np.int32)
             else:
                 return np.random.randint(1, 5, []).astype(np.int32)
 
@@ -154,6 +163,20 @@ class TestUnsqueeze2Op(AutoScanTest):
             teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
             "Lite does not support 'in_shape_size == 1' or '0 in axes' on nvidia_tensorrt."
         )
+
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_x_shape = list(program_config.inputs["X_data"].shape)
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
+                if len(in_x_shape) == 0:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

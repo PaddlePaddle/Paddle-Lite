@@ -28,6 +28,10 @@
 #ifdef LITE_WITH_PRECISION_PROFILE
 #include "lite/core/profile/precision_profiler.h"
 #endif
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/target_wrapper.h"
+#include "lite/backends/xpu/tensor_dump.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -75,7 +79,8 @@ void UpdatePersistableVarDesc(cpp::VarDesc* var,
     }
   }
   if (var_name != "feed" && var_name != "fetch") {
-    var->SetShape(previous_var_desc.GetShape());
+    auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
+    var->SetShape(tensor->dims().data());
     var->SetDataType(previous_var_desc.GetDataType());
   }
 }
@@ -623,9 +628,6 @@ void RuntimeProgram::Run() {
   }
 #endif
 
-#ifdef LITE_WITH_PROFILE
-  LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch, false, 1);
-#endif
 #ifdef LITE_WITH_PRECISION_PROFILE
   LOG(INFO) << "\n"
             << precision_profiler_summary
@@ -716,7 +718,12 @@ void Program::PrepareWorkspace(
       // Create tensors or weights from variable description.
       if (!var_desc->Persistable()) {
         vars_.push_back(var_name);
-        auto* var = exec_scope_->Var(var_name);
+        Variable* var = nullptr;
+        if (var_name.find("/target_trans_persistable") != std::string::npos) {
+          var = scope_->Var(var_name);
+        } else {
+          var = exec_scope_->Var(var_name);
+        }
         if (var_type == lite::VarDescAPI::Type::LOD_TENSOR) {
           const auto& var_data_type =
               VarDescType2PrecisionType(var_desc->GetDataType());
@@ -784,6 +791,12 @@ void Instruction::Run() {
   CHECK(profiler_) << "Profiler pointer of kernel can not be nullptr. "
                       "When LITE_WITH_PROFILE is defined, please set a "
                       "Profiler for Instruction.";
+  if (first_epoch_for_profiler_) {
+    kernel_->SetIsKernelTest(false);
+    auto* op_ch = profiler_->GetOpCharacter(profile_id_);
+    SetProfileRuntimeOpInfo(op_ch);
+    first_epoch_for_profiler_ = false;
+  }
   profiler_->StartTiming(
       profile::Type::kCreate, profile_id_, kernel_->mutable_context());
 #endif
@@ -802,14 +815,16 @@ void Instruction::Run() {
   op_->InferShape();
   kernel_->Launch();
   has_run_ = true;
-
-#ifdef LITE_WITH_PROFILE
-  if (first_epoch_for_profiler_) {
-    kernel_->SetIsKernelTest(false);
-    auto* op_ch = profiler_->GetOpCharacter(profile_id_);
-    SetProfileRuntimeOpInfo(op_ch);
-    first_epoch_for_profiler_ = false;
+#ifdef LITE_WITH_XPU
+#ifdef LITE_WITH_PRECISION_PROFILE
+  if (lite::TargetWrapperXPU::xpu_runtime_ptr->need_dump_xpu_info) {
+    const std::string dump_tensor_path =
+        lite::TargetWrapperXPU::xpu_runtime_ptr->xpu_dump_tensor_path;
+    const std::string dump_log_path =
+        lite::TargetWrapperXPU::xpu_runtime_ptr->xpu_dump_log_path;
+    xpu::npy::DumpOpoutTensor(this, op_, dump_tensor_path, dump_log_path);
   }
+#endif
 #endif
 }
 

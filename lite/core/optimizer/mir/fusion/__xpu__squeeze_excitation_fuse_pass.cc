@@ -227,7 +227,6 @@ class XPUSqueezeExcitationFuser_DEPREC : public FuseBase {
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* max_output_tensor = scope->NewTensor(max_output_name);
     max_output_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
-    max_output_tensor->set_persistable(true);
     op_desc.SetOutput("OutputMax", {max_output_name});
 
     std::map<std::string, int> act_map{
@@ -538,7 +537,6 @@ class XPUSqueezeExcitationFuser : public FuseBase {
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
     auto* max_output_tensor = scope->NewTensor(max_output_name);
     max_output_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
-    max_output_tensor->set_persistable(true);
     op_desc.SetOutput("OutputMax", {max_output_name});
 
     op_desc.SetAttr<std::vector<int>>("op_type", std::vector<int>{4});
@@ -642,6 +640,14 @@ class XPUSqueezeExcitationFuser : public FuseBase {
 class XPUSqueezeExcitationFusePass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
+    for (const auto& place : graph->valid_places()) {
+      if (place.precision == PrecisionType::kInt8) {
+        LOG(INFO)
+            << "XPU int8 model skip pass: __xpu__squeeze_excitation_fuse_pass";
+        return;
+      }
+    }
+
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     /* DEPERCATED */
     // TODO(weihaoji): remove XPUSqueezeExcitationFuser_DEPREC after xpu_fc

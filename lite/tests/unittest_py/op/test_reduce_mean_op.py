@@ -67,11 +67,15 @@ class TestReduceMeanOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=10), min_size=4, max_size=4))
+        in_shape = draw(st.sampled_from([in_shape, []]))
         keep_dim = draw(st.booleans())
         axis_list = draw(
             st.sampled_from([[0], [1], [2], [3], [0, 1], [1, 2], [2, 3]]))
 
-        reduce_all_data = True if axis_list == None or axis_list == [] else False
+        reduce_all_data = True if len(
+            in_shape) == 0 or axis_list == None or axis_list == [] else False
+        if len(in_shape) == 0:
+            axis_list = draw(st.sampled_from([[-1], []]))
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
@@ -110,6 +114,28 @@ class TestReduceMeanOp(AutoScanTest):
             _teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case on opencl. We need to fix it as soon as possible."
         )
+
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.OpenCL:
+                return True
+
+        self.add_ignore_check_case(_teller3,
+                                   IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+                                   "Expected kernel_type false.")
+
+        def _teller4(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type not in [
+                    TargetType.ARM, TargetType.Host, TargetType.X86,
+                    TargetType.Metal, TargetType.OpenCL
+            ]:
+                if program_config.attr["reduce_all"]:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller4, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "0D-tensor is not supported on this target now.")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

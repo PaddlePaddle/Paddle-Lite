@@ -52,7 +52,17 @@ void RoiAlignCompute::Run() {
   const int* xpu_lod = nullptr;
   std::vector<int> cpu_lod_data;
   cpu_lod_data.resize(batch_size + 1);
-  if (rois_num == nullptr) {
+
+  int roi_num_total = 0;
+  auto rois_num_lod = rois_num->data<int>();
+  int num = rois_num->numel();
+  for (int i = 0; i < num; ++i) {
+    roi_num_total += rois_num_lod[i];
+  }
+
+  if (batch_size == 1 && roi_num_total > rois_total) {
+    cpu_lod_data[1] = cpu_lod_data[0] + rois_total;
+  } else if (rois_num == nullptr) {
     auto rois_lod = rois->lod().back();
     int n = rois_lod.size();
     for (int i = 0; i < n; i++) {
@@ -65,6 +75,7 @@ void RoiAlignCompute::Run() {
       cpu_lod_data[i] = cpu_lod_data[i - 1] + rois_lod[i - 1];
     }
   }
+
   CHECK_EQ(cpu_lod_data[batch_size], rois_total);
   XPUScratchPadGuard xpu_lod_grad_ =
       TargetWrapperXPU::MallocScratchPad(cpu_lod_data.size() * sizeof(int));

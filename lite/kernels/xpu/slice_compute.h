@@ -22,9 +22,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <class T>
-class SliceCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kAny)> {
+template <typename T, PrecisionType PType>
+class SliceCompute : public KernelLite<TARGET(kXPU), PType, DATALAYOUT(kAny)> {
  public:
   using param_t = operators::SliceParam;
 

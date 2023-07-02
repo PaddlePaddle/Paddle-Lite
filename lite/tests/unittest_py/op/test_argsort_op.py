@@ -47,6 +47,10 @@ class TestArgSortOp(AutoScanTest):
         axis = draw(st.integers(min_value=-1, max_value=3))
         assume(axis < len(in_shape))
 
+        in_shape = draw(st.sampled_from([in_shape, []]))
+        if in_shape == []:
+            axis = draw(st.sampled_from([-1, 0]))
+
         arg_sort_op = OpConfig(
             type="argsort",
             inputs={"X": ["input_data"]},

@@ -32,12 +32,20 @@ uint64_t GetRandomSeed() {
 std::shared_ptr<std::mt19937_64> GetCPURandomEngine(uint64_t seed) {
   auto engine = std::make_shared<std::mt19937_64>();
   if (seed == 0) {
-    seed = GetRandomSeed();
-    VLOG(4) << "Use default random engine with random seed = " << seed;
+    seed = GetUInt64FromEnv("PADDLELITE_RANDOM_OP_SEED", 0);
+    if (seed == 0) {
+      seed = GetRandomSeed();
+      VLOG(4) << "Use default random engine with random seed = " << seed;
+    } else {
+      VLOG(4) << "Use default random with fixed random seed from "
+                 "PADDLELITE_RANDOM_OP_SEED = "
+              << seed;
+    }
   } else {
     VLOG(4) << "Use default random engine with fixed random seed = " << seed;
   }
-  engine->seed(seed);
+  std::seed_seq seq({seed});
+  engine->seed(seq);
   return engine;
 }
 
@@ -47,7 +55,18 @@ void GaussRandomCompute::Run() {
   float gstd = param.gauss_std;
 
   // output shape
-  if (param.ShapeTensor != nullptr) {
+  if (param.ShapeTensorList.size() > 0) {
+    std::vector<int64_t> tmp{};
+    for (size_t i = 0; i < param.ShapeTensorList.size(); ++i) {
+      auto tmp_tensor_ptr = param.ShapeTensorList[i]->data<int>();
+      tmp.push_back(static_cast<int64_t>(tmp_tensor_ptr[0]));
+    }
+    DDimLite dims(tmp);
+    param.Out->Resize(dims);
+  } else if (param.shape.size() > 0) {
+    DDimLite dims(param.shape);
+    param.Out->Resize(dims);
+  } else if (param.ShapeTensor != nullptr) {
     std::vector<int64_t> tmp{};
     auto ptr = param.ShapeTensor->data<int>();
     for (int i = 0; i < param.ShapeTensor->numel(); i++) {
@@ -56,18 +75,8 @@ void GaussRandomCompute::Run() {
     }
     DDimLite dims(tmp);
     param.Out->Resize(dims);
-  } else if (param.ShapeTensorList.size() > 0) {
-    std::vector<int64_t> tmp{};
-    for (size_t i = 0; i < param.ShapeTensorList.size(); ++i) {
-      auto tmp_tensor_ptr = param.ShapeTensorList[i]->data<int>();
-      tmp.push_back(static_cast<int64_t>(tmp_tensor_ptr[0]));
-    }
-    DDimLite dims(tmp);
-    param.Out->Resize(dims);
-  } else {
-    DDimLite dims(param.shape);
-    param.Out->Resize(dims);
   }
+
   auto data = param.Out->mutable_data<float>();
   int size = param.Out->numel();
   std::normal_distribution<float> dist(mean, gstd);
