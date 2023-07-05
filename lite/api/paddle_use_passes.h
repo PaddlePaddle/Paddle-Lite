@@ -52,6 +52,7 @@ USE_MIR_PASS(lite_scales_fuse_pass);
 USE_MIR_PASS(lite_scaleacts_fuse_pass);
 USE_MIR_PASS(lite_elementwise_activation_fuse_pass);
 USE_MIR_PASS(lite_elementwise_scale_fuse_pass);
+USE_MIR_PASS(lite_elementwise_reshape_fuse_pass);
 USE_MIR_PASS(lite_conv_scale_fuse_pass);
 USE_MIR_PASS(lite_conv_elementwise_tree_fuse_pass);
 USE_MIR_PASS(lite_quant_dequant_fuse_pass);
