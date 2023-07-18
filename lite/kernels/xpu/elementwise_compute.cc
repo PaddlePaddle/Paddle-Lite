@@ -353,6 +353,12 @@ using MulFloat32 =
 using MulFloat16 = xpu::ElementwiseCompute<float16,
                                            xpu::MulFunctor<float16>,
                                            PRECISION(kFP16)>;
+
+using MulInt32 =
+    xpu::ElementwiseCompute<int, xpu::MulFunctor<int>, PRECISION(kFloat)>;
+using MulInt32hf =
+    xpu::ElementwiseCompute<int, xpu::MulFunctor<int>, PRECISION(kFP16)>;
+
 using MulInt64 = xpu::ElementwiseCompute<int64_t,
                                          xpu::MulFunctor<int64_t>,
                                          PRECISION(kFloat)>;
@@ -477,6 +483,18 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_mul, kXPU, kFloat, kNCHW, MulInt32, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_mul, kXPU, kFP16, kNCHW, MulInt32hf, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_mul, kXPU, kFloat, kNCHW, MulInt64, int64)
