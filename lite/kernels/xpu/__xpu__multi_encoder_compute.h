@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <string>
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/kernel.h"
@@ -64,7 +65,8 @@ class XPUMultiEncoderCompute
   void prepare_weight_max(bool per_channel,
                           const std::vector<lite::Tensor *> &weight_max,
                           int max_ptr_len,
-                          std::vector<const float *> &max_xpu_ptrs);
+                          std::vector<const float *> &max_xpu_ptrs,
+                          const std::vector<std::string> &quant_types);
   template <typename T, typename TW, typename TGEMM>
   void run_encoder(const T *in, T *out);
 };
