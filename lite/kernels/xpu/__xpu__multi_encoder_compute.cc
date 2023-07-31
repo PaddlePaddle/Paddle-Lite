@@ -101,35 +101,44 @@ void XPUMultiEncoderCompute::prepare_weight_max(
     bool per_channel,
     const std::vector<lite::Tensor*>& weight_max,
     int max_ptr_len,
-    std::vector<const float*>& max_xpu_ptrs) {
+    std::vector<const float*>& max_xpu_ptrs,
+    const std::vector<std::string>& quant_types) {
   int max_value_num = 0;
-  for (auto max_tensor : weight_max) {
-    max_value_num += max_tensor->numel();
+  // weight_max per mul:
+  // per_channel quant: 1 * numel()
+  // per_tensor quant: max_ptr_len * numel()
+  // not_quantized/skip quant : max_ptr_len * numel()
+  for (int i = 0; i < weight_max.size(); ++i) {
+    VLOG(6) << "quant_types[" << i << "] is " << quant_types[i];
+    int index_mapping = (i / 6) * 8 + i % 6;
+    if (per_channel && quant_types[index_mapping] != "not_quantized") {
+      max_value_num += weight_max[i]->numel();
+    } else {
+      CHECK_EQ(weight_max[i]->numel(), 1);
+      max_value_num += weight_max[i]->numel() * max_ptr_len;
+    }
   }
   VLOG(3) << "Total weight max value number: " << max_value_num;
-
-  if (!per_channel) {
-    max_value_num *= max_ptr_len;
-  }
   weight_max_guard_ =
       TargetWrapperXPU::MallocScratchPad(max_value_num * sizeof(float));
   float* weight_max_ptr = reinterpret_cast<float*>(weight_max_guard_->addr_);
 
   int offset = 0;
-  for (auto max_tensor : weight_max) {
+  for (int i = 0; i < weight_max.size(); ++i) {
     float* cur_weight_max_ptr = weight_max_ptr + offset;
-    auto len = max_tensor->numel();
-    VLOG(6) << "weight max value: " << max_tensor->data<float>()[0] << " "
-            << max_tensor->data<float>()[len - 1];
-    if (per_channel) {
+    auto len = weight_max[i]->numel();
+    VLOG(6) << "weight max value: " << weight_max[i]->data<float>()[0] << " "
+            << weight_max[i]->data<float>()[len - 1];
+    int index_mapping = (i / 6) * 8 + i % 6;
+    if (per_channel && quant_types[index_mapping] != "not_quantized") {
       lite::TargetWrapperXPU::MemcpySync(cur_weight_max_ptr,
-                                         max_tensor->raw_data(),
+                                         weight_max[i]->raw_data(),
                                          sizeof(float) * len,
                                          IoDirection::HtoD);
       max_xpu_ptrs.push_back(cur_weight_max_ptr);
       offset += len;
     } else {
-      std::vector<float> cpu_max(max_ptr_len, max_tensor->data<float>()[0]);
+      std::vector<float> cpu_max(max_ptr_len, weight_max[i]->data<float>()[0]);
       lite::TargetWrapperXPU::MemcpySync(cur_weight_max_ptr,
                                          cpu_max.data(),
                                          sizeof(float) * max_ptr_len,
@@ -197,8 +206,11 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   }
 
   const int XPU_QUANT_SCALE_NUM = ctx.GetRawContext()->max_ptr_size();
-  prepare_weight_max(
-      param.per_channel, param.weight_max, XPU_QUANT_SCALE_NUM, fc_weight_max_);
+  prepare_weight_max(param.per_channel,
+                     param.weight_max,
+                     XPU_QUANT_SCALE_NUM,
+                     fc_weight_max_,
+                     param.quant_types);
   // prepare quant max, mul&matmul input/output max
   prepare_quant_max(
       param.input_max, n_layers, XPU_QUANT_SCALE_NUM, fc_input_max_);
