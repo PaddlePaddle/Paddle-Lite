@@ -100,6 +100,7 @@ void XPUSpatialTransformerResBlockCompute<InType, PType>::PrepareForRun() {
   // achieve params from model
   resblock_param_.conv_fix = param.conv_fix;
   resblock_param_.has_silu_fc_input = param.has_silu_fc_input;
+  resblock_param_.include_silu = param.include_silu;
   resblock_param_.conv_groups = param.groups;
   resblock_param_.kernel_dims = param.filter_dims;
   resblock_param_.dilations = param.dilations;

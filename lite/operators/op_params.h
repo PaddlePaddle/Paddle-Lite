@@ -1823,6 +1823,7 @@ struct XPUSpatialTransformerResBlockParam : ParamBase {
   std::vector<float> gn_eps{};
   bool conv_fix{};
   bool has_silu_fc_input{true};
+  bool include_silu{true};
 };
 
 struct XPUUpDecoderParam : ParamBase {
