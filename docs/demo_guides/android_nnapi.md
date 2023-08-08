@@ -14,6 +14,7 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
 ### 已支持的 Paddle 模型
 
 #### 模型
+
 - [mobilenet_v1_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz)
 - [resnet50_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/resnet50_int8_224_per_layer.tar.gz)
 - [ssd_mobilenet_v1_relu_int8_300_per_layer](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_int8_300_per_layer.tar.gz)
@@ -22,37 +23,46 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
 - [ssd_mobilenet_v1_relu_voc_fp32_300](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz)
 
 #### 性能
-- 测试环境
-  - 编译环境
-    - Ubuntu 16.04，NDK-r17c with GCC for Android armeabi-v7a
 
+- 测试环境
+  
+  - 编译环境
+    
+    - Ubuntu 16.04，NDK-r17c with GCC for Android armeabi-v7a
+  
   - 硬件环境
+    
     - 小米10
       - 高通 骁龙865
       - Android SDK version 29
     - 华为P40pro
       - 华为 Kirin990-5G
       - Android SDK version 29
+    - 紫光展锐T820参考设计
+      - 紫光展锐 T820
+      - Android SDK version 33
 
 - 测试方法
+  
   - warmup=1，repeats=5，统计平均时间，单位是 ms
   - 线程数为 1，`paddle::lite_api::PowerMode CPU_POWER_MODE` 设置为 ` paddle::lite_api::PowerMode::LITE_POWER_HIGH`
   - 分类模型的输入图像维度是{1, 3, 224, 224}，检测模型的维度是{1, 3, 300, 300}
   - 华为 Kirin NPU 对 Android NNAPI 的支持程度较高，但是由于其量化方式与 Paddle 有较大出入，量化模型无法发挥 NPU 加速特性，所以 fp32 模型性能较好
   - 高通 骁龙系列芯片（855 以后），DSP，GPU 等 IP 支持 Android NNAPI，但其 HTA|HTP 暂不支持 Android NNAPI
-  - 不同 SoC 对 Android NNAPI 的支持程度不同，如下仅举例华为 Kirin990-5G 和 高通 骁龙865
+  - 紫光展锐的T820/T760的VDSP，GPU，NPU等 IP 支持 Android NNAPI;  其中NPU对NNAPI量化模型支持程度较高，所以int8位模型的性能较好
+  - 不同 SoC 对 Android NNAPI 的支持程度不同，如下举例华为 Kirin990-5G 、高通 骁龙865和紫光展锐T820
 
 - 测试结果
 
-  |模型 |||
-  |---|---|---|
-  |  |骁龙865(ms) | Kirin990-5G(ms) |
-  |mobilenet_v1_int8_224_per_layer|  10.109|  47.903|
-  |resnet50_int8_224_per_layer|  18.622|  354.566|
-  |ssd_mobilenet_v1_relu_voc_int8_300_per_layer|  23.214|  68.312|
-  |mobilenet_v1_fp32_224|  12.250|  3.563|
-  |resnet50_fp32_224|  44.903|  8.762|
-  |ssd_mobilenet_v1_relu_voc_fp32_300|  23.112|  8.647|
+  |模型 ||||
+  |---|---|---|---|
+  |  | 骁龙865(ms) | Kirin990-5G(ms) | 紫光展锐T820(ms) |
+  |mobilenet_v1_int8_224_per_layer|  10.109|  47.903|  7.371|
+  |resnet50_int8_224_per_layer|  18.622|  354.566|  12.156|
+  |ssd_mobilenet_v1_relu_voc_int8_300_per_layer|  23.214|  68.312|  17.368|
+  |mobilenet_v1_fp32_224|  12.250|  3.563|  20.699|
+  |resnet50_fp32_224|  44.903|  8.762|  95.993|
+  |ssd_mobilenet_v1_relu_voc_fp32_300|  23.112|  8.647|  36.312|
 
 ### 已支持（或部分支持）的 Paddle 算子
 
@@ -73,7 +83,7 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
 ### 运行图像分类示例程序
 
 - 下载 Paddle Lite 通用示例程序[ PaddleLite-generic-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后目录主体结构如下：
-
+  
   ```shell
     - PaddleLite-generic-demo
       - image_classification_demo
@@ -117,8 +127,9 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
   ```
 
 - Android shell 端的示例程序
+  
   - 按照以下命令分别运行转换后的 ARM CPU 模型和 Android NNAPI 模型，比较它们的性能和结果；
-
+    
     ```shell
     注意：
     1）`run_with_adb.sh` 不能在 Docker 环境执行，否则可能无法找到设备，也不能在设备上运行。
@@ -130,7 +141,7 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
     在 ARM CPU 上运行 mobilenetv1 全量化模型
     $ cd PaddleLite-generic-demo/image_classification_demo/shell
     $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a cpu d3869b25
-
+    
       Top1 Egyptian cat - 0.502124
       Top2 tabby, tabby cat - 0.413927
       Top3 tiger cat - 0.071703
@@ -139,11 +150,11 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
       Preprocess time: 4.948000 ms, avg 4.948000 ms, max 4.948000 ms, min 4.948000 ms
       Prediction time: 34.962000 ms, avg 34.962000 ms, max 34.962000 ms, min 34.962000 ms
       Postprocess time: 4.715000 ms, avg 4.715000 ms, max 4.715000 ms, min 4.715000 ms
-
+    
     基于 Android NNAPI 上运行 mobilenetv1 全量化模型
     $ cd PaddleLite-generic-demo/image_classification_demo/shell
     $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer imagenet_224.txt test android armeabi-v7a android_nnapi d3869b25
-
+    
       Top1 Egyptian cat - 0.497230
       Top2 tabby, tabby cat - 0.403634
       Top3 tiger cat - 0.076047
@@ -155,7 +166,9 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
     ```
 
 - 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/inputs` 目录下，同时将图片文件名添加到 `PaddleLite-generic-demo/image_classification_demo/assets/datasets/test/list.txt` 中；
+
 - 重新编译示例程序：
+  
   ```shell
   注意：
   1）请根据 `buid.sh` 配置正确的参数值。
@@ -171,13 +184,15 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
 ### 更新模型
 
 - 通过 Paddle 训练，或 X2Paddle 转换得到 MobileNetv1 foat32 模型[ mobilenet_v1_fp32_224_fluid ](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
-- 如果需要使用量化模型，则参考[模型量化](../user_guides/quant_aware)使用 PaddleSlim 对 `float32` 模型进行量化（注意：由于 DSP 只支持量化 OP，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1 模型[ mobilenet_v1_int8_224_per_layer ](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz)；
-- 参考[模型转化方法](../user_guides/model_optimize_tool)，利用 opt 工具转换生成 Android NNAPI 模型，仅需要将 `valid_targets` 设置为 andriod_nnapi, arm 即可。
 
+- 如果需要使用量化模型，则参考[模型量化](../user_guides/quant_aware)使用 PaddleSlim 对 `float32` 模型进行量化（注意：由于 DSP 只支持量化 OP，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1 模型[ mobilenet_v1_int8_224_per_layer ](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz)；
+
+- 参考[模型转化方法](../user_guides/model_optimize_tool)，利用 opt 工具转换生成 Android NNAPI 模型，仅需要将 `valid_targets` 设置为 andriod_nnapi, arm 即可。
+  
   ```shell
   注意：
   1）PaddleLite-generic-demo 中已经包含了类似 opt 工具优化生成 nb 模型的功能。
-
+  
   $ cd PaddleLite-generic-demo/image_classification_demo/assets/models
   $ ./opt --model_dir=mobilenet_v1_int8_224_per_layer \
       --optimize_out_type=naive_buffer \
@@ -190,7 +205,7 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
 ### 更新支持 Android NNAPI 的 Paddle Lite 库
 
 - 下载 Paddle Lite 源码；
-
+  
   ```shell
   $ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
   $ cd Paddle-Lite
@@ -198,19 +213,23 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
   ```
 
 - 编译并生成 `PaddleLite+Android NNAPI` for armv8 and armv7 的部署库
-
+  
   - For armv8
+    
     - tiny_publish 编译方式
+      
       ```shell
       $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_cv=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_android_nnapi=ON
       ```
-
+    
     - full_publish 编译方式
+      
       ```shell
       $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_cv=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_android_nnapi=ON full_publish
       ```
-
+    
     - 替换头文件和库
+      
       ```shell
       替换 include 目录
       $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/include/
@@ -227,32 +246,36 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
       替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
       ```
-
+  
   - For armv7
+    
     - tiny_publis h编译方式
+      
       ```shell
       $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --android_stl=c++_shared --with_extra=ON --with_cv=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_android_nnapi=ON
       ```
     
     - full_publish 编译方式
+      
       ```shell
       $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --android_stl=c++_shared --with_extra=ON --with_cv=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_android_nnapi=ON full_publish
       ```
-
+    
     - 替换头文件和库
+      
       ```shell
       替换 include 目录
       $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/include/
-
+      
       替换 NNAdapter 运行时库
       $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/android_nnapi/
-
+      
       替换 NNAdapter device HAL 库
       $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libandroid_nnapi.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/android_nnapi/
-
+      
       替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
-
+      
       替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
       ```
