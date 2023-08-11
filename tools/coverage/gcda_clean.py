@@ -55,9 +55,6 @@ def clean(pull_id):
             if gcda.endswith('.gcda'):
                 trimmed = parent
 
-                # convert paddle/fluid/imperative/CMakeFiles/layer.dir/layer.cc.gcda
-                # to paddle/fluid/imperative/layer.cc.gcda
-
                 if trimmed.endswith('.dir'):
                     trimmed = os.path.dirname(trimmed)
 

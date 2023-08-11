@@ -18,13 +18,9 @@ import paddleslim
 from typing import Any, Callable, Dict, List, Optional
 import numpy as np
 import paddle
-from paddle import fluid
-from paddle.fluid import core, framework
-from paddle.fluid.executor import global_scope
-from paddle.fluid.framework import (
+from paddle.framework import core
+from paddle.framework import (
     IrGraph,
-    IrNode,
-    Operator,
     OpProtoHolder,
     convert_np_dtype_to_dtype_, )
 from paddle.static.quantization import (
@@ -130,7 +126,7 @@ def create_fake_model(program_config):
     '''  Create a Paddle model(in memory) according to the given config.  '''
     paddle.enable_static()
     main_program_desc = core.ProgramDesc()
-    util_program = fluid.Program()
+    util_program = paddle.static.Program()
     main_block_desc = main_program_desc.block(0)
 
     var_desc = main_block_desc.var(b"feed")
@@ -213,15 +209,15 @@ def create_fake_model(program_config):
         op_desc._set_attr("col", index)
 
     main_program_desc._set_version()
-    paddle.fluid.core.save_op_version_info(main_program_desc)
+    core.save_op_version_info(main_program_desc)
 
     model = main_program_desc.serialize_to_string()
 
     util_program._sync_with_cpp()
-    place = fluid.CPUPlace()
-    executor = fluid.Executor(place)
-    scope = fluid.Scope()
-    with fluid.scope_guard(scope):
+    place = paddle.CPUPlace()
+    executor = paddle.static.Executor(place)
+    scope = paddle.static.Scope()
+    with paddle.static.scope_guard(scope):
         executor.run(util_program)
         params = scope.find_var("out_var_0").get_bytes()
     return model, params

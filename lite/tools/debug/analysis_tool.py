@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 '''
-Fluid model analysis tools 
+Model analysis tools 
 '''
 
 from __future__ import absolute_import
@@ -34,9 +34,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 import numpy as np
-import paddle.fluid as fluid
-from paddle.fluid import debugger
-from paddle.fluid import core
+import paddle
+from paddle.distributed.fleet.base.util_factory import draw_block_graphviz
+from paddle.framework import core
 
 # Command arguments
 parser = argparse.ArgumentParser()
@@ -69,12 +69,12 @@ parser.add_argument(
     "--output_tensor",
     default=0,
     type=int,
-    help="dump fluid runntime tensors or not")
+    help="dump runntime tensors or not")
 parser.add_argument(
     "--tensor_output_file",
     default="./tensor_output_py",
     type=str,
-    help="dump fluid runntime tensors filepath")
+    help="dump runntime tensors filepath")
 parser.add_argument(
     "--tensor_output_length",
     default=-1,
@@ -109,16 +109,16 @@ def load_file(filename, delim=None):
             yield line
 
 
-class FluidModelExecutor(object):
+class ModelExecutor(object):
     """
-    A fluid inference model executeor
+    A inference model executor
     """
 
     def __init__(self, model_dir, input_file):
         self.model_dir = model_dir
-        self.place = fluid.CPUPlace()
-        self.exe = fluid.Executor(self.place)
-        self.scope = fluid.core.Scope()
+        self.place = paddle.CPUPlace()
+        self.exe = paddle.static.Executor(self.place)
+        self.scope = paddle.static.Scope()
         self.input_data = self._load_input_file(input_file)
 
         self.program, self.feed_target_names, self.fetch_targets = self._load_inference_model(
@@ -132,7 +132,7 @@ class FluidModelExecutor(object):
         """
         Get variables' tensor in var_list
         """
-        with fluid.scope_guard(self.scope):
+        with paddle.static.scope_guard(self.scope):
             global_block = self.program.global_block()
             feed_list = self._prepare_feed_data(global_block,
                                                 self.feed_target_names)
@@ -155,8 +155,7 @@ class FluidModelExecutor(object):
         """
         dot_path = os.path.join([output_path, filename + '.dot'])
         pdf_path = os.path.join([output_path, filename + '.pdf'])
-        debugger.draw_block_graphviz(
-            self.program.global_block(), path=dot_path)
+        draw_block_graphviz(self.program.global_block(), path=dot_path)
         cmd = ["dot", "-Tpdf", dot_path, "-o", pdf_path]
         subprocess.Popen(
             cmd,
@@ -210,15 +209,16 @@ class FluidModelExecutor(object):
         return input_data
 
     def _load_inference_model(self):
-        with fluid.scope_guard(self.scope):
+        with paddle.static.scope_guard(self.scope):
             model_abs_path = os.path.join(self.model_dir, 'model')
             param_abs_path = os.path.join(self.model_dir, 'params')
             if os.path.exists(model_abs_path) and os.path.exists(
                     param_abs_path):
-                return fluid.io.load_inference_model(self.model_dir, exe,
-                                                     'model', 'params')
+                return paddle.static.load_inference_model(self.model_dir, exe,
+                                                          'model', 'params')
             else:
-                return fluid.io.load_inference_model(self.model_dir, self.exe)
+                return paddle.static.load_inference_model(self.model_dir,
+                                                          self.exe)
 
     def _fetch_tmp_vars(self, block, var_names_list=None):
         fetch_var = block.var('fetch')
@@ -269,7 +269,7 @@ class FluidModelExecutor(object):
 
 class Analyser(object):
     """
-    A FLuid model analysis tool
+    A model analysis tool
     """
 
     def __init__(self, args):
@@ -277,8 +277,8 @@ class Analyser(object):
         self.tensors = OrderedDict()
         self.topo = {}
         self.input = []
-        logger.info("Loading fluid inference model %s ..." % args.model_dir)
-        self.predictor = FluidModelExecutor(args.model_dir, args.input_file)
+        logger.info("Loading inference model %s ..." % args.model_dir)
+        self.predictor = ModelExecutor(args.model_dir, args.input_file)
 
     def analysis(self):
         """
@@ -336,7 +336,7 @@ class Analyser(object):
               so we can find the first ops (may be one of them) with error results
         """
         assert len(self.tensors) == len(results), \
-                "FLuid output tensor'size mismatch with `tensor_file`"
+                "Output tensor'size mismatch with `tensor_file`"
         diff_vars = []
         flag = False
         for k in self.tensors:
@@ -392,8 +392,7 @@ class Analyser(object):
                     fd.write(
                         "--------------- Tensor File info ---------------\n")
                     output_param_info(inputs, outputs, self.tensors, fd)
-                    fd.write(
-                        "--------------- Fluid Tensor info ---------------\n")
+                    fd.write("--------------- Tensor info ---------------\n")
                     output_param_info(inputs, outputs, results, fd)
                     fd.write("\n\n")
 
