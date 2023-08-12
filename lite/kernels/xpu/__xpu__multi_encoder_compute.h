@@ -45,6 +45,7 @@ class XPUMultiEncoderCompute
   std::vector<const float *> fc_weight_max_;
   std::vector<const float *> fc_input_max_;
   std::vector<const float *> roformer_embedding_;
+  std::vector<const float *> smooth_quant_scale_;
   std::vector<xdnn::QuantType> quant_types_;
   XPUScratchPadGuard weight_max_guard_;
   XPUScratchPadGuard input_max_guard_;
@@ -54,6 +55,7 @@ class XPUMultiEncoderCompute
   int slice_idx = -1;
   int relative_type_ = 0;
   bool local_quant_ = false;
+  bool is_smooth_quant_ = false;
 
   template <typename T>
   std::vector<const T *> *get_weight();

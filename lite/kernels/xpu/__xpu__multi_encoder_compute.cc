@@ -181,6 +181,13 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   for (auto* ln_bias : param.ln_bias) {
     arg_ln_bias_.push_back(ln_bias->data<float>());
   }
+  // prepare smooth_quant_scale
+  is_smooth_quant_ = param.is_smooth_quant;
+  if (is_smooth_quant_) {
+    for (auto* scale : param.smooth_quant_scale) {
+      smooth_quant_scale_.push_back(scale->data<float>());
+    }
+  }
   relative_type_ = param.relative_type;
   // prepare roformer embedding
   if (relative_type_ == 1) {
@@ -266,6 +273,11 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       param.norm_before, /*is_pre_norm*/
                                       param.per_channel);
     qkv_attn_param.quant_type_.assign(quant_types_.begin(), quant_types_.end());
+    if (is_smooth_quant_) {
+      qkv_attn_param.is_smooth_quant = true;
+      qkv_attn_param.smooth_scale.assign(smooth_quant_scale_.begin(),
+                                         smooth_quant_scale_.end());
+    }
     if (relative_type_ == 1) {
       qkv_attn_param.relative_type = relative_type_;
       qkv_attn_param.max_pos_len = param.max_pos_len;
@@ -310,6 +322,11 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       param.norm_before, /*is_pre_norm*/
                                       param.per_channel);
     qkv_attn_param.quant_type_.assign(quant_types_.begin(), quant_types_.end());
+    if (is_smooth_quant_) {
+      qkv_attn_param.is_smooth_quant = true;
+      qkv_attn_param.smooth_scale.assign(smooth_quant_scale_.begin(),
+                                         smooth_quant_scale_.end());
+    }
     if (relative_type_ == 1) {
       qkv_attn_param.relative_type = relative_type_;
       qkv_attn_param.max_pos_len = param.max_pos_len;
@@ -356,6 +373,11 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       param.norm_before,
                                       param.per_channel);
     qkv_attn_param.quant_type_.assign(quant_types_.begin(), quant_types_.end());
+    if (is_smooth_quant_) {
+      qkv_attn_param.is_smooth_quant = true;
+      qkv_attn_param.smooth_scale.assign(smooth_quant_scale_.begin(),
+                                         smooth_quant_scale_.end());
+    }
     if (relative_type_ == 1) {
       qkv_attn_param.relative_type = relative_type_;
       qkv_attn_param.max_pos_len = param.max_pos_len;
@@ -474,6 +496,7 @@ REGISTER_LITE_KERNEL(__xpu__multi_encoder,
     .BindInput("LNScale", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("LNBias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("RoformerEmbedding", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindInput("SmoothQuantScaleWeight", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Mask", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
