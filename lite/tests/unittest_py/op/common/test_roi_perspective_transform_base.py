@@ -25,7 +25,6 @@ import hypothesis.strategies as st
 from hypothesis import assume
 
 
-# https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/fluid/layers/detection.py
 def sample_program_configs(draw):
     in_shape = draw(
         st.lists(

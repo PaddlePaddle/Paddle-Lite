@@ -79,7 +79,7 @@ def ratio_diff(arrA, arrB):
 
 def compare_output():
     """
-    compare result with fluid 
+    compare result
     """
     lite_output_path = "/".join(os.getcwd().split('/')[:-2])
     arm_abi = ["armv8, armv7"]
@@ -110,7 +110,7 @@ def compare_output():
                         if "out[" in line:
                             w.write(((line.split(":"))[1]))
                     w.close()
-                    paddle_output_path = lite_output_path + "/airank_fluid_output" + "/fluid_output_fp32_all1"
+                    paddle_output_path = lite_output_path + "/airank_output" + "/output_fp32_all1"
                     paddle_txt = paddle_output_path + "/" + (
                         (output_txt.split("."))[0]) + "/" + output_txt
                     lite_results = list()
