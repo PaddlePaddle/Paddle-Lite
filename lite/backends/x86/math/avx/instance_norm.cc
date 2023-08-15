@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/backends/x86/math/avx/instance_norm.h"
+
 #include <immintrin.h>
+
 #include <cmath>
 
 namespace paddle {
@@ -29,9 +31,7 @@ void instance_norm(const float* in,
                    const int width,
                    const float epsilon,
                    const float* scale,
-                   const float* bias,
-                   float* saved_mean,
-                   float* saved_variance) {
+                   const float* bias) {
   int nc = n * c;
   int spatial_size = height * width;
 
@@ -117,19 +117,15 @@ void instance_norm(const float* in,
     float variance = (summ_spatial - mean * mean * spatial_size) / spatial_size;
     float std = 1.f / sqrtf(variance + epsilon);
 
-    saved_mean[i] = mean;
-    saved_variance[i] = std;
-  }
-// compute instance_norm result: out = scale * (in - mean) / std + bias
-#pragma omp parallel for
-  for (int i = 0; i < nc; ++i) {
+    // saved_mean[i] = mean;
+    // saved_variance[i] = std;
+
     const float* in_p = in + i * spatial_size;
     float* out_p = out + i * spatial_size;
     int j = spatial_size;
-    const float sstd_val =
-        scale == nullptr ? saved_variance[i] : scale[i % c] * saved_variance[i];
+    const float sstd_val = scale == nullptr ? std : scale[i % c] * std;
     const float bias_val = bias == nullptr ? 0. : bias[i % c];
-    const float mean_val = saved_mean[i];
+    const float mean_val = mean;
     const __m128 vsstd = _mm_set1_ps(sstd_val);
     const __m128 vbias = _mm_set1_ps(bias_val);
     const __m128 vmean = _mm_set1_ps(mean_val);
@@ -165,6 +161,11 @@ void instance_norm(const float* in,
       out_p++;
     }
   }
+  // // compute instance_norm result: out = scale * (in - mean) / std + bias
+  // #pragma omp parallel for
+  //   for (int i = 0; i < nc; ++i) {
+
+  //   }
 }
 
 }  // namespace math

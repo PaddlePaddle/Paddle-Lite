@@ -26,8 +26,8 @@ namespace operators {
 bool InstanceNormOp::CheckShape() const {
   CHECK_OR_FALSE(param_.x);
   CHECK_OR_FALSE(param_.out);
-  CHECK_OR_FALSE(param_.saved_mean);
-  CHECK_OR_FALSE(param_.saved_variance);
+  // CHECK_OR_FALSE(param_.saved_mean);
+  // CHECK_OR_FALSE(param_.saved_variance);
 
   auto x_dims = param_.x->dims();
   CHECK(x_dims.size() >= 2 && x_dims.size() <= 5)
@@ -51,8 +51,8 @@ bool InstanceNormOp::InferShapeImpl() const {
   auto x_dims = param_.x->dims();
   int64_t batch_size = x_dims[0];
   int64_t channel_size = x_dims[1];
-  param_.saved_mean->Resize({batch_size * channel_size});
-  param_.saved_variance->Resize({batch_size * channel_size});
+  // param_.saved_mean->Resize({batch_size * channel_size});
+  // param_.saved_variance->Resize({batch_size * channel_size});
   param_.out->Resize(x_dims);
   return true;
 }
@@ -62,8 +62,8 @@ bool InstanceNormOp::AttachImpl(const cpp::OpDesc& op_desc,
   AttachInput(op_desc, scope, "X", false /*is_dispensable*/, &param_.x);
   AttachInput(op_desc, scope, "Scale", true, &param_.scale);
   AttachInput(op_desc, scope, "Bias", true, &param_.bias);
-  AttachOutput(op_desc, scope, "SavedMean", false, &param_.saved_mean);
-  AttachOutput(op_desc, scope, "SavedVariance", false, &param_.saved_variance);
+  AttachOutput(op_desc, scope, "SavedMean", true, &param_.saved_mean);
+  AttachOutput(op_desc, scope, "SavedVariance", true, &param_.saved_variance);
   AttachOutput(op_desc, scope, "Y", false, &param_.out);
   param_.epsilon = op_desc.GetAttr<float>("epsilon");
   if (op_desc.HasAttr("activation_type")) {

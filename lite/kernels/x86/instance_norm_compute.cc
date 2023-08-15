@@ -34,8 +34,8 @@ void InstanceNormCompute::Run() {
   const float* bias =
       param.bias == nullptr ? nullptr : param.bias->data<float>();
   float* out = param.out->mutable_data<float>();
-  float* saved_mean = param.saved_mean->mutable_data<float>();
-  float* saved_variance = param.saved_variance->mutable_data<float>();
+  // float* saved_mean = param.saved_mean->mutable_data<float>();
+  // float* saved_variance = param.saved_variance->mutable_data<float>();
   float epsilon = param.epsilon;
 
   int n = param.x->dims()[0];
@@ -54,9 +54,7 @@ void InstanceNormCompute::Run() {
                                  width,
                                  epsilon,
                                  scale,
-                                 bias,
-                                 saved_mean,
-                                 saved_variance);
+                                 bias);
 }
 
 }  // namespace x86
