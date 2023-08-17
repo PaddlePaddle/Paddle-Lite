@@ -14,6 +14,7 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
 ### 已支持的 Paddle 模型
 
 #### 模型
+
 - [mobilenet_v1_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz)
 - [resnet50_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/resnet50_int8_224_per_layer.tar.gz)
 - [ssd_mobilenet_v1_relu_int8_300_per_layer](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_int8_300_per_layer.tar.gz)
@@ -22,37 +23,46 @@ Paddle Lite 已支持 Android NNAPI 的预测部署。
 - [ssd_mobilenet_v1_relu_voc_fp32_300](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz)
 
 #### 性能
-- 测试环境
-  - 编译环境
-    - Ubuntu 16.04，NDK-r17c with GCC for Android armeabi-v7a
 
+- 测试环境
+  
+  - 编译环境
+    
+    - Ubuntu 16.04，NDK-r17c with GCC for Android armeabi-v7a
+  
   - 硬件环境
+    
     - 小米10
       - 高通 骁龙865
       - Android SDK version 29
     - 华为P40pro
       - 华为 Kirin990-5G
       - Android SDK version 29
+    - 紫光展锐 T820 参考设计
+      - 紫光展锐 T820
+      - Android SDK version 33
 
 - 测试方法
+  
   - warmup=1，repeats=5，统计平均时间，单位是 ms
   - 线程数为 1，`paddle::lite_api::PowerMode CPU_POWER_MODE` 设置为 ` paddle::lite_api::PowerMode::LITE_POWER_HIGH`
   - 分类模型的输入图像维度是{1, 3, 224, 224}，检测模型的维度是{1, 3, 300, 300}
   - 华为 Kirin NPU 对 Android NNAPI 的支持程度较高，但是由于其量化方式与 Paddle 有较大出入，量化模型无法发挥 NPU 加速特性，所以 fp32 模型性能较好
   - 高通 骁龙系列芯片（855 以后），DSP，GPU 等 IP 支持 Android NNAPI，但其 HTA|HTP 暂不支持 Android NNAPI
-  - 不同 SoC 对 Android NNAPI 的支持程度不同，如下仅举例华为 Kirin990-5G 和 高通 骁龙865
+  - 紫光展锐的 T820/T760 的 VDSP，GPU，NPU 等 IP 支持 Android NNAPI，其中 NPU 对 Android NNAPI 量化模型支持程度较高，所以 int8 模型的性能较好
+  - 不同 SoC 对 Android NNAPI 的支持程度不同，如下举例华为 Kirin990-5G 、高通 骁龙865 和紫光展锐 T820
 
 - 测试结果
 
-  |模型 |||
-  |---|---|---|
-  |  |骁龙865(ms) | Kirin990-5G(ms) |
-  |mobilenet_v1_int8_224_per_layer|  10.109|  47.903|
-  |resnet50_int8_224_per_layer|  18.622|  354.566|
-  |ssd_mobilenet_v1_relu_voc_int8_300_per_layer|  23.214|  68.312|
-  |mobilenet_v1_fp32_224|  12.250|  3.563|
-  |resnet50_fp32_224|  44.903|  8.762|
-  |ssd_mobilenet_v1_relu_voc_fp32_300|  23.112|  8.647|
+  |模型 ||||
+  |---|---|---|---|
+  |  | 骁龙865(ms) | Kirin990-5G(ms) | 紫光展锐T820(ms) |
+  |mobilenet_v1_int8_224_per_layer|  10.109|  47.903|  7.371|
+  |resnet50_int8_224_per_layer|  18.622|  354.566|  12.156|
+  |ssd_mobilenet_v1_relu_voc_int8_300_per_layer|  23.214|  68.312|  17.368|
+  |mobilenet_v1_fp32_224|  12.250|  3.563|  20.699|
+  |resnet50_fp32_224|  44.903|  8.762|  95.993|
+  |ssd_mobilenet_v1_relu_voc_fp32_300|  23.112|  8.647|  36.312|
 
 ### 已支持（或部分支持）的 Paddle 算子
 
