@@ -1992,6 +1992,12 @@ class XPUMultiEncoderFuser {
                         skip_quant_op);
         }
       }
+      auto iter = arg_map.find("SmoothQuantScaleWeight");
+      if (iter != arg_map.end()) {
+        auto& smoothquant_scale_weight_names =
+            arg_map["SmoothQuantScaleWeight"];
+        convert_scale_weight(scope, smoothquant_scale_weight_names);
+      }
 
       auto& fc_bias_names = arg_map["FCBias"];
       for (size_t i = 0; !is_qkv_already_fusion_ && enable_qkv_fusion &&
@@ -2102,6 +2108,31 @@ class XPUMultiEncoderFuser {
   std::string fc_precision_;
   bool adaptive_seqlen_;
   bool is_qkv_already_fusion_;
+
+  // convert all smoothquant_scale_weight fp32 to fp16
+  void convert_scale_weight(
+      Scope* scope,
+      const std::vector<std::string>& smoothquant_scale_weight_names) {
+    int weight_num = smoothquant_scale_weight_names.size();
+    std::vector<Tensor*> weight_tensor_vec(weight_num, nullptr);
+    VLOG(6) << "Convert scale weight num: " << weight_num;
+    int weight_len = 0;
+    for (int i = 0; i < weight_num; ++i) {
+      weight_tensor_vec[i] =
+          scope->FindMutableTensor(smoothquant_scale_weight_names[i]);
+      CHECK(weight_tensor_vec[i] != nullptr);
+      weight_len = weight_tensor_vec[i]->numel();
+      VLOG(6) << "Convert scale weight dim: " << weight_len;
+      std::unique_ptr<float16[]> weight_fp16(new float16[weight_len]);
+      paddle::lite::xpu::math::ConvertFP32ToFP16(
+          weight_tensor_vec[i]->mutable_data<float>(),
+          weight_fp16.get(),
+          weight_len);
+      memcpy(weight_tensor_vec[i]->mutable_data<float16>(),
+             weight_fp16.get(),
+             weight_len * sizeof(float16));
+    }
+  }
   // to transpose + quant + concat the weight inplace
   void update_weight(Scope* scope,
                      const std::vector<std::string>& fc_weight_names,
@@ -2322,6 +2353,12 @@ class XPUMultiEncoderFusePass : public ProgramPass {
                     for (auto relative_type : relative_embedding_type) {
                       for (auto mask : with_mask) {
                         for (auto smooth_quant : with_smooth_quant) {
+                          if (norm_before && smooth_quant) {
+                            // norm_before && smooth_quant and
+                            // norm_before && !smooth_quant are same pattern
+                            // so remove one
+                            continue;
+                          }
                           fusion::XPUSingleEncoderFuser single_encoder_fuser(
                               act_type,
                               input_pos,

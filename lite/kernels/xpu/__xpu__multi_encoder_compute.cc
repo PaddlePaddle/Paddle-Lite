@@ -21,10 +21,10 @@ namespace xpu {
 
 template <typename T>
 static std::vector<const T*> prepare_weight(
-    const std::vector<lite::Tensor*>& fc_weight) {
+    const std::vector<lite::Tensor*>& weight) {
   std::vector<const T*> result;
-  for (auto* weight : fc_weight) {
-    result.push_back(reinterpret_cast<const T*>(weight->data<float>()));
+  for (auto* w : weight) {
+    result.push_back(reinterpret_cast<const T*>(w->data<float>()));
   }
   return result;
 }
@@ -184,9 +184,7 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   // prepare smooth_quant_scale
   is_smooth_quant_ = param.is_smooth_quant;
   if (is_smooth_quant_) {
-    for (auto* scale : param.smooth_quant_scale) {
-      smooth_quant_scale_.push_back(scale->data<float>());
-    }
+    smooth_quant_scale_ = prepare_weight<float16>(param.smooth_quant_scale);
   }
   relative_type_ = param.relative_type;
   // prepare roformer embedding

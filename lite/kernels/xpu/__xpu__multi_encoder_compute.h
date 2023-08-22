@@ -45,7 +45,7 @@ class XPUMultiEncoderCompute
   std::vector<const float *> fc_weight_max_;
   std::vector<const float *> fc_input_max_;
   std::vector<const float *> roformer_embedding_;
-  std::vector<const float *> smooth_quant_scale_;
+  std::vector<const float16 *> smooth_quant_scale_;
   std::vector<xdnn::QuantType> quant_types_;
   XPUScratchPadGuard weight_max_guard_;
   XPUScratchPadGuard input_max_guard_;
