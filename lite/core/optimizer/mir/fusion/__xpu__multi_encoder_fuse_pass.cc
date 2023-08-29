@@ -2113,6 +2113,7 @@ class XPUMultiEncoderFuser {
   void convert_scale_weight(
       Scope* scope,
       const std::vector<std::string>& smoothquant_scale_weight_names) {
+#ifdef LITE_WITH_XPU
     int weight_num = smoothquant_scale_weight_names.size();
     std::vector<Tensor*> weight_tensor_vec(weight_num, nullptr);
     VLOG(6) << "Convert scale weight num: " << weight_num;
@@ -2132,6 +2133,7 @@ class XPUMultiEncoderFuser {
              weight_fp16.get(),
              weight_len * sizeof(float16));
     }
+#endif
   }
   // to transpose + quant + concat the weight inplace
   void update_weight(Scope* scope,
