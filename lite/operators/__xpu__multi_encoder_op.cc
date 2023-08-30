@@ -80,6 +80,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.output =
       scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
   param_.relative_type = op_desc.GetAttr<int>("relative_type");
+  param_.is_smooth_quant = op_desc.GetAttr<bool>("is_smooth_quant");
 
   param_.fc_weight.clear();
   for (auto& name : op_desc.Input("FCWeight")) {
@@ -107,6 +108,13 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
     for (auto& name : op_desc.Input("RoformerEmbedding")) {
       auto t = scope->FindMutableTensor(name);
       param_.roformer_embedding.push_back(t);
+    }
+  }
+  param_.smooth_quant_scale.clear();
+  if (param_.is_smooth_quant) {
+    for (auto& name : op_desc.Input("SmoothQuantScaleWeight")) {
+      auto t = scope->FindVar(name)->GetMutable<Tensor>();
+      param_.smooth_quant_scale.push_back(t);
     }
   }
 

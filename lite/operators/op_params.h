@@ -1773,6 +1773,7 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<lite::Tensor*> ln_scale;
   std::vector<lite::Tensor*> ln_bias;
   std::vector<lite::Tensor*> roformer_embedding;
+  std::vector<lite::Tensor*> smooth_quant_scale;
   const lite::Tensor* mask{nullptr};
   const lite::Tensor* SeqLod{nullptr};
   const lite::Tensor* PadSeqLen{nullptr};
@@ -1799,6 +1800,7 @@ struct XPUMultiEncoderParam : ParamBase {
   bool adaptive_seqlen{false};
   bool per_channel{false};
   bool already_qkv_fusion{false};  // qkv is already fusion in graph
+  bool is_smooth_quant{false};
 };
 
 struct XPUSpatialTransformerResBlockParam : ParamBase {
