@@ -1650,6 +1650,7 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
     op_desc.SetAttr<std::string>("act_type", act_type_);
     op_desc.SetAttr<bool>("norm_before", norm_before_);
     op_desc.SetAttr<int>("relative_type", 0);
+    op_desc.SetAttr<bool>("is_smooth_quant", false);
     op_desc.SetAttr<int>("ffn_hidden_dim_scale", scale_hidden_dim);
 
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
