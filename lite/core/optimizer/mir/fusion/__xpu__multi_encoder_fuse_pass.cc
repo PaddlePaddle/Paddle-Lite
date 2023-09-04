@@ -15,6 +15,7 @@
 #include <memory>
 #include <set>
 #include <vector>
+
 #include "lite/backends/xpu/math.h"
 #include "lite/core/context.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
@@ -53,7 +54,8 @@ class XPUSingleEncoderFuser : public FuseBase {
                                  bool with_q_scale = true,
                                  bool norm_before = false,
                                  const std::string& relative_type = "",
-                                 bool with_mask = true)
+                                 bool with_mask = true,
+                                 bool smooth_quant = false)
       : act_type_(act_type),
         input_pos_(input_pos),
         qkv_ln_2_out_pos_(qkv_ln_2_out_pos),
@@ -63,18 +65,38 @@ class XPUSingleEncoderFuser : public FuseBase {
         with_q_scale_(with_q_scale),
         norm_before_(norm_before),
         relative_emb_type_(relative_type),
-        with_mask_(with_mask) {}
+        with_mask_(with_mask),
+        smooth_quant_(smooth_quant) {}
 
   void BuildPattern() override {
-    auto* input = VarNode("input")
-                      ->assert_is_op_input("elementwise_add", input_pos_)
-                      ->AsInput();
+    PMNode* input = nullptr;
+    PMNode* smooth_scale_1_weight = nullptr;
+    PMNode* smooth_scale_1 = nullptr;
+    PMNode* smooth_scale_1_out = nullptr;
     PMNode* ln_before_scale = nullptr;
     PMNode* ln_before_bias = nullptr;
     PMNode* ln_before = nullptr;
     PMNode* ln_before_out = nullptr;
     PMNode* ln_before_mean = nullptr;
     PMNode* ln_before_var = nullptr;
+    if (smooth_quant_ && !norm_before_) {
+      VLOG(3) << "build first smooth_quant_scale";
+      input = VarNode("input")
+                  ->assert_is_op_input("elementwise_mul", "X")
+                  ->AsInput();
+      smooth_scale_1_weight = VarNode("smooth_scale_1_weight")
+                                  ->assert_is_op_input("elementwise_mul", "Y")
+                                  ->AsInput();
+      smooth_scale_1 =
+          OpNode("smooth_scale_1", "elementwise_mul")->AsIntermediate();
+      smooth_scale_1_out = VarNode("smooth_scale_1_out")
+                               ->assert_is_op_output("elementwise_mul", "Out")
+                               ->AsIntermediate();
+    } else {
+      input = VarNode("input")
+                  ->assert_is_op_input("elementwise_add", input_pos_)
+                  ->AsInput();
+    }
     if (norm_before_) {
       input->assert_is_op_input("layer_norm", "X");
       ln_before_scale = VarNode("ln_before_scale")
@@ -320,6 +342,9 @@ class XPUSingleEncoderFuser : public FuseBase {
     if (norm_before_) {
       qkv_add_2_out->assert_is_op_input("elementwise_add", qkv_ln_2_out_pos_);
     }
+    PMNode* smooth_scale_2_weight = nullptr;
+    PMNode* smooth_scale_2 = nullptr;
+    PMNode* smooth_scale_2_out = nullptr;
     auto* qkv_ln_2_scale = VarNode("qkv_ln_2_scale")
                                ->assert_is_op_input("layer_norm", "Scale")
                                ->AsInput();
@@ -332,7 +357,21 @@ class XPUSingleEncoderFuser : public FuseBase {
                              ->assert_is_op_input(mul_type_, "X")
                              ->AsIntermediate();
     if (!norm_before_) {
-      qkv_ln_2_out->assert_is_op_input("elementwise_add", qkv_ln_2_out_pos_);
+      if (smooth_quant_) {
+        VLOG(3) << "build second smooth_quant_scale";
+        qkv_ln_2_out->assert_is_op_input("elementwise_mul", "X");
+        smooth_scale_2_weight = VarNode("smooth_scale_2_weight")
+                                    ->assert_is_op_input("elementwise_mul", "Y")
+                                    ->AsInput();
+        smooth_scale_2 =
+            OpNode("smooth_scale_2", "elementwise_mul")->AsIntermediate();
+        smooth_scale_2_out = VarNode("smooth_scale_2_out")
+                                 ->assert_is_op_output("elementwise_mul", "Out")
+                                 ->assert_is_op_input("elementwise_add", "Y")
+                                 ->AsIntermediate();
+      } else {
+        qkv_ln_2_out->assert_is_op_input("elementwise_add", qkv_ln_2_out_pos_);
+      }
     }
     auto* qkv_ln_2_mean = VarNode("qkv_ln_2_mean")
                               ->assert_is_op_output("layer_norm", "Mean")
@@ -498,8 +537,13 @@ class XPUSingleEncoderFuser : public FuseBase {
     *qkv_reshape2 >> *qkv_reshape2_xshape;
     *qkv_mul_y >> *qkv_mul;
     *qkv_add_y >> *qkv_add;
-
-    *input >> *qkv_add_2 >> *qkv_add_2_out >> *qkv_ln_2 >> *qkv_ln_2_out;
+    if (smooth_quant_ && !norm_before_) {
+      *smooth_scale_1_weight >> *smooth_scale_1;
+      *input >> *smooth_scale_1 >> *smooth_scale_1_out >> *qkv_add_2 >>
+          *qkv_add_2_out >> *qkv_ln_2 >> *qkv_ln_2_out;
+    } else {
+      *input >> *qkv_add_2 >> *qkv_add_2_out >> *qkv_ln_2 >> *qkv_ln_2_out;
+    }
     *qkv_ln_2_scale >> *qkv_ln_2;
     *qkv_ln_2_bias >> *qkv_ln_2;
     *qkv_ln_2 >> *qkv_ln_2_mean;
@@ -516,8 +560,14 @@ class XPUSingleEncoderFuser : public FuseBase {
     if (norm_before_) {
       *qkv_add_2_out >> *qkv_add_5 >> *qkv_add_5_out;
     } else {
-      *qkv_ln_2_out >> *qkv_add_5 >> *qkv_add_5_out >> *qkv_ln_5 >>
-          *qkv_ln_5_out;
+      if (smooth_quant_) {
+        *smooth_scale_2_weight >> *smooth_scale_2;
+        *qkv_ln_2_out >> *smooth_scale_2 >> *smooth_scale_2_out >> *qkv_add_5 >>
+            *qkv_add_5_out >> *qkv_ln_5 >> *qkv_ln_5_out;
+      } else {
+        *qkv_ln_2_out >> *qkv_add_5 >> *qkv_add_5_out >> *qkv_ln_5 >>
+            *qkv_ln_5_out;
+      }
       *qkv_ln_5_scale >> *qkv_ln_5;
       *qkv_ln_5_bias >> *qkv_ln_5;
       *qkv_ln_5 >> *qkv_ln_5_mean;
@@ -577,6 +627,18 @@ class XPUSingleEncoderFuser : public FuseBase {
                            matched.at("qkv_ln_5_bias")->arg()->name,
                        });
       op_desc.SetOutput("Outputs", {matched.at("qkv_ln_5_out")->arg()->name});
+      if (smooth_quant_) {
+        op_desc.SetInput("SmoothQuantScaleWeight",
+                         {
+                             matched.at("smooth_scale_1_weight")->arg()->name,
+                             matched.at("smooth_scale_2_weight")->arg()->name,
+                         });
+        VLOG(3) << "matched.at(smooth_scale_1_weight)->arg()->name : "
+                << matched.at("smooth_scale_1_weight")->arg()->name;
+        op_desc.SetAttr<bool>("is_smooth_quant", true);
+      } else {
+        op_desc.SetAttr<bool>("is_smooth_quant", false);
+      }
     }
     // XXX: keep these to fool SubgraphOp::AttachImpl()
     op_desc.SetAttr<int>("sub_block", 0);
@@ -608,6 +670,14 @@ class XPUSingleEncoderFuser : public FuseBase {
     CHECK_EQ(q_mul_y_shape[0], qkv_mul_y_shape[1]);
     CHECK_EQ(q_mul_y_shape[1], qkv_mul_y_shape[0]);
     CHECK_GT(hidden_dim, 0) << "invalid hidden_dim: " << hidden_dim;
+
+    // if quant,skip softmax,and use qk_matmul out_threshold as softmax_max
+    auto* qk_matmul_value_op_info = matched.at("qk_matmul")->stmt()->op_info();
+    if (qk_matmul_value_op_info->HasAttr("out_threshold")) {
+      op_desc.SetAttr<float>(
+          "softmax_max_value",
+          qk_matmul_value_op_info->GetAttr<float>("out_threshold"));
+    }
 
     set_quant_info(scope, matched, &op_desc);
 
@@ -691,6 +761,10 @@ class XPUSingleEncoderFuser : public FuseBase {
     } else {
       froms.push_back("qkv_ln_5_scale");
       froms.push_back("qkv_ln_5_bias");
+      if (smooth_quant_) {
+        froms.push_back("smooth_scale_1_weight");
+        froms.push_back("smooth_scale_2_weight");
+      }
     }
     for (auto& from : froms) {
       IR_NODE_LINK_TO(matched.at(from), matched.at("q_mul"));
@@ -713,7 +787,9 @@ class XPUSingleEncoderFuser : public FuseBase {
   bool norm_before_;
   const std::string relative_emb_type_;
   bool with_mask_;
-  // quant_info: mul input_max, output_max * 6 + matmul x_max:y_max, output_max
+  bool smooth_quant_;
+  // quant_info: mul input_max, output_max * 6 + matmul x_max:y_max,
+  // output_max
   // * 2
   void set_quant_info(Scope* scope,
                       const key2nodes_t& matched,
@@ -1584,6 +1660,7 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
     op_desc.SetAttr<std::string>("act_type", act_type_);
     op_desc.SetAttr<bool>("norm_before", norm_before_);
     op_desc.SetAttr<int>("relative_type", 0);
+    op_desc.SetAttr<bool>("is_smooth_quant", false);
     op_desc.SetAttr<int>("ffn_hidden_dim_scale", scale_hidden_dim);
 
     auto fake_subgraph_op = LiteOpRegistry::Global().Create("subgraph");
@@ -1637,7 +1714,8 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
   bool with_fusion_qkv_bias_;
   bool norm_before_;
   bool with_dyn_reshape_;
-  // quant_info: mul input_max, output_max * 6 + matmul x_max:y_max, output_max
+  // quant_info: mul input_max, output_max * 6 + matmul x_max:y_max,
+  // output_max
   void set_quant_info(Scope* scope,
                       const key2nodes_t& matched,
                       cpp::OpDesc* op_desc) {
@@ -1753,9 +1831,15 @@ class XPUMultiEncoderFuser {
       std::string in_name, out_name;
       std::vector<std::string> arg_names{
           "FCWeight", "FCBias", "LNScale", "LNBias"};
+      // There are two different SmoothQuantScaleWeight in each single encoder
+      if ((first_encoder_op_info->HasAttr("is_smooth_quant")) &&
+          (first_encoder_op_info->GetAttr<bool>("is_smooth_quant"))) {
+        arg_names.emplace_back("SmoothQuantScaleWeight");
+      }
       std::map<std::string, std::vector<std::string>> arg_map;
       std::vector<std::string> fc_weight_max;
       std::vector<float> fc_input_max;
+      std::vector<float> softmax_max;
       std::vector<std::string> quant_types;
 
       for (size_t i = 0; i < all_encoders.size(); ++i) {
@@ -1778,6 +1862,9 @@ class XPUMultiEncoderFuser {
           CHECK(op_info->HasAttr("fc_input_max")) << "no fc_input_max attr";
           for (auto x0 : op_info->GetAttr<std::vector<float>>("fc_input_max")) {
             fc_input_max.push_back(x0);
+          }
+          if (op_info->HasAttr("softmax_max_value")) {
+            softmax_max.push_back(op_info->GetAttr<float>("softmax_max_value"));
           }
         }
         for (auto arg_name : arg_names) {
@@ -1839,6 +1926,9 @@ class XPUMultiEncoderFuser {
       }
       op_desc.SetOutput("Output", {out_name});
       op_desc.SetAttr<int>("xpu", 1);
+      op_desc.SetAttr<bool>(
+          "is_smooth_quant",
+          first_encoder_op_info->GetAttr<bool>("is_smooth_quant"));
       op_desc.SetAttr<int>(
           "relative_type",
           first_encoder_op_info->GetAttr<int>("relative_type"));
@@ -1858,6 +1948,7 @@ class XPUMultiEncoderFuser {
             << ", all_encoders.size:" << all_encoders.size();
         op_desc.SetAttr<std::vector<float>>("FCInputMax", fc_input_max);
         VLOG(3) << "fc_input_max size: " << fc_input_max.size();
+        op_desc.SetAttr<std::vector<float>>("Softmax_max", softmax_max);
         // only support adaptive_seqlen in int8 quant model
         CHECK_EQ(adaptive_seqlen_, true);
       } else {
@@ -1917,6 +2008,12 @@ class XPUMultiEncoderFuser {
                         max_tensor_name,
                         skip_quant_op);
         }
+      }
+      auto iter = arg_map.find("SmoothQuantScaleWeight");
+      if (iter != arg_map.end()) {
+        auto& smoothquant_scale_weight_names =
+            arg_map["SmoothQuantScaleWeight"];
+        convert_scale_weight(scope, smoothquant_scale_weight_names);
       }
 
       auto& fc_bias_names = arg_map["FCBias"];
@@ -2028,6 +2125,33 @@ class XPUMultiEncoderFuser {
   std::string fc_precision_;
   bool adaptive_seqlen_;
   bool is_qkv_already_fusion_;
+
+  // convert all smoothquant_scale_weight fp32 to fp16
+  void convert_scale_weight(
+      Scope* scope,
+      const std::vector<std::string>& smoothquant_scale_weight_names) {
+#ifdef LITE_WITH_XPU
+    int weight_num = smoothquant_scale_weight_names.size();
+    std::vector<Tensor*> weight_tensor_vec(weight_num, nullptr);
+    VLOG(6) << "Convert scale weight num: " << weight_num;
+    int weight_len = 0;
+    for (int i = 0; i < weight_num; ++i) {
+      weight_tensor_vec[i] =
+          scope->FindMutableTensor(smoothquant_scale_weight_names[i]);
+      CHECK(weight_tensor_vec[i] != nullptr);
+      weight_len = weight_tensor_vec[i]->numel();
+      VLOG(6) << "Convert scale weight dim: " << weight_len;
+      std::unique_ptr<float16[]> weight_fp16(new float16[weight_len]);
+      paddle::lite::xpu::math::ConvertFP32ToFP16(
+          weight_tensor_vec[i]->mutable_data<float>(),
+          weight_fp16.get(),
+          weight_len);
+      memcpy(weight_tensor_vec[i]->mutable_data<float16>(),
+             weight_fp16.get(),
+             weight_len * sizeof(float16));
+    }
+#endif
+  }
   // to transpose + quant + concat the weight inplace
   void update_weight(Scope* scope,
                      const std::vector<std::string>& fc_weight_names,
@@ -2132,12 +2256,11 @@ class XPUMultiEncoderFuser {
         // quant the weight here, not from the quanted-model
         // quant model without skip op or fp32 model, skip_quant_op=false;
         // why check skip_quant_op here? we need to distinguish 3 cases
-        // 1 fp32 model, skip_quant_op(false), use xpu dyanmic quant(find scale
-        // in xdnn), convert weight to int8
-        // 2 quant model skip op in K200, skip_quant_op(true),
-        // fc_precision_=int8(to use bert_int8), convert weight to int16
-        // 3 quant model skip op in R200, skip_quant_op(true),
-        // fc_precision_=int16, convert weight to int16
+        // 1 fp32 model, skip_quant_op(false), use xpu dyanmic quant(find
+        // scale in xdnn), convert weight to int8 2 quant model skip op in
+        // K200, skip_quant_op(true), fc_precision_=int8(to use bert_int8),
+        // convert weight to int16 3 quant model skip op in R200,
+        // skip_quant_op(true), fc_precision_=int16, convert weight to int16
         std::unique_ptr<int8_t[]> weight_qkv_trans_int8(new int8_t[qkv_len]);
         paddle::lite::xpu::math::ConvertFP32ToInt8(weight_qkv_trans.get(),
                                                    weight_qkv_trans_int8.get(),
@@ -2197,13 +2320,14 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     std::vector<bool> with_mask{true, false};
     std::vector<std::string> relative_embedding_type{
         "", "__xpu__roformer_relative_embedding"};
+    std::vector<bool> with_smooth_quant{true, false};
 
     std::string fc_precision;
     bool adaptive_seqlen = false;
 #ifdef LITE_WITH_XPU
     // TODO(miaotianxiang): core/mir/*_pass.cc are compiled anyway and need to
-    // access TargetWrapperXPU::multi_encoder_precision, but this static member
-    // variable in class specialization defined in
+    // access TargetWrapperXPU::multi_encoder_precision, but this static
+    // member variable in class specialization defined in
     // lite/backends/xpu/target_wrapper.cc is only compiled iff
     // LITE_WITH_XPU==ON. To suppress linkage error, we use
     // #ifdef here. Any better idea?
@@ -2214,7 +2338,8 @@ class XPUMultiEncoderFusePass : public ProgramPass {
       fc_precision = "int31";
       VLOG(3)
           << "Use int31 in XPUMultiEncoderOp, "
-          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision="
+          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_"
+             "precision="
           << lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision;
     } else if (GetStringFromEnv("XPU_ENCODER_PRECISION",
                                 lite::TargetWrapperXPU::xpu_runtime_ptr
@@ -2222,13 +2347,15 @@ class XPUMultiEncoderFusePass : public ProgramPass {
       fc_precision = "int8";
       VLOG(3)
           << "Use int8 in XPUMultiEncoderOp, "
-          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision="
+          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_"
+             "precision="
           << lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision;
     } else {
       fc_precision = "int16";
       VLOG(3)
           << "Use int16 in XPUMultiEncoderOp, "
-          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision="
+          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_"
+             "precision="
           << lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision;
     }
     adaptive_seqlen =
@@ -2246,21 +2373,30 @@ class XPUMultiEncoderFusePass : public ProgramPass {
                   for (auto norm_before : norm_befores) {
                     for (auto relative_type : relative_embedding_type) {
                       for (auto mask : with_mask) {
-                        fusion::XPUSingleEncoderFuser single_encoder_fuser(
-                            act_type,
-                            input_pos,
-                            qkv_ln_2_out_pos,
-                            matmul_type,
-                            matmul2_type,
-                            mul_type,
-                            with_q_scale,
-                            norm_before,
-                            relative_type,
-                            mask);
-                        single_encoder_fuser(graph.get());
-                        fusion::XPUMultiEncoderFuser multi_encoder_fuser(
-                            fc_precision, adaptive_seqlen);
-                        multi_encoder_fuser(graph.get());
+                        for (auto smooth_quant : with_smooth_quant) {
+                          if (norm_before && smooth_quant) {
+                            // norm_before && smooth_quant and
+                            // norm_before && !smooth_quant are same pattern
+                            // so remove one
+                            continue;
+                          }
+                          fusion::XPUSingleEncoderFuser single_encoder_fuser(
+                              act_type,
+                              input_pos,
+                              qkv_ln_2_out_pos,
+                              matmul_type,
+                              matmul2_type,
+                              mul_type,
+                              with_q_scale,
+                              norm_before,
+                              relative_type,
+                              mask,
+                              smooth_quant);
+                          single_encoder_fuser(graph.get());
+                          fusion::XPUMultiEncoderFuser multi_encoder_fuser(
+                              fc_precision, adaptive_seqlen);
+                          multi_encoder_fuser(graph.get());
+                        }
                       }
                     }
                   }

@@ -101,7 +101,6 @@ class TargetWrapper<TARGET(kXPU)> {
     if (xpu_runtime_ptr->xpu_sdnn_num != 0) {
       xdnn_context->set_nsdnn(xpu_runtime_ptr->xpu_sdnn_num);
     }
-
     if (xpu_runtime_ptr->xpu_enable_multi_stream) {
       // create different stream per thread
       xpu_runtime_ptr->xpu_stream.CreatXPUStream();

@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/operators/__xpu__multi_encoder_op.h"
+
 #include <vector>
+
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -80,6 +82,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.output =
       scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
   param_.relative_type = op_desc.GetAttr<int>("relative_type");
+  param_.is_smooth_quant = op_desc.GetAttr<bool>("is_smooth_quant");
 
   param_.fc_weight.clear();
   for (auto& name : op_desc.Input("FCWeight")) {
@@ -107,6 +110,13 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
     for (auto& name : op_desc.Input("RoformerEmbedding")) {
       auto t = scope->FindMutableTensor(name);
       param_.roformer_embedding.push_back(t);
+    }
+  }
+  param_.smooth_quant_scale.clear();
+  if (param_.is_smooth_quant) {
+    for (auto& name : op_desc.Input("SmoothQuantScaleWeight")) {
+      auto t = scope->FindVar(name)->GetMutable<Tensor>();
+      param_.smooth_quant_scale.push_back(t);
     }
   }
 
@@ -182,6 +192,11 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   if (op_desc.HasAttr("slice_decrease_axis")) {
     param_.slice_decrease_axis =
         op_desc.GetAttr<std::vector<int>>("slice_decrease_axis");
+  }
+
+  param_.softmax_max.clear();
+  if (op_desc.HasAttr("Softmax_max")) {
+    param_.softmax_max = op_desc.GetAttr<std::vector<float>>("Softmax_max");
   }
 
   return true;
