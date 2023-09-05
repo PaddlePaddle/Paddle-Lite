@@ -48,8 +48,8 @@ bool SplitOp::InferShapeImpl() const {
   if (infer_num < 2) {
     for (int i = 0; i < sections.size(); i++) {
       if (sections[i] == -1) {
-        sections[i] =
-            in_dims[axis] - std::accumulate(sections.begin(), sections.end(), 1);
+        sections[i] = in_dims[axis] -
+                      std::accumulate(sections.begin(), sections.end(), 1);
       }
     }
   }
