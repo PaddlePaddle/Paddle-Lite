@@ -33,8 +33,14 @@ void XPUMmdnnSearchAttention2Compute::PrepareForRun() {
   output_max_xpu_guard_ =
       TargetWrapperXPU::MallocScratchPad(maxptr_size * sizeof(float));
   auto& param = this->template Param<param_t>();
-  float W_max = param.W_max;
-  float weight_max_cpu[maxptr_size] = {W_max};
+
+  float W_max =0;
+  float weight_max_cpu[maxptr_size];
+  for (int i=0;i<maxptr_size;i++){
+     W_max = param.W_max;
+     weight_max_cpu[maxptr_size] = W_max;
+  }
+
   XPU_CALL(xpu_memcpy(weight_max_xpu_guard_->addr_,
                       weight_max_cpu,
                       maxptr_size * sizeof(float),
