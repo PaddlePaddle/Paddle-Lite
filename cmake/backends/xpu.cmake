@@ -85,7 +85,6 @@ if (XPU_SDK_ROOT)
   set (XPURT_LIB  "${XPU_SDK_ROOT}/xpu/xre/so/libxpurt.so" CACHE FILEPATH "libxpurt.so" FORCE)
   set (xpu_builder_libs xpuapi CACHE INTERNAL "xpu builder libs")
   set (xpu_runtime_libs xpurt CACHE INTERNAL "xpu runtime libs")
-
 else()
   prepare_xpu_sdk (xdnn ${XPU_XDNN_URL} xpuapi)
   prepare_xpu_sdk (xre ${XPU_XRE_URL} xpurt)
