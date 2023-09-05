@@ -72,7 +72,7 @@ macro (prepare_xpu_sdk sdk sdk_url)
 endmacro ()
 
 if (XPU_SDK_ROOT)
-  INCLUDE_DIRECTORIES(
+  include_directories(
     ${XPU_SDK_ROOT}/xpu/xre/include/
     ${XPU_SDK_ROOT}/xpu/xdnn/include/
   )
@@ -83,16 +83,15 @@ if (XPU_SDK_ROOT)
   link_libraries (xpuapi xpurt)
   set (XPUAPI_LIB "${XPU_SDK_ROOT}/xpu/xdnn/so/libxpuapi.so" CACHE FILEPATH "libxpuapi.so" FORCE)
   set (XPURT_LIB  "${XPU_SDK_ROOT}/xpu/xre/so/libxpurt.so" CACHE FILEPATH "libxpurt.so" FORCE)
-  set (xpu_builder_libs xpuapi CACHE INTERNAL "xpu builder libs")
-  set (xpu_runtime_libs xpurt CACHE INTERNAL "xpu runtime libs")
 else()
   prepare_xpu_sdk (xdnn ${XPU_XDNN_URL} xpuapi)
   prepare_xpu_sdk (xre ${XPU_XRE_URL} xpurt)
   set (XPUAPI_LIB "${XPU_INSTALL_DIR}/xpu/xdnn/so/libxpuapi.so" CACHE FILEPATH "libxpuapi.so" FORCE)
   set (XPURT_LIB  "${XPU_INSTALL_DIR}/xpu/xre/so/libxpurt.so" CACHE FILEPATH "libxpurt.so" FORCE)
-  set (xpu_builder_libs xpuapi CACHE INTERNAL "xpu builder libs")
-  set (xpu_runtime_libs xpurt CACHE INTERNAL "xpu runtime libs")
 endif ()
+set (xpu_builder_libs xpuapi CACHE INTERNAL "xpu builder libs")
+set (xpu_runtime_libs xpurt CACHE INTERNAL "xpu runtime libs")
+
 
 if(XPU_WITH_XFT)
   if(XPU_XFT_ROOT)
