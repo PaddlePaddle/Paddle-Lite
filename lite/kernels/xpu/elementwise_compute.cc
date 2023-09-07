@@ -646,8 +646,8 @@ REGISTER_LITE_KERNEL(elementwise_mul, kXPU, kInt8, kNCHW, MulInt8, Int8)
     .Finalize();
 
 using MulBool =
-    xpu::ElementwiseCompute<bool, xpu::MulFunctor<bool>, PRECISION(kBool)>;
-REGISTER_LITE_KERNEL(elementwise_mul, kXPU, kBool, kNCHW, MulBool, bool)
+    xpu::ElementwiseCompute<bool, xpu::MulFunctor<bool>, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(elementwise_mul, kXPU, kFloat, kNCHW, MulBool, bool)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kBool))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kBool))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kBool))})
