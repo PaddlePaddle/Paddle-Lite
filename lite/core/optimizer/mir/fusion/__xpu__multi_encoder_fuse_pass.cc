@@ -614,6 +614,10 @@ class XPUSingleEncoderFuser : public FuseBase {
                            matched.at("qkv_ln_2_bias")->arg()->name,
                        });
       op_desc.SetOutput("Outputs", {matched.at("qkv_add_5_out")->arg()->name});
+      // when norm_before_ == true, we can't detect
+      // the model is smooth_quant or not, we don't need to do anything
+      // so, set is_smooth_quant as false.
+      op_desc.SetAttr<bool>("is_smooth_quant", false);
     } else {
       op_desc.SetInput("LNScale",
                        {
