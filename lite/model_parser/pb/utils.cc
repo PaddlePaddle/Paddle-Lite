@@ -27,6 +27,7 @@ lite::VarDataType ConvertVarType(
   case VarType_Type::VarType_Type_##vtype: \
     type = lite::VarDataType::vtype;       \
     break
+    CASE(BOOL);
     CASE(FP64);
     CASE(FP32);
     CASE(INT8);

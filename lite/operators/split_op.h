@@ -32,7 +32,7 @@ class SplitOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  bool InferShapeWithCache() const override { return true; }
+  bool InferShapeWithCache() const override { return false; }
 
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
