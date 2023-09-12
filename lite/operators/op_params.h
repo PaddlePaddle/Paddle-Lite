@@ -1779,6 +1779,8 @@ struct XPUMultiEncoderParam : ParamBase {
   const lite::Tensor* PadSeqLen{nullptr};
   lite::Tensor* output{nullptr};
 
+  std::vector<float> softmax_max{};
+
   std::vector<int> slice_axes{};
   std::vector<int> slice_starts{};
   std::vector<int> slice_ends{};
