@@ -15,6 +15,7 @@
 #include <memory>
 #include <set>
 #include <vector>
+
 #include "lite/backends/xpu/math.h"
 #include "lite/core/context.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
@@ -674,6 +675,14 @@ class XPUSingleEncoderFuser : public FuseBase {
     CHECK_EQ(q_mul_y_shape[1], qkv_mul_y_shape[0]);
     CHECK_GT(hidden_dim, 0) << "invalid hidden_dim: " << hidden_dim;
 
+    // if quant,skip softmax,and use qk_matmul out_threshold as softmax_max
+    auto* qk_matmul_value_op_info = matched.at("qk_matmul")->stmt()->op_info();
+    if (qk_matmul_value_op_info->HasAttr("out_threshold")) {
+      op_desc.SetAttr<float>(
+          "softmax_max_value",
+          qk_matmul_value_op_info->GetAttr<float>("out_threshold"));
+    }
+
     set_quant_info(scope, matched, &op_desc);
 
     // extra traits to distill
@@ -783,7 +792,8 @@ class XPUSingleEncoderFuser : public FuseBase {
   const std::string relative_emb_type_;
   bool with_mask_;
   bool smooth_quant_;
-  // quant_info: mul input_max, output_max * 6 + matmul x_max:y_max, output_max
+  // quant_info: mul input_max, output_max * 6 + matmul x_max:y_max,
+  // output_max
   // * 2
   void set_quant_info(Scope* scope,
                       const key2nodes_t& matched,
@@ -1708,7 +1718,8 @@ class XPUSingleEncoderV2Fuser : public FuseBase {
   bool with_fusion_qkv_bias_;
   bool norm_before_;
   bool with_dyn_reshape_;
-  // quant_info: mul input_max, output_max * 6 + matmul x_max:y_max, output_max
+  // quant_info: mul input_max, output_max * 6 + matmul x_max:y_max,
+  // output_max
   void set_quant_info(Scope* scope,
                       const key2nodes_t& matched,
                       cpp::OpDesc* op_desc) {
@@ -1832,6 +1843,7 @@ class XPUMultiEncoderFuser {
       std::map<std::string, std::vector<std::string>> arg_map;
       std::vector<std::string> fc_weight_max;
       std::vector<float> fc_input_max;
+      std::vector<float> softmax_max;
       std::vector<std::string> quant_types;
 
       for (size_t i = 0; i < all_encoders.size(); ++i) {
@@ -1854,6 +1866,9 @@ class XPUMultiEncoderFuser {
           CHECK(op_info->HasAttr("fc_input_max")) << "no fc_input_max attr";
           for (auto x0 : op_info->GetAttr<std::vector<float>>("fc_input_max")) {
             fc_input_max.push_back(x0);
+          }
+          if (op_info->HasAttr("softmax_max_value")) {
+            softmax_max.push_back(op_info->GetAttr<float>("softmax_max_value"));
           }
         }
         for (auto arg_name : arg_names) {
@@ -1937,6 +1952,7 @@ class XPUMultiEncoderFuser {
             << ", all_encoders.size:" << all_encoders.size();
         op_desc.SetAttr<std::vector<float>>("FCInputMax", fc_input_max);
         VLOG(3) << "fc_input_max size: " << fc_input_max.size();
+        op_desc.SetAttr<std::vector<float>>("Softmax_max", softmax_max);
         // only support adaptive_seqlen in int8 quant model
         CHECK_EQ(adaptive_seqlen_, true);
       } else {
@@ -2244,12 +2260,11 @@ class XPUMultiEncoderFuser {
         // quant the weight here, not from the quanted-model
         // quant model without skip op or fp32 model, skip_quant_op=false;
         // why check skip_quant_op here? we need to distinguish 3 cases
-        // 1 fp32 model, skip_quant_op(false), use xpu dyanmic quant(find scale
-        // in xdnn), convert weight to int8
-        // 2 quant model skip op in K200, skip_quant_op(true),
-        // fc_precision_=int8(to use bert_int8), convert weight to int16
-        // 3 quant model skip op in R200, skip_quant_op(true),
-        // fc_precision_=int16, convert weight to int16
+        // 1 fp32 model, skip_quant_op(false), use xpu dyanmic quant(find
+        // scale in xdnn), convert weight to int8 2 quant model skip op in
+        // K200, skip_quant_op(true), fc_precision_=int8(to use bert_int8),
+        // convert weight to int16 3 quant model skip op in R200,
+        // skip_quant_op(true), fc_precision_=int16, convert weight to int16
         std::unique_ptr<int8_t[]> weight_qkv_trans_int8(new int8_t[qkv_len]);
         paddle::lite::xpu::math::ConvertFP32ToInt8(weight_qkv_trans.get(),
                                                    weight_qkv_trans_int8.get(),
@@ -2315,8 +2330,8 @@ class XPUMultiEncoderFusePass : public ProgramPass {
     bool adaptive_seqlen = false;
 #ifdef LITE_WITH_XPU
     // TODO(miaotianxiang): core/mir/*_pass.cc are compiled anyway and need to
-    // access TargetWrapperXPU::multi_encoder_precision, but this static member
-    // variable in class specialization defined in
+    // access TargetWrapperXPU::multi_encoder_precision, but this static
+    // member variable in class specialization defined in
     // lite/backends/xpu/target_wrapper.cc is only compiled iff
     // LITE_WITH_XPU==ON. To suppress linkage error, we use
     // #ifdef here. Any better idea?
@@ -2327,7 +2342,8 @@ class XPUMultiEncoderFusePass : public ProgramPass {
       fc_precision = "int31";
       VLOG(3)
           << "Use int31 in XPUMultiEncoderOp, "
-          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision="
+          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_"
+             "precision="
           << lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision;
     } else if (GetStringFromEnv("XPU_ENCODER_PRECISION",
                                 lite::TargetWrapperXPU::xpu_runtime_ptr
@@ -2335,13 +2351,15 @@ class XPUMultiEncoderFusePass : public ProgramPass {
       fc_precision = "int8";
       VLOG(3)
           << "Use int8 in XPUMultiEncoderOp, "
-          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision="
+          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_"
+             "precision="
           << lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision;
     } else {
       fc_precision = "int16";
       VLOG(3)
           << "Use int16 in XPUMultiEncoderOp, "
-          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision="
+          << "lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_"
+             "precision="
           << lite::TargetWrapperXPU::xpu_runtime_ptr->multi_encoder_precision;
     }
     adaptive_seqlen =
