@@ -391,51 +391,74 @@ struct BasicConfig<float> {
   using ISA_T = __m128;
   using LD_T = float;
 #endif
-  constexpr static auto isa_dup = set1_ps_inline<ISA_T, T>;
-  constexpr static auto isa_ld = loadu_ps_inline<ISA_T, LD_T>;
-  constexpr static auto isa_str = storeu_ps_inline<ISA_T, LD_T>;
+  constexpr static typename BasicConfig<float>::ISA_T (*isa_dup)(
+      typename BasicConfig<float>::T){set1_ps_inline<ISA_T, T>};  // NOLINT
+  constexpr static typename BasicConfig<float>::ISA_T (*isa_ld)(
+      const typename BasicConfig<float>::LD_T*){
+      loadu_ps_inline<ISA_T, LD_T>};  // NOLINT
+  constexpr static void (*isa_str)(typename BasicConfig<float>::LD_T*,
+                                   typename BasicConfig<float>::ISA_T){
+      storeu_ps_inline<ISA_T, LD_T>};  // NOLINT
 };
 
 template <>
 struct AddConfig<float> : public BasicConfig<float> {
-  constexpr static auto naive_op = NaiveAdd<float>;
-  constexpr static auto isa_op =
-      add_ps_inline<typename BasicConfig<float>::ISA_T>;
+  constexpr static typename BasicConfig<float>::T (*naive_op)(
+      typename BasicConfig<float>::T,
+      typename BasicConfig<float>::T){NaiveAdd<float>};  // NOLINT
+  constexpr static typename BasicConfig<float>::ISA_T (*isa_op)(
+      typename BasicConfig<float>::ISA_T, typename BasicConfig<float>::ISA_T){
+      add_ps_inline<typename BasicConfig<float>::ISA_T>};  // NOLINT
 };
 
 template <>
 struct SubConfig<float> : public BasicConfig<float> {
-  constexpr static auto naive_op = NaiveSub<float>;
-  constexpr static auto isa_op =
-      sub_ps_inline<typename BasicConfig<float>::ISA_T>;
+  constexpr static typename BasicConfig<float>::T (*naive_op)(
+      typename BasicConfig<float>::T,
+      typename BasicConfig<float>::T){NaiveSub<float>};  // NOLINT
+  constexpr static typename BasicConfig<float>::ISA_T (*isa_op)(
+      typename BasicConfig<float>::ISA_T, typename BasicConfig<float>::ISA_T){
+      sub_ps_inline<typename BasicConfig<float>::ISA_T>};  // NOLINT
 };
 
 template <>
 struct MulConfig<float> : public BasicConfig<float> {
-  constexpr static auto naive_op = NaiveMul<float>;
-  constexpr static auto isa_op =
-      mul_ps_inline<typename BasicConfig<float>::ISA_T>;
+  constexpr static typename BasicConfig<float>::T (*naive_op)(
+      typename BasicConfig<float>::T,
+      typename BasicConfig<float>::T){NaiveMul<float>};  // NOLINT
+  constexpr static typename BasicConfig<float>::ISA_T (*isa_op)(
+      typename BasicConfig<float>::ISA_T, typename BasicConfig<float>::ISA_T){
+      mul_ps_inline<typename BasicConfig<float>::ISA_T>};  // NOLINT
 };
 
 template <>
 struct MaxConfig<float> : public BasicConfig<float> {
-  constexpr static auto naive_op = NaiveMax<float>;
-  constexpr static auto isa_op =
-      max_ps_inline<typename BasicConfig<float>::ISA_T>;
+  constexpr static typename BasicConfig<float>::T (*naive_op)(
+      typename BasicConfig<float>::T,
+      typename BasicConfig<float>::T){NaiveMax<float>};  // NOLINT
+  constexpr static typename BasicConfig<float>::ISA_T (*isa_op)(
+      typename BasicConfig<float>::ISA_T, typename BasicConfig<float>::ISA_T){
+      max_ps_inline<typename BasicConfig<float>::ISA_T>};  // NOLINT
 };
 
 template <>
 struct MinConfig<float> : public BasicConfig<float> {
-  constexpr static auto naive_op = NaiveMin<float>;
-  constexpr static auto isa_op =
-      min_ps_inline<typename BasicConfig<float>::ISA_T>;
+  constexpr static typename BasicConfig<float>::T (*naive_op)(
+      typename BasicConfig<float>::T,
+      typename BasicConfig<float>::T){NaiveMin<float>};  // NOLINT
+  constexpr static typename BasicConfig<float>::ISA_T (*isa_op)(
+      typename BasicConfig<float>::ISA_T, typename BasicConfig<float>::ISA_T){
+      min_ps_inline<typename BasicConfig<float>::ISA_T>};  // NOLINT
 };
 
 template <>
 struct DivConfig<float> : public BasicConfig<float> {
-  constexpr static auto naive_op = NaiveDiv<float>;
-  constexpr static auto isa_op =
-      div_ps_inline<typename BasicConfig<float>::ISA_T>;
+  constexpr static typename BasicConfig<float>::T (*naive_op)(
+      typename BasicConfig<float>::T,
+      typename BasicConfig<float>::T){NaiveDiv<float>};  // NOLINT
+  constexpr static typename BasicConfig<float>::ISA_T (*isa_op)(
+      typename BasicConfig<float>::ISA_T, typename BasicConfig<float>::ISA_T){
+      div_ps_inline<typename BasicConfig<float>::ISA_T>};  // NOLINT
 };
 
 //************************** in32,int64 ******************
@@ -450,9 +473,14 @@ struct BasicConfig<int32_t> {
   using ISA_T = __m128i;
   using LD_T = __m128i;
 #endif
-  constexpr static auto isa_dup = set1_epi32_inline<ISA_T, T>;
-  constexpr static auto isa_ld = loadu_si_inline<ISA_T, LD_T>;
-  constexpr static auto isa_str = storeu_si_inline<ISA_T, LD_T>;
+  constexpr static typename BasicConfig<int32_t>::ISA_T (*isa_dup)(
+      typename BasicConfig<int32_t>::T){set1_epi32_inline<ISA_T, T>};  // NOLINT
+  constexpr static typename BasicConfig<int32_t>::ISA_T (*isa_ld)(
+      const typename BasicConfig<int32_t>::LD_T*){
+      loadu_si_inline<ISA_T, LD_T>};  // NOLINT
+  constexpr static void (*isa_str)(typename BasicConfig<int32_t>::LD_T*,
+                                   typename BasicConfig<int32_t>::ISA_T){
+      storeu_si_inline<ISA_T, LD_T>};  // NOLINT
 };
 
 template <>
@@ -466,175 +494,235 @@ struct BasicConfig<int64_t> {
   using ISA_T = __m128i;
   using LD_T = __m128i;
 #endif
-  constexpr static auto isa_dup = set1_epi64x_inline<ISA_T, T>;
-  constexpr static auto isa_ld = loadu_si_inline<ISA_T, LD_T>;
-  constexpr static auto isa_str = storeu_si_inline<ISA_T, LD_T>;
+  constexpr static typename BasicConfig<int64_t>::ISA_T (*isa_dup)(
+      typename BasicConfig<int64_t>::T){
+      set1_epi64x_inline<ISA_T, T>};  // NOLINT
+  constexpr static typename BasicConfig<int64_t>::ISA_T (*isa_ld)(
+      const typename BasicConfig<int64_t>::LD_T*){
+      loadu_si_inline<ISA_T, LD_T>};  // NOLINT
+  constexpr static void (*isa_str)(typename BasicConfig<int64_t>::LD_T*,
+                                   typename BasicConfig<int64_t>::ISA_T){
+      storeu_si_inline<ISA_T, LD_T>};  // NOLINT
 };
 
 template <>
 struct AddConfig<int32_t> : public BasicConfig<int32_t> {
-  constexpr static auto naive_op = NaiveAdd<int32_t>;
-  constexpr static auto isa_op =
-      add_epi32_inline<typename BasicConfig<int32_t>::ISA_T>;
+  constexpr static typename BasicConfig<int32_t>::T (*naive_op)(
+      typename BasicConfig<int32_t>::T,
+      typename BasicConfig<int32_t>::T){NaiveAdd<int32_t>};  // NOLINT
+  constexpr static typename BasicConfig<int32_t>::ISA_T (*isa_op)(
+      typename BasicConfig<int32_t>::ISA_T,
+      typename BasicConfig<int32_t>::ISA_T){
+      add_epi32_inline<typename BasicConfig<int32_t>::ISA_T>};  // NOLINT
 };
 
 template <>
 struct AddConfig<int64_t> : public BasicConfig<int64_t> {
-  constexpr static auto naive_op = NaiveAdd<int64_t>;
-  constexpr static auto isa_op =
-      add_epi64_inline<typename BasicConfig<int64_t>::ISA_T>;
+  constexpr static typename BasicConfig<int64_t>::T (*naive_op)(
+      typename BasicConfig<int64_t>::T,
+      typename BasicConfig<int64_t>::T){NaiveAdd<int64_t>};  // NOLINT
+  constexpr static typename BasicConfig<int64_t>::ISA_T (*isa_op)(
+      typename BasicConfig<int64_t>::ISA_T,
+      typename BasicConfig<int64_t>::ISA_T){
+      add_epi64_inline<typename BasicConfig<int64_t>::ISA_T>};  // NOLINT
 };
 
 template <>
 struct SubConfig<int32_t> : public BasicConfig<int32_t> {
-  constexpr static auto naive_op = NaiveSub<int32_t>;
-  constexpr static auto isa_op =
-      sub_epi32_inline<typename BasicConfig<int32_t>::ISA_T>;
+  constexpr static typename BasicConfig<int32_t>::T (*naive_op)(
+      typename BasicConfig<int32_t>::T,
+      typename BasicConfig<int32_t>::T){NaiveSub<int32_t>};  // NOLINT
+  constexpr static typename BasicConfig<int32_t>::ISA_T (*isa_op)(
+      typename BasicConfig<int32_t>::ISA_T,
+      typename BasicConfig<int32_t>::ISA_T){
+      sub_epi32_inline<typename BasicConfig<int32_t>::ISA_T>};  // NOLINT
 };
 
 template <>
 struct SubConfig<int64_t> : public BasicConfig<int64_t> {
-  constexpr static auto naive_op = NaiveSub<int64_t>;
-  constexpr static auto isa_op =
-      sub_epi64_inline<typename BasicConfig<int64_t>::ISA_T>;
+  constexpr static typename BasicConfig<int64_t>::T (*naive_op)(
+      typename BasicConfig<int64_t>::T,
+      typename BasicConfig<int64_t>::T){NaiveSub<int64_t>};  // NOLINT
+  constexpr static typename BasicConfig<int64_t>::ISA_T (*isa_op)(
+      typename BasicConfig<int64_t>::ISA_T,
+      typename BasicConfig<int64_t>::ISA_T){
+      sub_epi64_inline<typename BasicConfig<int64_t>::ISA_T>};  // NOLINT
 };
 
 template <>
 struct MulConfig<int32_t> : public BasicConfig<int32_t> {
-  constexpr static auto naive_op = NaiveMul<int32_t>;
-  constexpr static auto isa_op =
-      mul_epi32_inline<typename BasicConfig<int32_t>::ISA_T>;
+  constexpr static typename BasicConfig<int32_t>::T (*naive_op)(
+      typename BasicConfig<int32_t>::T,
+      typename BasicConfig<int32_t>::T){NaiveMul<int32_t>};  // NOLINT
+  constexpr static typename BasicConfig<int32_t>::ISA_T (*isa_op)(
+      typename BasicConfig<int32_t>::ISA_T,
+      typename BasicConfig<int32_t>::ISA_T){
+      mul_epi32_inline<typename BasicConfig<int32_t>::ISA_T>};  // NOLINT
 };
 
 template <>
 struct MulConfig<int64_t> : public BasicConfig<int64_t> {
-  constexpr static auto naive_op = NaiveMul<int64_t>;
+  constexpr static typename BasicConfig<int64_t>::T (*naive_op)(
+      typename BasicConfig<int64_t>::T,
+      typename BasicConfig<int64_t>::T){NaiveMul<int64_t>};  // NOLINT
   constexpr static typename BasicConfig<int64_t>::ISA_T (*isa_op)(
-      const typename BasicConfig<int64_t>::ISA_T,
-      const typename BasicConfig<int64_t>::ISA_T) = nullptr;
+      typename BasicConfig<int64_t>::ISA_T,
+      typename BasicConfig<int64_t>::ISA_T){nullptr};  // NOLINT
 };
 
 template <>
 struct MaxConfig<int32_t> : public BasicConfig<int32_t> {
-  constexpr static auto naive_op = NaiveMax<int32_t>;
-  constexpr static auto isa_op =
-      max_epi32_inline<typename BasicConfig<int32_t>::ISA_T>;
+  constexpr static typename BasicConfig<int32_t>::T (*naive_op)(
+      typename BasicConfig<int32_t>::T,
+      typename BasicConfig<int32_t>::T){NaiveMax<int32_t>};  // NOLINT
+  constexpr static typename BasicConfig<int32_t>::ISA_T (*isa_op)(
+      typename BasicConfig<int32_t>::ISA_T,
+      typename BasicConfig<int32_t>::ISA_T){
+      max_epi32_inline<typename BasicConfig<int32_t>::ISA_T>};  // NOLINT
 };
 
 template <>
 struct MaxConfig<int64_t> : public BasicConfig<int64_t> {
-  constexpr static auto naive_op = NaiveMax<int64_t>;
+  constexpr static typename BasicConfig<int64_t>::T (*naive_op)(
+      typename BasicConfig<int64_t>::T,
+      typename BasicConfig<int64_t>::T){NaiveMax<int64_t>};  // NOLINT
   constexpr static typename BasicConfig<int64_t>::ISA_T (*isa_op)(
-      const typename BasicConfig<int64_t>::ISA_T,
-      const typename BasicConfig<int64_t>::ISA_T) = nullptr;
+      typename BasicConfig<int64_t>::ISA_T,
+      typename BasicConfig<int64_t>::ISA_T){nullptr};  // NOLINT
 };
 
 template <>
 struct MinConfig<int32_t> : public BasicConfig<int32_t> {
-  constexpr static auto naive_op = NaiveMin<int32_t>;
-  constexpr static auto isa_op =
-      min_epi32_inline<typename BasicConfig<int32_t>::ISA_T>;
+  constexpr static typename BasicConfig<int32_t>::T (*naive_op)(
+      typename BasicConfig<int32_t>::T,
+      typename BasicConfig<int32_t>::T){NaiveMin<int32_t>};  // NOLINT
+  constexpr static typename BasicConfig<int32_t>::ISA_T (*isa_op)(
+      typename BasicConfig<int32_t>::ISA_T,
+      typename BasicConfig<int32_t>::ISA_T){
+      min_epi32_inline<typename BasicConfig<int32_t>::ISA_T>};  // NOLINT
 };
 
 template <>
 struct MinConfig<int64_t> : public BasicConfig<int64_t> {
-  constexpr static auto naive_op = NaiveMin<int64_t>;
+  constexpr static typename BasicConfig<int64_t>::T (*naive_op)(
+      typename BasicConfig<int64_t>::T,
+      typename BasicConfig<int64_t>::T){NaiveMin<int64_t>};  // NOLINT
   constexpr static typename BasicConfig<int64_t>::ISA_T (*isa_op)(
-      const typename BasicConfig<int64_t>::ISA_T,
-      const typename BasicConfig<int64_t>::ISA_T) = nullptr;
+      typename BasicConfig<int64_t>::ISA_T,
+      typename BasicConfig<int64_t>::ISA_T){nullptr};  // NOLINT
 };
 
 // mod has no isa version and float version
 template <>
 struct ModConfig<int32_t> : public BasicConfig<int32_t> {
-  constexpr static auto naive_op = NaiveMod<int32_t>;
+  constexpr static typename BasicConfig<int32_t>::T (*naive_op)(
+      typename BasicConfig<int32_t>::T,
+      typename BasicConfig<int32_t>::T){NaiveMod<int32_t>};  // NOLINT
   constexpr static typename BasicConfig<int32_t>::ISA_T (*isa_op)(
-      const typename BasicConfig<int32_t>::ISA_T,
-      const typename BasicConfig<int32_t>::ISA_T) = nullptr;
+      typename BasicConfig<int32_t>::ISA_T,
+      typename BasicConfig<int32_t>::ISA_T){nullptr};  // NOLINT
 };
 
 template <>
 struct ModConfig<int64_t> : public BasicConfig<int64_t> {
-  constexpr static auto naive_op = NaiveMod<int64_t>;
+  constexpr static typename BasicConfig<int64_t>::T (*naive_op)(
+      typename BasicConfig<int64_t>::T,
+      typename BasicConfig<int64_t>::T){NaiveMod<int64_t>};  // NOLINT
   constexpr static typename BasicConfig<int64_t>::ISA_T (*isa_op)(
-      const typename BasicConfig<int64_t>::ISA_T,
-      const typename BasicConfig<int64_t>::ISA_T) = nullptr;
+      typename BasicConfig<int64_t>::ISA_T,
+      typename BasicConfig<int64_t>::ISA_T){nullptr};  // NOLINT
 };
 
 // div except float has no isa version
 template <>
 struct DivConfig<int32_t> : public BasicConfig<int32_t> {
-  constexpr static auto naive_op = NaiveDiv<int32_t>;
+  constexpr static typename BasicConfig<int32_t>::T (*naive_op)(
+      typename BasicConfig<int32_t>::T,
+      typename BasicConfig<int32_t>::T){NaiveDiv<int32_t>};  // NOLINT
   constexpr static typename BasicConfig<int32_t>::ISA_T (*isa_op)(
-      const typename BasicConfig<int32_t>::ISA_T,
-      const typename BasicConfig<int32_t>::ISA_T) = nullptr;
+      typename BasicConfig<int32_t>::ISA_T,
+      typename BasicConfig<int32_t>::ISA_T){nullptr};  // NOLINT
 };
 
 template <>
 struct DivConfig<int64_t> : public BasicConfig<int64_t> {
-  constexpr static auto naive_op = NaiveDiv<int64_t>;
+  constexpr static typename BasicConfig<int64_t>::T (*naive_op)(
+      typename BasicConfig<int64_t>::T,
+      typename BasicConfig<int64_t>::T){NaiveDiv<int64_t>};  // NOLINT
   constexpr static typename BasicConfig<int64_t>::ISA_T (*isa_op)(
-      const typename BasicConfig<int64_t>::ISA_T,
-      const typename BasicConfig<int64_t>::ISA_T) = nullptr;
+      typename BasicConfig<int64_t>::ISA_T,
+      typename BasicConfig<int64_t>::ISA_T){nullptr};  // NOLINT
 };
 
 // floordiv has no isa version
 template <>
 struct FloorDivConfig<int32_t> : public BasicConfig<int32_t> {
-  constexpr static auto naive_op = NaiveFloorDiv<int32_t>;
+  constexpr static typename BasicConfig<int32_t>::T (*naive_op)(
+      typename BasicConfig<int32_t>::T,
+      typename BasicConfig<int32_t>::T){NaiveFloorDiv<int32_t>};  // NOLINT
   constexpr static typename BasicConfig<int32_t>::ISA_T (*isa_op)(
-      const typename BasicConfig<int32_t>::ISA_T,
-      const typename BasicConfig<int32_t>::ISA_T) = nullptr;
+      typename BasicConfig<int32_t>::ISA_T,
+      typename BasicConfig<int32_t>::ISA_T){nullptr};  // NOLINT
 };
 
 template <>
 struct FloorDivConfig<int64_t> : public BasicConfig<int64_t> {
-  constexpr static auto naive_op = NaiveFloorDiv<int64_t>;
+  constexpr static typename BasicConfig<int64_t>::T (*naive_op)(
+      typename BasicConfig<int64_t>::T,
+      typename BasicConfig<int64_t>::T){NaiveFloorDiv<int64_t>};  // NOLINT
   constexpr static typename BasicConfig<int64_t>::ISA_T (*isa_op)(
-      const typename BasicConfig<int64_t>::ISA_T,
-      const typename BasicConfig<int64_t>::ISA_T) = nullptr;
+      typename BasicConfig<int64_t>::ISA_T,
+      typename BasicConfig<int64_t>::ISA_T){nullptr};  // NOLINT
 };
 
 template <>
 struct FloorDivConfig<float> : public BasicConfig<float> {
-  constexpr static auto naive_op = NaiveFloorDiv<float>;
+  constexpr static typename BasicConfig<float>::T (*naive_op)(
+      typename BasicConfig<float>::T,
+      typename BasicConfig<float>::T){NaiveFloorDiv<float>};  // NOLINT
   constexpr static typename BasicConfig<float>::ISA_T (*isa_op)(
-      const typename BasicConfig<float>::ISA_T,
-      const typename BasicConfig<float>::ISA_T) = nullptr;
+      typename BasicConfig<float>::ISA_T,
+      typename BasicConfig<float>::ISA_T){nullptr};  // NOLINT
 };
 
 // pow has no isa version
 template <>
 struct PowConfig<int32_t> : public BasicConfig<int32_t> {
-  constexpr static auto naive_op = NaivePow<int32_t>;
+  constexpr static typename BasicConfig<int32_t>::T (*naive_op)(
+      typename BasicConfig<int32_t>::T,
+      typename BasicConfig<int32_t>::T){NaivePow<int32_t>};  // NOLINT
   constexpr static typename BasicConfig<int32_t>::ISA_T (*isa_op)(
-      const typename BasicConfig<int32_t>::ISA_T,
-      const typename BasicConfig<int32_t>::ISA_T) = nullptr;
+      typename BasicConfig<int32_t>::ISA_T,
+      typename BasicConfig<int32_t>::ISA_T){nullptr};  // NOLINT
 };
 
 template <>
 struct PowConfig<int64_t> : public BasicConfig<int64_t> {
-  constexpr static auto naive_op = NaivePow<int64_t>;
+  constexpr static typename BasicConfig<int64_t>::T (*naive_op)(
+      typename BasicConfig<int64_t>::T,
+      typename BasicConfig<int64_t>::T){NaivePow<int64_t>};  // NOLINT
   constexpr static typename BasicConfig<int64_t>::ISA_T (*isa_op)(
-      const typename BasicConfig<int64_t>::ISA_T,
-      const typename BasicConfig<int64_t>::ISA_T) = nullptr;
+      typename BasicConfig<int64_t>::ISA_T,
+      typename BasicConfig<int64_t>::ISA_T){nullptr};  // NOLINT
 };
 
 template <>
 struct PowConfig<float> : public BasicConfig<float> {
-  constexpr static auto naive_op = NaivePow<float>;
+  constexpr static typename BasicConfig<float>::T (*naive_op)(
+      typename BasicConfig<float>::T,
+      typename BasicConfig<float>::T){NaivePow<float>};  // NOLINT
   constexpr static typename BasicConfig<float>::ISA_T (*isa_op)(
-      const typename BasicConfig<float>::ISA_T,
-      const typename BasicConfig<float>::ISA_T) = nullptr;
+      typename BasicConfig<float>::ISA_T,
+      typename BasicConfig<float>::ISA_T){nullptr};  // NOLINT
 };
 
 // Active only support float version
 template <class DataType>
 struct ActiveConfig<ActiveType::NO_ACTIVE, DataType> {
-  constexpr static DataType (*naive_active)(DataType) = nullptr;
+  constexpr static DataType (*naive_active)(DataType){nullptr};  // NOLINT
   constexpr static typename BasicConfig<DataType>::ISA_T (*isa_active)(
-      const typename BasicConfig<DataType>::ISA_T) = nullptr;
-  constexpr static bool has_active = false;
+      const typename BasicConfig<DataType>::ISA_T){nullptr};  // NOLINT
+  constexpr static bool has_active{false};                    // NOLINT
 };
 
 #if defined(__AVX__)
@@ -642,97 +730,100 @@ namespace forward_avx = paddle::lite::x86::math::detail::forward::avx;
 
 template <>
 struct ActiveConfig<ActiveType::RELU, float> {
-  constexpr static float (*naive_active)(float) = NaiveRelu<float>;
-  constexpr static __m256 (*isa_active)(const __m256) = forward_avx::Relu;
-  constexpr static bool has_active = true;
+  constexpr static float (*naive_active)(float){NaiveRelu<float>};  // NOLINT
+  constexpr static __m256 (*isa_active)(const __m256){
+      forward_avx::Relu};                  // NOLINT
+  constexpr static bool has_active{true};  // NOLINT
 };
 
 template <>
 struct ActiveConfig<ActiveType::TANH, float> {
-  constexpr static float (*naive_active)(float) = NaiveTanh<float>;
-  constexpr static __m256 (*isa_active)(const __m256) = forward_avx::Tanh;
-  constexpr static bool has_active = true;
+  constexpr static float (*naive_active)(float){NaiveTanh<float>};  // NOLINT
+  constexpr static __m256 (*isa_active)(const __m256){
+      forward_avx::Tanh};                  // NOLINT
+  constexpr static bool has_active{true};  // NOLINT
 };
 
 template <>
 struct ActiveConfig<ActiveType::SIGMOID, float> {
-  constexpr static float (*naive_active)(float) = NaiveSigmoid<float>;
-  constexpr static __m256 (*isa_active)(const __m256) = forward_avx::Sigmoid;
-  constexpr static bool has_active = true;
+  constexpr static float (*naive_active)(float){NaiveSigmoid<float>};  // NOLINT
+  constexpr static __m256 (*isa_active)(const __m256){
+      forward_avx::Sigmoid};               // NOLINT
+  constexpr static bool has_active{true};  // NOLINT
 };
 #elif defined(__SSE4_2__)
 __m128 _mm_relu_ps(const __m128& a);
 
 template <>
 struct ActiveConfig<ActiveType::RELU, float> {
-  constexpr static float (*naive_active)(float) = NaiveRelu<float>;
-  constexpr static __m128 (*isa_active)(const __m128) = _mm_relu_ps;
-  constexpr static bool has_active = true;
+  constexpr static float (*naive_active)(float){NaiveRelu<float>};   // NOLINT
+  constexpr static __m128 (*isa_active)(const __m128){_mm_relu_ps};  // NOLINT
+  constexpr static bool has_active{true};                            // NOLINT
 };
 
 // SSE has no tanh and sigmoid for now
 template <>
 struct ActiveConfig<ActiveType::TANH, float> {
-  constexpr static float (*naive_active)(float) = NaiveTanh<float>;
-  constexpr static __m128 (*isa_active)(const __m128) = nullptr;
-  constexpr static bool has_active = true;
+  constexpr static float (*naive_active)(float){NaiveTanh<float>};  // NOLINT
+  constexpr static __m128 (*isa_active)(const __m128){nullptr};     // NOLINT
+  constexpr static bool has_active{true};                           // NOLINT
 };
 
 template <>
 struct ActiveConfig<ActiveType::SIGMOID, float> {
-  constexpr static float (*naive_active)(float) = NaiveSigmoid<float>;
-  constexpr static __m128 (*isa_active)(const __m128) = nullptr;
-  constexpr static bool has_active = true;
+  constexpr static float (*naive_active)(float){NaiveSigmoid<float>};  // NOLINT
+  constexpr static __m128 (*isa_active)(const __m128){nullptr};        // NOLINT
+  constexpr static bool has_active{true};                              // NOLINT
 };
 #endif
 
 // fuse-activation doesn't support int32 and int64 type
 template <>
 struct ActiveConfig<ActiveType::RELU, int32_t> {
-  constexpr static int32_t (*naive_active)(int32_t) = nullptr;
+  constexpr static int32_t (*naive_active)(int32_t){nullptr};  // NOLINT
   constexpr static typename BasicConfig<int32_t>::ISA_T (*isa_active)(
-      const typename BasicConfig<int32_t>::ISA_T) = nullptr;
-  constexpr static bool has_active = false;
+      const typename BasicConfig<int32_t>::ISA_T){nullptr};  // NOLINT
+  constexpr static bool has_active{false};                   // NOLINT
 };
 
 template <>
 struct ActiveConfig<ActiveType::TANH, int32_t> {
-  constexpr static int32_t (*naive_active)(int32_t) = nullptr;
+  constexpr static int32_t (*naive_active)(int32_t){nullptr};  // NOLINT
   constexpr static typename BasicConfig<int32_t>::ISA_T (*isa_active)(
-      const typename BasicConfig<int32_t>::ISA_T) = nullptr;
-  constexpr static bool has_active = false;
+      const typename BasicConfig<int32_t>::ISA_T){nullptr};  // NOLINT
+  constexpr static bool has_active{false};                   // NOLINT
 };
 
 template <>
 struct ActiveConfig<ActiveType::SIGMOID, int32_t> {
-  constexpr static int32_t (*naive_active)(int32_t) = nullptr;
+  constexpr static int32_t (*naive_active)(int32_t){nullptr};  // NOLINT
   constexpr static typename BasicConfig<int32_t>::ISA_T (*isa_active)(
-      const typename BasicConfig<int32_t>::ISA_T) = nullptr;
-  constexpr static bool has_active = false;
+      const typename BasicConfig<int32_t>::ISA_T){nullptr};  // NOLINT
+  constexpr static bool has_active{false};                   // NOLINT
 };
 
 template <>
 struct ActiveConfig<ActiveType::RELU, int64_t> {
-  constexpr static int64_t (*naive_active)(int64_t) = nullptr;
+  constexpr static int64_t (*naive_active)(int64_t){nullptr};  // NOLINT
   constexpr static typename BasicConfig<int64_t>::ISA_T (*isa_active)(
-      const typename BasicConfig<int64_t>::ISA_T) = nullptr;
-  constexpr static bool has_active = false;
+      const typename BasicConfig<int64_t>::ISA_T){nullptr};  // NOLINT
+  constexpr static bool has_active{false};                   // NOLINT
 };
 
 template <>
 struct ActiveConfig<ActiveType::TANH, int64_t> {
-  constexpr static int64_t (*naive_active)(int64_t) = nullptr;
+  constexpr static int64_t (*naive_active)(int64_t){nullptr};  // NOLINT
   constexpr static typename BasicConfig<int64_t>::ISA_T (*isa_active)(
-      const typename BasicConfig<int64_t>::ISA_T) = nullptr;
-  constexpr static bool has_active = false;
+      const typename BasicConfig<int64_t>::ISA_T){nullptr};  // NOLINT
+  constexpr static bool has_active{false};                   // NOLINT
 };
 
 template <>
 struct ActiveConfig<ActiveType::SIGMOID, int64_t> {
-  constexpr static int64_t (*naive_active)(int64_t) = nullptr;
+  constexpr static int64_t (*naive_active)(int64_t){nullptr};  // NOLINT
   constexpr static typename BasicConfig<int64_t>::ISA_T (*isa_active)(
-      const typename BasicConfig<int64_t>::ISA_T) = nullptr;
-  constexpr static bool has_active = false;
+      const typename BasicConfig<int64_t>::ISA_T){nullptr};  // NOLINT
+  constexpr static bool has_active{false};                   // NOLINT
 };
 
 // avoid compling error: xxx_address will never be null

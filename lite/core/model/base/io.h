@@ -32,6 +32,12 @@
 #define LITE_SUPRESS_UBSAN(type)
 #endif
 
+#if __GNUG__ && __GNUC__ < 5
+#define LITE_IS_TRIVIALLY_COPYABLE(T) __has_trivial_copy(T)
+#else
+#define LITE_IS_TRIVIALLY_COPYABLE(T) std::is_trivially_copyable<T>::value
+#endif
+
 namespace paddle {
 namespace lite {
 namespace model_parser {
@@ -84,9 +90,9 @@ class ByteReader {
   virtual size_t current() const = 0;
   virtual bool ReachEnd() const = 0;
 
-  template <typename T,
-            typename = typename std::enable_if<
-                std::is_trivially_copyable<T>::value>::type>
+  template <
+      typename T,
+      typename = typename std::enable_if<LITE_IS_TRIVIALLY_COPYABLE(T)>::type>
   T Read() const {
     T tmp;
     Read(&tmp, sizeof(T));
@@ -105,9 +111,9 @@ class ByteWriter {
   ByteWriter() = default;
   virtual void Write(const void* src, size_t size) const = 0;
 
-  template <typename T,
-            typename = typename std::enable_if<
-                std::is_trivially_copyable<T>::value>::type>
+  template <
+      typename T,
+      typename = typename std::enable_if<LITE_IS_TRIVIALLY_COPYABLE(T)>::type>
   void Write(T elem) const {
     Write(&elem, sizeof(T));
   }

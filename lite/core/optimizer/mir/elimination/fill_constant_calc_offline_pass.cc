@@ -124,7 +124,7 @@ void FillConstantCalcOfflinePass::RemoveFillConstantPattern(
     // Get fill_constant's output tensor
     auto out_var = scope->FindVar(op_desc->Output("Out").front());
     auto out_t = out_var->GetMutable<lite::Tensor>();
-    out_t->Resize(DDim({shape}));
+    out_t->Resize(DDim(shape));
     switch (dtype) {
       case static_cast<int>(lite::core::FluidType::BOOL):
         FillConstData<bool>(out_t, static_cast<bool>(value));
