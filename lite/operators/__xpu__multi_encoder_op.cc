@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/operators/__xpu__multi_encoder_op.h"
+
 #include <vector>
+
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -190,6 +192,11 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   if (op_desc.HasAttr("slice_decrease_axis")) {
     param_.slice_decrease_axis =
         op_desc.GetAttr<std::vector<int>>("slice_decrease_axis");
+  }
+
+  param_.softmax_max.clear();
+  if (op_desc.HasAttr("Softmax_max")) {
+    param_.softmax_max = op_desc.GetAttr<std::vector<float>>("Softmax_max");
   }
 
   return true;

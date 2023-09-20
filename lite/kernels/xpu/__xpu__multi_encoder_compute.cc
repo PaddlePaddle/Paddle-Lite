@@ -270,6 +270,11 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       param.hidden_dim,
                                       param.norm_before, /*is_pre_norm*/
                                       param.per_channel);
+
+    if (param.softmax_max.size()) {
+      qkv_attn_param.ptq_max_value = param.softmax_max;
+    }
+
     qkv_attn_param.quant_type_.assign(quant_types_.begin(), quant_types_.end());
     if (is_smooth_quant_) {
       qkv_attn_param.is_smooth_quant = true;
@@ -319,6 +324,9 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       param.hidden_dim,
                                       param.norm_before, /*is_pre_norm*/
                                       param.per_channel);
+    if (param.softmax_max.size()) {
+      qkv_attn_param.ptq_max_value = param.softmax_max;
+    }
     qkv_attn_param.quant_type_.assign(quant_types_.begin(), quant_types_.end());
     if (is_smooth_quant_) {
       qkv_attn_param.is_smooth_quant = true;
@@ -370,6 +378,9 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       param.hidden_dim,
                                       param.norm_before,
                                       param.per_channel);
+    if (param.softmax_max.size()) {
+      qkv_attn_param.ptq_max_value = param.softmax_max;
+    }
     qkv_attn_param.quant_type_.assign(quant_types_.begin(), quant_types_.end());
     if (is_smooth_quant_) {
       qkv_attn_param.is_smooth_quant = true;
