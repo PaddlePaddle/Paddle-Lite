@@ -1,4 +1,4 @@
-# Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+#Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@ macro (prepare_xpu_sdk sdk sdk_url)
   set (xpu_${sdk}_root        "${XPU_INSTALL_DIR}/xpu/${sdk}"  CACHE PATH "xpu ${sdk} include directory" FORCE)
   set (xpu_${sdk}_include_dir "${xpu_${sdk}_root}/include" CACHE PATH "xpu ${sdk} include directory" FORCE)
   include_directories (${xpu_${sdk}_include_dir})
+
   foreach (lib ${ARGN})
     add_library (${lib} SHARED IMPORTED GLOBAL)
     set_property (TARGET ${lib} PROPERTY IMPORTED_LOCATION "${xpu_${sdk}_root}/so/lib${lib}.so")
@@ -70,28 +71,6 @@ macro (prepare_xpu_sdk sdk sdk_url)
     link_libraries (${lib})
   endforeach ()
 endmacro ()
-
-if (XPU_SDK_ROOT)
-  include_directories(
-    ${XPU_SDK_ROOT}/xpu/xre/include/
-    ${XPU_SDK_ROOT}/xpu/xdnn/include/
-  )
-  add_library (xpuapi SHARED IMPORTED GLOBAL)
-  add_library (xpurt SHARED IMPORTED GLOBAL)
-  set_property (TARGET xpuapi PROPERTY IMPORTED_LOCATION "${XPU_SDK_ROOT}/xpu/xdnn/so/libxpuapi.so")
-  set_property (TARGET xpurt  PROPERTY IMPORTED_LOCATION "${XPU_SDK_ROOT}/xpu/xre/so/libxpurt.so")
-  link_libraries (xpuapi xpurt)
-  set (XPUAPI_LIB "${XPU_SDK_ROOT}/xpu/xdnn/so/libxpuapi.so" CACHE FILEPATH "libxpuapi.so" FORCE)
-  set (XPURT_LIB  "${XPU_SDK_ROOT}/xpu/xre/so/libxpurt.so" CACHE FILEPATH "libxpurt.so" FORCE)
-else()
-  prepare_xpu_sdk (xdnn ${XPU_XDNN_URL} xpuapi)
-  prepare_xpu_sdk (xre ${XPU_XRE_URL} xpurt)
-  set (XPUAPI_LIB "${XPU_INSTALL_DIR}/xpu/xdnn/so/libxpuapi.so" CACHE FILEPATH "libxpuapi.so" FORCE)
-  set (XPURT_LIB  "${XPU_INSTALL_DIR}/xpu/xre/so/libxpurt.so" CACHE FILEPATH "libxpurt.so" FORCE)
-endif ()
-set (xpu_builder_libs xpuapi CACHE INTERNAL "xpu builder libs")
-set (xpu_runtime_libs xpurt CACHE INTERNAL "xpu runtime libs")
-
 
 if(XPU_WITH_XFT)
   if(XPU_XFT_ROOT)
@@ -131,4 +110,65 @@ if(XPU_WITH_XFT)
     link_libraries (xft)
   endif(XPU_XFT_ROOT)
 endif(XPU_WITH_XFT)
+
+if (NOT XPU_SDK_ROOT)
+  prepare_xpu_sdk (xdnn ${XPU_XDNN_URL} xpuapi)
+  prepare_xpu_sdk (xre ${XPU_XRE_URL} xpurt)
+  set (XPUAPI_LIB "${XPU_INSTALL_DIR}/xpu/xdnn/so/libxpuapi.so" CACHE FILEPATH "libxpuapi.so" FORCE)
+  set (XPURT_LIB  "${XPU_INSTALL_DIR}/xpu/xre/so/libxpurt.so" CACHE FILEPATH "libxpurt.so" FORCE)
+  set (xpu_builder_libs xpuapi CACHE INTERNAL "xpu builder libs")
+  set (xpu_runtime_libs xpurt CACHE INTERNAL "xpu runtime libs")
+  return ()
+endif ()
+
+# **DEPRECATED**, use XPU_SDK_URL/XPU_SDK_ENV in the future
+message (STATUS "XPU_SDK_ROOT: ${XPU_SDK_ROOT}")
+
+add_library (xpuapi SHARED IMPORTED GLOBAL)
+add_library (xpurt SHARED IMPORTED GLOBAL)
+if (MSVC)
+  set (XPU_INCLUDE_DIR "${XPU_SDK_ROOT}/XTCL/include" CACHE PATH "xpu include directory" FORCE)
+  set (XPUAPI_LIB      "${XPU_SDK_ROOT}/XTCL/lib/libxpuapi.lib" CACHE FILEPATH "libxpuapi.lib" FORCE)
+  set (XPURT_LIB       "${XPU_SDK_ROOT}/XTCL/runtime/lib/libxpurt.lib" CACHE FILEPATH "libxpurt.lib" FORCE)
+else ()
+  set(LIB_NAME ${XPU_SDK_ROOT})
+  set(search_name "xpu_toolchain")
+  string(FIND "${LIB_NAME}" "${search_name}" match_result)  
+  if(${match_result} EQUAL -1)  
+     message(STATUS "Substring not found")  
+     include_directories(
+     #${XPU_SDK_ROOT}/xpu/xre/include/
+     #${XPU_SDK_ROOT}/xpu/xdnn/include/
+     ${XPU_SDK_ROOT}/xre/include/
+     ${XPU_SDK_ROOT}/xdnn/include/
+    )
+   #set_property (TARGET xpuapi PROPERTY IMPORTED_LOCATION "${XPU_SDK_ROOT}/xpu/xdnn/so/libxpuapi.so")
+   #set_property (TARGET xpurt  PROPERTY IMPORTED_LOCATION "${XPU_SDK_ROOT}/xpu/xre/so/libxpurt.so")
+   set_property (TARGET xpuapi PROPERTY IMPORTED_LOCATION "${XPU_SDK_ROOT}/xdnn/so/libxpuapi.so")
+   set_property (TARGET xpurt  PROPERTY IMPORTED_LOCATION "${XPU_SDK_ROOT}/xre/so/libxpurt.so")
+   link_libraries (xpuapi xpurt)
+   #set (XPUAPI_LIB "${XPU_SDK_ROOT}/xpu/xdnn/so/libxpuapi.so" CACHE FILEPATH "libxpuapi.so" FORCE)
+   #set (XPURT_LIB  "${XPU_SDK_ROOT}/xpu/xre/so/libxpurt.so" CACHE FILEPATH "libxpurt.so" FORCE) 
+   set (XPUAPI_LIB "${XPU_SDK_ROOT}/xdnn/so/libxpuapi.so" CACHE FILEPATH "libxpuapi.so" FORCE)
+   set (XPURT_LIB  "${XPU_SDK_ROOT}/xre/so/libxpurt.so" CACHE FILEPATH "libxpurt.so" FORCE) 
+   else()  
+    message(STATUS "Substring found at index: ${match_result}")  
+    set (XPU_INCLUDE_DIR "${XPU_SDK_ROOT}/XTCL/include" CACHE PATH "xpu include directory" FORCE)
+    set (XPUAPI_LIB      "${XPU_SDK_ROOT}/XTCL/shlib/libxpuapi.so" CACHE FILEPATH "libxpuapi.so" FORCE)
+    set (XPURT_LIB       "${XPU_SDK_ROOT}/XTCL/runtime/shlib/libxpurt.so" CACHE FILEPATH "libxpurt.so" FORCE)
+  endif()
+endif ()
+
+#include_directories (${XPU_INCLUDE_DIR})
+
+if (MSVC)
+  set_property (TARGET xpuapi PROPERTY IMPORTED_LOCATION ${XPUAPI_LIB})
+  set_property (TARGET xpurt PROPERTY IMPORTED_LOCATION ${XPURT_LIB})
+else ()
+  set_property (TARGET xpuapi PROPERTY IMPORTED_LOCATION ${XPUAPI_LIB})
+  set_property (TARGET xpurt PROPERTY IMPORTED_LOCATION ${XPURT_LIB})
+endif ()
+
+set (xpu_runtime_libs xpuapi xpurt CACHE INTERNAL "xpu runtime libs")
+set (xpu_builder_libs xpuapi xpurt CACHE INTERNAL "xpu builder libs")
 
