@@ -64,6 +64,7 @@ add_kernel(where_compute_xpu XPU extra SRCS where_compute.cc)
 add_kernel(gather_nd_compute_xpu XPU extra SRCS gather_nd_compute.cc)
 add_kernel(meshgrid_compute_xpu XPU basic SRCS meshgrid_compute.cc)
 add_kernel(fetch_compute_xpu XPU basic SRCS fetch_compute.cc)
+add_kernel(unbind_compute_xpu XPU basic SRCS unbind_compute.cc)
 
 # extra
 add_kernel(lookup_table_compute_xpu XPU extra SRCS lookup_table_compute.cc)
