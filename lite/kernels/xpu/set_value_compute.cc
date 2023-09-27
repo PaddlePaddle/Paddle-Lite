@@ -82,8 +82,8 @@ void SetValueCompute::SetValue(const std::vector<int64_t>& starts,
         __ends__,                                                      \
         __steps__,                                                     \
         param.axes,                                                    \
-        {},                                                            \
-        {});                                                           \
+        param.decrease_axes,                                           \
+        param.none_axes);                                              \
     CHECK_EQ(r, 0);                                                    \
     return;                                                            \
   }
