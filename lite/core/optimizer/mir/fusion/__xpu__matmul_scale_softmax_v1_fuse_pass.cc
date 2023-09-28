@@ -36,7 +36,23 @@ class MatmulScaleSoftmaxV1fuser : public FuseBase {
     auto* mat_v =
         VarNode("mat_v")->assert_is_op_input("matmul_v2", "Y")->AsInput();
 
-    auto* matmul_v2_0 = OpNode("matmul_v2_0", "matmul_v2")->AsIntermediate();
+    auto matmul_v2_0_teller = [](const Node* node) {
+      auto scope = node->stmt()->op()->scope();
+      auto mat_q_name = node->stmt()->op_info()->Input("X")[0];
+      auto mat_k_name = node->stmt()->op_info()->Input("Y")[0];
+      auto mat_q = scope->FindTensor(mat_q_name);
+      auto mat_k = scope->FindTensor(mat_k_name);
+      bool is_same = true;
+      CHECK_EQ(mat_q->dims().size(), mat_k->dims().size());
+      for (size_t i = 0; i < mat_q->dims().size(); i++) {
+        if (mat_q->dims()[i] != mat_k->dims()[i]) is_same = false;
+      }
+      return is_same;
+    };
+
+    auto* matmul_v2_0 = OpNode("matmul_v2_0", "matmul_v2")
+                            ->assert_node_satisfied(matmul_v2_0_teller)
+                            ->AsIntermediate();
     auto* matmul_v2_0_out = VarNode("matmul_v2_0_out")
                                 ->assert_is_op_output("matmul_v2", "Out")
                                 ->AsIntermediate();
@@ -73,7 +89,24 @@ class MatmulScaleSoftmaxV1fuser : public FuseBase {
     auto* softmax_out = VarNode("softmax_out")
                             ->assert_is_op_output("softmax", "Out")
                             ->AsIntermediate();
-    auto* matmul_v2_1 = OpNode("matmul_v2_1", "matmul_v2")->AsIntermediate();
+
+    auto matmul_v2_1_teller = [](const Node* node) {
+      auto scope = node->stmt()->op()->scope();
+      auto mat_v_name = node->stmt()->op_info()->Input("Y")[0];
+      auto mat_out_name = node->stmt()->op_info()->Output("Out")[0];
+      auto mat_v = scope->FindTensor(mat_v_name);
+      auto mat_out = scope->FindTensor(mat_out_name);
+      bool is_same = true;
+      CHECK_EQ(mat_v->dims().size(), mat_out->dims().size());
+      for (size_t i = 0; i < mat_v->dims().size(); i++) {
+        if (mat_v->dims()[i] != mat_out->dims()[i]) is_same = false;
+      }
+      return is_same;
+    };
+
+    auto* matmul_v2_1 = OpNode("matmul_v2_1", "matmul_v2")
+                            ->assert_node_satisfied(matmul_v2_1_teller)
+                            ->AsIntermediate();
     auto* matmul_v2_1_out = VarNode("matmul_v2_1_out")
                                 ->assert_is_op_output("matmul_v2", "Out")
                                 ->AsOutput();

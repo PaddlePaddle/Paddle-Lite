@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,13 +22,13 @@ namespace kernels {
 namespace xpu {
 
 template <typename T, PrecisionType PType>
-class ScaleCompute : public KernelLite<TARGET(kXPU), PType> {
+class UnbindCompute : public KernelLite<TARGET(kXPU), PType> {
  public:
-  using param_t = operators::ScaleParam;
+  using param_t = operators::UnbindParam;
 
   virtual void Run();
 
-  virtual ~ScaleCompute() = default;
+  virtual ~UnbindCompute() = default;
 };
 
 }  // namespace xpu

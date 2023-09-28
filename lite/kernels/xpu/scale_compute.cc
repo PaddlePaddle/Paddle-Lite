@@ -21,8 +21,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T>
-void ScaleCompute<T>::Run() {
+template <typename T, PrecisionType PType>
+void ScaleCompute<T, PType>::Run() {
   auto& param = this->template Param<param_t>();
   auto& ctx = this->ctx_->template As<XPUContext>();
 
@@ -52,32 +52,30 @@ void ScaleCompute<T>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(scale,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::ScaleCompute<float>,
-                     def)
+using XPUScale_FP32 =
+    paddle::lite::kernels::xpu::ScaleCompute<float, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(scale, kXPU, kFloat, kNCHW, XPUScale_FP32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(scale,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::ScaleCompute<int>,
-                     int32)
+using XPUScale_FP16 =
+    paddle::lite::kernels::xpu::ScaleCompute<float16, PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(scale, kXPU, kFP16, kNCHW, XPUScale_FP16, fp16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .Finalize();
+
+using XPUScale_Int32 =
+    paddle::lite::kernels::xpu::ScaleCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(scale, kXPU, kFloat, kNCHW, XPUScale_Int32, int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(scale,
-                     kXPU,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::xpu::ScaleCompute<int64_t>,
-                     int64)
+using XPUScale_Int64 =
+    paddle::lite::kernels::xpu::ScaleCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(scale, kXPU, kFloat, kNCHW, XPUScale_Int64, int64)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .Finalize();
