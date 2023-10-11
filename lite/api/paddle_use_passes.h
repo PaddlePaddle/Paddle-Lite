@@ -114,6 +114,7 @@ USE_MIR_PASS(__xpu__multi_softmax_fuse_pass);
 USE_MIR_PASS(__xpu__max_pooling_pad_zero_detect_fuse_pass);
 USE_MIR_PASS(__xpu__static_kernel_pick_pass);
 USE_MIR_PASS(__xpu__quantization_parameters_propagation_pass);
+USE_MIR_PASS(__xpu__greater_than_cast_mul_fuse_pass);
 USE_MIR_PASS(x86_int8_attribute_pass);
 USE_MIR_PASS(fill_range_fuse_pass);
 USE_MIR_PASS(range_calc_offline_pass);

@@ -2066,6 +2066,12 @@ struct XPURoformerRelativeEmbeddingParam : ParamBase {
   int max_pos_len{512};
 };
 
+struct XPUGreaterThanFilterParam : ParamBase {
+  lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+  float scale{1.0f};
+};
+
 struct XPUMaskAdaptiveParam : ParamBase {
   const lite::Tensor* Mask{nullptr};
   lite::Tensor* SeqLod{nullptr};
