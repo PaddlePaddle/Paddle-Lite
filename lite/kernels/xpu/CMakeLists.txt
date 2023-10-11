@@ -136,6 +136,7 @@ add_kernel(__xpu__squeeze_excitation_compute_xpu XPU extra SRCS __xpu__squeeze_e
 add_kernel(__xpu__bigru_compute_xpu XPU extra SRCS __xpu__bigru_compute.cc)
 add_kernel(__xpu__dynamic_lstm_compute_xpu XPU extra SRCS __xpu__dynamic_lstm_compute.cc)
 add_kernel(__xpu__multi_softmax_compute_xpu XPU extra SRCS __xpu__multi_softmax_compute.cc)
+add_kernel(__xpu__greater_than_filter_compute_xpu XPU extra SRCS __xpu__greater_than_filter_compute.cc)
 
 add_kernel(__xpu__gn_silu_compute_xpu XPU extra SRCS __xpu__gn_silu_compute.cc)
 add_kernel(__xpu__multihead_self_attn_compute_xpu XPU extra SRCS __xpu__multihead_self_attn_compute.cc)
