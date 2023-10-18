@@ -35,7 +35,7 @@ void XPUMmdnnSearchAttention2Compute::PrepareForRun() {
   auto& param = this->template Param<param_t>();
   float weight_max_cpu[maxptr_size];
   for (int i = 0; i < maxptr_size; i++) {
-    weight_max_cpu[maxptr_size] = param.W_max;
+    weight_max_cpu[i] = param.W_max;
   }
   XPU_CALL(xpu_memcpy(weight_max_xpu_guard_->addr_,
                       weight_max_cpu,
