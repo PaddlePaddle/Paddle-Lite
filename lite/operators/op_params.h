@@ -1779,6 +1779,8 @@ struct XPUMultiEncoderParam : ParamBase {
   const lite::Tensor* PadSeqLen{nullptr};
   lite::Tensor* output{nullptr};
 
+  std::vector<float> softmax_max{};
+
   std::vector<int> slice_axes{};
   std::vector<int> slice_starts{};
   std::vector<int> slice_ends{};
@@ -1953,6 +1955,12 @@ struct XPURoformerRelativeEmbeddingParam : ParamBase {
   lite::Tensor* sin_embedding{nullptr};
   lite::Tensor* output{nullptr};
   int max_pos_len{512};
+};
+
+struct XPUGreaterThanFilterParam : ParamBase {
+  lite::Tensor* input{nullptr};
+  lite::Tensor* output{nullptr};
+  float scale{1.0f};
 };
 
 struct XPUMaskAdaptiveParam : ParamBase {
