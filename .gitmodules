@@ -16,3 +16,6 @@
 [submodule "third-party/pybind"]
 	path = third-party/pybind
 	url = https://github.com/pybind/pybind11.git
+[submodule "PaddleLite-on-Zephyr"]
+	path = PaddleLite-on-Zephyr
+	url = https://github.com/hnu-esnl/PaddleLite-on-Zephyr.git
