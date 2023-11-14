@@ -1081,6 +1081,21 @@ bool DeviceInfo::SetCPUInfoByName() {
     SetCacheInfo(1, 1, 32 * 1024 * 1024);
     SetCacheInfo(2, 1, 128 * 1024 * 1024);
     return true;
+  } else if (dev_name_.find("Phytium,D2000/8 E8C") != std::string::npos) {
+    core_num_ = 8;
+    core_ids_.resize(core_num_);
+    big_core_ids_.resize(core_num_);
+    cluster_ids_.resize(core_num_);
+    for (int i = 0; i < core_num_; ++i) {
+      core_ids_[i] = i;
+      big_core_ids_[i] = i;
+      cluster_ids_[i] = 0;
+    }
+    little_core_ids_ = {};
+    SetCacheInfo(0, 1, 64 * 1024);
+    SetCacheInfo(1, 1, 32 * 1024 * 1024);
+    SetCacheInfo(2, 1, 128 * 1024 * 1024);
+    return true;
   }
   return false;
 }
@@ -1398,7 +1413,7 @@ void DeviceInfo::SetRunMode(lite_api::PowerMode mode, int thread_num) {
     active_ids_.push_back(0);
   }
 #ifdef ARM_WITH_OMP
-  omp_set_num_threads(active_ids_.size());
+  omp_set_num_threads(core_num_);
 #endif
   if (mode_ != lite_api::LITE_POWER_NO_BIND) {
     if (check_cpu_online(active_ids_)) {
@@ -1412,7 +1427,7 @@ void DeviceInfo::SetRunMode(lite_api::PowerMode mode, int thread_num) {
   // only LITE_POWER_NO_BIND is supported in other OS
   RequestPowerNoBindMode(thread_num);
 #ifdef ARM_WITH_OMP
-  omp_set_num_threads(active_ids_.size());
+  omp_set_num_threads(core_num_);
 #endif
 #endif  // LITE_WITH_LINUX
   //! alloc memory for sgemm in this context
