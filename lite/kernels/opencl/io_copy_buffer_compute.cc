@@ -89,8 +89,7 @@ class IoCopyHostToOpenCLCompute
   }
 #endif
   void PrepareForRun() override {
-    auto& param = Param<param_t>();
-    if (fp16_support_ && param.process_type != 2) {
+    if (fp16_support_) {
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
       auto& context = ctx_->As<OpenCLContext>();
       context.cl_context()->AddKernel(kernel_func_name_,
@@ -114,8 +113,7 @@ class IoCopyHostToOpenCLCompute
     VLOG(2) << "param.y->dims().size():" << param.y->dims().size();
     VLOG(2) << "param.y->dims():" << param.y->dims();
 #endif
-    if (fp16_support_ && param.x->precision() == PRECISION(kFloat) &&
-        param.process_type != 2) {
+    if (fp16_support_ && param.x->precision() == PRECISION(kFloat)) {
       std::unique_ptr<Tensor> precision_cast_t =
           std::unique_ptr<Tensor>(new Tensor);
       precision_cast_t->Resize(param.x->dims());
@@ -132,7 +130,6 @@ class IoCopyHostToOpenCLCompute
       kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
       auto kernel = context.cl_context()->GetKernel(kernel_key.str());
       size_t count = param.x->dims().production();
-
       auto* y_data = MUTABLE_BUFFER_GPU(param.y);
       int arg_idx = 0;
       cl_int status;
@@ -204,8 +201,7 @@ class IoCopykOpenCLToHostCompute
   }
 #endif
   void PrepareForRun() override {
-    auto& param = Param<param_t>();
-    if (fp16_support_ && param.process_type != 2) {
+    if (fp16_support_) {
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
       auto& context = ctx_->As<OpenCLContext>();
       context.cl_context()->AddKernel(kernel_func_name_,
@@ -244,7 +240,7 @@ class IoCopykOpenCLToHostCompute
     VLOG(4) << "--- Find the sync event for the target cl tensor. ---";
 #endif
     if (fp16_support_ && param.x->precision() != PRECISION(kInt64) &&
-        param.x->precision() != PRECISION(kInt32) && param.process_type != 2) {
+        param.x->precision() != PRECISION(kInt32)) {
       mem_size = param.x->dims().production() * sizeof(float);
       std::unique_ptr<Tensor> precision_cast_t =
           std::unique_ptr<Tensor>(new Tensor);

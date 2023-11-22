@@ -46,7 +46,7 @@ class LayoutComputeBufferChwToImageDefault
       kernel_func_name_ = "buffer_to_image2d_with_pre255";
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
-    if (param.process_type != 2 && fp16_support_) {
+    if (fp16_support_) {
       build_options_ += " -DMUTABLE_TYPE=half ";
     } else {
       build_options_ += " -DMUTABLE_TYPE=float ";
@@ -74,6 +74,10 @@ class LayoutComputeBufferChwToImageDefault
     } else {
       x_data = param.x->data<float, cl::Buffer>();
     }
+    // std::vector<float> temp(2);
+    // std::cout << x_data->get() << std::endl;
+    // TargetWrapperCL::MemcpySync(temp.data(), x_data, 8, IoDirection::DtoH);
+    // std::cout << "debug layout " << temp[0] << "/" << temp[1] << std::endl;
     auto x_dims = param.x->dims();
     auto image_shape = InitImageDimInfoWith(x_dims);
     auto* y_data = MUTABLE_DATA_GPU(
@@ -189,7 +193,7 @@ class LayoutComputeImageDefaultToBufferChw
     if (param.process_type == 1) {
       kernel_func_name_ = "image2d_to_buffer_with_post255";
     }
-    if (param.process_type != 2 && fp16_support_) {
+    if (fp16_support_) {
       build_options_ += " -DMUTABLE_TYPE=half ";
     } else {
       build_options_ += " -DMUTABLE_TYPE=float ";
@@ -217,10 +221,10 @@ class LayoutComputeImageDefaultToBufferChw
       y_data = param.y->mutable_data<uint8_t, cl::Buffer>(TARGET(kOpenCL));
       param.y->set_precision(PRECISION(kInt8));
     } else {
-      y_data = (fp16_support_ && param.process_type != 2)
+      y_data = (fp16_support_)
                    ? param.y->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL))
                    : param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
-      if (fp16_support_ && param.process_type != 2)
+      if (fp16_support_)
         param.y->set_precision(PRECISION(kFP16));
       else
         param.y->set_precision(PRECISION(kFloat));
@@ -637,7 +641,7 @@ class LayoutComputeImageFolderToBufferChw
     if (x_dims.size() > 2) {
       kernel_func_name_ = "image2d_to_buffer";
     }
-    if (param.process_type != 2 && fp16_support_) {
+    if (fp16_support_) {
       build_options_ += " -DMUTABLE_TYPE=half ";
     } else {
       build_options_ += " -DMUTABLE_TYPE=float ";
@@ -672,11 +676,11 @@ class LayoutComputeImageFolderToBufferChw
       x_image_shape = folder_converter.InitImageDimInfoWith(x_dims);
     }
     auto* y_data =
-        (fp16_support_ && param.process_type != 2)
+        (fp16_support_)
             ? param.y->mutable_data<half_t, cl::Buffer>(TARGET(kOpenCL))
             : param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     auto* x_data = GET_DATA_GPU(param.x);
-    if (fp16_support_ && param.process_type != 2)
+    if (fp16_support_)
       param.y->set_precision(PRECISION(kFP16));
     else
       param.y->set_precision(PRECISION(kFloat));
@@ -787,7 +791,7 @@ class LayoutComputeBufferChwToImageFolder
     if (x_dims.size() > 2) {
       kernel_func_name_ = "buffer_to_image2d";
     }
-    if (param.process_type != 2 && fp16_support_) {
+    if (fp16_support_) {
       build_options_ += " -DMUTABLE_TYPE=half ";
     } else {
       build_options_ += " -DMUTABLE_TYPE=float ";
