@@ -117,7 +117,7 @@ class XPUGreaterThanCastMulFuser : public FuseBase {
     auto* scope = matched.at("fill_any_like")->stmt()->op()->scope();
     auto input_name = matched.at("input")->arg()->name;
 
-    std::cout << "======>Test Paddle Lite Ci" << std::endl;
+    std::cout << "======>Test Paddle Lite Ci=======>" << std::endl;
     float value_filled = 1.0f;
     value_filled =
         matched.at("fill_any_like")->stmt()->op_info()->GetAttr<float>("value");
