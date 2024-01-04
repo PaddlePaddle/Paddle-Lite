@@ -21,6 +21,22 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+template <typename T>
+T GetValueOfExpectedType(const lite::Tensor* x) {
+  switch (x->precision()) {
+    case PRECISION(kFloat):
+      return static_cast<T>(x->template data<float>()[0]);
+    case PRECISION(kInt32):
+      return static_cast<T>(x->template data<int32_t>()[0]);
+    case PRECISION(kInt64):
+      return static_cast<T>(x->template data<int64_t>()[0]);
+    default:
+      LOG(FATAL) << "data type is not supported: "
+                 << lite_api::PrecisionToStr(x->precision());
+      return static_cast<T>(0);
+  }
+}
+
 template <typename T, PrecisionType PType>
 void LinspaceCompute<T, PType>::Run() {
   auto& param = this->template Param<operators::LinspaceParam>();
@@ -31,20 +47,31 @@ void LinspaceCompute<T, PType>::Run() {
   auto* out_tensor = param.Out;
   int64_t num = static_cast<int64_t>(num_tensor->template data<int>()[0]);
   int r = -1;
+
+  T start_val = GetValueOfExpectedType<T>(start_tensor);
+  T stop_val = GetValueOfExpectedType<T>(stop_tensor);
   switch (param.Out->precision()) {
     case PRECISION(kFloat):
       r = xdnn::linspace<T>(ctx.GetRawContext(),
                             out_tensor->template mutable_data<T>(TARGET(kXPU)),
-                            static_cast<T>(start_tensor->template data<T>()[0]),
-                            static_cast<T>(stop_tensor->template data<T>()[0]),
+                            start_val,
+                            stop_val,
                             num);
       CHECK_EQ(r, 0);
       break;
     case PRECISION(kInt32):
       r = xdnn::linspace<T>(ctx.GetRawContext(),
                             out_tensor->template mutable_data<T>(TARGET(kXPU)),
-                            static_cast<T>(start_tensor->template data<T>()[0]),
-                            static_cast<T>(stop_tensor->template data<T>()[0]),
+                            start_val,
+                            stop_val,
+                            num);
+      CHECK_EQ(r, 0);
+      break;
+    case PRECISION(kInt64):
+      r = xdnn::linspace<T>(ctx.GetRawContext(),
+                            out_tensor->template mutable_data<T>(TARGET(kXPU)),
+                            start_val,
+                            stop_val,
                             num);
       CHECK_EQ(r, 0);
       break;

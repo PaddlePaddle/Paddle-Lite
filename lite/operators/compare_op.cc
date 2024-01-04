@@ -35,7 +35,7 @@ static void GetBroadcastDimsArrays(const DDim &x_dims,
   };
 
   CHECK_GE(axis, 0);
-  CHECK_LT(axis, max_dim);
+  CHECK_LE(axis, max_dim);
   if (x_dims.size() > y_dims.size()) {
     std::fill(y_dims_array, y_dims_array + axis, 1);
     if (axis + y_dims.size() < max_dim) {
