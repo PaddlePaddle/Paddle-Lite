@@ -107,7 +107,6 @@ void ElementwiseAddCompute::UpdateParams() {
   auto axis = ele_param_->axis;
   const auto& x_dims = ele_param_->X->dims();
   const auto& y_dims = ele_param_->Y->dims();
-  const auto& out_dims = ele_param_->Out->dims();
   if (axis < 0) {
     axis = static_cast<int>(x_dims.size() - y_dims.size());
   }
