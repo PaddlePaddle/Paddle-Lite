@@ -5,10 +5,10 @@ repos:
     -   id: remove-crlf
         files: (?!.*third_party)^.*$|(?!.*book)^.*$
         exclude: ^(third-party/|metal/|web/)
--   repo: https://github.com/PaddlePaddle/mirrors-yapf.git
-    sha: 0d79c0c469bab64f7229c9aca2b1186ef47f0e37
+-   repo: https://github.com/psf/black.git
+    rev: 23.3.0
     hooks:
-    -   id: yapf
+    -   id: black
         language_version: python3
         files: (.*\.(py|bzl)|BUILD|.*\.BUILD|WORKSPACE)$
 -   repo: https://github.com/pre-commit/pre-commit-hooks
