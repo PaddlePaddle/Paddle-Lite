@@ -15,6 +15,7 @@
 #pragma once
 #include <string>
 #include <vector>
+
 #include "lite/core/op_lite.h"
 #include "lite/core/scope.h"
 #include "lite/utils/all.h"
@@ -65,7 +66,7 @@ class ReshapeOp : public OpLite {
   std::vector<DDimLite> last_output_shapes_{};
   std::vector<LoD> last_output_lods_{};
   // last shape tensor vector cache.
-  std::vector<std::vector<int>> last_shape_tensor_vals{};
+  std::vector<std::vector<int64_t>> last_shape_tensor_vals{};
 };
 
 class Reshape2Op : public ReshapeOp {
@@ -90,7 +91,7 @@ class Reshape2Op : public ReshapeOp {
   }
 };
 
-std::vector<DDim::value_type> ValidateShape(const std::vector<int> &shape,
+std::vector<DDim::value_type> ValidateShape(const std::vector<int64_t> &shape,
                                             const DDim &input_dims);
 
 }  // namespace operators
