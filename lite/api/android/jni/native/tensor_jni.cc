@@ -136,7 +136,7 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeSetData___3I(
   return JNI_TRUE;
 }
 
-JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeSetData___3L(
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_lite_Tensor_nativeSetData___3J(
     JNIEnv *env, jobject jtensor, jlongArray buf) {
   std::unique_ptr<Tensor> *tensor = get_writable_tensor_pointer(env, jtensor);
   if (tensor == nullptr || (*tensor == nullptr)) {
