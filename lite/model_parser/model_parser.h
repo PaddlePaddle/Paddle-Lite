@@ -19,7 +19,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#ifndef LITE_ON_TINY_PUBLISH
+#if !defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_ZEPHYR)
 #include "lite/core/framework.pb.h"
 #endif
 #include "lite/core/scope.h"
@@ -30,7 +30,7 @@
 namespace paddle {
 namespace lite {
 
-#ifndef LITE_ON_TINY_PUBLISH
+#if !defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_ZEPHYR)
 // Read a __model__ file.
 std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
     const std::string& path, bool program_from_memory = false);

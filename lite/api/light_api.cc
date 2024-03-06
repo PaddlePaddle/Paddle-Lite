@@ -15,8 +15,10 @@
 #include "lite/api/light_api.h"
 #include <algorithm>
 #include <unordered_map>
+#ifndef LITE_WITH_ZEPHYR
 #include "paddle_use_kernels.h"  // NOLINT
 #include "paddle_use_ops.h"      // NOLINT
+#endif
 
 namespace paddle {
 namespace lite {
@@ -43,7 +45,7 @@ void LightPredictor::Build(const std::string& model_dir,
                            lite_api::LiteModelType model_type,
                            bool model_from_memory) {
   switch (model_type) {
-#ifndef LITE_ON_TINY_PUBLISH
+#if !defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_ZEPHYR)
     case lite_api::LiteModelType::kProtobuf:
       LoadModelPb(model_dir, "", "", scope_.get(), program_desc_.get());
       break;

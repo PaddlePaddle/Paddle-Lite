@@ -19,7 +19,7 @@
 #include "lite/model_parser/naive_buffer/op_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
-#ifndef LITE_ON_TINY_PUBLISH
+#if !defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_ZEPHYR)
 #include "lite/model_parser/pb/block_desc.h"
 #include "lite/model_parser/pb/op_desc.h"
 #include "lite/model_parser/pb/program_desc.h"
@@ -43,7 +43,7 @@ namespace lite {
     }                                                              \
   }
 
-#ifndef LITE_ON_TINY_PUBLISH
+#if !defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_ZEPHYR)
 template <>
 void TransformVarDescAnyToCpp<pb::VarDesc>(const pb::VarDesc &any_desc,
                                            cpp::VarDesc *cpp_desc) {
@@ -296,7 +296,7 @@ TRANS_OP_ANY_WITH_CPP_IMPL(naive_buffer::OpDesc);
 TRANS_BLOCK_ANY_WITH_CPP_IMPL(BlockDesc, naive_buffer, naive_buffer);
 TRANS_PROGRAM_ANY_WITH_CPP_IMPL(ProgramDesc, naive_buffer, naive_buffer);
 
-#ifndef LITE_ON_TINY_PUBLISH
+#if !defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_ZEPHYR)
 TRANS_VAR_ANY_WITH_CPP_IMPL(pb::VarDesc);
 TRANS_OP_ANY_WITH_CPP_IMPL(pb::OpDesc);
 TRANS_BLOCK_ANY_WITH_CPP_IMPL(BlockDesc, pb, framework);

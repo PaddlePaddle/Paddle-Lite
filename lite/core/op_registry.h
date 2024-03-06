@@ -405,7 +405,7 @@ class KernelRegistry final {
 
  private:
   mutable std::vector<any_kernel_registor_t> registries_;
-#ifndef LITE_ON_TINY_PUBLISH
+#if !defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_ZEPHYR)
   mutable std::map<
       std::string,
       std::vector<std::tuple<TargetType, PrecisionType, DataLayoutType>>>

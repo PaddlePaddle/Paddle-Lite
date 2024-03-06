@@ -58,7 +58,8 @@
 namespace paddle {
 namespace lite {
 
-#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU))
+#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_MLU) || \
+     (defined LITE_WITH_ZEPHYR))
 LITE_THREAD_LOCAL lite_api::PowerMode DeviceInfo::mode_;
 LITE_THREAD_LOCAL ARMArch DeviceInfo::arch_;
 LITE_THREAD_LOCAL int DeviceInfo::mem_size_;

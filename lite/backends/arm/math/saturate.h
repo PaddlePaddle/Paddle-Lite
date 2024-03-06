@@ -17,6 +17,9 @@
 #include <limits.h>
 #include <algorithm>
 #include <cmath>
+#ifdef LITE_WITH_ZEPHYR
+#include <climits>
+#endif
 
 namespace paddle {
 namespace lite {

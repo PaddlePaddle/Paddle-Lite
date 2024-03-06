@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #pragma once
-
+#ifdef LITE_WITH_ZEPHYR
+#include "lite/utils/dirent.h"
+#endif
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>

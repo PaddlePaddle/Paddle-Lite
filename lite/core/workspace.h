@@ -59,7 +59,7 @@ class WorkSpace {
   static WorkSpace& Global_X86() { return Global_Host(); }
 #endif
 
-#if defined(LITE_WITH_ARM)
+#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_ZEPHYR))
   static WorkSpace& Global_ARM() { return Global_Host(); }
 #endif
 

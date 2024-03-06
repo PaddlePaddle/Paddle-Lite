@@ -202,7 +202,7 @@ class Context<TargetType::kXPU> {
 };
 #endif
 
-#ifdef LITE_WITH_ARM
+#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_ZEPHYR))
 template <>
 class Context<TargetType::kARM> {
  public:
@@ -433,7 +433,7 @@ class ContextScheduler {
             &context);
       } break;
 #endif
-#ifdef LITE_WITH_ARM
+#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_ZEPHYR))
       case TARGET(kARM):
         kernel_contexts_[TargetType::kARM].As<ARMContext>().CopySharedTo(
             &ctx->As<ARMContext>());
@@ -514,7 +514,7 @@ class ContextScheduler {
 #ifdef LITE_WITH_CUDA
     InitContext<TargetType::kCUDA, CUDAContext>();
 #endif
-#ifdef LITE_WITH_ARM
+#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_ZEPHYR))
     InitContext<TargetType::kARM, ARMContext>();
 #endif
 #ifdef LITE_WITH_OPENCL

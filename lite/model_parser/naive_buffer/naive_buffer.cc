@@ -14,6 +14,9 @@
 
 #include "lite/model_parser/naive_buffer/naive_buffer.h"
 #include <stdio.h>
+#ifdef LITE_WITH_ZEPHYR
+#include "lite/utils/mem.h"
+#endif
 
 namespace paddle {
 namespace lite {
