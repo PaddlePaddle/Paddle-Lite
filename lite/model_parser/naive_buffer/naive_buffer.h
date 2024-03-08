@@ -67,6 +67,9 @@ struct BinaryTable {
   void LoadFromFile(const std::string& filename,
                     const size_t& offset = 0,
                     const size_t& size = 0);
+#ifdef LITE_WITH_ZEPHYR
+  void LoadFromFile(const uint64_t& topo_size, uint8_t* start);
+#endif
   void LoadFromMemory(const char* buffer, size_t buffer_size);
 };
 

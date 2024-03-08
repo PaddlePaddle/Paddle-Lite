@@ -27,16 +27,19 @@
 #include "lite/model_parser/naive_buffer/param_desc.h"
 #include "lite/model_parser/naive_buffer/program_desc.h"
 #include "lite/model_parser/naive_buffer/var_desc.h"
-#ifndef LITE_ON_TINY_PUBLISH
+#if !defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_ZEPHYR)
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/model_parser/pb/var_desc.h"
 #endif
 #include "lite/utils/io.h"
+#ifdef LITE_WITH_ZEPHYR
+#include "lite/utils/config.h"
+#endif
 
 namespace paddle {
 namespace lite {
 
-#ifndef LITE_ON_TINY_PUBLISH
+#if !defined(LITE_ON_TINY_PUBLISH) && !defined(LITE_WITH_ZEPHYR)
 int SizeOfType(framework::proto::VarType::Type type) {
   using Type = framework::proto::VarType::Type;
   switch (static_cast<int>(type)) {
@@ -604,6 +607,7 @@ void SetTensorDataNaive(T *out, size_t size, const std::vector<T> &src) {
   }
 }
 
+#ifndef LITE_WITH_ZEPHYR
 void GetParamInfoNaive(const naive_buffer::ParamDesc &desc,
                        lite::Scope *scope,
                        const std::string &name) {
@@ -747,6 +751,7 @@ void LoadModelNaive(const std::string &model_dir,
 
   VLOG(4) << "Load naive buffer model in '" << model_dir << "' successfully";
 }
+#endif
 
 /*
  * Binary structure of naive_buffer model: model.nb
@@ -778,6 +783,7 @@ void ReadModelDataFromFile(T *data,
   *offset = *offset + size;
 }
 
+#ifndef LITE_WITH_ZEPHYR
 void LoadModelNaiveFromFile(const std::string &filename,
                             Scope *scope,
                             cpp::ProgramDesc *cpp_prog) {
@@ -835,9 +841,11 @@ void LoadModelNaiveFromFile(const std::string &filename,
 
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
+#endif
 
 // warning: this is an old inference and is not suggested.
 // todo: this inference will be abandened in release/v3.0.0
+#ifndef LITE_WITH_ZEPHYR
 void LoadModelNaiveFromMemory(const std::string &model_buffer,
                               const std::string &param_buffer,
                               Scope *scope,
@@ -865,6 +873,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
 
   VLOG(4) << "Load model from naive buffer memory successfully";
 }
+#endif
 
 // usage: LoadModelNaiveFromMemory is used for loading naive model from memory
 template <typename T>
@@ -877,6 +886,7 @@ void ReadModelDataFromBuffer(T *data,
   memcpy(data, data_table.cursor(), size);
   *offset = *offset + size;
 }
+#ifndef LITE_WITH_ZEPHYR
 void LoadModelNaiveFromMemory(const std::string &model_buffer,
                               Scope *scope,
                               cpp::ProgramDesc *cpp_prog) {
@@ -922,6 +932,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
 
   VLOG(4) << "Load model from naive buffer memory successfully";
 }
+#endif
 
 }  // namespace lite
 }  // namespace paddle

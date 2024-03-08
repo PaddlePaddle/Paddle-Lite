@@ -221,7 +221,7 @@ RuntimeProgram::RuntimeProgram(
       VLOG(3) << "The attr '" << kKernelTypeAttr
               << "' not found, pick the first kernel for " << op_type;
       std::vector<std::unique_ptr<KernelBase>> kernels;
-#if defined(LITE_WITH_ARM)
+#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_ZEPHYR))
       kernels = op->CreateKernels({Place{TARGET(kARM)}, Place{TARGET(kHost)}});
 #elif defined(LITE_WITH_X86)
       kernels = op->CreateKernels({Place{TARGET(kX86)}, Place{TARGET(kHost)}});

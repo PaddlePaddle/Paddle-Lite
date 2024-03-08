@@ -223,7 +223,7 @@ std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT &) {
 }
 
 ConfigBase::ConfigBase(PowerMode mode, int threads) {
-#ifdef LITE_WITH_ARM
+#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_ZEPHYR))
   lite::DeviceInfo::Init();
   lite::DeviceInfo::Global().SetRunMode(mode, threads);
   mode_ = lite::DeviceInfo::Global().mode();
@@ -244,7 +244,7 @@ void ConfigBase::set_opencl_tune(bool enable_tune) {
 }
 
 void ConfigBase::set_power_mode(paddle::lite_api::PowerMode mode) {
-#ifdef LITE_WITH_ARM
+#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_ZEPHYR))
   lite::DeviceInfo::Global().SetRunMode(mode, threads_);
   mode_ = lite::DeviceInfo::Global().mode();
   threads_ = lite::DeviceInfo::Global().threads();
@@ -252,7 +252,7 @@ void ConfigBase::set_power_mode(paddle::lite_api::PowerMode mode) {
 }
 
 void ConfigBase::set_threads(int threads) {
-#ifdef LITE_WITH_ARM
+#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_ZEPHYR))
   lite::DeviceInfo::Global().SetRunMode(mode_, threads);
   mode_ = lite::DeviceInfo::Global().mode();
   threads_ = lite::DeviceInfo::Global().threads();
@@ -336,7 +336,7 @@ void MobileConfig::set_model_buffer(const char *model_buffer,
 // This is the method for allocating workspace_size according to L3Cache size
 void MobileConfig::SetArmL3CacheSize(L3CacheSetMethod method,
                                      int absolute_val) {
-#ifdef LITE_WITH_ARM
+#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_ZEPHYR))
   lite::DeviceInfo::Global().SetArmL3CacheSize(method, absolute_val);
 #endif
 }

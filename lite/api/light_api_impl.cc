@@ -57,7 +57,7 @@ std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetOutput(
 }
 
 void LightPredictorImpl::Run() {
-#ifdef LITE_WITH_ARM
+#if ((defined LITE_WITH_ARM) || (defined LITE_WITH_ZEPHYR))
   lite::DeviceInfo::Global().SetRunMode(mode_, threads_);
 #endif
   raw_predictor_->Run();
