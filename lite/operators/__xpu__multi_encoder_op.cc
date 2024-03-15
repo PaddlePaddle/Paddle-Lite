@@ -69,6 +69,18 @@ bool XPUMultiEncoderOp::InferShapeImpl() const {
     } else {
       param_.output->Resize(out_dims);
     }
+  } else if (param_.has_token_sliced_layer &&
+             param_.token_sliced_length.size() > 0) {
+    int n_layers = param_.n_layers;
+    CHECK_EQ(param_.token_sliced_length.size(), n_layers);
+    int last_layer_seql = -1;
+    for (int i = n_layers - 1; i >= 0; --i) {
+      if (param_.token_sliced_length[i] != -1) {
+        last_layer_seql = param_.token_sliced_length[i];
+        break;
+      }
+    }
+    param_.output->Resize({batch_size, last_layer_seql, head_num});
   } else {
     param_.output->Resize({batch_size, seq_len, head_num});
   }
@@ -83,6 +95,10 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
       scope->FindVar(op_desc.Output("Output").front())->GetMutable<Tensor>();
   param_.relative_type = op_desc.GetAttr<int>("relative_type");
   param_.is_smooth_quant = op_desc.GetAttr<bool>("is_smooth_quant");
+  param_.has_token_sliced_layer =
+      op_desc.GetAttr<bool>("has_token_sliced_layer");
+  param_.token_sliced_length =
+      op_desc.GetAttr<std::vector<int>>("token_sliced_length");
 
   param_.fc_weight.clear();
   for (auto& name : op_desc.Input("FCWeight")) {

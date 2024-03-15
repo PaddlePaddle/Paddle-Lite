@@ -1803,6 +1803,10 @@ struct XPUMultiEncoderParam : ParamBase {
   bool per_channel{false};
   bool already_qkv_fusion{false};  // qkv is already fusion in graph
   bool is_smooth_quant{false};
+  // has any sliced-layers
+  bool has_token_sliced_layer{false};
+  // token length of sliced layers, -1 means not sliced
+  std::vector<int> token_sliced_length{};
 };
 
 struct XPUSpatialTransformerResBlockParam : ParamBase {

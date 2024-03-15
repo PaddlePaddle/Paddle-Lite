@@ -254,6 +254,7 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
   auto& ctx = this->ctx_->template As<XPUContext>();
 
   xdnn::VectorParam<int> query_lod;
+  const bool has_token_sliced_layer = param.has_token_sliced_layer;
   if (param.SeqLod && param.SeqLod->data<int>()) {
     // vsl
     query_lod = {param.SeqLod->data<int>(),
@@ -270,7 +271,11 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       param.hidden_dim,
                                       param.norm_before, /*is_pre_norm*/
                                       param.per_channel);
-
+    if (has_token_sliced_layer) {
+      qkv_attn_param.with_token_slice = true;
+      qkv_attn_param.attn_sliced_length.assign(
+          param.token_sliced_length.begin(), param.token_sliced_length.end());
+    }
     if (param.softmax_max.size()) {
       qkv_attn_param.ptq_max_value = param.softmax_max;
     }
@@ -324,6 +329,11 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       param.hidden_dim,
                                       param.norm_before, /*is_pre_norm*/
                                       param.per_channel);
+    if (has_token_sliced_layer) {
+      qkv_attn_param.with_token_slice = true;
+      qkv_attn_param.attn_sliced_length.assign(
+          param.token_sliced_length.begin(), param.token_sliced_length.end());
+    }
     if (param.softmax_max.size()) {
       qkv_attn_param.ptq_max_value = param.softmax_max;
     }
@@ -378,6 +388,11 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       param.hidden_dim,
                                       param.norm_before,
                                       param.per_channel);
+    if (has_token_sliced_layer) {
+      qkv_attn_param.with_token_slice = true;
+      qkv_attn_param.attn_sliced_length.assign(
+          param.token_sliced_length.begin(), param.token_sliced_length.end());
+    }
     if (param.softmax_max.size()) {
       qkv_attn_param.ptq_max_value = param.softmax_max;
     }
