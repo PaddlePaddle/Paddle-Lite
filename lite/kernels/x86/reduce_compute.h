@@ -14,6 +14,7 @@
 #pragma once
 
 #include <vector>
+
 #include "lite/backends/x86/fluid/eigen.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
@@ -92,6 +93,15 @@ class ReduceCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
     } else {
       int ndim = x_dims.size();
       int rdim = dims.size();
+      HANDLE_DIM(6, 5, Functor);
+      HANDLE_DIM(6, 4, Functor);
+      HANDLE_DIM(6, 3, Functor);
+      HANDLE_DIM(6, 2, Functor);
+      HANDLE_DIM(6, 1, Functor);
+      HANDLE_DIM(5, 4, Functor);
+      HANDLE_DIM(5, 3, Functor);
+      HANDLE_DIM(5, 2, Functor);
+      HANDLE_DIM(5, 1, Functor);
       HANDLE_DIM(4, 3, Functor);
       HANDLE_DIM(4, 2, Functor);
       HANDLE_DIM(4, 1, Functor);
