@@ -222,6 +222,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__embedding_with_eltwise_add_fuse_pass",
        "__xpu__fc_fuse_pass",
        "__xpu__softmax_topk_fuse_pass",
+       "__xpu__remove_mask_slice_pass",
        "__xpu__multi_encoder_adaptive_seqlen_fuse_pass",
        "__xpu__multi_encoder_adaptive_seqlen_v2_fuse_pass",
        "__xpu__multi_encoder_adaptive_seqlen_v3_fuse_pass",

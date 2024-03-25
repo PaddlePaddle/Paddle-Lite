@@ -99,6 +99,7 @@ USE_MIR_PASS(__xpu__spatial_transformer_resblock_fuse_pass);
 USE_MIR_PASS(__xpu__matmul_scale_softmax_v1_fuse_pass);
 USE_MIR_PASS(__xpu__up_decoder_fuse_pass);
 USE_MIR_PASS(__xpu__multi_up_decoder_fuse_pass);
+USE_MIR_PASS(__xpu__remove_mask_slice_pass);
 USE_MIR_PASS(__xpu__multi_encoder_adaptive_seqlen_fuse_pass);
 USE_MIR_PASS(__xpu__multi_encoder_adaptive_seqlen_v2_fuse_pass);
 USE_MIR_PASS(__xpu__multi_encoder_adaptive_seqlen_v3_fuse_pass);
