@@ -349,7 +349,6 @@ std::unique_ptr<cl::Program> CLRuntime::CreateProgramFromSource(
 bool CLRuntime::BuildProgram(cl::Program* program, const std::string& options) {
   status_ = program->build({device()}, options.c_str());
   CL_CHECK_ERROR(status_);
-
   if (status_ != CL_SUCCESS) {
     if (program->getBuildInfo<CL_PROGRAM_BUILD_STATUS>(device()) ==
         CL_BUILD_ERROR) {

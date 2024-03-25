@@ -15,7 +15,7 @@ INCLUDE(cblas)
 
 IF(NOT ${CBLAS_FOUND})
     INCLUDE(ExternalProject)
-
+    SET(CMAKE_VERBOSE_MAKEFILE ON)
     SET(CBLAS_SOURCES_DIR ${THIRD_PARTY_PATH}/openblas)
     SET(CBLAS_INSTALL_DIR ${THIRD_PARTY_PATH}/install/openblas)
     SET(CBLAS_INC_DIR "${CBLAS_INSTALL_DIR}/include" CACHE PATH "openblas include directory." FORCE)

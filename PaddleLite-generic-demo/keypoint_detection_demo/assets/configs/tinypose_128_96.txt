@@ -1,0 +1,6 @@
+width:96
+height:128
+mean:0.485,0.456,0.406
+std:0.229,0.224,0.225
+draw_threshold:0.5
+use_dark_decode:true
