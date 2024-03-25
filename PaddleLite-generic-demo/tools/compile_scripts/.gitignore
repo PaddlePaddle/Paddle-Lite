@@ -1,0 +1,4 @@
+sdk/*
+workspace/*
+settings.sh
+!.gitignore

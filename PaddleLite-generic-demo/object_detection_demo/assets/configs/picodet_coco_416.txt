@@ -1,0 +1,7 @@
+type:2
+width:416
+height:416
+mean:0,0,0
+std:1,1,1
+draw_threshold:0.35
+label_list:coco-labels-2014_2017.txt

@@ -1,0 +1,7 @@
+type:1
+width:300
+height:300
+mean:0.5,0.5,0.5
+std:0.5,0.5,0.5
+draw_threshold:0.5
+label_list:pascalvoc_label_list.txt

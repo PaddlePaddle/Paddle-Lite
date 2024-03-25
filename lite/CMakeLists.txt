@@ -1,6 +1,7 @@
 include(lite)
 
 message(STATUS "LITE_WITH_X86:\t${LITE_WITH_X86}")
+message(STATUS "LITE_WITH_LOONGARCH:\t${LITE_WITH_LOONGARCH}")
 message(STATUS "LITE_WITH_ARM:\t${LITE_WITH_ARM}")
 message(STATUS "LITE_WITH_SW:\t${LITE_WITH_SW}")
 message(STATUS "LITE_WITH_OPENCL:\t${LITE_WITH_OPENCL}")
@@ -404,6 +405,53 @@ if (LITE_WITH_X86)
     add_dependencies(publish_inference publish_inference_x86_cxx_demos)
   endif()
 endif()
+if (LITE_WITH_LOONGARCH)
+    if(NOT WIN32)
+        add_custom_target(publish_inference_cxx_lib ${TARGET}
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/bin"
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND cp "${PADDLE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/paddle_use_kernels.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/paddle_use_ops.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+            COMMAND cp "${PADDLE_BINARY_DIR}/libpaddle_api_full_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND cp "${PADDLE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+            )
+        add_dependencies(publish_inference_cxx_lib bundle_full_api)
+        add_dependencies(publish_inference_cxx_lib bundle_light_api)
+        add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
+        add_dependencies(publish_inference_cxx_lib paddle_light_api_shared)
+        add_dependencies(publish_inference publish_inference_cxx_lib)
+    endif()
+endif()
+
+if (LITE_WITH_LOONGARCH)
+  if(NOT WIN32)
+    add_custom_target(publish_inference_loongarch_cxx_lib ${TARGET}
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/bin"
+            COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/test_model_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
+            )
+    add_dependencies(publish_inference_loongarch_cxx_lib test_model_bin)
+
+    configure_file(${PADDLE_SOURCE_DIR}/lite/demo/cxx/loongarch_mobilenetv1_light_demo/CMakeLists.txt.in ${PADDLE_SOURCE_DIR}/lite/demo/cxx/loongarch_mobilenetv1_light_demo/CMakeLists.txt @ONLY)
+    configure_file(${PADDLE_SOURCE_DIR}/lite/demo/cxx/loongarch_mobilenetv1_full_demo/CMakeLists.txt.in ${PADDLE_SOURCE_DIR}/lite/demo/cxx/loongarch_mobilenetv1_full_demo/CMakeLists.txt @ONLY)
+    add_custom_target(publish_inference_loongarch_cxx_demos ${TARGET}
+           COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+           COMMAND cp -r "${PADDLE_SOURCE_DIR}/lite/demo/cxx/loongarch_mobilenetv1_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light"
+           COMMAND cp -r "${PADDLE_SOURCE_DIR}/lite/demo/cxx/loongarch_mobilenetv1_full_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_full"
+           COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/third_party"
+           COMMAND rm -rf "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light/*.in"
+           COMMAND rm -rf "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_full/*.in"
+           COMMAND rm -rf "${PADDLE_SOURCE_DIR}/lite/demo/cxx/loongarch_mobilenetv1_light_demo/CMakeLists.txt"
+           COMMAND rm -rf "${PADDLE_SOURCE_DIR}/lite/demo/cxx/loongarch_mobilenetv1_full_demo/CMakeLists.txt"
+       )
+    add_dependencies(publish_inference_loongarch_cxx_lib publish_inference_loongarch_cxx_demos)
+    add_dependencies(publish_inference_loongarch_cxx_demos paddle_full_api_shared eigen3)
+    add_dependencies(publish_inference publish_inference_loongarch_cxx_lib)
+    add_dependencies(publish_inference publish_inference_loongarch_cxx_demos)
+  endif()
+endif()
 
 if (LITE_WITH_ARM)
     if (NOT LITE_ON_TINY_PUBLISH)
@@ -605,7 +653,7 @@ if (LITE_WITH_ARM)
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/java/android/PaddlePredictor/app/src/main/jniLibs/arm8"
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/java/android/PaddlePredictor/app/src/main/jniLibs/arm64-v8a"
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/java/android/PaddlePredictor/app/src/main/jniLibs/armeabi-v7a"
-                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/java/android/PaddlePredictor/app/src/main/jniLibs/x86"
+                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/java/android/PaddlePredictor/app/src/main/jniLibs/loongarch"
             )
             add_dependencies(publish_inference_java_lib publish_inference_android_java_demo)
         endif()

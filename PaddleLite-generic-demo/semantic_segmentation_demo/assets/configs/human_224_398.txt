@@ -1,0 +1,5 @@
+width:398
+height:224
+mean:0.5,0.5,0.5
+std:0.5,0.5,0.5
+draw_weight:0.8

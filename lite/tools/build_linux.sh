@@ -4,12 +4,12 @@ set -e
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
-# armv8 or armv7hf or armv7 or x86, default armv8.
-ARCH=armv8
+# armv8 or armv7hf or armv7 or x86 or loongarch, default armv8.
+ARCH=loongarch
 # gcc or clang, default gcc.
 TOOLCHAIN=gcc
 # ON or OFF, default OFF.
-WITH_EXTRA=OFF
+WITH_EXTRA=ON
 # controls whether to compile python lib, default is OFF.
 WITH_PYTHON=OFF
 PY_VERSION=""
@@ -20,15 +20,15 @@ WITH_CV=OFF
 # controls whether to print log information, default is ON.
 WITH_LOG=ON
 # controls whether to throw the exception when error occurs, default is OFF
-WITH_EXCEPTION=OFF
+WITH_EXCEPTION=ON
 # options of striping lib according to input model.
 WITH_STRIP=OFF
 OPTMODEL_DIR=""
 # options of compiling x86 lib
 WITH_STATIC_MKL=OFF
-WITH_AVX=ON
+WITH_AVX=OFF
 # options of compiling OPENCL lib.
-WITH_OPENCL=OFF
+WITH_OPENCL=ON
 # options of compiling Metal lib for Mac OS.
 WITH_METAL=OFF
 # controls whether to block temporary 0dim pass, default is OFF
@@ -88,10 +88,10 @@ KUNLUNXIN_XFT_ROOT=""
 # options of adding training ops
 WITH_TRAIN=OFF
 # options of building tiny publish so
-WITH_TINY_PUBLISH=ON
+WITH_TINY_PUBLISH=OFF
 # controls whether to include FP16 kernels, default is OFF
 BUILD_ARM82_FP16=OFF
-WITH_ARM_DOTPROD=ON
+WITH_ARM_DOTPROD=OFF
 # options of profiling
 WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
@@ -150,6 +150,10 @@ function init_cmake_mutable_options {
         with_x86=ON
         arm_target_os=""
         WITH_TINY_PUBLISH=OFF
+    elif [ "${ARCH}" == "loongarch" ]; then
+        with_loongarch=ON
+        arm_target_os=""
+        WITH_TINY_PUBLISH=OFF	
     else
         with_arm=ON
         arm_arch=$ARCH
@@ -183,6 +187,7 @@ function init_cmake_mutable_options {
 
     cmake_mutable_options="-DLITE_WITH_ARM=$with_arm \
                         -DLITE_WITH_X86=$with_x86 \
+			-DLITE_WITH_LOONGARCH=$with_loongarch\
                         -DARM_TARGET_ARCH_ABI=$arm_arch \
                         -DARM_TARGET_OS=$arm_target_os \
                         -DARM_TARGET_LANG=$TOOLCHAIN \
@@ -309,6 +314,7 @@ function prepare_thirdparty {
         git submodule update --init --recursive
     fi
     cd -
+    cd .
 }
 ####################################################################################################
 
@@ -361,7 +367,7 @@ function make_publish_so {
 
     cmake $workspace \
         ${CMAKE_COMMON_OPTIONS} \
-        ${cmake_mutable_options}
+        ${cmake_mutable_options} 
 
     if [ "${WITH_BENCHMARK}" == "ON" ]; then
         make benchmark_bin -j$NUM_PROC
@@ -402,7 +408,7 @@ function print_usage {
     echo -e "|     ./lite/tools/build_linux.sh help                                                                                                                 |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                                  |"
-    echo -e "|     --arch: (armv8|armv7hf|armv7|x86), default is armv8                                                                                              |"
+    echo -e "|     --arch: (armv8|armv7hf|armv7|x86|loongarch), default is armv8                                                                                              |"
     echo -e "|     --toolchain: (gcc|clang), defalut is gcc                                                                                                         |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP), default is OFF  |"
     echo -e "|     --with_python: (OFF|ON); controls whether to build python lib or whl, default is OFF                                                             |"
