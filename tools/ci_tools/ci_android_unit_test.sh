@@ -70,7 +70,7 @@ function test_arm_api {
     adb -s $adb_device push $testpath /data/local/tmp/$adb_work_dir
     adb -s $adb_device shell chmod +x "/data/local/tmp/$adb_work_dir/$test_name"
     adb -s $adb_device push $model_path /data/local/tmp/$adb_work_dir
-    adb -s $adb_device shell "cd /data/local/tmp/$adb_work_dir && ./$test_name --model_dir lite_naive_model"
+    adb -s $adb_device shell "cd /data/local/tmp/$adb_work_dir && export GLOG_v=5 && ./$test_name --model_dir lite_naive_model"
 }
 
 # 2 function of compiling
@@ -109,7 +109,7 @@ function test_arm_unit_test {
   adb_work_dir=$3
   unit_test_path=$(find ./lite -name $unit_test)
   adb -s $adb_devices push $unit_test_path /data/local/tmp/$adb_work_dir
-  adb -s $adb_devices shell "cd /data/local/tmp/$adb_work_dir && ./$unit_test"
+  adb -s $adb_devices shell "cd /data/local/tmp/$adb_work_dir && export GLOG_v=5 && ./$unit_test"
 }
 
 function build_test_android {
