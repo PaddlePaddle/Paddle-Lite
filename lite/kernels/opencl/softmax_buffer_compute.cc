@@ -25,9 +25,7 @@ class SoftmaxComputeBuffer
  public:
   using param_t = operators::SoftmaxParam;
 
-  std::string doc() const override {
-    return "Softmax using cl::Image2D, kFP16";
-  }
+  std::string doc() const override { return "Softmax using cl::Buffer, kFP16"; }
 
   void PrepareForRun() override {
     softmax_param_ = param_.get_mutable<param_t>();
@@ -35,24 +33,24 @@ class SoftmaxComputeBuffer
     int axis = softmax_param_->axis;
     VLOG(4) << "x_dims: " << x_dims;
     VLOG(4) << "axis: " << axis;
-    if (x_dims.size() > 1) {
-      axis = axis < 0 ? x_dims.size() + axis : axis;
-      axis_ = 4 - x_dims.size() + axis;
-    } else {      // for dim 1
-      axis_ = 1;  // process width as channel for folder format
-    }
-    VLOG(4) << "axis_: " << axis_;
-    if (x_dims.size() == 2 && axis_ == 3) {
+    auto extend_in_dims = ExtendInputDims(x_dims);
+    axis = axis < 0 ? x_dims.size() + axis : axis;
+    axis_ = 4 - x_dims.size() + axis;
+
+    if (extend_in_dims[3] < 4) {
+      small_w_flag_ = true;
+      kernel_func_name_ = "softmax_common_buffer";
+    } else if ((x_dims.size() == 2 || x_dims.size() == 1) && axis_ == 3) {
       onexone_flag_ = true;
-      kernel_func_name_ = "softmax_1x1";
+      kernel_func_name_ = "softmax_1x1_buffer";
     } else if (axis_ == 3) {
       kernel_func_name_ = "softmax_width_buffer";
     } else if (axis_ == 2) {
       kernel_func_name_ = "softmax_height_buffer";
     } else if (axis_ == 1) {
-      kernel_func_name_ = "softmax_channel";
+      kernel_func_name_ = "softmax_channel_buffer";
     } else if (axis_ == 0) {
-      kernel_func_name_ = "softmax_batch";
+      kernel_func_name_ = "softmax_batch_buffer";
     } else {
       LOG(FATAL) << "do not support this axis value!"
                  << "axis value is: " << axis_;
@@ -95,20 +93,48 @@ class SoftmaxComputeBuffer
     CL_CHECK_FATAL(status);
     status = kernel.setArg(1, *out_buf);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, static_cast<int>(extend_in_dims[0]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, static_cast<int>(extend_in_dims[1]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(4, static_cast<int>(extend_in_dims[2]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(5, static_cast<int>(extend_in_dims[3]));
-    CL_CHECK_FATAL(status);
+
+    if (small_w_flag_) {
+      int select_dim = 1;
+      for (int i = extend_in_dims.size() - 1; i >= 0; i--) {
+        if (i > axis_) {
+          select_dim *= extend_in_dims[i];
+        }
+      }
+      int pre_dim = extend_in_dims[axis_] * select_dim;
+      status = kernel.setArg(2, static_cast<int>(pre_dim));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(3, static_cast<int>(extend_in_dims[axis_]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(4, static_cast<int>(select_dim));
+      CL_CHECK_FATAL(status);
+    } else if (onexone_flag_) {
+      status = kernel.setArg(2, static_cast<int>(extend_in_dims[3]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(3, UP_DIV(static_cast<int>(extend_in_dims[3]), 4));
+      CL_CHECK_FATAL(status);
+    } else {
+      status = kernel.setArg(2, static_cast<int>(extend_in_dims[0]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(3, static_cast<int>(extend_in_dims[1]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(4, static_cast<int>(extend_in_dims[2]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(5, static_cast<int>(extend_in_dims[3]));
+      CL_CHECK_FATAL(status);
+      if (axis_ == 3) {
+        auto mask_v = GetMask4(extend_in_dims[3]);
+        cl_float4 mask = {mask_v[0], mask_v[1], mask_v[2], mask_v[3]};
+        status = kernel.setArg(6, mask);
+        CL_CHECK_FATAL(status);
+      }
+    }
 
     status = EnqueueNDRangeKernel(context,
                                   kernel,
                                   cl::NullRange,
                                   global_work_size_,
-                                  cl::NullRange,
+                                  local_work_size_,
                                   nullptr,
                                   event_);
     CL_CHECK_FATAL(status);
@@ -126,47 +152,63 @@ class SoftmaxComputeBuffer
 
   void SetGlobalLocal() {
     auto x_dims = softmax_param_->x->dims();
-    int c = x_dims[1];
-    int w_blk = (x_dims[3] + 3) / 4;
-    // int w = x_dims[3];
-    int bh = x_dims[0] * x_dims[2];
-    if (axis_ == 3) {  // for width
+    auto extend_in_dims = ExtendInputDims(x_dims);
+    int n = extend_in_dims[0];
+    int c = extend_in_dims[1];
+    int h = extend_in_dims[2];
+    int w = extend_in_dims[3];
+    int w_blk = (w + 3) / 4;
+    int bh = n * h;
+
+    if (small_w_flag_) {
+      int suffix_num = 1;
+      int prefix_num = 1;
+      for (int i = 0; i < extend_in_dims.size(); i++) {
+        if (i < axis_) {
+          prefix_num *= extend_in_dims[i];
+        } else if (i > axis_) {
+          suffix_num *= extend_in_dims[i];
+        }
+      }
+      global_work_size_ = cl::NDRange(prefix_num, suffix_num, 1);
+    } else if (onexone_flag_) {
+      local_work_size_ = cl::NDRange(32, 1, 1);
+      global_work_size_ =
+          cl::NDRange(ROUND_UP(UP_DIV(w, 4), local_work_size_[0]), h, 1);
+    } else if (axis_ == 3) {  // for width
       global_work_size_ = cl::NDRange{static_cast<cl::size_type>(c),
                                       static_cast<cl::size_type>(bh),
                                       static_cast<cl::size_type>(1)};
     } else if (axis_ == 2) {  // for height
-      global_work_size_ =
-          cl::NDRange{static_cast<cl::size_type>(c * w_blk),
-                      static_cast<cl::size_type>(last_x_dims_[0]),
-                      static_cast<cl::size_type>(1)};
+      global_work_size_ = cl::NDRange{static_cast<cl::size_type>(c * w_blk),
+                                      static_cast<cl::size_type>(n),
+                                      static_cast<cl::size_type>(1)};
+    } else if (axis_ == 1) {  // for channel
+      global_work_size_ = cl::NDRange{static_cast<cl::size_type>(h * w_blk),
+                                      static_cast<cl::size_type>(n),
+                                      static_cast<cl::size_type>(1)};
+    } else {  // for batch
+      global_work_size_ = cl::NDRange{static_cast<cl::size_type>(h * w_blk),
+                                      static_cast<cl::size_type>(c),
+                                      static_cast<cl::size_type>(1)};
     }
     VLOG(4) << "gws: " << global_work_size_[0] << ", " << global_work_size_[1]
             << ", " << global_work_size_[2];
   }
 
-  const std::vector<float> GetChannelMask(int channels) {
+  const std::vector<float> GetMask4(int total_count) {
     std::vector<float> mask{0.0f, 0.0f, 0.0f, 0.0f};
-    const int reminder = channels % 4 == 0 ? 4 : channels % 4;
+    const int reminder = total_count % 4 == 0 ? 4 : total_count % 4;
     for (int i = 0; i < reminder; ++i) {
-      mask[i] = 1.0f;
+      mask[3 - i] = 1.0f;
     }
     return mask;
   }
 
   const DDim ExtendInputDims(const DDim& in_dims) {
     auto extend_dims = std::vector<int64_t>{1, 1, 1, 1};
-    if (onexone_flag_) {
-      extend_dims[0] = in_dims[0];
-      extend_dims[1] = in_dims[1];
-    } else {
-      for (int i = 0; i < in_dims.size(); i++) {
-        extend_dims[4 - in_dims.size() + i] = in_dims[i];
-      }
-      if (in_dims.size() ==
-          1) {  // transform dim_w to dim_c for dim1 folder case
-        extend_dims[1] = in_dims[0];
-        extend_dims[3] = 1;
-      }
+    for (int i = 0; i < in_dims.size(); i++) {
+      extend_dims[4 - in_dims.size() + i] = in_dims[i];
     }
     return DDim(extend_dims);
   }
@@ -182,6 +224,7 @@ class SoftmaxComputeBuffer
   DDim last_x_dims_;
   int axis_;
   bool onexone_flag_{false};
+  bool small_w_flag_{false};
   DDim out_img_shape_ = DDim(std::vector<DDim::value_type>(
       {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
   cl::NDRange global_work_size_;
