@@ -279,6 +279,12 @@ void get_cpu_arch(std::vector<ARMArch>* archs, const int cpu_num) {
         case 0xd48:
           arch_type = kX2;
           break;
+        case 0xd4d:
+          arch_type = kA715;
+          break;  
+        case 0xd4e:
+          arch_type = kX3;  
+          break;
         default:
           LOG(ERROR) << "Unknow cpu arch: " << arch_id;
       }

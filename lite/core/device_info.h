@@ -40,6 +40,7 @@ typedef enum {
   kAPPLE = 0,
   kX1 = 1,
   kX2 = 2,
+  kX3 = 3,
   kA35 = 35,
   kA53 = 53,
   kA55 = 55,
@@ -55,6 +56,7 @@ typedef enum {
   kGold_Prime = 80,
   kSilver = 81,
   kA710 = 82,
+  kA715 = 83,
   kARMArch_UNKOWN = -1
 } ARMArch;
 
@@ -136,7 +138,9 @@ class DeviceInfo {
                                       kGold_Prime,
                                       kSilver,
                                       kA710,
-                                      kA510};
+                                      kA510,
+                                      kA715,
+                                      kX3};
     for (int i = 0; i < core_num_; ++i) {
       auto iter = std::find(int8_arch.begin(), int8_arch.end(), archs_[i]);
       if (iter == std::end(int8_arch)) {
@@ -159,7 +163,9 @@ class DeviceInfo {
                                       kGold,
                                       kGold_Prime,
                                       kSilver,
-                                      kA710};
+                                      kA710,
+                                      kA715,
+                                      kX3};
     for (int i = 0; i < core_num_; ++i) {
       auto iter = std::find(fp16_arch.begin(), fp16_arch.end(), archs_[i]);
       if (iter != std::end(fp16_arch)) {
