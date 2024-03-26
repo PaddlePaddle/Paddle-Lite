@@ -27,6 +27,20 @@ const int KBLOCK_INT8_SVE = 2;
 const int MBLOCK_INT8_SVE = 8;
 const int NBLOCK_INT8_SVE = 12;
 
+typedef enum {
+  GemmNoBias = 0,
+  GemmMBias = 1,
+  GemmNBias = 2,
+  GemmMNBias = 3,
+} GemmBiasDirection;
+
+typedef enum {
+  GemmNoScale = 0,
+  GemmMScale = 1,
+  GemmNScale = 2,
+  GemmMNScale = 3,
+} GemmScaleDirection;
+
 #define ROUNDUP_SVE(a, b) ((((a) + (b)-1) / (b)) * (b))
 inline int get_hblock_int8_sve(ARMContext* ctx) { return MBLOCK_INT8_SVE; }
 
@@ -57,6 +71,7 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
                            int N,
                            int K,
                            bool is_bias,
+                           GemmBiasDirection bias_direction,
                            bool is_transB,
                            const float* scale,
                            const operators::ActivationParam act_param,

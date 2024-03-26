@@ -781,7 +781,7 @@ void prepackA_int8_sve(TensorLite* tout,
       Dtype *&c_ptr0, Dtype *&c_ptr1, Dtype *&c_ptr2, Dtype *&c_ptr3,  \
       Dtype *&c_ptr4, Dtype *&c_ptr5, Dtype *&c_ptr6, Dtype *&c_ptr7,  \
       const float32_t *scale, const float32_t *alpha, int k, int tail, \
-      int flag_act, int last
+      int flag_act, int last, int bias_direction
 template <typename Dtype>
 inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(Dtype));
 
@@ -906,7 +906,48 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "fmla   z26.s, z14.s, z5.s[0]\n"            \
   "fmla   z25.s, z15.s, z5.s[1]\n"            \
   "fmla   z24.s, z20.s, z5.s[2]\n"            \
-  "fmla   z23.s, z21.s, z5.s[3]\n"
+  "fmla   z23.s, z21.s, z5.s[3]\n"            \
+  "9: \n"
+
+#define CVT_SMMLA_INT32_TO_FP32_8x2_N_DIRECTION   \
+  "cmp %w[bias_direction],#2\n"               \
+  "bne   3f\n"                                \
+  "mov z6.s, #0x0\n"                          \
+  "ld1rqw {z0.s}, p0/Z, [%x[bias]]\n"         \
+  "trn1 z2.d,  z8.d,  z6.d\n"                 \
+  "trn2 z3.d,  z8.d,  z6.d\n"                 \
+  "trn1 z8.d,  z14.d, z6.d\n"                 \
+  "trn2 z9.d,  z14.d, z6.d\n"                 \
+  "trn1 z14.d, z20.d, z6.d\n"                 \
+  "trn2 z15.d, z20.d, z6.d\n"                 \
+  "trn1 z20.d, z26.d, z6.d\n"                 \
+  "trn2 z21.d, z26.d, z6.d\n"                 \
+  "ld1rqw {z4.s}, p0/Z, [%x[scale]]\n"        \
+  "mov    z30.s,  z0.s\n"                     \
+  "mov    z29.s,  z0.s\n"                     \
+  "scvtf  z2.s,  p0/m, z2.s\n"                \
+  "scvtf  z3.s,  p0/m, z3.s\n"                \
+  "mov    z28.s,  z0.s\n"                     \
+  "mov    z27.s,  z0.s\n"                     \
+  "scvtf  z8.s,  p0/m, z8.s\n"                \
+  "scvtf  z9.s,  p0/m, z9.s\n"                \
+  "mov    z26.s,  z0.s\n"                     \
+  "mov    z25.s,  z0.s\n"                     \
+  "scvtf  z14.s, p0/m, z14.s\n"               \
+  "scvtf  z15.s, p0/m, z15.s\n"               \
+  "mov    z24.s,  z0.s\n"                     \
+  "mov    z23.s,  z0.s\n"                     \
+  "scvtf  z20.s, p0/m, z20.s\n"               \
+  "scvtf  z21.s, p0/m, z21.s\n"               \
+  "fmla   z30.s, z2.s, z4.s\n"                \
+  "fmla   z29.s, z3.s, z4.s\n"                \
+  "fmla   z28.s, z8.s, z4.s\n"                \
+  "fmla   z27.s, z9.s, z4.s\n"                \
+  "fmla   z26.s, z14.s, z4.s\n"               \
+  "fmla   z25.s, z15.s, z4.s\n"               \
+  "fmla   z24.s, z20.s, z4.s\n"               \
+  "fmla   z23.s, z21.s, z4.s\n"               \
+  "b 9f \n"
 
 #define SMMLA_STORE_FP32_8x2            \
   "cbz %x[last], 11f\n"                 \
@@ -1061,7 +1102,47 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "fmla   z26.s, z14.s, z5.s[0]\n"            \
   "fmla   z25.s, z15.s, z5.s[1]\n"            \
   "fmla   z24.s, z20.s, z5.s[2]\n"            \
-  "fmla   z23.s, z21.s, z5.s[3]\n"
+  "fmla   z23.s, z21.s, z5.s[3]\n"            \
+  "9: \n"
+
+#define CVT_SMMLA_INT32_TO_FP32_8x4_N_DIRECTION  \
+  "cmp %w[bias_direction], #2\n"              \
+  "bne 3f \n"                                 \
+  "ld1rqw {z0.s}, p0/Z, [%x[bias]]\n"         \
+  "trn1 z2.d,  z8.d,  z9.d\n"                 \
+  "trn2 z3.d,  z8.d,  z9.d\n"                 \
+  "trn1 z8.d,  z14.d, z15.d\n"                \
+  "trn2 z9.d,  z14.d, z15.d\n"                \
+  "trn1 z14.d, z20.d, z21.d\n"                \
+  "trn2 z15.d, z20.d, z21.d\n"                \
+  "trn1 z20.d, z26.d, z27.d\n"                \
+  "trn2 z21.d, z26.d, z27.d\n"                \
+  "ld1rqw {z4.s}, p0/Z, [%x[scale]]\n"        \
+  "mov    z30.s,  z0.s\n"                     \
+  "mov    z29.s,  z0.s\n"                     \
+  "scvtf  z2.s,  p0/m, z2.s\n"                \
+  "scvtf  z3.s,  p0/m, z3.s\n"                \
+  "mov    z28.s,  z0.s\n"                     \
+  "mov    z27.s,  z0.s\n"                     \
+  "scvtf  z8.s,  p0/m, z8.s\n"                \
+  "scvtf  z9.s,  p0/m, z9.s\n"                \
+  "mov    z26.s,  z0.s\n"                     \
+  "mov    z25.s,  z0.s\n"                     \
+  "scvtf  z14.s, p0/m, z14.s\n"               \
+  "scvtf  z15.s, p0/m, z15.s\n"               \
+  "mov    z24.s,  z0.s\n"                     \
+  "mov    z23.s,  z0.s\n"                     \
+  "scvtf  z20.s, p0/m, z20.s\n"               \
+  "scvtf  z21.s, p0/m, z21.s\n"               \
+  "fmla   z30.s, z2.s, z4.s\n"                \
+  "fmla   z29.s, z3.s, z4.s\n"                \
+  "fmla   z28.s, z8.s, z4.s\n"                \
+  "fmla   z27.s, z9.s, z4.s\n"                \
+  "fmla   z26.s, z14.s, z4.s\n"               \
+  "fmla   z25.s, z15.s, z4.s\n"               \
+  "fmla   z24.s, z20.s, z4.s\n"               \
+  "fmla   z23.s, z21.s, z4.s\n"               \
+  "b 9f \n"
 
 #define SMMLA_RELU_8x4(inst) \
   #inst " z30.s,  p0/m, z30.s, z0.s\n" \
@@ -1733,8 +1814,118 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
   "dup    z24.s,  z1.s[3]\n" /* c7-12 z20 z22 z24*/     \
   "fmla   z20.s,  z21.s,  z3.s[3]\n"                    \
   "fmla   z22.s,  z23.s,  z3.s[3]\n"                    \
-  "fmla   z24.s,  z25.s,  z3.s[3]\n"
+  "fmla   z24.s,  z25.s,  z3.s[3]\n"                    \
+  "9: \n"
 
+#define CVT_SMMLA_INT32_TO_FP32_8x12_N_DIRECTION        \
+  "cmp %w[bias_direction],#2\n"                         \
+  "bne   3f\n"                                          \
+  "ld1rqw {z0.s}, p0/Z, [%x[bias]]\n"                   \
+  "ld1rqw {z1.s}, p0/Z, [%x[bias], #0x10]\n"            \
+  "trn1 z2.d,  z8.d,  z9.d\n"                           \
+  "trn2 z3.d,  z8.d,  z9.d\n"                           \
+  "trn1 z4.d,  z10.d, z11.d\n"                          \
+  "trn2 z5.d,  z10.d, z11.d\n"                          \
+  "trn1 z6.d,  z12.d, z13.d\n"                          \
+  "trn2 z7.d,  z12.d, z13.d\n"                          \
+  "trn1 z8.d,  z14.d, z15.d\n"                          \
+  "trn2 z9.d,  z14.d, z15.d\n"                          \
+  "trn1 z10.d, z16.d, z17.d\n"                          \
+  "trn2 z11.d, z16.d, z17.d\n"                          \
+  "trn1 z12.d, z18.d, z19.d\n"                          \
+  "trn2 z13.d, z18.d, z19.d\n"                          \
+  "trn1 z14.d, z20.d, z21.d\n"                          \
+  "trn2 z15.d, z20.d, z21.d\n"                          \
+  "trn1 z16.d, z22.d, z23.d\n"                          \
+  "trn2 z17.d, z22.d, z23.d\n"                          \
+  "trn1 z18.d, z24.d, z25.d\n"                          \
+  "trn2 z19.d, z24.d, z25.d\n"                          \
+  "trn1 z20.d, z26.d, z27.d\n"                          \
+  "trn2 z21.d, z26.d, z27.d\n"                          \
+  "trn1 z22.d, z28.d, z29.d\n"                          \
+  "trn2 z23.d, z28.d, z29.d\n"                          \
+  "trn1 z24.d, z30.d, z31.d\n"                          \
+  "trn2 z25.d, z30.d, z31.d\n"                          \
+  "mov z28.s, #0x0\n"                                   \
+  "movprfx z26, z2\n fadd z26.s, p0/m, z26.s, z28.s\n"  \
+  "ld1rqw {z2.s}, p0/Z, [%x[scale]]\n"                  \
+  "movprfx z27, z3\n fadd z27.s, p0/m, z27.s, z28.s\n"  \
+  "mov    z29.s,  z0.s\n"                               \
+  "mov    z30.s,  z1.s\n"                               \
+  "ld1rqw {z3.s}, p0/Z, [%x[scale], #0x10]\n"           \
+  "scvtf  z26.s, p0/m, z26.s\n"                         \
+  "scvtf  z4.s,  p0/m, z4.s\n"                          \
+  "scvtf  z6.s,  p0/m, z6.s\n"                          \
+  "scvtf  z27.s, p0/m, z27.s\n"                         \
+  "scvtf  z5.s,  p0/m, z5.s\n"                          \
+  "scvtf  z7.s,  p0/m, z7.s\n"                          \
+  "scvtf  z8.s,  p0/m, z8.s\n"                          \
+  "scvtf  z10.s, p0/m, z10.s\n"                         \
+  "fmla   z29.s, z26.s, z2.s\n"                         \
+  "mov    z26.s, z0.s\n"                                \
+  "fmla   z30.s, z4.s,  z3.s\n"                         \
+  "mov    z4.s,  z1.s\n"                                \
+  "scvtf  z9.s,  p0/m, z9.s\n"                          \
+  "scvtf  z11.s, p0/m, z11.s\n"                         \
+  "fmla   z26.s, z27.s, z2.s\n"                         \
+  "mov    z27.s, z0.s\n"                                \
+  "fmla   z4.s,  z5.s,  z3.s\n"                         \
+  "mov    z5.s,  z1.s\n"                                \
+  "scvtf  z14.s, p0/m, z14.s\n"                         \
+  "scvtf  z16.s, p0/m, z16.s\n"                         \
+  "fmla   z27.s, z8.s, z2.s\n"                          \
+  "mov    z8.s,  z0.s\n"                                \
+  "fmla   z5.s,  z10.s, z3.s\n"                         \
+  "mov    z10.s, z1.s\n"                                \
+  "scvtf  z15.s, p0/m, z15.s\n"                         \
+  "scvtf  z17.s, p0/m, z17.s\n"                         \
+  "fmla   z8.s,   z9.s, z2.s\n"                         \
+  "mov    z9.s,   z0.s\n"                               \
+  "fmla   z10.s,  z11.s,  z3.s\n"                       \
+  "mov    z11.s,  z1.s\n"                               \
+  "scvtf  z20.s,  p0/m, z20.s\n"                        \
+  "scvtf  z22.s,  p0/m, z22.s\n"                        \
+  "fmla   z9.s,   z14.s, z2.s\n"                        \
+  "mov    z14.s,  z0.s\n"                               \
+  "fmla   z11.s,  z16.s,  z3.s\n"                       \
+  "mov    z16.s,  z1.s\n"                               \
+  "scvtf  z21.s,  p0/m, z21.s\n"                        \
+  "scvtf  z23.s,  p0/m, z23.s\n"                        \
+  "fmla   z14.s,  z15.s, z2.s\n"                        \
+  "mov    z15.s,  z0.s\n"                               \
+  "fmla   z16.s,  z17.s,  z3.s\n"                       \
+  "mov    z17.s,  z1.s\n"                               \
+  "fmla   z15.s,  z20.s, z2.s\n"                        \
+  "mov    z20.s,  z0.s\n"                               \
+  "fmla   z17.s,  z22.s,  z3.s\n"                       \
+  "mov    z22.s,  z1.s\n"                               \
+  "fmla   z20.s,  z21.s,  z2.s\n"                       \
+  "fmla   z22.s,  z23.s,  z3.s\n"                       \
+  "ld1rqw {z0.s}, p0/Z, [%x[bias], #0x20]\n"            \
+  "ld1rqw {z2.s}, p0/Z, [%x[scale], #0x20]\n"           \
+  "mov    z31.s,  z0.s\n"                               \
+  "scvtf  z12.s, p0/m, z12.s\n" /* c0-12 z29 z30 z31*/  \
+  "fmla   z31.s, z6.s,  z2.s\n"                         \
+  "mov    z6.s,  z0.s\n"                                \
+  "scvtf  z13.s, p0/m, z13.s\n" /* c1-12 z26 z4 z6*/    \
+  "fmla   z6.s,  z7.s,  z2.s\n"                         \
+  "mov    z7.s,  z0.s\n"                                \
+  "scvtf  z18.s, p0/m, z18.s\n" /* c2-12 z27 z5 z7*/    \
+  "fmla   z7.s,  z12.s,  z2.s\n"                        \
+  "mov    z12.s, z0.s\n"                                \
+  "scvtf  z19.s, p0/m, z19.s\n" /* c3-12 z8 z10 z12*/   \
+  "fmla   z12.s,  z13.s,  z2.s\n"                       \
+  "mov    z13.s,  z0.s\n"                               \
+  "scvtf  z24.s,  p0/m, z24.s\n" /* c4-12 z9 z11 z13*/  \
+  "fmla   z13.s,  z18.s,  z2.s\n"                       \
+  "mov    z18.s,  z0.s\n"                               \
+  "scvtf  z25.s,  p0/m, z25.s\n" /* c5-12 z14 z16 z18*/ \
+  "fmla   z18.s,  z19.s,  z2.s\n"                       \
+  "mov    z19.s,  z0.s\n" /* c6-12 z15 z17 z19*/        \
+  "fmla   z19.s,  z24.s,  z2.s\n"                       \
+  "mov    z24.s,  z0.s\n" /* c7-12 z20 z22 z24*/        \
+  "fmla   z24.s,  z25.s,  z2.s\n"                       \
+  "b 9f \n"
 
 #define SMMLA_RELU_8x12(inst) \
   #inst " z29.s,  p0/m, z29.s, z0.s\n" \
@@ -2405,7 +2596,8 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
     [c_ptr3] "+r"(c_ptr3), [c_ptr4] "+r"(c_ptr4), [c_ptr5] "+r"(c_ptr5), \
     [c_ptr6] "+r"(c_ptr6), [c_ptr7] "+r"(c_ptr7) \
   : [bias] "r"(bias), [alpha] "r"(alpha), [scale] "r"(scale), \
-    [flag_act] "r"(flag_act), [rem_cnt] "r"(tail), [last] "r"(last) \
+    [flag_act] "r"(flag_act), [rem_cnt] "r"(tail), [last] "r"(last), \
+    [bias_direction] "r"(bias_direction) \
   : "cc", "memory", "x0", "x1", "p0", "p1", "z0", "z1", "z2", "z3", "z4", \
     "z5", "z6", "z7", \
     "z8", "z9", "z10", "z11", "z12", "z13", "z14", "z15", "z16", "z17", \
@@ -2419,7 +2611,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
     [c_ptr6] "+r"(c_ptr6), [c_ptr7] "+r"(c_ptr7) \
   : [bias] "r"(bias), [alpha] "r"(alpha), [scale] "r"(scale), \
     [flag_act] "r"(flag_act), [rem_cnt] "r"(tail), [last] "r"(last), \
-    [vmax] "r"(vmax) \
+    [vmax] "r"(vmax), [bias_direction] "r"(bias_direction) \
   : "cc", "memory", "x0", "x1", "p0", "p1", "z0", "z1", "z2", "z3", "z4", \
     "z5", "z6", "z7", \
     "z8", "z9", "z10", "z11", "z12", "z13", "z14", "z15", "z16", "z17", \
@@ -2433,7 +2625,7 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
     [c_ptr6] "r"(out6), [c_ptr7] "r"(out7), \
     [bias] "r"(bias), [alpha] "r"(alpha), [vmax] "r"(vmax), \
     [flag_act] "r"(flag_act), [rem_cnt] "r"(tail), [last] "r"(last), \
-    [scale] "r"(scale) \
+    [scale] "r"(scale), [bias_direction] "r"(bias_direction) \
   : "cc", "memory", "x0", "x1", "p0", "p1", "z0", "z1", "z2", "z3", "z4", \
     "z5", "z6", "z7", \
     "z8", "z9", "z10", "z11", "z12", "z13", "z14", "z15", "z16", "z17", \
@@ -2442,9 +2634,10 @@ inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(Dtype));
 
 template <>
 inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(float)) {
-  asm volatile(INIT_SMMLA_8x2 COMPUTE_SMMLA_8x2 COMPUTE_SMMLA_8x2_REMAIN
-                   CVT_SMMLA_INT32_TO_FP32_8x2 SMMLA_ACT_PROCESS_8x4
-                       SMMLA_STORE_FP32_8x2 ASM_PARAMS_FP32);
+  asm volatile(
+      INIT_SMMLA_8x2 COMPUTE_SMMLA_8x2 COMPUTE_SMMLA_8x2_REMAIN
+          CVT_SMMLA_INT32_TO_FP32_8x2_N_DIRECTION CVT_SMMLA_INT32_TO_FP32_8x2
+              SMMLA_ACT_PROCESS_8x4 SMMLA_STORE_FP32_8x2 ASM_PARAMS_FP32);
 }
 
 template <>
@@ -2459,9 +2652,10 @@ inline void gemm_smmla_int8_kernel_8x1(SMMLA_PARAMS(int8_t)) {
   int8_t out7[4] = {0};
   float vmax[4] = {-127.f, -127.f, -127.f, -127.f};
 
-  asm volatile(INIT_SMMLA_8x2 COMPUTE_SMMLA_8x2 COMPUTE_SMMLA_8x2_REMAIN
-                   CVT_SMMLA_INT32_TO_FP32_8x2 SMMLA_ACT_PROCESS_8x4
-                       SMMLA_STORE_INT8_8x1 ASM_PARAMS_INT8);
+  asm volatile(
+      INIT_SMMLA_8x2 COMPUTE_SMMLA_8x2 COMPUTE_SMMLA_8x2_REMAIN
+          CVT_SMMLA_INT32_TO_FP32_8x2_N_DIRECTION CVT_SMMLA_INT32_TO_FP32_8x2
+              SMMLA_ACT_PROCESS_8x4 SMMLA_STORE_INT8_8x1 ASM_PARAMS_INT8);
 
   int cnt = 2;
   if (last == 0) cnt = 1;
@@ -2489,8 +2683,9 @@ template <>
 inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(float)) {
   asm volatile(
       INIT_SMMLA_8x4 COMPUTE_SMMLA_8x4_0 COMPUTE_SMMLA_8x4_1
-          COMPUTE_SMMLA_8x4_REMAIN CVT_SMMLA_INT32_TO_FP32_8x4
-              SMMLA_ACT_PROCESS_8x4 SMMLA_STORE_FP32_8x4 ASM_PARAMS_FP32);
+          COMPUTE_SMMLA_8x4_REMAIN CVT_SMMLA_INT32_TO_FP32_8x4_N_DIRECTION
+              CVT_SMMLA_INT32_TO_FP32_8x4 SMMLA_ACT_PROCESS_8x4
+                  SMMLA_STORE_FP32_8x4 ASM_PARAMS_FP32);
 }
 
 template <>
@@ -2498,25 +2693,28 @@ inline void gemm_smmla_int8_kernel_8x4(SMMLA_PARAMS(int8_t)) {
   float vmax[4] = {-127.f, -127.f, -127.f, -127.f};
   asm volatile(
       INIT_SMMLA_8x4 COMPUTE_SMMLA_8x4_0 COMPUTE_SMMLA_8x4_1
-          COMPUTE_SMMLA_8x4_REMAIN CVT_SMMLA_INT32_TO_FP32_8x4
-              SMMLA_ACT_PROCESS_8x4 SMMLA_STORE_INT8_8x4 ASM_PARAMS_FP32_INT8);
+          COMPUTE_SMMLA_8x4_REMAIN CVT_SMMLA_INT32_TO_FP32_8x4_N_DIRECTION
+              CVT_SMMLA_INT32_TO_FP32_8x4 SMMLA_ACT_PROCESS_8x4
+                  SMMLA_STORE_INT8_8x4 ASM_PARAMS_FP32_INT8);
 }
 
 template <>
 inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(float)) {
   asm volatile(
       INIT_SMMLA_8x12 COMPUTE_SMMLA_8x12_0 COMPUTE_SMMLA_8x12_1
-          COMPUTE_SMMLA_8x12_REMAIN CVT_SMMLA_INT32_TO_FP32_8x12
-              SMMLA_ACT_PROCESS_8x12 SMMLA_STORE_FP32_8x12 ASM_PARAMS_FP32);
+          COMPUTE_SMMLA_8x12_REMAIN CVT_SMMLA_INT32_TO_FP32_8x12_N_DIRECTION
+              CVT_SMMLA_INT32_TO_FP32_8x12 SMMLA_ACT_PROCESS_8x12
+                  SMMLA_STORE_FP32_8x12 ASM_PARAMS_FP32);
 }
 
 template <>
 inline void gemm_smmla_int8_kernel_8x12(SMMLA_PARAMS(int8_t)) {
   float vmax[4] = {-127.f, -127.f, -127.f, -127.f};
-  asm volatile(INIT_SMMLA_8x12 COMPUTE_SMMLA_8x12_0 COMPUTE_SMMLA_8x12_1
-                   COMPUTE_SMMLA_8x12_REMAIN CVT_SMMLA_INT32_TO_FP32_8x12
-                       SMMLA_ACT_PROCESS_8x12 SMMLA_STORE_INT8_8x12
-                           ASM_PARAMS_FP32_INT8);
+  asm volatile(
+      INIT_SMMLA_8x12 COMPUTE_SMMLA_8x12_0 COMPUTE_SMMLA_8x12_1
+          COMPUTE_SMMLA_8x12_REMAIN CVT_SMMLA_INT32_TO_FP32_8x12_N_DIRECTION
+              CVT_SMMLA_INT32_TO_FP32_8x12 SMMLA_ACT_PROCESS_8x12
+                  SMMLA_STORE_INT8_8x12 ASM_PARAMS_FP32_INT8);
 }
 // clang-format on
 /// a: m*k  b: k*n  c: m*n
@@ -2533,6 +2731,7 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
                            int N,
                            int K,
                            bool is_bias,
+                           GemmBiasDirection bias_direction,
                            bool is_transB,
                            const float* scale,
                            const operators::ActivationParam act_param,
@@ -2642,17 +2841,19 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
       unsigned int ymax = y + MBLOCK_INT8_SVE;
       ymax = (ymax > M) ? M : ymax;
       float32_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-      if (is_bias) {
-        int j = 0;
-        for (int i = y; i < ymax && j < 8; i++, j++) {
-          bias_local[j] = bias[i];
-        }
-      }
       float32_t scale_local[8] = {1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
-      if (scale) {
-        int j = 0;
-        for (int i = y; i < ymax && j < 8; i++, j++) {
-          scale_local[j] = scale[i];
+      if (bias_direction != GemmNBias) {
+        if (is_bias) {
+          int j = 0;
+          for (int i = y; i < ymax && j < 8; i++, j++) {
+            bias_local[j] = bias[i];
+          }
+        }
+        if (scale) {
+          int j = 0;
+          for (int i = y; i < ymax && j < 8; i++, j++) {
+            scale_local[j] = scale[i];
+          }
         }
       }
       dtype cout0[NBLOCK_INT8_SVE] = {0};
@@ -2705,6 +2906,18 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
       const int8_t* a_ptr_l = A_packed + y * kup;
       const int8_t* b_ptr = b_pannel;
       for (int xb = 0; xb < bblocks; xb++) {
+        if (bias_direction == GemmNBias) {
+          if (scale) {
+            for (int j = 0; j < NBLOCK_INT8_SVE; j++) {
+              scale_local[j] = scale[xb * NBLOCK_INT8_SVE + j + x0];
+            }
+          }
+          if (bias) {
+            for (int j = 0; j < NBLOCK_INT8_SVE; j++) {
+              bias_local[j] = bias[xb * NBLOCK_INT8_SVE + j + x0];
+            }
+          }
+        }
         if ((y + 7) >= ymax) {
           switch ((y + 7) - ymax) {
             case 6:
@@ -2747,7 +2960,8 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
                                               k_pre,
                                               tail_pre,
                                               flag_act,
-                                              1);
+                                              1,
+                                              static_cast<int>(bias_direction));
           }
           for (int i = 0; i < rem_rem; i += 2) {
             const int8_t* a_ptr = a_ptr_l;
@@ -2769,7 +2983,8 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
                                               k_pre,
                                               tail_pre,
                                               flag_act,
-                                              last);
+                                              last,
+                                              static_cast<int>(bias_direction));
           }
         } else {
           const int8_t* a_ptr = a_ptr_l;
@@ -2789,7 +3004,8 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
                                              k_pre,
                                              tail_pre,
                                              flag_act,
-                                             1);
+                                             1,
+                                             static_cast<int>(bias_direction));
         }
       }
     }
@@ -2806,6 +3022,7 @@ void gemm_prepack_int8_sve(const int8_t* A_packed,
       int N,                                      \
       int K,                                      \
       bool is_bias,                               \
+      GemmBiasDirection bias_direction,           \
       bool is_transB,                             \
       const float* scale,                         \
       const operators::ActivationParam act_param, \
