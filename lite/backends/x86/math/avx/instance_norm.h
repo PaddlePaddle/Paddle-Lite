@@ -27,9 +27,7 @@ void instance_norm(const float* in,
                    const int width,
                    const float epsilon,
                    const float* scale,
-                   const float* bias,
-                   float* saved_mean,
-                   float* saved_variance);
+                   const float* bias);
 
 }  // namespace math
 }  // namespace x86
