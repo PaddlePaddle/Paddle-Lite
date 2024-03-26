@@ -132,9 +132,9 @@ function build_opt {
     rm -rf build.opt
     mkdir -p build.opt
     cd build.opt
-    opt_arch=$(echo `uname -p`)
+    opt_arch=$(echo `uname -m`)
     with_x86=OFF
-    if [ $opt_arch == "aarch64" ]; then
+    if [ $opt_arch == "aarch64" ] || [ $opt_arch == "armv6l" ] || [ $opt_arch == "armv7" ] || [ $opt_arch == "armv7l" ]; then
         with_x86=OFF
     else
        with_x86=ON

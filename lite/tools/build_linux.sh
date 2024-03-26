@@ -381,8 +381,16 @@ function build_opt {
     rm -rf $build_dir
     mkdir -p $build_dir
     cd $build_dir
+    opt_arch=$(echo `uname -m`)
+    with_x86=OFF
+    if [ $opt_arch == "aarch64" ] || [ $opt_arch == "armv6l" ] || [ $opt_arch == "armv7" ] || [ $opt_arch == "armv7l" ]; then
+        with_x86=OFF
+    else
+       with_x86=ON
+    fi
     cmake $workspace \
       -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON \
+      -DLITE_WITH_X86=${with_x86} \
       -DWITH_TESTING=OFF \
       -DLITE_BUILD_EXTRA=ON \
       -DWITH_MKL=OFF
