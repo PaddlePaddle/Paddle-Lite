@@ -82,6 +82,14 @@ void CompareCompute<PType, T, Functor>::Run() {
   const auto* y = param.Y->template data<T>();
 
   auto& ctx = this->ctx_->template As<XPUContext>();
+
+  if (x_dims.size() == 0) {
+    x_dims.ConstructFrom({1});
+  }
+  if (y_dims.size() == 0) {
+    y_dims.ConstructFrom({1});
+  }
+
   Functor comp_func;
   std::vector<int> xshape;
   std::vector<int> yshape;

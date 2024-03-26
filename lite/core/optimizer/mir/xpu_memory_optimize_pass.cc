@@ -54,6 +54,7 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(SSAGraph* graph) {
       "scale",
       "__xpu__resnet50",
       "softmax",
+      "select_input",
   };
 
   auto insert_invalid_op_nodes_for_specific_target =
