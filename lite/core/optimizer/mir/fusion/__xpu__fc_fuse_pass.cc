@@ -50,7 +50,12 @@ class XPUFcFuser : public FuseBase {
                 !op_desc.GetAttr<bool>("transpose_X"));
       }
       if (this->mul_type_ == "matmul_v2") {
-        return (mul_y_shape.size() == 2 && !op_desc.GetAttr<bool>("trans_x"));
+        int check_product = 1;
+        for (unsigned int i = 0; i < mul_y_shape.size(); ++i) {
+          check_product *= mul_y_shape[i];
+        }
+        return (mul_y_shape.size() == 2 && !op_desc.GetAttr<bool>("trans_x") &&
+                check_product > 0);
       }
       return false;
     };
