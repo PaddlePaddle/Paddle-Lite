@@ -89,22 +89,14 @@ void FcFuser::BuildPattern() {
   mul->AsIntermediate();
   add->AsIntermediate();
 
-  if (act_type_ == "relu") {
+  if (act_type_ == "relu" || act_type_ == "relu6") {
     auto* add_out = VarNode("add_out");
-    auto* relu = OpNode("relu", "relu");
-    std::vector<PMNode*> relu_inputs{add_out};
     add_inputs >> *add >> *add_out;
+    auto* relu = OpNode(act_type_, act_type_);
+    std::vector<PMNode*> relu_inputs{add_out};
     relu_inputs >> *relu >> *Out;
     add_out->AsIntermediate();
     relu->AsIntermediate();
-  } else if (act_type_ == "relu6") {
-    auto* add_out = VarNode("add_out");
-    auto* relu6 = OpNode("relu6", "relu6");
-    std::vector<PMNode*> relu6_inputs{add_out};
-    add_inputs >> *add >> *add_out;
-    relu6_inputs >> *relu6 >> *Out;
-    add_out->AsIntermediate();
-    relu6->AsIntermediate();
   } else {
     add_inputs >> *add >> *Out;
   }
