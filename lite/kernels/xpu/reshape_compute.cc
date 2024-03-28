@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/reshape_compute.h"
+
 #include <algorithm>
+
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -68,9 +70,8 @@ REGISTER_LITE_KERNEL(
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
     .BindInput("ShapeTensor",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindInput("Shape",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kXPU),
                                        PRECISION(kAny),
@@ -90,9 +91,8 @@ REGISTER_LITE_KERNEL(
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
     .BindInput("ShapeTensor",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindInput("Shape",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kXPU),
                                        PRECISION(kAny),
@@ -110,8 +110,7 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
-    .BindInput("Shape",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kXPU),
                                        PRECISION(kAny),
@@ -129,8 +128,7 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
-    .BindInput("Shape",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("Shape", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kXPU),
                                        PRECISION(kAny),

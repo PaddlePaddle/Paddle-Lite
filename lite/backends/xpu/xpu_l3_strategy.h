@@ -16,6 +16,7 @@
 #include <map>
 #include <numeric>
 #include <vector>
+
 #include "lite/backends/xpu/xpu_l3_cache_block.h"
 #include "lite/utils/macros.h"
 
@@ -47,6 +48,11 @@ class XPUL3Planner {
         return &(it->second);
       }
     }
+  }
+
+  bool if_find_plan_query_shape() {
+    return (query_shape_.size() == 0 ||
+            plans_.find(query_shape_) != plans_.end());
   }
 
   void run_autotune(const std::vector<XPUL3CacheBlock*>& l3_block_dict,

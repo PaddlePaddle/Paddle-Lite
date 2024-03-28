@@ -45,8 +45,6 @@ class LayerNormBufferCompute
     layer_norm_param_ = param_.get_mutable<param_t>();
     auto* scale = layer_norm_param_->Scale;
     auto* bias = layer_norm_param_->Bias;
-    bool fp16_flag =
-        (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16);
     if (scale != nullptr) {
       auto* scale_cpu = scale->data<float>();
       scale_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);

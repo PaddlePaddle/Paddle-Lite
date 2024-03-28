@@ -13,12 +13,21 @@
 // limitations under the License.
 
 #include "lite/operators/reshape_op.h"
+
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
+
+// check shape_tensor's precision and data
+template <typename T>
+bool CheckTensor(const lite::Tensor *&shape_tensor) {
+  return (!shape_tensor->dims().empty() &&
+          shape_tensor->target() == TargetType::kHost &&
+          shape_tensor->data<T>() != nullptr);
+}
 
 bool ReshapeOp::InferShape() {
   auto UseCache = [&, this]() -> bool {
@@ -46,13 +55,25 @@ bool ReshapeOp::InferShape() {
       for (size_t i = 0; i < input_shape_tensor_vct_cache_.size(); i++) {
         auto shape_tensor_vct = input_shape_tensor_vct_cache_[i];
         for (int k = 0; k < shape_tensor_vct.size(); ++k) {
-          if (!shape_tensor_vct[k]->dims().empty() &&
-              shape_tensor_vct[k]->target() == TargetType::kHost &&
-              shape_tensor_vct[k]->data<int>() != nullptr) {
-            if (shape_tensor_vct[k]->data<int>()[0] !=
-                last_shape_tensor_vals[i][k]) {
-              return false;
+          if (shape_tensor_vct[k]->precision() == PrecisionType::kInt64) {
+            if (CheckTensor<int64_t>(shape_tensor_vct[k])) {
+              if (shape_tensor_vct[k]->data<int64_t>()[0] !=
+                  last_shape_tensor_vals[i][k]) {
+                return false;
+              }
             }
+          } else if (shape_tensor_vct[k]->precision() ==
+                     PrecisionType::kInt32) {
+            if (CheckTensor<int>(shape_tensor_vct[k])) {
+              if (static_cast<int64_t>(shape_tensor_vct[k]->data<int>()[0]) !=
+                  last_shape_tensor_vals[i][k]) {
+                return false;
+              }
+            }
+          } else {
+            LOG(FATAL) << "The dtype of shape tensor must be int32 or int64. "
+                          "current dtype is "
+                       << PrecisionToStr(shape_tensor_vct[k]->precision());
           }
         }
       }
@@ -85,12 +106,21 @@ bool ReshapeOp::InferShape() {
       last_shape_tensor_vals.clear();
       for (size_t i = 0; i < input_shape_tensor_vct_cache_.size(); i++) {
         auto shape_tensor_vct = input_shape_tensor_vct_cache_[i];
-        std::vector<int> final_shape;
+        std::vector<int64_t> final_shape;
         for (int k = 0; k < shape_tensor_vct.size(); ++k) {
-          if (!shape_tensor_vct[k]->dims().empty() &&
-              shape_tensor_vct[k]->target() == TargetType::kHost &&
-              shape_tensor_vct[k]->data<int>() != nullptr) {
-            final_shape.push_back(shape_tensor_vct[k]->data<int>()[0]);
+          if (shape_tensor_vct[k]->precision() == PrecisionType::kInt64) {
+            if (CheckTensor<int64_t>(shape_tensor_vct[k])) {
+              final_shape.push_back(shape_tensor_vct[k]->data<int64_t>()[0]);
+            }
+          } else if (shape_tensor_vct[k]->precision() ==
+                     PrecisionType::kInt32) {
+            if (CheckTensor<int>(shape_tensor_vct[k])) {
+              final_shape.push_back(shape_tensor_vct[k]->data<int>()[0]);
+            }
+          } else {
+            LOG(FATAL) << "The dtype of shape tensor must be int32 or int64."
+                          "current dtype is "
+                       << PrecisionToStr(shape_tensor_vct[k]->precision());
           }
         }
         last_shape_tensor_vals.push_back(final_shape);
@@ -111,26 +141,52 @@ bool ReshapeOp::InferShapeImpl() const {
   auto *shape_tensor = param_.shape_tensor;
   const auto &shape_vct = param_.shape_vct;
 
-  std::vector<int> final_shape;
+  std::vector<int64_t> final_shape;
   if (shape_tensor_vct.size() > 0) {
     final_shape.resize(shape_tensor_vct.size());
     for (size_t i = 0; i < shape_tensor_vct.size(); i++) {
       if (shape_tensor_vct[i]->dims().empty()) {
         if (!shape_vct.empty()) {
-          final_shape[i] = shape_vct[i];
+          final_shape[i] = static_cast<int64_t>(shape_vct[i]);
         } else {
           LOG(FATAL) << "Input shape error";
         }
       } else {
-        final_shape[i] = shape_tensor_vct[i]->data<int>()[0];
+        auto *shape_tensor = shape_tensor_vct[i];
+        if (shape_tensor->precision() == PrecisionType::kInt64) {
+          final_shape[i] = shape_tensor->data<int64_t>()[0];
+        } else if (shape_tensor->precision() == PrecisionType::kInt32) {
+          final_shape[i] = shape_tensor->data<int32_t>()[0];
+        } else {
+          LOG(FATAL) << "The dtype of shape tensor must be int32 or int64."
+                        "current dtype is "
+                     << PrecisionToStr(shape_tensor->precision());
+        }
       }
     }
-  } else if (shape_tensor != nullptr && shape_tensor->data<int>() != nullptr) {
-    auto *shape_tensor_data = shape_tensor->data<int>();
-    final_shape = std::vector<int>(shape_tensor_data,
-                                   shape_tensor_data + shape_tensor->numel());
+  } else if (shape_tensor != nullptr) {
+    if (shape_tensor->precision() == PrecisionType::kInt64 &&
+        shape_tensor->data<int64_t>() != nullptr) {
+      auto *shape_tensor_data = shape_tensor->data<int64_t>();
+      for (int i = 0; i < shape_tensor->numel(); i++) {
+        final_shape.push_back(shape_tensor_data[i]);
+      }
+    } else if (shape_tensor->precision() == PrecisionType::kInt32 &&
+               shape_tensor->data<int>() != nullptr) {
+      auto *shape_tensor_data = shape_tensor->data<int32_t>();
+      for (int i = 0; i < shape_tensor->numel(); i++) {
+        final_shape.push_back(shape_tensor_data[i]);
+      }
+    } else {
+      LOG(FATAL) << "The dtype of shape tensor must be int32 or int64."
+                    "current dtype is "
+                 << PrecisionToStr(shape_tensor->precision());
+    }
   } else if (!shape_vct.empty()) {
-    final_shape = shape_vct;
+    final_shape.clear();
+    for (auto f : shape_vct) {
+      final_shape.push_back(static_cast<int64_t>(f));
+    }
   } else {
     LOG(FATAL) << "Input shape error";
   }
@@ -222,19 +278,19 @@ static bool CheckPositive(const DDim &dims) {
   return true;
 }
 
-std::vector<DDim::value_type> ValidateShape(const std::vector<int> &shape,
+std::vector<DDim::value_type> ValidateShape(const std::vector<int64_t> &shape,
                                             const DDim &input_dims) {
   const DDim::value_type input_size = input_dims.production();
 
   // only one dimension can be set to -1, whose size will be automatically
   // infered.
-  const int unk_dim_val = -1;
-  const int copy_dim_val = 0;
+  const int64_t unk_dim_val = -1;
+  const int64_t copy_dim_val = 0;
 
   std::vector<DDim::value_type> output_dims(shape.size());
   DDim::value_type capacity = 1;
-  int unk_dim_idx = -1;
-  for (size_t i = 0; i < shape.size(); ++i) {
+  int64_t unk_dim_idx = -1;
+  for (int64_t i = 0; i < shape.size(); ++i) {
     if (shape[i] == unk_dim_val) {
       CHECK_EQ(unk_dim_idx, -1)
           << "Only one input dimension of Attr(shape) can be unknown.";
