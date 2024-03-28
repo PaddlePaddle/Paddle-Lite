@@ -39,21 +39,23 @@ inline void GetYoloBox(T* box,
                        int i,
                        int j,
                        int an_idx,
-                       int grid_size,
-                       int input_size,
+                       int h,
+                       int w,
+                       int input_size_h,
+                       int input_size_w,
                        int index,
                        int stride,
                        int img_height,
                        int img_width,
                        T scale,
                        T bias) {
-  box[0] = (i + Sigmoid(x[index]) * scale + bias) * img_width / grid_size;
+  box[0] = (i + Sigmoid(x[index]) * scale + bias) * img_width / w;
   box[1] =
-      (j + Sigmoid(x[index + stride]) * scale + bias) * img_height / grid_size;
+      (j + Sigmoid(x[index + stride]) * scale + bias) * img_height / h;
   box[2] = std::exp(x[index + 2 * stride]) * anchors[2 * an_idx] * img_width /
-           input_size;
+           input_size_w;
   box[3] = std::exp(x[index + 3 * stride]) * anchors[2 * an_idx + 1] *
-           img_height / input_size;
+           img_height / input_size_h;
 }
 
 inline int GetEntryIndex(int batch,
@@ -121,7 +123,8 @@ void YoloBox(lite::Tensor* X,
   const int w = X->dims()[3];
   const int b_num = Boxes->dims()[1];
   const int an_num = anchors.size() / 2;
-  int X_size = downsample_ratio * h;
+  int input_size_h = downsample_ratio * h;
+  int input_size_w = downsample_ratio * w;
 
   const int stride = h * w;
   const int an_stride = (class_num + 5) * stride;
@@ -161,7 +164,9 @@ void YoloBox(lite::Tensor* X,
                      k,
                      j,
                      h,
-                     X_size,
+                     w,
+                     input_size_h,
+                     input_size_w,
                      box_idx,
                      stride,
                      img_height,
@@ -191,3 +196,4 @@ void YoloBox(lite::Tensor* X,
 }  // namespace host
 }  // namespace lite
 }  // namespace paddle
+
