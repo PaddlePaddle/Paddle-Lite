@@ -20,6 +20,8 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+inline float abs(float f) { return f ? f >= 0 : -f; }
+
 template <typename T, PrecisionType PType>
 void ScaleCompute<T, PType>::Run() {
   auto& param = this->template Param<operators::ScaleParam>();

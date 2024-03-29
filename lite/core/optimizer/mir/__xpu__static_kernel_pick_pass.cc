@@ -13,21 +13,23 @@
 // limitations under the License.
 
 #include "lite/core/optimizer/mir/__xpu__static_kernel_pick_pass.h"
-#include <algorithm>
-#include <cmath>
-#include <list>
-#include <map>
-#include <memory>
-#include <queue>
-#include <string>
-#include <utility>
-#include <vector>
+#include <algorithm>  // NOLINT
+#include <cmath>      // NOLINT
+#include <list>       // NOLINT
+#include <map>        // NOLINT
+#include <memory>     // NOLINT
+#include <queue>      // NOLINT
+#include <string>     // NOLINT
+#include <utility>    // NOLINT
+#include <vector>     // NOLINT
 #include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
+
+inline float abs(float f) { return f >= 0 ? f : -f; }
 
 bool XPUKernelScoreCmp(const std::pair<float, std::unique_ptr<KernelBase>>& a,
                        const std::pair<float, std::unique_ptr<KernelBase>>& b) {

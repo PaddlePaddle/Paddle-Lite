@@ -63,7 +63,7 @@ lite_option(LITE_WITH_NNADAPTER                "Enable NNAdapter in lite mode"  
 lite_option(LITE_WITH_XPU                      "Enable XPU in lite mode"                                              OFF)
 lite_option(XPU_WITH_XFT                       "Enable XPU-XFT in lite mode"                                          OFF)
 lite_option(LITE_WITH_TRAIN                    "Enable training operators and kernels in lite"                        OFF)
-lite_option(LITE_WITH_OPENMP                   "Enable OpenMP in lite framework"                                      ON)
+lite_option(LITE_WITH_OPENMP                   "Enable OpenMP in lite framework"                                      OFF)
 lite_option(LITE_WITH_OPENCL                   "Enable OpenCL support in lite"                                        OFF)
 lite_option(LITE_WITH_METAL                    "Enable Metal support in lite"                                         OFF)
 lite_option(LITE_WITH_PROFILE                  "Enable profile mode in lite framework"                                OFF)

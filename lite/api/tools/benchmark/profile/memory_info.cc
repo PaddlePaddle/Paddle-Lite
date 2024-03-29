@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "memory_info.h"
+#include "memory_info.h"  // NOLINT
 
 #ifdef __linux__
 #include <malloc.h>
@@ -40,6 +40,7 @@ MemoryUsage GetMemoryUsage() {
   if (getrusage(RUSAGE_SELF, &res) == 0) {
     result.max_rss_kb = res.ru_maxrss;
   }
+/*
 #if defined(__GLIBC__) && __GLIBC_MINOR__ >= 33
   const auto mem = mallinfo2();
 #else
@@ -47,6 +48,7 @@ MemoryUsage GetMemoryUsage() {
 #endif
   result.total_allocated_bytes = mem.arena;
   result.in_use_allocated_bytes = mem.uordblks;
+*/
 #endif
   return result;
 }
@@ -59,6 +61,6 @@ void MemoryUsage::AllStatsToStream(std::ostream* stream) const {
           << in_use_allocated_bytes / 1024.0 / 1024.0 << " MB";
 }
 
-}  // namespace paddle
-}  // namespace lite_api
 }  // namespace profile
+}  // namespace lite_api
+}  // namespace paddle

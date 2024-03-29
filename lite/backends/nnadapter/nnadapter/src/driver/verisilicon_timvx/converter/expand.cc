@@ -32,7 +32,7 @@ int ConvertExpand(Converter* converter, core::Operation* operation) {
   auto shape_count = output_operand->type.dimensions.count;
   auto shape_data = output_operand->type.dimensions.data;
 
-  std::vector<int32_t> expand_shape;
+  std::vector<uint32_t> expand_shape;
   for (int i = shape_count - 1; i >= 0; i--) {
     expand_shape.push_back(shape_data[i]);
   }

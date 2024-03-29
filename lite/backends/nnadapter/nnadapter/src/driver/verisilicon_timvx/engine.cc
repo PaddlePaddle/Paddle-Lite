@@ -19,6 +19,8 @@
 #include "driver/verisilicon_timvx/converter/converter.h"
 #include "driver/verisilicon_timvx/optimizer/convert_fill_like_into_mul_add.h"
 #include "driver/verisilicon_timvx/optimizer/convert_meshgrid_into_reshape_expand.h"
+#include "driver/verisilicon_timvx/optimizer/fix_ops.h"
+#include "driver/verisilicon_timvx/optimizer/remove_relu.h"
 #include "driver/verisilicon_timvx/optimizer/unpack_op_fusion.h"
 #include "optimizer/constant_fold_operations.h"
 #include "optimizer/convert_adaptive_pool2d_into_pool2d.h"
@@ -95,6 +97,10 @@ int Program::Build(core::Model* model, core::Cache* cache) {
       for (size_t i = 0; i < input_count; i++) {
         const auto& type = cache->input_types[i];
         input_tensors_[i] = CreateTimVXTensor(graph_.get(), &type);
+        NNADAPTER_VLOG(3) << "Model input[" << i
+                          << "] id=" << input_tensors_[i]->GetId()
+                          << nnadapter::OperandTypeToString(
+                                 &cache->input_types[i]);
         NNADAPTER_CHECK(input_tensors_[i]);
       }
     }
@@ -106,6 +112,10 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     for (size_t i = 0; i < output_count; i++) {
       const auto& type = cache->output_types[i];
       output_tensors_[i] = CreateTimVXTensor(graph_.get(), &type);
+      NNADAPTER_VLOG(3) << "Model output[" << i
+                        << "] id=" << output_tensors_[i]->GetId()
+                        << nnadapter::OperandTypeToString(
+                               &cache->output_types[i]);
       NNADAPTER_CHECK(output_tensors_[i]);
     }
     auto nbg_op = graph_->CreateOperation<tim::vx::ops::NBG>(
@@ -133,7 +143,9 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FuseSigmoidMulIntoSwish(model);
     ConvertAdaptivePool2dIntoPool2d(model);
     UnpackOpFusion(model);
+    FixOps(model);
     ConvertQuantizationSymmToAsymm(model);
+    // RemoveRelu(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a tim-vx graph
     Converter converter(graph_.get(), &tensors_);
@@ -150,6 +162,9 @@ int Program::Build(core::Model* model, core::Cache* cache) {
         NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
         input_tensors_[i] = tensors_[operand].front();
         NNADAPTER_CHECK(input_tensors_[i]);
+        NNADAPTER_VLOG(3) << "Model input[" << i
+                          << "] id=" << input_tensors_[i]->GetId()
+                          << nnadapter::OperandTypeToString(&operand->type);
         input_types_[i] = type;
       }
     }
@@ -164,6 +179,9 @@ int Program::Build(core::Model* model, core::Cache* cache) {
       NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
       output_tensors_[i] = tensors_[operand].back();
       NNADAPTER_CHECK(output_tensors_[i]);
+      NNADAPTER_VLOG(3) << "Model output[" << i
+                        << "] id=" << output_tensors_[i]->GetId()
+                        << nnadapter::OperandTypeToString(&operand->type);
       output_types_[i] = type;
     }
     // Compile tim-vx graph and serialize to NBG(Network Binary Graph)

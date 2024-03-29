@@ -562,12 +562,8 @@ int set_sched_affinity(const std::vector<int>& cpu_ids) {
 
 #define PD_CPU_ZERO(cpusetp) memset((cpusetp), 0, sizeof(cpu_set_t))
 
-// set affinity for thread
-#ifdef __GLIBC__
+  // set affinity for thread
   pid_t pid = syscall(SYS_gettid);
-#else
-  pid_t pid = gettid();
-#endif
   cpu_set_t mask;
   PD_CPU_ZERO(&mask);
   unsigned int Runmask = 0;

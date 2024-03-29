@@ -31,7 +31,7 @@ int ConvertFill(Converter* converter, core::Operation* operation) {
 
   auto shape_count = output_operand->type.dimensions.count;
   auto shape_data = output_operand->type.dimensions.data;
-  std::vector<int32_t> shape;
+  std::vector<uint32_t> shape;
   for (int i = shape_count - 1; i >= 0; i--) {
     shape.push_back(shape_data[i]);
   }

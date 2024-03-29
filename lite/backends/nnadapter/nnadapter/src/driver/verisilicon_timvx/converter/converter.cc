@@ -32,6 +32,16 @@ namespace verisilicon_timvx {
 #undef REGISTER_CONVERTER
 
 int Converter::Apply(core::Model* model) {
+  // Create the input and output tensors in advance so that the input and output
+  // remain in their original order when saving the NBG model on some machines.
+  auto input_count = model->input_operands.size();
+  for (size_t i = 0; i < input_count; i++) {
+    ConvertOperand(model->input_operands[i]);
+  }
+  auto output_count = model->output_operands.size();
+  for (size_t i = 0; i < output_count; i++) {
+    ConvertOperand(model->output_operands[i]);
+  }
   // Convert the NNAdapter operations to the tim-vx operations
   std::vector<core::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
@@ -89,8 +99,11 @@ std::shared_ptr<tim::vx::Tensor> Converter::AddTensor(
 
 std::shared_ptr<tim::vx::Tensor> Converter::ConvertOperand(
     core::Operand* operand, std::vector<int32_t> dimensions) {
-  auto tensor = AddTensor(&operand->type, operand->buffer, dimensions);
-  UpdateTensorMap(operand, tensor);
+  std::shared_ptr<tim::vx::Tensor> tensor = GetMappedTensor(operand);
+  if (!tensor || !IsModelOutputOperand(operand)) {
+    tensor = AddTensor(&operand->type, operand->buffer, dimensions);
+    UpdateTensorMap(operand, tensor);
+  }
   return tensor;
 }
 }  // namespace verisilicon_timvx
