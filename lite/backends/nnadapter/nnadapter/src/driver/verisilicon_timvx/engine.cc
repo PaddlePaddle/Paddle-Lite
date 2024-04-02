@@ -143,7 +143,7 @@ int Program::Build(core::Model* model, core::Cache* cache) {
     FuseSigmoidMulIntoSwish(model);
     ConvertAdaptivePool2dIntoPool2d(model);
     UnpackOpFusion(model);
-    FixOps(model);
+    // FixOps2(model);
     ConvertQuantizationSymmToAsymm(model);
     // RemoveRelu(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
