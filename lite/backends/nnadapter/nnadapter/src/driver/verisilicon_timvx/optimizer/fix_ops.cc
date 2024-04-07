@@ -36,7 +36,7 @@ static void FixResizeLinearNearest(core::Model* model,
   UpdateModelOutputOperands(model, output_operand, dummy_operand);
 }
 
-void FixOps2(core::Model* model) {
+void FixOps(core::Model* model) {
   std::vector<core::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {

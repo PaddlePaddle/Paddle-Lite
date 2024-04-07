@@ -19,7 +19,7 @@
 namespace nnadapter {
 namespace verisilicon_timvx {
 
-void FixOps2(core::Model* model);
+void FixOps(core::Model* model);
 
 }  // namespace verisilicon_timvx
 }  // namespace nnadapter
