@@ -219,7 +219,7 @@ class KernelBase {
   static bool fp16_support() {
     bool fp16_support = paddle::lite::CLRuntime::Global()->get_precision() ==
                         lite_api::CL_PRECISION_FP16;
-    LOG(INFO) << "opencl fp16_support: " << fp16_support;
+    // LOG(INFO) << "opencl fp16_support: " << fp16_support;
     return fp16_support;
   }
 

@@ -20,8 +20,8 @@ limitations under the License. */
 #include "lite/core/version.h"
 #include "lite/utils/io.h"
 #include "lite/utils/log/cp_logging.h"
+#include "lite/utils/log/ohos_log.h"
 #include "lite/utils/string.h"
-
 namespace paddle {
 namespace lite {
 
@@ -568,6 +568,7 @@ GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
   const std::string kADRENO_PATTERN_STR = "QUALCOMM Adreno(TM)";
   const std::string kPOWERVR_PATTERN_STR = "PowerVR";
   const std::string kAPPLE_M1_PATTERN_STR = "Apple M1";
+  const std::string kOHOS_PATTERN_STR = "Maleoon";
   std::string gpu_type_str = "";
 
   if (device_name == kADRENO_PATTERN_STR) {
@@ -582,9 +583,11 @@ GpuType CLRuntime::ParseGpuTypeFromDeviceName(std::string device_name) {
   } else if (device_name.find(kAPPLE_M1_PATTERN_STR) != std::string::npos) {
     gpu_type_str = "appleM1 gpu";
     return GpuType::APPLE_M1;
+  } else if (device_name.find(kOHOS_PATTERN_STR) != std::string::npos) {
+    return GpuType::MALELOON;
   } else {
     gpu_type_str = "others gpu";
-    return GpuType::UNKNOWN;
+    return GpuType::OTHERS;
   }
 #ifdef LITE_WITH_LOG
   LOG(INFO) << "gpu_type_str:" << gpu_type_str;

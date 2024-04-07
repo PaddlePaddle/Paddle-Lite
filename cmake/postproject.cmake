@@ -169,7 +169,15 @@ endif()
 
 message(STATUS "ANDROID_NDK_MAJOR: ${ANDROID_NDK_MAJOR}")
 
-if(LITE_WITH_OPENMP)
+if (LITE_WITH_OHOS)
+    if (${OHOS_ARCH} STREQUAL "armeabi-v7a")
+        message(STATUS "OHOS OPENNEON ...")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=neon -mfloat-abi=softfp")
+    endif ()
+endif ()
+
+
+if(OFF)
     if (ARM_TARGET_LANG STREQUAL "gcc")
         set(OpenMP_C_FLAGS "-fopenmp")
         set(OpenMP_C_LIB_NAMES "omp")

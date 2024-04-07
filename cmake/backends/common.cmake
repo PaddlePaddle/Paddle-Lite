@@ -48,7 +48,7 @@ else()
   include(ccache)               # set ccache for compilation
   include(util)                 # set unittest and link libs
   include(version)              # set PADDLE_VERSION
-  if(NOT APPLE)
+  if(NOT APPLE AND NOT OHOS)
     include(flags)
   endif()
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")

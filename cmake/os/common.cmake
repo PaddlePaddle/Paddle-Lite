@@ -16,7 +16,7 @@ cmake_minimum_required(VERSION 3.10)
 
 # Arm config
 if(LITE_WITH_ARM)
-  set(ARM_TARGET_OS_LIST "android" "armlinux" "ios" "ios64" "armmacos" "qnx")
+  set(ARM_TARGET_OS_LIST "android" "armlinux" "ios" "ios64" "armmacos" "qnx" "ohos")
   set(ARM_TARGET_ARCH_ABI_LIST "armv8" "armv7" "armv7hf" "arm64-v8a" "armeabi-v7a")
   set(ARM_TARGET_LANG_LIST "gcc" "clang")
   set(ARM_TARGET_LIB_TYPE_LIST "static" "shared")
@@ -46,6 +46,7 @@ if(LITE_WITH_ARM)
     if(NOT ARM_TARGET_LANG IN_LIST ARM_TARGET_LANG_LIST)
       message(FATAL_ERROR "ARM_TARGET_LANG should be one of ${ARM_TARGET_LANG_LIST}")
     endif()
+    message(STATUS "ARM_TARGET_LANG: ${ARM_TARGET_LANG}")
   endif()
 
   # Target lib check
@@ -72,6 +73,9 @@ if(LITE_WITH_ARM)
   if(ARM_TARGET_OS STREQUAL "android")
     include(os/android)
   endif()
+  if(ARM_TARGET_OS STREQUAL "ohos")
+    include(os/ohos)
+  endif()
   if(ARM_TARGET_OS STREQUAL "armlinux")
     include(os/armlinux)
   endif()
@@ -88,7 +92,7 @@ if(LITE_WITH_ARM)
   # Detect origin host toolchain
   set(HOST_C_COMPILER $ENV{CC})
   set(HOST_CXX_COMPILER $ENV{CXX})
-  if(IOS OR ARMMACOS)
+  if(IOS OR ARMMACOS OR OHOS)
     set(default_cc clang)
     set(default_cxx clang++)
   else()
@@ -129,7 +133,7 @@ if(NOT APPLE)
 endif()
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
-if(ANDROID OR IOS OR ARMLINUX OR ARMMACOS)
+if(ANDROID OR IOS OR ARMLINUX OR ARMMACOS OR OHOS)
   set(WITH_DSO OFF CACHE STRING
     "Disable DSO when cross-compiling for Android and iOS" FORCE)
   set(WITH_AVX OFF CACHE STRING
@@ -141,7 +145,7 @@ if(ANDROID OR IOS OR ARMLINUX OR ARMMACOS)
 endif()
 
 # Python
-if(ANDROID OR IOS)
+if(ANDROID OR IOS OR OHOS)
   set(LITE_WITH_PYTHON OFF CACHE STRING
     "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
 endif()

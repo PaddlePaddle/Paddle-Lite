@@ -73,6 +73,13 @@ bool CLWrapper::InitHandle() {
     "/system/vendor/lib/libPVROCL.so",
     "/data/data/org.pocl.libs/files/lib/libpocl.so",
 #endif  // __aarch64__
+#elif defined(__OHOS__)
+#if defined(__aarch64__)
+    "/vendor/lib64/libOpenCL.so",
+#else
+// "OHOS NOT SUPPORTED 32 ABI";
+// https://developer.huawei.com/consumer/cn/doc/harmonyos-guides-V5/build-with-ndk-ide-V5
+#endif
 #elif defined(__linux__)
     "/usr/lib/aarch64-linux-gnu/libOpenCL.so",
     "/usr/lib/arm-linux-gnueabihf/libOpenCL.so",
@@ -97,7 +104,7 @@ bool CLWrapper::InitHandle() {
       break;
     }
   }
-  VLOG(4) << "Load the OpenCL library from " << target_lib;
+  VLOG(1) << "Load the OpenCL library from " << target_lib;
   if (handle_ != nullptr) {
     return true;
   } else {

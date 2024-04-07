@@ -150,6 +150,10 @@ else()
             target_link_libraries(paddle_light_api_shared ${METAL_LIBRARY} ${MPS_LIBRARY} ${FOUNDATION_LIBRARY})
         endif()
 
+        if (LITE_WITH_LOG)
+            message(STATUS "got 333 link lite with log ${OHOS_LINKED_LIBS} " )
+            target_link_libraries(paddle_light_api_shared ${OHOS_LINKED_LIBS})
+        endif ()
         # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
         if (LITE_WITH_JAVA)
           add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
