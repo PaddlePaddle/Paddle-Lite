@@ -422,24 +422,12 @@ void sort_cpuid_by_max_freq(const std::vector<int>& max_freqs,
   for (int i = 0; i < cpu_num; i++) {
     cpu_ids->at(i) = i;
   }
-  // sort cpuid as big core first
-  // simple bubble sort
-  for (int i = 0; i < cpu_num; i++) {
-    for (int j = i + 1; j < cpu_num; j++) {
-      if (max_freqs[i] < max_freqs[j]) {
-        // swap
-        int tmp = cpu_ids->at(i);
-        cpu_ids->at(i) = cpu_ids->at(j);
-        cpu_ids->at(j) = tmp;
-      }
-    }
-  }
-  // SMP
-  int mid_max_freq =
-      (max_freqs[cpu_ids->at(0)] + max_freqs[cpu_ids->at(cpu_num - 1)]) / 2;
+
+  int freq_max = *std::max_element(max_freqs.begin(), max_freqs.end());
+  int freq_min = *std::min_element(max_freqs.begin(), max_freqs.end());
+  int mid_max_freq = (freq_max + freq_min) / 2;
 
   for (int i = 0; i < cpu_num; i++) {
-    cpu_ids->at(i) = i;
     if (max_freqs[i] >= mid_max_freq) {
       cluster_ids->at(i) = 0;
     } else {
