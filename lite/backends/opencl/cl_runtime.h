@@ -16,6 +16,7 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <vector>
+
 #include "lite/api/paddle_place.h"
 #include "lite/backends/opencl/cl_include.h"
 #include "lite/backends/opencl/cl_utility.h"
@@ -221,6 +222,8 @@ class CLRuntime {
                                 const std::vector<int>& tune_vct);
 
  private:
+  static CLRuntime instance_;
+
   CLRuntime() { Init(); }
   CLRuntime(const CLRuntime&) = delete;
   CLRuntime(const CLRuntime&&) = delete;
