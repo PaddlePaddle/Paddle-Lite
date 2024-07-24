@@ -40,7 +40,7 @@ IOS_DEPLOYMENT_TARGET=11.0
 # use Arm DNN library instead of built-in math library, defaults to OFF.
 WITH_ARM_DNN_LIBRARY=OFF
 # num of threads used during compiling..
-readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
+readonly NUM_PROC=8
 #####################################################################################################
 
 
