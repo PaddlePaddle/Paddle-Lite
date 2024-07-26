@@ -57,7 +57,7 @@ kernel void fetch(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
             output[dst] = input.w;
         }
     }
-    //  dimensions < 4, data layout on CPU is NCHW(texture width is H, height is W), data layout on
+    //  dimensions < 4, data layout on CPU is NCHW(texture width is H, height is C), data layout on
     //  GPU is NCHW
     // arraylength=(W+3)/4
     else {
