@@ -17,6 +17,8 @@ WITH_LOG=ON
 WITH_EXCEPTION=ON
 # controls whether to print profile infomation, default is ON 
 WITH_PROFILE=ON
+# controls whether to use metal, default is OFF
+WITH_META=OFF
 # absolute path of Paddle-Lite.
 workspace=$PWD/$(dirname $0)/../../
 # options of striping lib according to input model.
@@ -74,13 +76,13 @@ function make_xcode {
     cmake $workspace \
             -DLITE_WITH_XCODE=ON \
             -DLITE_WITH_ARM=ON \
+            -DLITE_WITH_METAL=$WITH_METAL \
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
             -DLITE_WITH_X86=OFF \
             -DLITE_WITH_LOG=$WITH_LOG \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
-            -DLITE_WITH_PRECISION_PROFILE=$WITH_EXCEPTION \
             -DLITE_WITH_PROFILE=$WITH_PROFILE \
             -DLITE_BUILD_TAILOR=$WITH_STRIP \
             -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
@@ -155,6 +157,10 @@ function main {
                 ;;
             --with_profile=*)
                 WITH_PROFILE="${i#*=}"
+                shift
+                ;;
+            --with_metal=*)
+                WITH_METAL="${i#*=}"
                 shift
                 ;;
             --ios_deployment_target=*)
