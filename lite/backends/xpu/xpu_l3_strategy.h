@@ -28,6 +28,7 @@ class XPUL3Planner {
   void set_current_query_shape(
       const std::vector<std::vector<int64_t>>& query_shape, size_t l3_size) {
     query_shape_.clear();
+    if (l3_size <= 0) return;
     for (size_t node_idx = 0; node_idx < query_shape.size(); node_idx++) {
       for (size_t shape_idx = 0; shape_idx < query_shape[node_idx].size();
            shape_idx++) {
@@ -38,30 +39,134 @@ class XPUL3Planner {
   }
 
   std::vector<size_t>* get_current_plan() {
-    if (plans_.size() <= 0) {
+    if (plans_.size() <= 0 || query_shape_.empty()) {
       return nullptr;
     } else {
       auto it = plans_.lower_bound(query_shape_);
       if (it == plans_.end()) {
-        return nullptr;
+        LOG(INFO) << "new query_shape, use the first L3 cache plan";
+        return &(plans_.begin()->second);
       } else {
         return &(it->second);
       }
     }
   }
-
   bool if_find_plan_query_shape() {
-    return (query_shape_.size() == 0 ||
-            plans_.find(query_shape_) != plans_.end());
+    return (!query_shape_.empty() && plans_.find(query_shape_) != plans_.end());
   }
+  // greedy strategy
+  void run_autotune_greedy(const std::vector<XPUL3CacheBlock*>& l3_block_dict,
+                           size_t l3_size) {
+    if (l3_block_dict.size() == 0 || l3_size <= 0 || query_shape_.size() == 0 ||
+        plans_.find(query_shape_) != plans_.end()) {
+      return;
+    }
+    VLOG(3) << "AutoTune(greedy) XPU L3 Cache Block Start.";
+    struct node {
+      size_t weights = 0;
+      size_t scores = 0;
+      float ratio = 0.f;  // score/weights
+    };
+    std::vector<std::vector<node>> records;
+    std::vector<size_t> record_map;
+    size_t total_scores = 0;
+    for (size_t block_idx = 0; block_idx < l3_block_dict.size(); block_idx++) {
+      XPUL3CacheBlock* cur_block = l3_block_dict[block_idx];
+      std::vector<size_t>& history = cur_block->history_;
+      auto history_size = history.size();
+      size_t score = 0;
+      VLOG(3) << "Block Idx is " << block_idx;
+      if (history_size > l3_tune_level_) {
+        std::vector<node> block_nodes{node()};
+        std::sort(history.begin(), history.end());
+        for (size_t i = 0; i < history_size; i++) {
+          VLOG(3) << "Size History : " << i << " is " << history[i];
+          if (history[i] > l3_size) {
+            break;
+          }
+          if (history[i] <= 0) continue;
+          score += history[i];
+          if (i == history_size - 1 || history[i + 1] != history[i]) {
+            node cur_node;
+            cur_node.weights = history[i];
+            cur_node.scores = score;
+            cur_node.ratio = score * 1.0 / cur_node.weights;
+            if (block_nodes.back().ratio < cur_node.ratio) {
+              if (block_nodes.size() < 2) {
+                block_nodes.push_back(cur_node);
+              } else {
+                block_nodes.back().weights = cur_node.weights;
+                block_nodes.back().scores = cur_node.scores;
+                block_nodes.back().ratio = cur_node.ratio;
+              }
+              VLOG(3) << "History : " << i
+                      << ", Node Weights is:" << cur_node.weights
+                      << ", Node Scores is: " << score
+                      << ", profit: " << cur_node.ratio;
+            }
+          }
+        }
+        total_scores += score;
+        records.push_back(block_nodes);
+        record_map.push_back(block_idx);
+      }
+    }
+    if (records.size() <= 0) {
+      return;
+    }
+    {  // greedy search
+      std::vector<int> ret_index(records.size());
+      std::iota(ret_index.begin(), ret_index.end(), 0);
+      auto customGreater = [&records](int a, int b) {
+        if (records[a].back().ratio > records[b].back().ratio) {
+          return true;
+        } else if (records[a].back().ratio == records[b].back().ratio) {
+          return records[a].back().weights > records[b].back().weights;
+        } else {
+          return false;
+        }
+      };
+      std::stable_sort(ret_index.begin(), ret_index.end(), customGreater);
+      int total_l3_size = 0;
+      std::vector<size_t> final_res(l3_block_dict.size() + 1, 0);
+      for (size_t i = 0; i < ret_index.size(); i++) {
+        int block_idx = record_map[ret_index[i]];
+        const node& select_node = records[ret_index[i]].back();
+        if (select_node.weights > 0 &&
+            total_l3_size + select_node.weights <= l3_size) {
+          final_res[block_idx] = select_node.weights;
+          total_l3_size += select_node.weights;
+          VLOG(3) << "BLOCK IDX is " << block_idx << ", Acquired L3 Size is "
+                  << select_node.weights << ", profit" << select_node.ratio;
+        }
+      }
+      int xdnn_ctx_l3_size = (l3_size - total_l3_size) / 64 * 64;
+      CHECK_GE(xdnn_ctx_l3_size, 0) << "invalid remaining xdnn L3 size: "
+                                    << xdnn_ctx_l3_size;
+      LOG(INFO) << "greedy search L3 tune strategy, lite use L3: "
+                << total_l3_size << ", xdnn left l3 size: " << xdnn_ctx_l3_size;
 
+      double l3_global_ratio =
+          static_cast<double>(total_l3_size) / total_scores;
+      VLOG(3) << "Tensor Space in L3 / Tensor Space in Global :"
+              << l3_global_ratio * 100 << " %";
+      final_res[l3_block_dict.size()] = xdnn_ctx_l3_size;
+      plans_.insert({query_shape_, final_res});
+      VLOG(3) << "AutoTune(greedy) XPU L3 Cache Block End.";
+      return;
+    }
+  }
   void run_autotune(const std::vector<XPUL3CacheBlock*>& l3_block_dict,
                     size_t l3_size) {
     if (l3_block_dict.size() == 0 || l3_size <= 0 || query_shape_.size() == 0 ||
         plans_.find(query_shape_) != plans_.end()) {
       return;
     }
-    VLOG(3) << "AutoTune XPU L3 Cache Block Start.";
+    // greedy search
+    if (l3_tune_level_ <= 1) {
+      return run_autotune_greedy(l3_block_dict, l3_size);
+    }
+    VLOG(3) << "AutoTune XPU L3 Cache Block Start";
     struct node {
       size_t weights = 0;
       size_t scores = 0;
@@ -76,7 +181,7 @@ class XPUL3Planner {
       auto history_size = history.size();
       size_t score = 0;
       VLOG(3) << "Block Idx is " << block_idx;
-      if (history_size > 1) {
+      if (history_size > l3_tune_level_) {
         std::vector<node> block_nodes{node()};
         std::sort(history.begin(), history.end());
         for (size_t i = 0; i < history_size; i++) {
@@ -182,11 +287,20 @@ class XPUL3Planner {
     VLOG(3) << "AutoTune XPU L3 Cache Block End.";
   }
 
+  void set_l3_tune_level(int v) {
+    if (v < 0) {
+      LOG(FATAL) << "invalid l3_tune_leve value: " << v;
+    }
+    l3_tune_level_ = v;
+    LOG(INFO) << "set_l3_tune_level: " << l3_tune_level_;
+  }
+
  private:
   // plans_ format: [query_shape_] : [block0 block1 ... blockn xdnn_ctx_l3_size]
   std::map<std::vector<int64_t>, std::vector<size_t>> plans_;
   // query_shape format: [shape0 shape1 ... shapen l3_size]
   std::vector<int64_t> query_shape_;
+  int l3_tune_level_{1};  // tensor reuse threshold in graph
 };
 
 }  // namespace lite

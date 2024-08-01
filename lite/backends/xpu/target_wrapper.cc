@@ -31,15 +31,12 @@ XPUL3CacheBlock* TargetWrapperXPU::CreateL3CacheBlock() {
   //  当模型由于触发条件不同，调用了不同的子图，跑多条queryshape相同的数据时，存在多创建l3cache的情况；
   //  为了跳过子图中的第二次创建的l3cache，这里先判断plan是否是新的queryshape：
   //  如果是新的queryshape，则直接创建l3cache；
-  //  如果没有新增queryshape，则跳过第二次创建l3cache
+  //  如果没有新增queryshape，则跳过第二次创建l3cache, 返回nullptr
   if (!xpu_runtime_ptr->xpu_l3_planner->if_find_plan_query_shape()) {
     xpu_runtime_ptr->xpu_l3_block_dict.push_back(new XPUL3CacheBlock());
-  }
-
-  if (xpu_runtime_ptr->xpu_l3_block_dict.size() == 0) {
-    return nullptr;
-  } else {
     return xpu_runtime_ptr->xpu_l3_block_dict.back();
+  } else {
+    return nullptr;
   }
 }
 
