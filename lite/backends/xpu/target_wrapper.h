@@ -149,6 +149,8 @@ class TargetWrapper<TARGET(kXPU)> {
       xpu_runtime_ptr->xpu_l3_planner = new XPUL3Planner;
     }
     CHECK(xpu_runtime_ptr->xpu_l3_planner);
+    xpu_runtime_ptr->xpu_l3_planner->set_l3_tune_level(
+        GetIntFromEnv("L3_TUNE_LEVEL", 1));
 
     int devid = -1;
     uint64_t max_l3_size = 0;
