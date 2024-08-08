@@ -84,9 +84,12 @@ kernel void concat_normal(texture2d_array<ftype, access::read> inx[[texture(0)]]
     out.write(r, gid.xy, gid.z);
 }
 
-// Metal shader compiler automatically enables compilation optimization to enhance the shader’s computing performance.
-// However, the latest version of the Metal shader compiler may cause out-of-bounds reads of `vdim` or `inTexture` in the function below.
-// Therefore, compilation optimization is disabled for this function (marked with `__attribute__((optnone))`).
+// Metal shader compiler automatically enables compilation optimization to enhance the shader’s
+// computing performance.
+// However, the latest version of the Metal shader compiler may cause out-of-bounds reads of `vdim`
+// or `inTexture` in the function below.
+// Therefore, compilation optimization is disabled for this function (marked with
+// `__attribute__((optnone))`).
 __attribute__((optnone)) kernel void concat(texture2d_array<ftype, access::write> out[[texture(0)]],
     texture2d_array<ftype, access::read> in0[[texture(1)]],
     texture2d_array<ftype, access::read> in1[[texture(2)]],

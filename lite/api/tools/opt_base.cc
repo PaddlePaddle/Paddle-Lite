@@ -158,6 +158,7 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
           TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});
       valid_places_.emplace_back(Place{
           TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places_.emplace_back(TARGET(kARM));
     } else if (target_repr == "arm_metal") {
       valid_places_.emplace_back(Place{
           TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});

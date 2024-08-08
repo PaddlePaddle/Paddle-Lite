@@ -226,6 +226,40 @@ class StaticKernelPickPass : public mir::StmtPass {
         }
       }
 
+      // Metal cast kernal should check both inputs and outputs precision
+      bool reset_score = false;
+      if (kernel.place().target == TARGET(kMetal)) {
+        if (instruct.op_type() == "cast") {
+          VLOG(4) << "Metal cast kernel calculates precision compatibility by "
+                     "itself";
+          for (size_t i = 0; i < out_names.size(); ++i) {
+            std::string tmp;
+            CHECK(instruct.op_info()->GetOutputArgname(out_names[i], &tmp));
+            if (out_types.count(out_names[i]) &&
+                out_types.at(out_names[i]) !=
+                    kernel.GetOutputDeclType(tmp)->precision()) {
+              reset_score = true;
+              break;
+            }
+
+            CHECK(instruct.op_info()->GetInputArgname(in_names[i], &tmp));
+            if (in_types.count(in_names[i])) {
+              if (!PrecTypeCompatible(
+                      in_types.at(in_names[i]),
+                      kernel.GetInputDeclType(tmp)->precision())) {
+                reset_score = true;
+                break;
+              }
+            }
+          }
+        }
+      }
+      if (reset_score) {
+        score = 0;
+        VLOG(4) << "[Reset score] metal cast kernel is unmatched";
+        VLOG(4) << "[score s7]:" << score;
+      }
+
       if (weight * score > final_score) {
         final_score = weight * score;
         winner_place = place;
