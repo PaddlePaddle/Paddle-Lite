@@ -44,6 +44,9 @@ enum class L3CacheSetMethod {
 };
 
 // return true if current device supports OpenCL model
+LITE_API bool EnableOpenCLBackend(bool enable);
+
+// return true if current device supports OpenCL model
 LITE_API bool IsOpenCLBackendValid(bool check_fp16_valid = false);
 
 // return current opencl device type,

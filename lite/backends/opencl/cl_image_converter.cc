@@ -71,13 +71,13 @@ void CLImageConverterDefault::NCHWToImage(float *nchw,
           if (c < C) {
             // size_t x = (n * width * H + h * width + (c / 4) * W + w) * 4 +
             // (c % 4);
-            fp16_support_ ? image_fp16[i2] = Float2Half(*p) : image_fp32[i2] =
-                                                                  *p;
+            fp16_support() ? image_fp16[i2] = Float2Half(*p) : image_fp32[i2] =
+                                                                   *p;
             i2 += 4;
             p++;
           } else {
-            fp16_support_ ? image_fp16[i2] = Float2Half(0.f) : image_fp32[i2] =
-                                                                   0.f;
+            fp16_support() ? image_fp16[i2] = Float2Half(0.f) : image_fp32[i2] =
+                                                                    0.f;
             i2 += 4;
           }
         }
@@ -115,7 +115,7 @@ void CLImageConverterDefault::ImageToNCHW(void *image,
       for (size_t h = 0; h < H; h++) {
         size_t i2 = (i1 << 2) + c % 4;
         for (size_t w = 0; w < W; w++) {
-          *p = fp16_support_ ? Half2Float(image_fp16[i2]) : image_fp32[i2];
+          *p = fp16_support() ? Half2Float(image_fp16[i2]) : image_fp32[i2];
           i2 += 4;
           p++;
         }
@@ -196,7 +196,7 @@ void CLImageConverterFolder::NCHWToImage(float *tensor,
     for (size_t h = 0; h < tdim[0]; h++) {
       for (size_t w = 0; w < width * 4; w++) {
         if (w < tdim[1]) {
-          if (fp16_support_) {
+          if (fp16_support()) {
             image_fp16[(h * width + w / 4) * 4 + (w % 4)] =
                 Float2Half(tensor[h * tdim[1] + w]);
           } else {
@@ -204,7 +204,7 @@ void CLImageConverterFolder::NCHWToImage(float *tensor,
                 tensor[h * tdim[1] + w];
           }
         } else {
-          if (fp16_support_) {
+          if (fp16_support()) {
             image_fp16[(h * width + w / 4) * 4 + (w % 4)] = Float2Half(0.f);
           } else {
             image_fp32[(h * width + w / 4) * 4 + (w % 4)] = 0.f;
@@ -241,7 +241,7 @@ void CLImageConverterFolder::ImageToNCHW(void *image,
     for (size_t h = 0; h < H; h++) {
       for (size_t w = 0; w < W; w++) {
         p[h * W + w] =
-            fp16_support_
+            fp16_support()
                 ? Half2Float(image_fp16[(h * width + w / 4) * 4 + (w % 4)])
                 : image_fp32[(h * width + w / 4) * 4 + (w % 4)];
       }
@@ -286,14 +286,14 @@ void CLImageConverterNWBlock::NCHWToImage(float *tensor,
           size_t index = 4 * c * (width * H) + 4 * h * width + 4 * W * (n / 4) +
                          w * 4 + n % 4;
           if (n < N) {
-            if (fp16_support_) {
+            if (fp16_support()) {
               image_fp16[index] = Float2Half(*p);
             } else {
               image_fp32[index] = *p;
             }
             p++;
           } else {
-            if (fp16_support_) {
+            if (fp16_support()) {
               image_fp16[index] = Float2Half(0.f);
             } else {
               image_fp32[index] = 0.f;
@@ -330,8 +330,8 @@ void CLImageConverterNWBlock::ImageToNCHW(void *image,
         for (size_t w = 0; w < W; ++w) {
           size_t index = 4 * c * (width * H) + 4 * h * width + 4 * W * (n / 4) +
                          w * 4 + n % 4;
-          *p =
-              fp16_support_ ? Half2Float(image_fp16[index]) : image_fp32[index];
+          *p = fp16_support() ? Half2Float(image_fp16[index])
+                              : image_fp32[index];
           p++;
           if (index >= (width * height * 4)) {
             LOG(INFO) << " index out of range ";
@@ -393,7 +393,7 @@ void CLImageConverterDWBlock::NCHWToImage(float *tensor,
           if (c < C) {
             // size_t x = (n * width * H + h * width + (c / 4) * W + w) * 4 +
             // (c % 4);
-            if (fp16_support_) {
+            if (fp16_support()) {
               image_fp16[i2] = Float2Half(*p);
             } else {
               image_fp32[i2] = *p;
@@ -401,7 +401,7 @@ void CLImageConverterDWBlock::NCHWToImage(float *tensor,
             i2 += 4;
             p++;
           } else {
-            if (fp16_support_) {
+            if (fp16_support()) {
               image_fp16[i2] = Float2Half(0.f);
             } else {
               image_fp32[i2] = 0.f;
@@ -437,7 +437,7 @@ void CLImageConverterDWBlock::ImageToNCHW(void *image,
       for (size_t h = 0; h < H; h++) {
         size_t i2 = (i1 << 2) + c % 4;
         for (size_t w = 0; w < W; w++) {
-          *p = fp16_support_ ? Half2Float(image_fp16[i2]) : image_fp32[i2];
+          *p = fp16_support() ? Half2Float(image_fp16[i2]) : image_fp32[i2];
           i2 += 4;
           p++;
         }
@@ -540,7 +540,7 @@ void CLImageConverterWinoTransWeight::NCHWToImage(float *tensor,
   float *image_fp32 = static_cast<float *>(image);
   half_t *image_fp16 = static_cast<half_t *>(image);
   // auto weight_dest_data = static_cast<half_t *>(image);
-  if (fp16_support_) {
+  if (fp16_support()) {
     memset(image_fp16, 0, num_count * sizeof(half_t));
   } else {
     memset(image_fp32, 0, num_count * sizeof(float));
@@ -573,7 +573,7 @@ void CLImageConverterWinoTransWeight::NCHWToImage(float *tensor,
       auto dstSz_fp16 = dstOz_fp16 + szC4 * 16 + unitCo * my;
       auto dstSz_fp32 = dstOz_fp32 + szC4 * 16 + unitCo * my;
       for (int i = 0; i < 16; ++i) {
-        if (fp16_support_) {
+        if (fp16_support()) {
           *(dstSz_fp16 + i * ((co + 3) / 4) * ((ci + 3) / 4) * 4 * 4) =
               Float2Half(K_Transform.data()[i]);
         } else {
@@ -648,12 +648,12 @@ void CLImageConverterNBlock::NCHWToImage(float *nchw,
           size_t img_idx =
               (((n / 4) * W * H + h * W + w) * c_block4 + c) * 4 + n % 4;
           if (n < N && c < C) {
-            fp16_support_ ? image_fp16[img_idx] = Float2Half(*p)
-                          : image_fp32[img_idx] = *p;
+            fp16_support() ? image_fp16[img_idx] = Float2Half(*p)
+                           : image_fp32[img_idx] = *p;
             p++;
           } else {
-            fp16_support_ ? image_fp16[img_idx] = Float2Half(0.f)
-                          : image_fp32[img_idx] = 0.f;
+            fp16_support() ? image_fp16[img_idx] = Float2Half(0.f)
+                           : image_fp32[img_idx] = 0.f;
           }
         }
       }
@@ -697,12 +697,12 @@ void CLImageConverterNBlockGroup::NCHWToImage(float *nchw,
               (((n / 4) * W * H + h * W + w) * c_block4 + c) * 4 + n % 4;
           size_t remain = n % ((N / groups + 3) / 4 * 4);
           if (remain < (N / groups) && c < C) {
-            fp16_support_ ? image_fp16[img_idx] = Float2Half(*p)
-                          : image_fp32[img_idx] = *p;
+            fp16_support() ? image_fp16[img_idx] = Float2Half(*p)
+                           : image_fp32[img_idx] = *p;
             p++;
           } else {
-            fp16_support_ ? image_fp16[img_idx] = Float2Half(0.f)
-                          : image_fp32[img_idx] = 0.f;
+            fp16_support() ? image_fp16[img_idx] = Float2Half(0.f)
+                           : image_fp32[img_idx] = 0.f;
           }
         }
       }
@@ -760,12 +760,12 @@ void CLImageConverterN2Block::NCHWToImage(float *nchw,
                            (c / 4) * 32 + ((n % 8) / 4) * 16 + (c % 4) * 4 +
                            (n % 8) % 4;
           if (n < N && c < C) {
-            fp16_support_ ? image_fp16[img_idx] = Float2Half(*p)
-                          : image_fp32[img_idx] = *p;
+            fp16_support() ? image_fp16[img_idx] = Float2Half(*p)
+                           : image_fp32[img_idx] = *p;
             p++;
           } else {
-            fp16_support_ ? image_fp16[img_idx] = Float2Half(0.f)
-                          : image_fp32[img_idx] = 0.f;
+            fp16_support() ? image_fp16[img_idx] = Float2Half(0.f)
+                           : image_fp32[img_idx] = 0.f;
           }
         }
       }
@@ -819,12 +819,12 @@ void CLImageConverterDWFilter::NCHWToImage(float *nchw,
         for (size_t w = 0; w < W; w++) {
           size_t img_idx = (((n / 4) * W * H + h * W + w) * C + c) * 4 + n % 4;
           if (n < N) {
-            fp16_support_ ? image_fp16[img_idx] = Float2Half(*p)
-                          : image_fp32[img_idx] = *p;
+            fp16_support() ? image_fp16[img_idx] = Float2Half(*p)
+                           : image_fp32[img_idx] = *p;
             p++;
           } else {
-            fp16_support_ ? image_fp16[img_idx] = Float2Half(0.f)
-                          : image_fp32[img_idx] = 0.f;
+            fp16_support() ? image_fp16[img_idx] = Float2Half(0.f)
+                           : image_fp32[img_idx] = 0.f;
           }
         }
       }

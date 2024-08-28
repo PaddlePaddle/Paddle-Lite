@@ -215,8 +215,14 @@ class KernelBase {
   cl::Event event_;
   cl::Event event_1;
   cl::Event event_2;
-  bool fp16_support_{paddle::lite::CLRuntime::Global()->get_precision() ==
-                     lite_api::CL_PRECISION_FP16};
+
+  static bool fp16_support() {
+    bool fp16_support = paddle::lite::CLRuntime::Global()->get_precision() ==
+                        lite_api::CL_PRECISION_FP16;
+    LOG(INFO) << "opencl fp16_support: " << fp16_support;
+    return fp16_support;
+  }
+
 #endif
 };
 

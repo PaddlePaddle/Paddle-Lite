@@ -201,9 +201,12 @@ class LITE_API RuntimeProgram {
   bool use_precision_low_ = false;
   ~RuntimeProgram() {
 #ifdef LITE_WITH_OPENCL
-    // save program kernel cache & tuned params
-    CLRuntime::Global()->SaveProgram();
-    CLRuntime::Global()->SaveTuned();
+    // when has opencl kernel try to save params
+    if (has_opencl_kernel_) {
+      // save program kernel cache & tuned params
+      CLRuntime::Global()->SaveProgram();
+      CLRuntime::Global()->SaveTuned();
+    }
 #endif  // LITE_WITH_OPENCL
 #ifdef LITE_WITH_PROFILE
     // exclude data of first epoch
@@ -216,36 +219,49 @@ class LITE_API RuntimeProgram {
 
   void Init() {
     if (instructions_.empty()) {
-      LOG(FATAL) << "no instructions";
+      LOG(FATAL) << "No instructions";
     }
 #ifdef LITE_WITH_PROFILE
     set_profiler();
 #endif
-
-#ifdef LITE_WITH_OPENCL
-    bool opencl_valid = paddle::lite::CLWrapper::Global()->OpenclLibFound() &&
-                        paddle::lite::CLWrapper::Global()->DlsymSuccess() &&
-                        CLRuntime::Global()->OpenCLAvaliableForDevice();
-    using OpenCLContext = Context<TargetType::kOpenCL>;
-    std::unique_ptr<KernelContext> unique_opencl_ctx(new KernelContext());
-    if (opencl_valid) {
-      unique_opencl_ctx->As<OpenCLContext>().InitOnce();
-    }
-#endif
-
     for (auto& inst : instructions_[kRootBlockIdx]) {
       KernelBase* kernel = inst.mutable_kernel();
       if (kernel->target() == TARGET(kOpenCL)) {
 #if defined(LITE_WITH_OPENCL)
-        if (opencl_valid) {
+        // mark has opencl kernel
+        has_opencl_kernel_ = true;
+
+        // init opencl runtime when first find opencl kernel.
+        // when unique_opencl_ctx_ not init. init it
+        if (!unique_opencl_ctx_) {
+          // auto enable when opencl kernel is found.
+          ClGlobalDelegate::Global().SetUseOpenCL(true);
+          opencl_valid_ = paddle::lite::CLWrapper::Global()->OpenclLibFound() &&
+                          paddle::lite::CLWrapper::Global()->DlsymSuccess() &&
+                          CLRuntime::Global()->OpenCLAvaliableForDevice();
+          // check opencl env valid.
+          if (opencl_valid_) {
+            // init opencl context
+            std::unique_ptr<KernelContext> unique_opencl_ctx(
+                new KernelContext());
+            unique_opencl_ctx_ = std::move(unique_opencl_ctx);
+            (*unique_opencl_ctx_).As<OpenCLContext>().InitOnce();
+          } else {
+            LOG(FATAL) << "Check opencl env failed. opencl_valid:"
+                       << opencl_valid_;
+          }
+        }
+
+        // check valid and copy shared context to kernel.
+        if (opencl_valid_) {
           std::unique_ptr<KernelContext> ctx(new KernelContext());
-          (*unique_opencl_ctx)
+          (*unique_opencl_ctx_)
               .As<OpenCLContext>()
               .CopySharedTo(&ctx->As<OpenCLContext>());
           kernel->SetContext(std::move(ctx));
         } else {
           // if gpu not support , fatal when user init gpu model.
-          LOG(FATAL) << "opencl_valid:" << opencl_valid;
+          LOG(FATAL) << "OpenCl Valid: " << opencl_valid_;
         }
 #endif
       } else if (kernel->target() == TARGET(kMetal)) {
@@ -312,6 +328,11 @@ class LITE_API RuntimeProgram {
   Scope* exec_scope_{};
   int64_t version_{0};
 
+#ifdef LITE_WITH_OPENCL
+  bool opencl_valid_{false};
+  bool has_opencl_kernel_{false};
+  std::unique_ptr<KernelContext> unique_opencl_ctx_;
+#endif
 #ifdef LITE_WITH_METAL
   std::unique_ptr<KernelContext> metal_ctx_{nullptr};
 #endif

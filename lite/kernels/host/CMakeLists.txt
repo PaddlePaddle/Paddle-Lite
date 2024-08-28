@@ -125,6 +125,7 @@ add_kernel(temporal_shift_compute_host Host extra SRCS temporal_shift_compute.cc
 add_kernel(pad_compute_host Host extra SRCS pad_compute.cc)
 add_kernel(bitwise_compute_host Host extra SRCS bitwise_compute.cc)
 add_kernel(empty_compute_host Host extra SRCS empty_compute.cc)
+add_kernel(pixel_unshuffle_compute_arm Host extra SRCS pixel_unshuffle_compute.cc)
 
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)

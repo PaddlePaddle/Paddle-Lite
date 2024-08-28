@@ -1684,14 +1684,14 @@ void ConvImageCompute::NCHW2IMG4(
       size_t img_idx = (c / 4) * oc_block * 4 + n;
       if (n < oc && c < ic) {
         if ((c % 4) == index) {
-          fp16_support_ ? dst_fp16[img_idx] = Float2Half(*p)
-                        : dst_fp32[img_idx] = *p;
+          fp16_support() ? dst_fp16[img_idx] = Float2Half(*p)
+                         : dst_fp32[img_idx] = *p;
         }
         p++;
       } else {
         if ((c % 4) == index) {
-          fp16_support_ ? dst_fp16[img_idx] = Float2Half(0.f)
-                        : dst_fp32[img_idx] = 0.f;
+          fp16_support() ? dst_fp16[img_idx] = Float2Half(0.f)
+                         : dst_fp32[img_idx] = 0.f;
         }
       }
     }

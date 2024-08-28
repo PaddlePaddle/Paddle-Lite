@@ -601,12 +601,12 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
           size_t i2 = (i1 << 2) + c % 4;
           for (size_t w = 0; w < W; w++) {
             if (c < C) {
-              fp16_support_ ? image_fp16[i2] = Float2Half(nchw[index++])
-                            : image_fp32[i2] = nchw[index++];
+              fp16_support() ? image_fp16[i2] = Float2Half(nchw[index++])
+                             : image_fp32[i2] = nchw[index++];
               i2 += 4;
             } else {
-              fp16_support_ ? image_fp16[i2] = Float2Half(0.f)
-                            : image_fp32[i2] = 0.f;
+              fp16_support() ? image_fp16[i2] = Float2Half(0.f)
+                             : image_fp32[i2] = 0.f;
               i2 += 4;
             }
           }

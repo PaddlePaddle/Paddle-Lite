@@ -221,14 +221,14 @@ class CLRuntime {
   void SetTunedLocalWorkSizeMap(const std::string& key,
                                 const std::vector<int>& tune_vct);
 
- private:
-  static CLRuntime instance_;
-
-  CLRuntime() { Init(); }
   CLRuntime(const CLRuntime&) = delete;
   CLRuntime(const CLRuntime&&) = delete;
   CLRuntime& operator=(const CLRuntime&) = delete;
   CLRuntime& operator=(const CLRuntime&&) = delete;
+
+ private:
+  CLRuntime() { Init(); }
+
   ~CLRuntime();
 
   bool InitializePlatform();

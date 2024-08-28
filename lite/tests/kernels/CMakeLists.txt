@@ -132,6 +132,7 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_kernel_where_compute SRCS where_compute_test.cc)
     lite_cc_test(test_kernel_log_softmax_compute SRCS log_softmax_compute_test.cc)
     lite_cc_test(test_kernel_roll_compute SRCS roll_compute_test.cc)
+    lite_cc_test(test_kernel_pixelunshuffle_compute SRCS pixel_unshuffle_compute_test.cc)
     # lite_cc_test(test_kernel_tensor_array_to_tensor_compute SRCS tensor_array_to_tensor_compute_test.cc)
     # TODO: fix tensor_array_to_tensor unittest
     

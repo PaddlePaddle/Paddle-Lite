@@ -25,12 +25,9 @@ limitations under the License. */
 namespace paddle {
 namespace lite {
 
-CLRuntime CLRuntime::instance_;
-
 CLRuntime* CLRuntime::Global() {
-  static std::once_flag init_flag;
-  std::call_once(init_flag, []() { instance_.Init(); });
-  return &instance_;
+  static CLRuntime instance;
+  return &instance;
 }
 
 void CLRuntime::Flush(const int index) {

@@ -21,6 +21,7 @@
 #endif
 #ifdef LITE_WITH_OPENCL
 #include "lite/backends/opencl/cl_context.h"
+#include "lite/backends/opencl/cl_global.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
 #ifdef LITE_WITH_XPU
@@ -368,8 +369,20 @@ class Context<TargetType::kOpenCL> {
  public:
   CLContext* cl_context() { return cl_context_.get(); }
 
-  void InitOnce() {
-    if (CLRuntime::Global()->IsInitSuccess() == false) {
+  void InitOnce() { AttemptCreateClContext(); }
+
+  void AttemptCreateClContext() {
+    if (!ClGlobalDelegate::Global().UseOpenCL()) {
+      LOG(INFO) << "Force close opencl,  so return";
+      return;
+    }
+
+    if (cl_context_ != nullptr) {
+      LOG(INFO) << "Cl_context has already created, so return";
+      return;
+    }
+
+    if (!CLRuntime::Global()->IsInitSuccess()) {
       // gpu is not support , can use cpu instead . do not fatal..
       LOG(ERROR) << "OpenCL runtime init failed";
     }
@@ -377,6 +390,10 @@ class Context<TargetType::kOpenCL> {
   }
 
   void CopySharedTo(OpenCLContext* ctx) {
+    if (ctx && (cl_context_ == nullptr)) {
+      LOG(INFO) << "cl_context_ == nullptr, attem to create it";
+      AttemptCreateClContext();
+    }
     if (ctx && cl_context_) {
       ctx->cl_context_ = cl_context_;
     }
@@ -498,6 +515,7 @@ class ContextScheduler {
     InitContext<TargetType::kARM, ARMContext>();
 #endif
 #ifdef LITE_WITH_OPENCL
+    VLOG(4) << "ContextScheduler init opencl context ";
     InitContext<TargetType::kOpenCL, OpenCLContext>();
 #endif
 #ifdef LITE_WITH_METAL

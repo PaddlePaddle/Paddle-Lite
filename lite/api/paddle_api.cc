@@ -29,6 +29,7 @@
 #endif
 
 #ifdef LITE_WITH_OPENCL
+#include "lite/backends/opencl/cl_global.h"
 #include "lite/backends/opencl/cl_runtime.h"
 #endif
 
@@ -39,39 +40,26 @@
 namespace paddle {
 namespace lite_api {
 
-bool IsOpenCLBackendValid(bool check_fp16_valid) {
-#ifdef LITE_WITH_LOG
-  LOG(INFO) << "need to check fp16 valid:" << check_fp16_valid;
-#endif
-  bool opencl_valid = false;
-
+bool EnableOpenCLBackend(bool enable) {
+  VLOG(4) << "External EnableOpenCLBackend : " << enable;
 #ifdef LITE_WITH_OPENCL
-  bool opencl_lib_found = paddle::lite::CLWrapper::Global()->OpenclLibFound();
-#ifdef LITE_WITH_LOG
-  LOG(INFO) << "Found opencl library:" << opencl_lib_found;
+  paddle::lite::ClGlobalDelegate::Global().SetUseOpenCL(enable);
+  return enable;
 #endif
-  if (opencl_lib_found == false) return false;
+  return enable;
+}
 
-  bool dlsym_success = paddle::lite::CLWrapper::Global()->DlsymSuccess();
-#ifdef LITE_WITH_LOG
-  LOG(INFO) << "dlsym_success:" << dlsym_success;
-#endif
-  if (dlsym_success == false) return false;
-  opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice(
+bool IsOpenCLBackendValid(bool check_fp16_valid) {
+#ifdef LITE_WITH_OPENCL
+  return paddle::lite::ClGlobalDelegate::Global().IsOpenCLBackendValid(
       check_fp16_valid);
-
-#ifdef LITE_WITH_LOG
-  LOG(INFO) << "opencl_valid:" << opencl_valid;
 #endif
-#endif
-  return opencl_valid;
+  return false;
 }
 
 int GetOpenCLDeviceType() {
 #ifdef LITE_WITH_OPENCL
-  if (IsOpenCLBackendValid()) {
-    return paddle::lite::CLRuntime::Global()->GetGpuType();
-  }
+  return paddle::lite::ClGlobalDelegate::Global().GetOpenCLDeviceType();
 #endif
   return -1;
 }

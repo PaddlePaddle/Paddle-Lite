@@ -92,7 +92,7 @@ PyPI 源目前仅提供 Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台�
 python -m pip install paddlelite==2.12
 ```
 
-如果您需要使用 AMRLinux 平台的 Python 预测功能，请参考 [ARM Linux 环境下编译适用于 ARM Linux 的库](../source_compile/arm_linux_compile_arm_linux) 编译、安装 Paddle Lite 的 python 包。
+如果您需要使用 ARMLinux 平台的 Python 预测功能，请参考 [ARM Linux 环境下编译适用于 ARM Linux 的库](../source_compile/arm_linux_compile_arm_linux) 编译、安装 Paddle Lite 的 python 包。
 
 ### 3. 准备预测部署模型
 
