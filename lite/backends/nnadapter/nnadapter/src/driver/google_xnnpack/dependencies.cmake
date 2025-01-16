@@ -97,10 +97,6 @@ ExternalProject_Add(
                       ${CROSS_COMPILE_CMAKE_ARGS}
 )
 
-add_library(clog_lib STATIC IMPORTED GLOBAL)
-set_property(TARGET clog_lib PROPERTY IMPORTED_LOCATION ${GOOGLE_XNNPACK_INSTALL_DIR}/lib/libclog.a)
-add_dependencies(clog_lib ${GOOGLE_XNNPACK_PROJECT})
-
 add_library(cpuinfo_lib STATIC IMPORTED GLOBAL)
 set_property(TARGET cpuinfo_lib PROPERTY IMPORTED_LOCATION ${GOOGLE_XNNPACK_INSTALL_DIR}/lib/libcpuinfo.a)
 add_dependencies(cpuinfo_lib ${GOOGLE_XNNPACK_PROJECT})
@@ -109,10 +105,14 @@ add_library(pthreadpool_lib STATIC IMPORTED GLOBAL)
 set_property(TARGET pthreadpool_lib PROPERTY IMPORTED_LOCATION ${GOOGLE_XNNPACK_INSTALL_DIR}/lib/libpthreadpool.a)
 add_dependencies(pthreadpool_lib ${GOOGLE_XNNPACK_PROJECT})
 
+add_library(microkernel_lib STATIC IMPORTED GLOBAL)
+set_property(TARGET microkernel_lib PROPERTY IMPORTED_LOCATION ${GOOGLE_XNNPACK_INSTALL_DIR}/src/extern_xnnpack-build/libmicrokernels-prod.a)
+add_dependencies(microkernel_lib ${GOOGLE_XNNPACK_PROJECT})
+
 add_library(xnnpack_lib STATIC IMPORTED GLOBAL)
 set_property(TARGET xnnpack_lib PROPERTY IMPORTED_LOCATION ${GOOGLE_XNNPACK_INSTALL_DIR}/lib/libXNNPACK.a)
 add_dependencies(xnnpack_lib ${GOOGLE_XNNPACK_PROJECT})
 
 include_directories(${GOOGLE_XNNPACK_INSTALL_DIR}/include)
 
-set(DEPS ${DEPS} clog_lib cpuinfo_lib pthreadpool_lib xnnpack_lib)
+set(DEPS ${DEPS} cpuinfo_lib pthreadpool_lib microkernel_lib xnnpack_lib)

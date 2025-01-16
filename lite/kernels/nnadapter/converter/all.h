@@ -20,7 +20,7 @@ REGISTER_CONVERTER(batch_norm,
                    "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,"
                    "huawei_ascend_npu,amlogic_npu,imagination_nna,cambricon_"
                    "mlu,verisilicon_timvx,kunlunxin_xtcl,android_nnapi,nvidia_"
-                   "tensorrt,intel_openvino,qualcomm_qnn,google_xnnpack,"
+                   "tensorrt,intel_openvino,qualcomm_qnn,"
                    "eeasytech_npu");
 REGISTER_CONVERTER(bmm, ConvertBmm, "intel_openvino");
 REGISTER_CONVERTER(cast,
@@ -110,8 +110,7 @@ REGISTER_CONVERTER(mul,
                    "builtin_device,rockchip_npu,mediatek_apu,huawei_kirin_npu,"
                    "huawei_ascend_npu,amlogic_npu,imagination_nna,cambricon_"
                    "mlu,verisilicon_timvx,kunlunxin_xtcl,android_nnapi,nvidia_"
-                   "tensorrt,intel_openvino,qualcomm_qnn,google_xnnpack,"
-                   "eeasytech_npu");
+                   "tensorrt,intel_openvino,qualcomm_qnn,eeasytech_npu");
 REGISTER_CONVERTER(lookup_table,
                    ConvertLookupTable,
                    "qualcomm_qnn,verisilicon_timvx");
