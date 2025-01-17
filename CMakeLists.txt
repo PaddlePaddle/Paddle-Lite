@@ -42,6 +42,9 @@ message(STATUS "CMAKE GENERATOR: ${CMAKE_GENERATOR}")
 set(THIRD_PARTY_PATH "${PADDLE_BINARY_DIR}/third_party" CACHE STRING
   "A path setting third party libraries download & build directories.")
 
+# Simd configurations
+include(simd)
+
 if(WIN32)
   include(os/windows)
 endif()
@@ -91,9 +94,6 @@ lite_option(LITE_WITH_ARM_DNN_LIBRARY          "Use Arm DNN library instead of b
 
 find_package(Git REQUIRED)
 find_package(Threads REQUIRED)
-
-# Simd configurations
-include(simd)
 
 # CMAKE_BUILD_TYPE
 if(NOT CMAKE_BUILD_TYPE)
