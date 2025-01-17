@@ -27,6 +27,8 @@ OPTMODEL_DIR=""
 # options of compiling x86 lib
 WITH_STATIC_MKL=OFF
 WITH_AVX=ON
+# options of compiling LoongArch
+WITH_LASX=ON
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
 # options of compiling Metal lib for Mac OS.
@@ -150,6 +152,11 @@ function init_cmake_mutable_options {
         with_x86=ON
         arm_target_os=""
         WITH_TINY_PUBLISH=OFF
+    elif [ "${ARCH}" == "loongarch" ]; then
+        with_loongarch=ON
+        arm_target_os=""
+        WITH_TINY_PUBLISH=OFF
+        WITH_AVX=OFF
     else
         with_arm=ON
         arm_arch=$ARCH
@@ -183,6 +190,7 @@ function init_cmake_mutable_options {
 
     cmake_mutable_options="-DLITE_WITH_ARM=$with_arm \
                         -DLITE_WITH_X86=$with_x86 \
+                        -DLITE_WITH_LOONGARCH=$with_loongarch \
                         -DARM_TARGET_ARCH_ABI=$arm_arch \
                         -DARM_TARGET_OS=$arm_target_os \
                         -DARM_TARGET_LANG=$TOOLCHAIN \
@@ -197,6 +205,7 @@ function init_cmake_mutable_options {
                         -DLITE_OPTMODEL_DIR=$OPTMODEL_DIR \
                         -DWITH_STATIC_MKL=$WITH_STATIC_MKL \
                         -DWITH_AVX=$WITH_AVX \
+                        -DWITH_LASX=$WITH_LASX \
                         -DLITE_WITH_OPENCL=$WITH_OPENCL \
                         -DLITE_WITH_METAL=$WITH_METAL \
                         -DLITE_WITH_RKNPU=$WITH_ROCKCHIP_NPU \
@@ -429,6 +438,10 @@ function print_usage {
     echo -e "|     --with_static_mkl: (OFF|ON); controls whether to compile static mkl lib, default is OFF                                                          |"
     echo -e "|     --with_avx: (OFF|ON); controls whether to use avx , default is ON                                                                                |"
     echo -e "|                                                                                                                                                      |"
+    echo -e "|  arguments of loongarch compiling:                                                                                                                   |"
+    echo -e "|     ./lite/tools/build_linux.sh --arch=loongarch                                                                                                     |"
+    echo -e "|     --with_lasx: (OFF|ON); controls whether to use lasx , default is ON                                                                              |"
+    echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of opencl library compiling:                                                                                                              |"
     echo -e "|     ./lite/tools/build_linux.sh --with_opencl=ON                                                                                                     |"
     echo -e "|     --with_opencl: (OFF|ON); controls whether to compile lib for opencl, default is OFF                                                              |"
@@ -541,6 +554,10 @@ function main {
                 ;;
             --with_avx=*)
                 WITH_AVX="${i#*=}"
+                shift
+                ;;
+            --with_lasx=*)
+                WITH_LASX="${i#*=}"
                 shift
                 ;;
             --skip_support_0_dim_tensor_pass=*)
