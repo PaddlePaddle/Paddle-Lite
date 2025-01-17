@@ -19,7 +19,11 @@
 #include <string>
 #include <utility>
 #include <vector>
+#if defined(LITE_WITH_X86)
 #include "lite/backends/x86/fluid/rw_lock.h"
+#elif defined(LITE_WITH_LOONGARCH)
+#include "lite/backends/loongarch/fluid/rw_lock.h"
+#endif
 #include "lite/core/variable.h"
 
 namespace paddle {

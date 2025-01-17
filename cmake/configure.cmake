@@ -113,6 +113,10 @@ if (LITE_WITH_X86)
     add_definitions("-DLITE_WITH_X86")
 endif()
 
+if (LITE_WITH_LOONGARCH)
+    add_definitions("-DLITE_WITH_LOONGARCH")
+endif()
+
 if (LITE_WITH_ARM)
     add_definitions("-DLITE_WITH_ARM")
 endif()

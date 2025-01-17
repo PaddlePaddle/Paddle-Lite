@@ -27,7 +27,7 @@ namespace host {
 
 bool GetCondData(const Tensor *cond) {
   auto is_host = [](TargetType x) -> bool {
-    return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM);
+    return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM) || x == TARGET(kLoongArch);
   };
 
   bool flag;

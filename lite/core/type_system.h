@@ -176,7 +176,7 @@ class Type : public DataType {
 // -------------------------------- compatible check ---------------------------
 static bool TargetCompatibleTo(const Type& a, const Type& b) {
   auto is_host = [](TargetType x) -> bool {
-    return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM) ||
+    return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM) || x == TARGET(kLoongArch) ||
            x == TARGET(kAny);
   };
   if (a.IsTensor() || b.IsTensor() || a.IsTensorList() || b.IsTensorList()) {

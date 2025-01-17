@@ -435,6 +435,10 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
         inner_places.insert(inner_places.begin(),
                             Place{TARGET(kX86), PRECISION(kInt8)});
       }
+      if (valid_place.target == TARGET(kLoongArch)) {
+        inner_places.insert(inner_places.begin(),
+                            Place{TARGET(kLoongArch), PRECISION(kInt8)});
+      }
     }
   }
   // XPU target must make sure to insert in front of others.

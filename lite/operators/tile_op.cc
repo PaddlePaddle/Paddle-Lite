@@ -89,8 +89,8 @@ bool TileOp::InferShapeImpl() const {
     } else {
       CHECK_GT(repeat_times[i], 0)
           << "Every element of the input 'repeat_times' for tile op must be "
-          << "greater than 1, but the value given is ",
-          repeat_times[i];
+          << "greater than 1, but the value given is "
+          << repeat_times[i];
       out_shape[i] = x_dim_vec[i] * repeat_times[i];
     }
   }

@@ -37,6 +37,11 @@
 #endif
 #include "lite/backends/x86/mklml.h"
 #endif
+
+#ifdef WITH_OMP
+#include <omp.h>
+#endif
+
 namespace paddle {
 namespace lite {
 
@@ -146,6 +151,16 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 #endif
   VLOG(3) << "x86_math_num_threads() is set successfully and the "
              "number of threads is:"
+          << real_num_threads;
+#endif
+
+#if defined(WITH_OMP) && defined(LITE_WITH_LOONGARCH)
+  int num_threads = config.math_num_threads();
+  int max_num_threads = omp_get_max_threads();
+  int real_num_threads = std::min(num_threads, max_num_threads);
+  omp_set_num_threads(real_num_threads);
+  VLOG(3) << "math_num_threads() is set successfully and the "
+             "real number of threads is:"
           << real_num_threads;
 #endif
 

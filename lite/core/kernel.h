@@ -97,6 +97,9 @@ class KernelBase {
 #if defined(LITE_WITH_X86)
     WorkSpace::Global_X86().AllocReset();
 #endif
+#if defined(LITE_WITH_LOONGARCH)
+    WorkSpace::Global_LOONGARCH().AllocReset();
+#endif
 #if defined(LITE_WITH_METAL)
     WorkSpace::Global_METAL().AllocReset();
 #endif

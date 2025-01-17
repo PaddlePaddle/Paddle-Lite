@@ -236,6 +236,7 @@ class LITE_API ConfigBase {
   std::map<std::string, std::vector<char>> nnadapter_model_cache_buffers_{};
   int device_id_{0};
   int x86_math_num_threads_ = 1;
+  int math_num_threads_ = 1;
 
   std::string metal_path_;
   bool metal_use_mps_{false};
@@ -418,6 +419,7 @@ class LITE_API ConfigBase {
   // set x86_math_num_threads
   void set_x86_math_num_threads(int threads);
   int x86_math_num_threads() const;
+  int math_num_threads() const;
 
   void set_metal_lib_path(const std::string& path);
   void set_metal_use_mps(bool flag);

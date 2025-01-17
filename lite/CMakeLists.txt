@@ -2,6 +2,7 @@ include(lite)
 
 message(STATUS "LITE_WITH_X86:\t${LITE_WITH_X86}")
 message(STATUS "LITE_WITH_ARM:\t${LITE_WITH_ARM}")
+message(STATUS "LITE_WITH_LOONGARCH:\t${LITE_WITH_LOONGARCH}")
 message(STATUS "LITE_WITH_SW:\t${LITE_WITH_SW}")
 message(STATUS "LITE_WITH_OPENCL:\t${LITE_WITH_OPENCL}")
 message(STATUS "LITE_WITH_METAL:\t${LITE_WITH_METAL}")
@@ -403,6 +404,26 @@ if (LITE_WITH_X86)
     add_dependencies(publish_inference publish_inference_x86_cxx_lib)
     add_dependencies(publish_inference publish_inference_x86_cxx_demos)
   endif()
+endif()
+
+if (LITE_WITH_LOONGARCH)
+  add_custom_target(publish_inference_cxx_lib ${TARGET}
+      COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/bin"
+      COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+      COMMAND cp "${PADDLE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+      COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/paddle_use_kernels.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+      COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/paddle_use_ops.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+      COMMAND cp "${PADDLE_BINARY_DIR}/libpaddle_api_full_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      COMMAND cp "${PADDLE_BINARY_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      COMMAND cp "${PADDLE_BINARY_DIR}/lite/api/*.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      )
+  add_dependencies(publish_inference_cxx_lib bundle_full_api)
+  add_dependencies(publish_inference_cxx_lib bundle_light_api)
+  add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
+  add_dependencies(publish_inference_cxx_lib paddle_light_api_shared)
+  add_dependencies(publish_inference publish_inference_cxx_lib)
+  add_dependencies(publish_inference test_model_bin)
 endif()
 
 if (LITE_WITH_ARM)

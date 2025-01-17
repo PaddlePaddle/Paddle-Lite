@@ -1,0 +1,53 @@
+if (NOT LITE_WITH_LOONGARCH)
+  return()
+elseif(LITE_ON_MODEL_OPTIMIZE_TOOL)
+  return()
+endif ()
+
+configure_file (warpctc_lib_path.h.in ${CMAKE_CURRENT_BINARY_DIR}/warpctc_lib_path.h)
+
+# source code and dependencies of loongarch_math static lib
+set(LOONGARCH_MATH_SRC "" CACHE INTERNAL "")
+set(LOONGARCH_MATH_DEPS framework_proto eigen3 CACHE INTERNAL "")
+
+# source code in current directory
+FILE(GLOB LOONGARCH_BASE_SRC  ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
+# source code about jit
+FILE(GLOB LOONGARCH_JIT_SRC ${CMAKE_CURRENT_SOURCE_DIR}/jit/*.cc)
+FILE(GLOB LOONGARCH_JIT_REFER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/jit/refer/*.cc)
+if (NOT WIN32 AND NOT APPLE)
+FILE(GLOB LOONGARCH_JIT_GEN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/jit/gen/*.cc)
+endif()
+set(LOONGARCH_JIT_MORE_SRC "" CACHE INTERNAL "")
+add_subdirectory(jit)
+# Fluid source file
+FILE(GLOB LOONGARCH_FLUID_SRC ${CMAKE_CURRENT_SOURCE_DIR}/fluid/*.cc)
+# detail implementation of x86 math
+FILE(GLOB LOONGARCH_DETAIL_SRC ${CMAKE_CURRENT_SOURCE_DIR}/math/*.cc)
+FILE(GLOB LOONGARCH_DETAIL_COMMON_SRC ${CMAKE_CURRENT_SOURCE_DIR}/math/common/*.cc)
+FILE(GLOB LOONGARCH_DETAIL_LASX_SRC ${CMAKE_CURRENT_SOURCE_DIR}/math/lasx/*.cc)
+FILE(GLOB LOONGARCH_DETAIL_LSX_SRC ${CMAKE_CURRENT_SOURCE_DIR}/math/lsx/*.cc)
+
+# Step 1. collect source files
+list(APPEND LOONGARCH_MATH_SRC ${LOONGARCH_DETAIL_LSX_SRC})
+list(APPEND LOONGARCH_MATH_SRC ${LOONGARCH_BASE_SRC})
+list(APPEND LOONGARCH_MATH_SRC ${LOONGARCH_FLUID_SRC})
+list(APPEND LOONGARCH_MATH_SRC ${LOONGARCH_JIT_SRC})
+list(APPEND LOONGARCH_MATH_SRC ${LOONGARCH_JIT_REFER_SRC})
+list(APPEND LOONGARCH_MATH_SRC ${LOONGARCH_JIT_MORE_SRC})
+list(APPEND LOONGARCH_MATH_SRC ${LOONGARCH_DETAIL_SRC})
+list(APPEND LOONGARCH_MATH_SRC ${LOONGARCH_DETAIL_COMMON_SRC})
+
+# Step2. third party lib
+#  2.1 lasx or lsx
+IF(WITH_LASX)
+  set(LOONGARCH_MATH_SRC ${LOONGARCH_MATH_SRC} ${LOONGARCH_DETAIL_LASX_SRC})
+ENDIF()
+
+# Step3. Compile into a static lib libloongarch_math.a
+lite_cc_library(loongarch_math SRCS ${LOONGARCH_MATH_SRC} DEPS ${LOONGARCH_MATH_DEPS})
+add_dependencies(loongarch_math eigen3)
+
+IF(WITH_LASX)
+  TARGET_COMPILE_OPTIONS(loongarch_math PRIVATE "-mlasx")
+ENDIF()

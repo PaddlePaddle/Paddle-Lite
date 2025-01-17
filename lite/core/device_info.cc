@@ -78,6 +78,10 @@
 #endif
 #endif
 
+#ifdef WITH_OMP
+#include <omp.h>
+#endif
+
 #include <algorithm>
 #include <limits>
 

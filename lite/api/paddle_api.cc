@@ -325,6 +325,9 @@ void ConfigBase::set_threads(int threads) {
   mode_ = lite::DeviceInfo::Global().mode();
   threads_ = lite::DeviceInfo::Global().threads();
 #endif
+#ifdef LITE_WITH_LOONGARCH
+  math_num_threads_ = threads >= 1 ? threads : 1;
+#endif
 }
 
 void ConfigBase::set_metal_device(void *device) {
@@ -379,6 +382,10 @@ void ConfigBase::set_x86_math_num_threads(int threads) {
   x86_math_num_threads_ = threads;
 }
 int ConfigBase::x86_math_num_threads() const { return x86_math_num_threads_; }
+#endif
+
+#ifdef LITE_WITH_LOONGARCH
+int ConfigBase::math_num_threads() const { return math_num_threads_; }
 #endif
 
 void ConfigBase::set_subgraph_model_cache_buffers(

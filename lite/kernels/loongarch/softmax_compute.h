@@ -1,0 +1,95 @@
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+#pragma once
+
+#include <vector>
+#include "lite/backends/loongarch/math/softmax.h"
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace loongarch {
+
+static inline int CanonicalAxis(const int axis, const int rank) {
+  if (axis < 0) {
+    return axis + rank;
+  }
+  return axis;
+}
+
+static inline int SizeToAxis(const int axis, const DDim& dims) {
+  int size = 1;
+  for (int i = 0; i < axis; i++) {
+    size *= dims[i];
+  }
+  return size;
+}
+
+static inline int SizeFromAxis(const int axis, const DDim& dims) {
+  int size = 1;
+  for (size_t i = axis; i < dims.size(); i++) {
+    size *= dims[i];
+  }
+  return size;
+}
+
+template <typename T>
+class SoftmaxCompute : public KernelLite<TARGET(kLoongArch), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::SoftmaxParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<operators::SoftmaxParam>();
+    auto& context = ctx_->As<LoongArchContext>();
+    CHECK(param.output);
+    CHECK(param.x);
+
+    auto* x = param.x;
+    auto* output = param.output;
+    auto out_ptr = output->template mutable_data<T>();
+
+    const int rank = x->dims().size();
+    const int axis = CanonicalAxis(param.axis, rank);
+    int axis_dim = 0;
+    if (rank == 2 && axis == 1) {
+      axis_dim = x->dims()[axis];
+      lite::loongarch::math::SoftmaxFunctor<lite::TargetType::kLoongArch, T, true>()(
+          context, axis_dim, x, output);
+    } else if (rank == 0) {
+      output->Resize(x->dims());
+      out_ptr[0] = 1;
+    } else {
+      const int n = SizeToAxis(axis, x->dims());
+      const int d = SizeFromAxis(axis, x->dims());
+      DDim x_dims = x->dims();
+      DDim out_dims = output->dims();
+      DDim shape_2d(std::vector<DDim::value_type>{n, d});
+      x->Resize(shape_2d);
+      output->Resize(shape_2d);
+      axis_dim = x->dims()[axis];
+      lite::loongarch::math::SoftmaxFunctor<lite::TargetType::kLoongArch, T, true>()(
+          context, axis_dim, x, output);
+      x->Resize(x_dims);
+      output->Resize(out_dims);
+    }
+  }
+
+  virtual ~SoftmaxCompute() = default;
+};
+
+}  // namespace loongarch
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

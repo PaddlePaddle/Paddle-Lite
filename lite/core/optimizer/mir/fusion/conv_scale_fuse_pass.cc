@@ -32,7 +32,7 @@ void ConvScaleFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   bool has_weight_quant = false;
   for (auto& place : graph->valid_places()) {
     if (place.target == TARGET(kARM) || place.target == TARGET(kHost) ||
-        place.target == TARGET(kX86)) {
+        place.target == TARGET(kX86) || place.target == TARGET(kLoongArch)) {
       if (place.precision == PRECISION(kInt8)) {
         has_int8 = true;
       }
@@ -73,4 +73,4 @@ void ConvScaleFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(lite_conv_scale_fuse_pass,
                   paddle::lite::mir::ConvScaleFusePass)
-    .BindTargets({TARGET(kOpenCL), TARGET(kARM), TARGET(kX86)});
+    .BindTargets({TARGET(kOpenCL), TARGET(kARM), TARGET(kX86), TARGET(kLoongArch)});

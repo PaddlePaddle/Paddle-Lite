@@ -68,6 +68,7 @@ void CopySync(void* dst, const void* src, size_t size, IoDirection dir) {
     case TARGET(kX86):
     case TARGET(kHost):
     case TARGET(kARM):
+    case TARGET(kLoongArch):
       TargetWrapper<TARGET(kHost)>::MemcpySync(
           dst, src, size, IoDirection::HtoH);
       break;

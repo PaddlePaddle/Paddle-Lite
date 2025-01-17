@@ -3,6 +3,7 @@
 
 include(CheckCXXSourceRuns)
 include(CheckCXXSourceCompiles)
+include(CheckCXXCompilerFlag)
 
 if(IOS)
 return ()
@@ -119,4 +120,12 @@ mark_as_advanced(MMX_FOUND SSE2_FOUND SSE3_FOUND AVX_FOUND AVX2_FOUND AVX512F_FO
 
 if(WITH_AVX AND AVX_FOUND)
     add_definitions(-DLITE_WITH_AVX)
+endif()
+
+if(LITE_WITH_LOONGARCH)
+    check_cxx_compiler_flag(-mlasx LASX_FOUND)
+    check_cxx_compiler_flag(-mlsx LSX_FOUND)
+    if(NOT LSX_FOUND)
+        message(FATAL_ERROR "At least LSX support!")
+    endif()
 endif()

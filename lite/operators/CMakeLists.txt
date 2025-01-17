@@ -278,7 +278,7 @@ endif()
 add_library(ops STATIC ${OPS_SRC} op_params.cc)
 add_dependencies(ops utils)
 
-if (NOT LITE_WITH_X86)
+if (NOT LITE_WITH_X86 AND NOT LITE_WITH_LOONGARCH)
     if(NOT LITE_WITH_ARM)
         lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc)
     endif()

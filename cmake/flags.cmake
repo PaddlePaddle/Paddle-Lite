@@ -152,7 +152,7 @@ set(GPU_COMMON_FLAGS
     -Wno-error=array-bounds # Warnings in Eigen::array
     -gencode arch=compute_62,code=sm_62
 )
-if(LITE_WITH_SW AND NOT EMSCRIPTEN)
+if(LITE_WITH_SW AND NOT EMSCRIPTEN AND NOT LITE_WITH_LOONGARCH)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
 endif()
 endif(NOT WIN32)

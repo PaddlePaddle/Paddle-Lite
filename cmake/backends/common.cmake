@@ -20,7 +20,13 @@ if(LITE_WITH_XPU)
   include(backends/xpu)
 endif()
 
-include(backends/x86)
+if(LITE_WITH_X86)
+  include(backends/x86)
+endif()
+
+if(LITE_WITH_LOONGARCH)
+  include(backends/loongarch)
+endif()
 
 # Add dependencies
 include(generic)                # simplify cmake module

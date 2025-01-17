@@ -63,6 +63,10 @@ class WorkSpace {
   static WorkSpace& Global_ARM() { return Global_Host(); }
 #endif
 
+#if defined(LITE_WITH_LOONGARCH)
+  static WorkSpace& Global_LOONGARCH() { return Global_Host(); }
+#endif
+
 #if defined(LITE_WITH_METAL)
   static WorkSpace& Global_METAL() {
     static LITE_THREAD_LOCAL std::unique_ptr<WorkSpace> x(

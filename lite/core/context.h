@@ -54,6 +54,7 @@ class Context;
 
 using HostContext = Context<TargetType::kHost>;
 using X86Context = Context<TargetType::kX86>;
+using LoongArchContext = Context<TargetType::kLoongArch>;
 using ARMContext = Context<TargetType::kARM>;
 using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
@@ -361,6 +362,24 @@ class Context<TargetType::kX86> {
 };
 #endif
 
+#ifdef LITE_WITH_LOONGARCH
+template <>
+class Context<TargetType::kLoongArch> {
+ public:
+  // NOTE: InitOnce should only be used by ContextScheduler
+  void InitOnce() {}
+
+  void CopySharedTo(LoongArchContext* ctx) {}
+
+  std::string name() const { return "LoongArchContext"; }
+
+ private:
+  // overall information
+  //
+  // kernel information
+};
+#endif
+
 #ifdef LITE_WITH_OPENCL
 template <>
 class Context<TargetType::kOpenCL> {
@@ -465,6 +484,12 @@ class ContextScheduler {
             &ctx->As<ARMContext>());
         break;
 #endif
+#ifdef LITE_WITH_LOONGARCH
+      case TARGET(kLoongArch):
+        kernel_contexts_[TargetType::kLoongArch].As<LoongArchContext>().CopySharedTo(
+            &ctx->As<LoongArchContext>());
+        break;
+#endif
 #ifdef LITE_WITH_XPU
       case TARGET(kXPU):
         kernel_contexts_[TargetType::kXPU].As<XPUContext>().CopySharedTo(
@@ -513,6 +538,9 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_ARM
     InitContext<TargetType::kARM, ARMContext>();
+#endif
+#ifdef LITE_WITH_LOONGARCH
+    InitContext<TargetType::kLoongArch, LoongArchContext>();
 #endif
 #ifdef LITE_WITH_OPENCL
     VLOG(4) << "ContextScheduler init opencl context ";

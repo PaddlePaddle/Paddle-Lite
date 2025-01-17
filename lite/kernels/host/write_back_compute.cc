@@ -30,7 +30,7 @@ void WriteBackCompute::RunImplement(const lite::Tensor* x,
   auto x_target = x->target();
   auto y_target = y->target();
   auto is_host = [](TargetType x) -> bool {
-    return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM);
+    return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM) || x == TARGET(kLoongArch);
   };
 
   if (is_host(x_target) && is_host(y_target)) {

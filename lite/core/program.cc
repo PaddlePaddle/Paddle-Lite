@@ -556,6 +556,8 @@ RuntimeProgram::RuntimeProgram(
       kernels = op->CreateKernels({Place{TARGET(kARM)}, Place{TARGET(kHost)}});
 #elif defined(LITE_WITH_X86)
       kernels = op->CreateKernels({Place{TARGET(kX86)}, Place{TARGET(kHost)}});
+#elif defined(LITE_WITH_LOONGARCH)
+      kernels = op->CreateKernels({Place{TARGET(kLoongArch)}, Place{TARGET(kHost)}});
 #endif
       if (kernels.size() > 0) {
         kernel = std::move(kernels.front());

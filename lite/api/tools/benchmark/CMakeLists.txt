@@ -51,6 +51,10 @@ set(TARGET "benchmark_bin")
 lite_cc_binary(${TARGET} SRCS ${BENCHMARK_SRC}
                DEPS gflags
                CV_DEPS paddle_cv_arm)
+IF("${CBLAS_PROVIDER}" STREQUAL "OPENBLAS")
+    TARGET_LINK_LIBRARIES(${TARGET} ${CBLAS_LIBRARIES})
+ENDIF()
+
 
 if(ARM_TARGET_OS STREQUAL "android")
     # Validation Dataset
