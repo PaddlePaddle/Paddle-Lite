@@ -33,7 +33,7 @@ IF(NOT ${CBLAS_FOUND})
 
     IF (NOT WIN32)
     SET(OPENBLAS_CC "${CMAKE_C_COMPILER} -Wno-unused-but-set-variable -Wno-unused-variable")
-    SET(OPENBLAS_COMMIT "v0.2.20")
+    SET(OPENBLAS_COMMIT "v0.3.28")
 
     IF(APPLE)
         SET(OPENBLAS_CC "${CMAKE_C_COMPILER} -isysroot ${CMAKE_OSX_SYSROOT}")
@@ -47,7 +47,7 @@ IF(NOT ${CBLAS_FOUND})
     ExternalProject_Add(
         extern_openblas
         ${EXTERNAL_PROJECT_LOG_ARGS}
-        GIT_REPOSITORY      https://github.com/xianyi/OpenBLAS.git
+        GIT_REPOSITORY      https://github.com/OpenMathLib/OpenBLAS.git
         GIT_TAG             ${OPENBLAS_COMMIT}
         PREFIX              ${CBLAS_SOURCES_DIR}
         INSTALL_DIR         ${CBLAS_INSTALL_DIR}
