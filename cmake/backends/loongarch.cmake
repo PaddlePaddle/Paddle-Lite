@@ -16,6 +16,14 @@ IF(NOT LITE_WITH_LOONGARCH)
   RETURN()
 ENDIF()
 
+# We need C++17.
+SET(CMAKE_CXX_STANDARD 17)
+SET(CMAKE_CXX_STANDARD_REQUIRED True)
+# But some warning should be omit.
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=deprecated-declarations")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=register")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=array-bounds")
+
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mlsx")
 INCLUDE(external/xxhash)    # download install xxhash
 
