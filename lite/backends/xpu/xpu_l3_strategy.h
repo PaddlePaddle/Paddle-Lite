@@ -44,15 +44,15 @@ class XPUL3Planner {
     } else {
       auto it = plans_.lower_bound(query_shape_);
       if (it == plans_.end()) {
-        LOG(INFO) << "new query_shape, use the first L3 cache plan";
-        return &(plans_.begin()->second);
+        return nullptr;
       } else {
         return &(it->second);
       }
     }
   }
   bool if_find_plan_query_shape() {
-    return (!query_shape_.empty() && plans_.find(query_shape_) != plans_.end());
+    return (query_shape_.size() == 0 ||
+            plans_.find(query_shape_) != plans_.end());
   }
   // greedy strategy
   void run_autotune_greedy(const std::vector<XPUL3CacheBlock*>& l3_block_dict,
