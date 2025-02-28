@@ -279,17 +279,15 @@ void StridedSliceCompute<T, PType>::Run() {
   }
 
   std::vector<int64_t> out_dims_vector(input_dims.size(), -1);
-  if (!param.tensor_input) {
-    out_dims_vector = StridedSliceOutDims(starts,
-                                          ends,
-                                          strides,
-                                          axes,
-                                          infer_flags,
-                                          input_dims.data(),
-                                          decrease_axis,
-                                          axes.size(),
-                                          true);
-  }
+  out_dims_vector = StridedSliceOutDims(starts,
+                                        ends,
+                                        strides,
+                                        axes,
+                                        infer_flags,
+                                        input_dims.data(),
+                                        decrease_axis,
+                                        axes.size(),
+                                        true);
   auto out_dims = DDim(out_dims_vector);
   std::vector<int> reverse_vector(starts.size(), 0);
   StridedSliceFunctor(starts.data(),

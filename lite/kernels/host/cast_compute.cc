@@ -73,6 +73,12 @@ void CastCompute::Run() {
     int32_t* out_data = param.Out->mutable_data<int32_t>();
     std::transform(
         x_data_begin, x_data_end, out_data, TransOp<int64_t, int32_t>);
+  } else if (param.in_dtype == 3 && param.out_dtype == 0) {  // int64->bool
+      const int64_t* x_data_begin = param.X->data<int64_t>();
+      const int64_t* x_data_end = x_data_begin + param.X->numel();
+      bool* out_data = param.Out->mutable_data<bool>();
+      std::transform(
+          x_data_begin, x_data_end, out_data, TransOp<int64_t, bool>);
   } else if (param.in_dtype == 0 && param.out_dtype == 5) {  // bool->fp32
     const bool* x_data_begin = param.X->data<bool>();
     const bool* x_data_end = x_data_begin + param.X->numel();
