@@ -104,7 +104,7 @@ bool CLWrapper::InitHandle() {
       break;
     }
   }
-  VLOG(1) << "Load the OpenCL library from " << target_lib;
+  VLOG(4) << "Load the OpenCL library from " << target_lib;
   if (handle_ != nullptr) {
     return true;
   } else {
