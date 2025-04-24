@@ -22,8 +22,8 @@ namespace ohos {
 
 #undef LOG_DOMAIN
 #undef LOG_TAG
-#define LOG_DOMAIN 0x3200           // 全局domain宏，标识业务领域
-#define LOG_TAG "Paddle-Lite-OHOS"  // 全局tag宏，标识模块日志tag
+#define LOG_DOMAIN 0x3200           // global domain
+#define LOG_TAG "Paddle-Lite-OHOS"  // global tag
 
 #define OHOS_LOG_I(format, ...) \
   OH_LOG_INFO(LogType::LOG_APP, "【native】Info: " format, ##__VA_ARGS__);
