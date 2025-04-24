@@ -174,10 +174,11 @@ if (LITE_WITH_OHOS)
         message(STATUS "OHOS OPENNEON ...")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=neon -mfloat-abi=softfp")
     endif ()
+    # close LITE_WITH_OPENMP for ohos
+    set(LITE_WITH_OPENMP OFF)
 endif ()
 
-
-if(OFF)
+if(LITE_WITH_OPENMP)
     if (ARM_TARGET_LANG STREQUAL "gcc")
         set(OpenMP_C_FLAGS "-fopenmp")
         set(OpenMP_C_LIB_NAMES "omp")

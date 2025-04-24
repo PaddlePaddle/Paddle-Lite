@@ -151,7 +151,7 @@ else()
         endif()
 
         if (LITE_WITH_LOG)
-            message(STATUS "got 333 link lite with log ${OHOS_LINKED_LIBS} " )
+            message(STATUS "link lite with log ${OHOS_LINKED_LIBS} ")
             target_link_libraries(paddle_light_api_shared ${OHOS_LINKED_LIBS})
         endif ()
         # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
