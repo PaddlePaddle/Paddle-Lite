@@ -92,6 +92,11 @@ void TargetWrapperXPU::ScatterL3Cache(
   }
   std::vector<size_t>* plan =
       xpu_runtime_ptr->xpu_l3_planner->get_current_plan();
+  if (plan->size() != xpu_runtime_ptr->xpu_l3_block_dict.size() + 1) {
+    LOG(INFO) << "plan->size() != xpu_runtime_ptr->xpu_l3_block_dict.size() + "
+                 "1, reset plan";
+    plan = nullptr;
+  }
   if (plan == nullptr) {
     if (xpu_runtime_ptr->api_l3_reserve) {
       XPU_CALL(xpu_runtime_ptr->xpu_tls_raw_ctx->GetXDNNContext()->_l3_mgr.set(
@@ -105,7 +110,7 @@ void TargetWrapperXPU::ScatterL3Cache(
                    ->_l3_mgr.get_size()
             << ", Remain L3 Size for Lite is " << 0;
   } else {
-    CHECK_EQ(plan->size(), xpu_runtime_ptr->xpu_l3_block_dict.size() + 1);
+    // CHECK_EQ(plan->size(), xpu_runtime_ptr->xpu_l3_block_dict.size() + 1);
     xdnn_ctx_l3_size = plan->back();
     for (size_t i = 0; i < xpu_runtime_ptr->xpu_l3_block_dict.size(); i++) {
       size_t cur_block_size = plan->data()[i];

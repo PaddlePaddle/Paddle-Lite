@@ -44,8 +44,10 @@ class XPUL3Planner {
     } else {
       auto it = plans_.lower_bound(query_shape_);
       if (it == plans_.end()) {
-        LOG(INFO) << "new query_shape, use the first L3 cache plan";
-        return &(plans_.begin()->second);
+        // LOG(INFO) << "new query_shape, use the first L3 cache plan";
+        // return &(plans_.begin()->second);
+        LOG(INFO) << "new query_shape, use new cache plan";
+        return nullptr;
       } else {
         return &(it->second);
       }
