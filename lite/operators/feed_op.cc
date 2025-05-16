@@ -50,15 +50,23 @@ class FeedOp : public OpLite {
 
  protected:
   bool AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) override {
-    auto feed_var_name = opdesc.Input("X").front();
+    auto inputs = opdesc.Input("X");
+    CHECK(!inputs.empty()) << "Feed op requires at least one input";
+
+    auto feed_var_name = inputs.front();
     auto* feed_var = scope->FindVar(feed_var_name);
-    CHECK(feed_var);
+    CHECK(feed_var) << "Cannot find feed variable: " << feed_var_name;
+
     auto* feed_tensor_list = feed_var->GetMutable<std::vector<lite::Tensor>>();
     param_.feed_list = feed_tensor_list;
 
-    auto out_name = opdesc.Output("Out").front();
+    auto outputs = opdesc.Output("Out");
+    CHECK(!outputs.empty()) << "Feed op requires at least one output";
+
+    auto out_name = outputs.front();
     auto* out_var = scope->FindVar(out_name);
-    CHECK(out_var);
+    CHECK(out_var) << "Cannot find output variable: " << out_name;
+
     param_.out = out_var->GetMutable<lite::Tensor>();
 
     // NOTE need boost here
