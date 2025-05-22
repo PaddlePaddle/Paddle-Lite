@@ -21,6 +21,11 @@ namespace fbs {
 template <>
 std::string OpDescView::GetAttr<std::string>(const char* name) const {
   const auto& it = desc_->attrs()->LookupByKey(name);
+  // protect npe
+  if (!it) {
+    LOG(WARNING) << "Attribute " << name << " does not exist.";
+    return {};
+  }
   if (!it->s()) {
     return std::string();
   }
@@ -36,7 +41,11 @@ template <>
 lite::VectorView<std::string, Flatbuffers>
 OpDescView::GetAttr<std::vector<std::string>>(const char* name) const {
   const auto& it = desc_->attrs()->LookupByKey(name);
-  CHECK(it) << "Attr " << name << "does not exist.";
+  // protect npe
+  if (!it) {
+    LOG(WARNING) << "Attribute " << name << " does not exist.";
+    return VectorView<std::string>(nullptr);
+  }
   return VectorView<std::string>(it->strings());
 }
 
@@ -51,6 +60,10 @@ OpDescView::GetAttr<std::vector<std::string>>(const std::string& name) const {
   typename lite::OpDataTypeTrait<T, Flatbuffers>::RT OpDescView::GetAttr<T>( \
       const char* name) const {                                              \
     const auto& it = desc_->attrs()->LookupByKey(name);                      \
+    if (!it) {                                                               \
+      LOG(WARNING) << "Attribute " << name << " does not exist.";            \
+      return typename lite::OpDataTypeTrait<T, Flatbuffers>::RT();           \
+    }                                                                        \
     return it->fb_f__();                                                     \
   }                                                                          \
   template <>                                                                \
