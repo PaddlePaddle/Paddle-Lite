@@ -21,8 +21,8 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-using LoDTensor = lite::Tensor;
-using LoDTensorArray = std::vector<lite::Tensor>;
+using DenseTensor = lite::Tensor;
+using DenseTensorArray = std::vector<lite::Tensor>;
 
 // all the lod have 2 levels.
 // The first is source level, the second is sentence level.
@@ -52,15 +52,15 @@ struct BeamSearchDecoder {
    * with word score.
    * Param:
    *  sentence_vector_list: sentence_vector for each source sentence.
-   *  id_tensor: result LoDTensor for sentences of id.
-   *  score_tensor: result LoDTensor for sentences of score.
+   *  id_tensor: result DenseTensor for sentences of id.
+   *  score_tensor: result DenseTensor for sentences of score.
    *  reverse: whether ids of sentence in sentence_vector_list is reversed
    *  sort_by_score: whether to sort hypotheses of each sentence by scores.
    */
   void ConvertSentenceVectorToLodTensor(
       std::vector<SentenceVector<T>> sentence_vector_list,
-      LoDTensor* id_tensor,
-      LoDTensor* score_tensor,
+      DenseTensor* id_tensor,
+      DenseTensor* score_tensor,
       bool reverse = true,
       bool sort_by_score = true) const {
     size_t src_num = sentence_vector_list.size();
@@ -129,12 +129,12 @@ struct BeamSearchDecoder {
 
   /**
    * Gather the hypotheses for each source sentence by backtrace though the
-   * LoDTensorArray step_ids whose lods reserve the path in the tree.
+   * DenseTensorArray step_ids whose lods reserve the path in the tree.
    */
-  void Backtrace(const LoDTensorArray& step_ids,
-                 const LoDTensorArray& step_scores,
-                 LoDTensor* id_tensor,
-                 LoDTensor* score_tensor) const {
+  void Backtrace(const DenseTensorArray& step_ids,
+                 const DenseTensorArray& step_scores,
+                 DenseTensor* id_tensor,
+                 DenseTensor* score_tensor) const {
     CHECK(!step_ids.empty()) << "step num should be larger than 0";
     CHECK_EQ(step_ids.size(), step_scores.size())
         << "step_ids and step_scores should be the same";
@@ -211,10 +211,10 @@ struct BeamSearchDecoder {
 };
 
 struct BeamSearchDecodeFunctor {
-  BeamSearchDecodeFunctor(const LoDTensorArray& step_ids,
-                          const LoDTensorArray& step_scores,
-                          LoDTensor* id_tensor,
-                          LoDTensor* score_tensor,
+  BeamSearchDecodeFunctor(const DenseTensorArray& step_ids,
+                          const DenseTensorArray& step_scores,
+                          DenseTensor* id_tensor,
+                          DenseTensor* score_tensor,
                           size_t beam_size,
                           int end_id)
       : beam_size_(beam_size),
@@ -233,10 +233,10 @@ struct BeamSearchDecodeFunctor {
 
   size_t beam_size_;
   int end_id_;
-  const LoDTensorArray& step_ids_;
-  const LoDTensorArray& step_scores_;
-  LoDTensor* id_tensor_;
-  LoDTensor* score_tensor_;
+  const DenseTensorArray& step_ids_;
+  const DenseTensorArray& step_scores_;
+  DenseTensor* id_tensor_;
+  DenseTensor* score_tensor_;
 };
 
 template <>

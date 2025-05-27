@@ -48,7 +48,7 @@ namespace math {
  * For a mini-batch of 2 variable lengths sentences, containing 3, and 1
  * time-steps:
  *
- * Assumed input (X) is a [4, M, N] float LoDTensor, and X->lod()[0] = [0, 3,
+ * Assumed input (X) is a [4, M, N] float DenseTensor, and X->lod()[0] = [0, 3,
  * 4].
  * Besides, for the sake of simplicity, we assume M=1 and N=2.
  *

@@ -61,7 +61,7 @@ class SequenceUnpadCompute
 
     param.Out->template mutable_data<T>();
     int64_t padded_length = param.X->dims()[1];
-    math::UnpaddingLoDTensorFunctor<lite::TargetType::kHost, T>()(
+    math::UnpaddingDenseTensorFunctor<lite::TargetType::kHost, T>()(
         ctx,
         *param.X,
         param.Out,

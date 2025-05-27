@@ -64,8 +64,8 @@ const void* get_allocation(const lite::Tensor& tensor) {
 
 namespace pb {
 
-void LoDTensorDeserializer::ForwardRead(lite::Tensor* tensor,
-                                        ByteReader* reader) {
+void DenseTensorDeserializer::ForwardRead(lite::Tensor* tensor,
+                                          ByteReader* reader) {
   CHECK(tensor) << "The input tensor is nullptr.";
   CHECK(reader) << "The input reader is nullptr.";
   CHECK(!reader->ReachEnd()) << "Nothing to read.";
@@ -107,9 +107,9 @@ void LoDTensorDeserializer::ForwardRead(lite::Tensor* tensor,
 }
 
 #ifndef LITE_ON_TINY_PUBLISH
-void LoDTensorSerializer::ForwardWrite(const lite::Tensor& tensor,
-                                       ByteWriter* writer,
-                                       uint32_t version) {
+void DenseTensorSerializer::ForwardWrite(const lite::Tensor& tensor,
+                                         ByteWriter* writer,
+                                         uint32_t version) {
   CHECK(writer) << "The input writer is nullptr.";
   CHECK(tensor.target() == TARGET(kHost))
       << "Only host tensor is supported to be serialized.";

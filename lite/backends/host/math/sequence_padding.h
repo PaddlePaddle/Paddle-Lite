@@ -57,7 +57,7 @@ inline static void CheckDims(const lite::DDim& seq_tensor_dims,
 }
 
 /*
- * \brief   Padding/Unpadding LoDTensor to/from normal Tensor of the shape
+ * \brief   Padding/Unpadding DenseTensor to/from normal Tensor of the shape
  *          [max_sequence_length, num_sequences, sequence_width].
  *
  *  Padding sequence:
@@ -72,7 +72,8 @@ inline static void CheckDims(const lite::DDim& seq_tensor_dims,
  *    padding (s0, s1, s2, s3; s0, s1, s2, 0; s0, 0, s2, 0; s0, 0, 0, 0)
  *
  * \param context       device context of this functor.
- * \param seq           LoDTensor which is stored in sequence format, the shape
+ * \param seq           DenseTensor which is stored in sequence format, the
+ * shape
  *                      is [total_sequence_length, sequence_width] where
  *                      total_sequence_length is the sum of all sequences'
  *                      length.
@@ -83,7 +84,7 @@ inline static void CheckDims(const lite::DDim& seq_tensor_dims,
  * \note  transposition is also done in this functor.
  */
 template <lite::TargetType Target, typename T>
-class PaddingLoDTensorFunctor {
+class PaddingDenseTensorFunctor {
  public:
   void operator()(const lite::Context<Target>& context,
                   const lite::Tensor& seq_tensor,
@@ -96,7 +97,7 @@ class PaddingLoDTensorFunctor {
 };
 
 template <lite::TargetType Target, typename T>
-class UnpaddingLoDTensorFunctor {
+class UnpaddingDenseTensorFunctor {
  public:
   void operator()(const lite::Context<Target>& context,
                   const lite::Tensor& pad_tensor,

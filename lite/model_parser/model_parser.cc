@@ -43,9 +43,9 @@
 namespace paddle {
 namespace lite {
 #ifndef LITE_ON_TINY_PUBLISH
-void LoadLoDTensor(model_parser::pb::LoDTensorDeserializer *loader,
-                   model_parser::ByteReader *reader,
-                   Variable *var) {
+void LoadDenseTensor(model_parser::pb::DenseTensorDeserializer *loader,
+                     model_parser::ByteReader *reader,
+                     Variable *var) {
   auto *tensor = var->GetMutable<lite::Tensor>();
   CHECK(tensor) << "Can not get allocation of the tensor.";
   CHECK(loader) << "The input argument loader is nullptr.";
@@ -69,8 +69,8 @@ std::unique_ptr<framework::proto::ProgramDesc> LoadProgram(
 // Load directly to CPU, and latter transfer to other devices.
 void LoadParam(const std::string &path, Variable *out) {
   model_parser::BinaryFileReader reader(path);
-  model_parser::pb::LoDTensorDeserializer loader;
-  LoadLoDTensor(&loader, &reader, out);
+  model_parser::pb::DenseTensorDeserializer loader;
+  LoadDenseTensor(&loader, &reader, out);
 }
 
 bool IsPersistable(const cpp::VarDesc &var) {
@@ -106,14 +106,14 @@ void LoadCombinedParamsPb(const std::string &path,
   } else {
     reader.reset(new model_parser::BinaryFileReader(path));
   }
-  model_parser::pb::LoDTensorDeserializer loader;
+  model_parser::pb::DenseTensorDeserializer loader;
   if (!paramlist.empty()) {
     CHECK(reader->length())
         << "The model needs weights but the weight file is not existed.";
   }
   for (size_t i = 0; i < paramlist.size(); ++i) {
     auto *var = scope->Var(paramlist[i]);
-    LoadLoDTensor(&loader, reader.get(), var);
+    LoadDenseTensor(&loader, reader.get(), var);
   }
   CHECK(reader->ReachEnd()) << "You are not allowed to load partial data via"
                             << " LoadCombinedParamsPb, use LoadParam instead.";
@@ -190,10 +190,10 @@ void LoadNonCombinedParamsPb(const std::string &model_dir,
       if (IsFileExists(model_dir + "/" + var->Name())) {
         VLOG(4) << "reading weight " << var->Name();
         model_parser::BinaryFileReader reader(model_dir + "/" + var->Name());
-        model_parser::pb::LoDTensorDeserializer loader;
+        model_parser::pb::DenseTensorDeserializer loader;
         switch (var->GetType()) {
           case VarDescAPI::Type::DENSE_TENSOR:
-            LoadLoDTensor(&loader, &reader, scope->Var(var->Name()));
+            LoadDenseTensor(&loader, &reader, scope->Var(var->Name()));
             break;
           default:
             CHECK(false) << "unknown weight type";
@@ -303,7 +303,7 @@ void SaveModelPb(const std::string &model_dir,
       const std::string path = model_dir + "/" + item.name();
 
       model_parser::BinaryFileWriter file(path);
-      model_parser::pb::LoDTensorSerializer saver;
+      model_parser::pb::DenseTensorSerializer saver;
       auto *var = exec_scope.FindVar(item.name());
       const auto &tensor = var->Get<lite::Tensor>();
       saver.ForwardWrite(tensor, &file);
@@ -329,7 +329,7 @@ void SaveCombinedParamsPb(const std::string &path,
 
   // Save vars
   model_parser::BinaryFileWriter file(path);
-  model_parser::pb::LoDTensorSerializer saver;
+  model_parser::pb::DenseTensorSerializer saver;
   for (size_t i = 0; i < paramlist.size(); ++i) {
     auto *var = exec_scope.FindVar(paramlist[i]);
     const auto &tensor = var->Get<lite::Tensor>();

@@ -46,12 +46,14 @@ bool WriteBackOp::InferShapeImpl() const {
 bool WriteBackOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
   if (opdesc.HasAttr("tensor_array_copy")) param_.tensor_array_copy = true;
   if (!param_.tensor_array_copy) {
-    param_.x = scope->FindMutableTensor(opdesc.Input("Src_LoDTensor").front());
-    param_.y = scope->FindMutableTensor(opdesc.Input("Dst_LoDTensor").front());
+    param_.x =
+        scope->FindMutableTensor(opdesc.Input("Src_DenseTensor").front());
+    param_.y =
+        scope->FindMutableTensor(opdesc.Input("Dst_DenseTensor").front());
     return true;
   } else {
-    auto src = opdesc.Input("Src_LoDTensorArray").front();
-    auto dst = opdesc.Input("Dst_LoDTensorArray").front();
+    auto src = opdesc.Input("Src_DenseTensorArray").front();
+    auto dst = opdesc.Input("Dst_DenseTensorArray").front();
     param_.array_x = scope->FindVar(src)->GetMutable<std::vector<Tensor>>();
     param_.array_y = scope->FindVar(dst)->GetMutable<std::vector<Tensor>>();
     return true;

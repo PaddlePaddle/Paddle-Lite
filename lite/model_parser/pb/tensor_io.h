@@ -50,9 +50,9 @@ const void* get_allocation(const lite::Tensor& tensor);
 }  // namespace tensor
 
 namespace pb {
-class LoDTensorDeserializer {
+class DenseTensorDeserializer {
  public:
-  LoDTensorDeserializer() : buf_(new Buffer) {}
+  DenseTensorDeserializer() : buf_(new Buffer) {}
 
   void ForwardRead(lite::Tensor* tensor, ByteReader* reader);
 
@@ -61,9 +61,9 @@ class LoDTensorDeserializer {
 };
 
 #ifndef LITE_ON_TINY_PUBLISH
-class LoDTensorSerializer {
+class DenseTensorSerializer {
  public:
-  LoDTensorSerializer() : buf_(new Buffer) {}
+  DenseTensorSerializer() : buf_(new Buffer) {}
   void ForwardWrite(const lite::Tensor& tensor,
                     ByteWriter* writer,
                     uint32_t version = 0);

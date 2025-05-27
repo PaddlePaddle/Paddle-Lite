@@ -21,7 +21,7 @@ namespace x86 {
 namespace math {
 
 template <typename T>
-class ScaleLoDTensorFunctor<lite::TargetType::kX86, T> {
+class ScaleDenseTensorFunctor<lite::TargetType::kX86, T> {
  public:
   void operator()(const lite::Context<lite::TargetType::kX86>& context,
                   const T* scales,
@@ -43,7 +43,7 @@ class ScaleLoDTensorFunctor<lite::TargetType::kX86, T> {
   }
 };
 
-template class ScaleLoDTensorFunctor<lite::TargetType::kX86, float>;
+template class ScaleDenseTensorFunctor<lite::TargetType::kX86, float>;
 
 }  // namespace math
 }  // namespace x86

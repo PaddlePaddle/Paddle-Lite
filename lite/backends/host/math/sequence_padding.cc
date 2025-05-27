@@ -82,7 +82,7 @@ static void fast_mem_init(void* dest,
 }
 
 template <typename T>
-class PaddingLoDTensorFunctor<lite::TargetType::kHost, T> {
+class PaddingDenseTensorFunctor<lite::TargetType::kHost, T> {
  public:
   void operator()(const lite::Context<lite::TargetType::kHost>& context,
                   const lite::Tensor& seq_tensor,
@@ -135,7 +135,7 @@ class PaddingLoDTensorFunctor<lite::TargetType::kHost, T> {
 };
 
 template <typename T>
-class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, T> {
+class UnpaddingDenseTensorFunctor<lite::TargetType::kHost, T> {
  public:
   void operator()(const lite::Context<lite::TargetType::kHost>& context,
                   const lite::Tensor& pad_tensor,
@@ -170,15 +170,15 @@ class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, T> {
   }
 };
 
-template class PaddingLoDTensorFunctor<lite::TargetType::kHost, int>;
-template class PaddingLoDTensorFunctor<lite::TargetType::kHost, int64_t>;
-template class PaddingLoDTensorFunctor<lite::TargetType::kHost, float>;
-template class PaddingLoDTensorFunctor<lite::TargetType::kHost, double>;
+template class PaddingDenseTensorFunctor<lite::TargetType::kHost, int>;
+template class PaddingDenseTensorFunctor<lite::TargetType::kHost, int64_t>;
+template class PaddingDenseTensorFunctor<lite::TargetType::kHost, float>;
+template class PaddingDenseTensorFunctor<lite::TargetType::kHost, double>;
 
-template class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, int>;
-template class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, int64_t>;
-template class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, float>;
-template class UnpaddingLoDTensorFunctor<lite::TargetType::kHost, double>;
+template class UnpaddingDenseTensorFunctor<lite::TargetType::kHost, int>;
+template class UnpaddingDenseTensorFunctor<lite::TargetType::kHost, int64_t>;
+template class UnpaddingDenseTensorFunctor<lite::TargetType::kHost, float>;
+template class UnpaddingDenseTensorFunctor<lite::TargetType::kHost, double>;
 
 }  // namespace math
 }  // namespace host

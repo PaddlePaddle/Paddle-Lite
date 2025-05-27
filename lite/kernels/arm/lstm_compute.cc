@@ -57,7 +57,7 @@ void LSTMComputeRun(const operators::LstmParam& param,
   memset(cell_ptr, 0, cell_out->numel() * sizeof(float));
 
   bool is_reverse = param.is_reverse;
-  lite::arm::math::LoDTensor2BatchFunctor<float> to_batch;
+  lite::arm::math::DenseTensor2BatchFunctor<float> to_batch;
   to_batch(*input, batch_gate, true, is_reverse);
 
   auto in_dims = input->dims();
@@ -247,7 +247,7 @@ void LSTMComputeRun(const operators::LstmParam& param,
     lstm_value.prev_state_value = lstm_value.state_value;
   }
 
-  lite::arm::math::Batch2LoDTensorFunctor<float> to_seq;
+  lite::arm::math::Batch2DenseTensorFunctor<float> to_seq;
   auto* lod_hidden = batch_hidden.mutable_lod();
   *lod_hidden = batch_gate->lod();
   to_seq(batch_hidden, hidden_out);

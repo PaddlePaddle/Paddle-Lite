@@ -152,7 +152,7 @@ void DistributeFpnProposalsCompute::Run() {
       }
     }
   }
-  // merge lod information into LoDTensor
+  // merge lod information into DenseTensor
   for (int i = 0; i < num_level; ++i) {
     lite::LoD lod;
     lod.emplace_back(multi_fpn_rois_lod0[i]);

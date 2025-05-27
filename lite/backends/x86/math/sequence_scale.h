@@ -36,7 +36,8 @@ namespace math {
 
  *
  * \param context       Device context of this functor.
- * \param seq           LoDTensor which is stored in sequence format, the shape
+ * \param seq           DenseTensor which is stored in sequence format, the
+ shape
  *                      is [total_sequence_length, sequence_width] where
  *                      total_sequence_length is the sum of all sequences'
  *                      length.
@@ -46,7 +47,7 @@ namespace math {
  */
 
 template <lite::TargetType Target, typename T>
-class ScaleLoDTensorFunctor {
+class ScaleDenseTensorFunctor {
  public:
   void operator()(const lite::Context<Target>& context,
                   const T* scales,

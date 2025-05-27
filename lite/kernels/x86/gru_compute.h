@@ -81,7 +81,7 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
     const auto& hidden_dims = hidden->dims();
 
-    lite::x86::math::LoDTensor2BatchFunctor<TARGET(kX86), T> to_batch;
+    lite::x86::math::DenseTensor2BatchFunctor<TARGET(kX86), T> to_batch;
     to_batch(context, *input, batch_gate, true, is_reverse);
 
     if (bias) {
@@ -214,7 +214,7 @@ class GRUCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 #ifdef PADDLE_WITH_MKLML
     }
 #endif
-    lite::x86::math::Batch2LoDTensorFunctor<TARGET(kX86), T> to_seq;
+    lite::x86::math::Batch2DenseTensorFunctor<TARGET(kX86), T> to_seq;
     batch_hidden->set_lod(batch_gate->lod());
     to_seq(context, *batch_hidden, hidden);
   }

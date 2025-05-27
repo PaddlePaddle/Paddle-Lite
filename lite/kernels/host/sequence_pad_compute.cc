@@ -32,7 +32,7 @@ void SequencePadCompute<T>::Run() {
   CHECK(!x->lod().empty()) << "Input X should have lod data.";
   int padded_length = param.padded_length;
 
-  lite::host::math::PaddingLoDTensorFunctor<lite::TargetType::kHost, T>()(
+  lite::host::math::PaddingDenseTensorFunctor<lite::TargetType::kHost, T>()(
       ctx,
       *x,
       out,

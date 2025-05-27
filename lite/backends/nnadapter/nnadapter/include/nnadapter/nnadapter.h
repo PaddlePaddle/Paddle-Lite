@@ -2273,7 +2273,8 @@ typedef enum {
    * bounding boxes.
    *        In this case, input bboxes should be the first case with shape [N,
    * M, 4/8/16/24/32].
-   *     2. A 2-D LoDTensor with shape [M, C]. M is the number of bbox, C is the
+   *     2. A 2-D DenseTensor with shape [M, C]. M is the number of bbox, C is
+   * the
    * class number.
    *        In this case, input bboxes should be the second case with shape [M,
    * C, 4].

@@ -297,13 +297,13 @@ class WriteBackOp : public OpDescBase {
   static constexpr char const type_[] = "write_back";
   // In order to adapt to the operator registration system,
   // the dependent parameters are classified by variable types here.
-  static constexpr char const input_lod_deps_[] = "Dep_LoDTensor";
-  static constexpr char const input_lod_array_deps_[] = "Dep_LoDTensorArray";
-  static constexpr char const input_src_[] = "Src_LoDTensor";
-  static constexpr char const input_src_array_[] = "Src_LoDTensorArray";
+  static constexpr char const input_lod_deps_[] = "Dep_DenseTensor";
+  static constexpr char const input_lod_array_deps_[] = "Dep_DenseTensorArray";
+  static constexpr char const input_src_[] = "Src_DenseTensor";
+  static constexpr char const input_src_array_[] = "Src_DenseTensorArray";
   // For directed acyclic, input is used as output here.
-  static constexpr char const input_dst_[] = "Dst_LoDTensor";
-  static constexpr char const input_dst_array_[] = "Dst_LoDTensorArray";
+  static constexpr char const input_dst_[] = "Dst_DenseTensor";
+  static constexpr char const input_dst_array_[] = "Dst_DenseTensorArray";
   general::OpDesc fake_desc_;
   bool tensor_array_copy_{false};
 };

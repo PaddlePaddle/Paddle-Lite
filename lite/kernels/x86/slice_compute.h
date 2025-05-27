@@ -35,7 +35,7 @@ void DealTensorArray(const std::vector<lite::Tensor>* XTensorList,
                      const std::vector<int>& ends,
                      bool out_is_array) {
   auto in_array = XTensorList;
-  // If the input is LoDTensorArray, the rank of input is 1.
+  // If the input is DenseTensorArray, the rank of input is 1.
   int64_t in_size = in_array->size();
   int64_t start = starts[0] < 0 ? (starts[0] + in_size) : starts[0];
   int64_t end = ends[0] < 0 ? (ends[0] + in_size) : ends[0];

@@ -54,10 +54,10 @@ class CopyMatrixRowsFunctor<lite::TargetType::kX86, T> {
 template class CopyMatrixRowsFunctor<lite::TargetType::kX86, float>;
 template class CopyMatrixRowsFunctor<lite::TargetType::kX86, double>;
 
-template class LoDTensor2BatchFunctor<lite::TargetType::kX86, float>;
-template class LoDTensor2BatchFunctor<lite::TargetType::kX86, double>;
-template class Batch2LoDTensorFunctor<lite::TargetType::kX86, float>;
-template class Batch2LoDTensorFunctor<lite::TargetType::kX86, double>;
+template class DenseTensor2BatchFunctor<lite::TargetType::kX86, float>;
+template class DenseTensor2BatchFunctor<lite::TargetType::kX86, double>;
+template class Batch2DenseTensorFunctor<lite::TargetType::kX86, float>;
+template class Batch2DenseTensorFunctor<lite::TargetType::kX86, double>;
 
 }  // namespace math
 }  // namespace x86

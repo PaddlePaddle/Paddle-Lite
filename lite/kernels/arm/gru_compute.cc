@@ -83,7 +83,7 @@ void GRUComputeRun(const operators::GRUParam& param,
     bit_length = param.bit_length;
   }
 
-  lite::arm::math::LoDTensor2BatchFunctor<float> to_batch;
+  lite::arm::math::DenseTensor2BatchFunctor<float> to_batch;
   to_batch(*input, batch_gate, true, param.is_reverse);
 
   if (bias) {
@@ -164,7 +164,7 @@ void GRUComputeRun(const operators::GRUParam& param,
     }
     gru_value.prev_out_value = gru_value.output_value;
   }
-  lite::arm::math::Batch2LoDTensorFunctor<float> to_seq;
+  lite::arm::math::Batch2DenseTensorFunctor<float> to_seq;
   *(batch_hidden->mutable_lod()) = batch_gate->lod();
   to_seq(*batch_hidden, hidden);
 }
@@ -211,7 +211,7 @@ void GRUCompute<PRECISION(kFP16)>::Run() {
   hidden->mutable_data<float16_t>();
   memset(batch_gate_data, 0, batch_gate->numel() * sizeof(float16_t));
 
-  lite::arm::math::LoDTensor2BatchFunctor<float16_t> to_batch;
+  lite::arm::math::DenseTensor2BatchFunctor<float16_t> to_batch;
   to_batch(*input, batch_gate, true, param.is_reverse);
 
   if (bias) {
@@ -267,7 +267,7 @@ void GRUCompute<PRECISION(kFP16)>::Run() {
 
     gru_value.prev_out_value = gru_value.output_value;
   }
-  lite::arm::math::Batch2LoDTensorFunctor<float16_t> to_seq;
+  lite::arm::math::Batch2DenseTensorFunctor<float16_t> to_seq;
   *(batch_hidden->mutable_lod()) = batch_gate->lod();
   to_seq(*batch_hidden, hidden);
 }

@@ -33,11 +33,13 @@ bool RoiPerspectiveTransformOp::CheckShape() const {
       << x_dims;
   auto rois_dims = param_.rois->dims();
   CHECK_EQ(rois_dims.size(), 2UL)
-      << "ROIs should be a 2-D LoDTensor of shape (num_rois, 8) given as [[x0, "
+      << "ROIs should be a 2-D DenseTensor of shape (num_rois, 8) given as "
+         "[[x0, "
          "y0, x1, y1, x2, y2, x3, y3], ...]. But received rois dims: "
       << rois_dims;
   CHECK_EQ(rois_dims[1], 8L)
-      << "ROIs should be a 2-D LoDTensor of shape (num_rois, 8) given as [[x0, "
+      << "ROIs should be a 2-D DenseTensor of shape (num_rois, 8) given as "
+         "[[x0, "
          "y0, x1, y1, x2, y2, x3, y3], ...]. But received rois dims: "
       << rois_dims;
   return true;

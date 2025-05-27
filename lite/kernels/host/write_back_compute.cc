@@ -114,27 +114,27 @@ REGISTER_LITE_KERNEL(write_back,
                      kAny,
                      paddle::lite::kernels::host::WriteBackCompute,
                      write_back)
-    .BindInput("Src_LoDTensor",
+    .BindInput("Src_DenseTensor",
                {LiteType::GetTensorTy(TARGET(kAny),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
-    .BindInput("Dst_LoDTensor",
+    .BindInput("Dst_DenseTensor",
                {LiteType::GetTensorTy(TARGET(kAny),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
-    .BindInput("Src_LoDTensorArray",
+    .BindInput("Src_DenseTensorArray",
                {LiteType::GetTensorListTy(TARGET(kAny),
                                           PRECISION(kAny),
                                           DATALAYOUT(kAny))})
-    .BindInput("Dst_LoDTensorArray",
+    .BindInput("Dst_DenseTensorArray",
                {LiteType::GetTensorListTy(TARGET(kAny),
                                           PRECISION(kAny),
                                           DATALAYOUT(kAny))})
-    .BindInput("Dep_LoDTensor",
+    .BindInput("Dep_DenseTensor",
                {LiteType::GetTensorTy(TARGET(kAny),
                                       PRECISION(kAny),
                                       DATALAYOUT(kAny))})
-    .BindInput("Dep_LoDTensorArray",
+    .BindInput("Dep_DenseTensorArray",
                {LiteType::GetTensorListTy(TARGET(kAny),
                                           PRECISION(kAny),
                                           DATALAYOUT(kAny))})

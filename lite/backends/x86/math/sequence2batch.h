@@ -42,7 +42,7 @@ class CopyMatrixRowsFunctor {
 };
 
 template <lite::TargetType Target, typename T>
-class LoDTensor2BatchFunctor {
+class DenseTensor2BatchFunctor {
   // Calculate the length of each sequence and
   // sort sequence index by the length.
   // example:  sequences = {s0, s1, s2}
@@ -67,7 +67,7 @@ class LoDTensor2BatchFunctor {
     if (!is_cal_batch_lod) {
       auto lods = batch->lod();
       CHECK_GT(lods.size(), 2UL)
-          << "The LoD of LoDTensor should inlcude at least 2-level "
+          << "The LoD of DenseTensor should inlcude at least 2-level "
              "sequence information.";
       CHECK_EQ(lods[1].size(), static_cast<size_t>(lod_tensor.dims()[0]))
           << "The LoD information should be consistent with the dims.";
@@ -119,12 +119,12 @@ class LoDTensor2BatchFunctor {
     LoD* batch_lods = batch->mutable_lod();
     batch_lods->resize(3);
 
-    // batch_lods[0] is the start positions for batch LoDTensor
+    // batch_lods[0] is the start positions for batch DenseTensor
     int max_seqlen = seq_info[0].length;
     batch_lods->at(0).resize(static_cast<size_t>(max_seqlen + 1));
-    // batch_lods[1] is the raw index in the input LoDTensor
+    // batch_lods[1] is the raw index in the input DenseTensor
     batch_lods->at(1).resize(static_cast<size_t>(lod_tensor.dims()[0]));
-    // batch_lods[2] is the sort order for the input LoDTensor.
+    // batch_lods[2] is the sort order for the input DenseTensor.
     batch_lods->at(2).resize(seq_info.size());
 
     auto* batch_starts = batch_lods->at(0).data();
@@ -156,14 +156,14 @@ class LoDTensor2BatchFunctor {
 };
 
 template <lite::TargetType Target, typename T>
-class Batch2LoDTensorFunctor {
+class Batch2DenseTensorFunctor {
  public:
   void operator()(const lite::Context<Target>& context,
                   const lite::Tensor& batch,
                   lite::Tensor* lod_tensor) const {
     auto in_lod = batch.lod();
     CHECK_GT(in_lod.size(), 2UL)
-        << "The LoD of LoDTensor should inlcude at least 2-level "
+        << "The LoD of DenseTensor should inlcude at least 2-level "
            "sequence information.";
     CHECK_EQ(in_lod[1].size(), static_cast<size_t>(lod_tensor->dims()[0]))
         << "The LoD information should be consistent with the dims.";
