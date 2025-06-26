@@ -41,9 +41,17 @@ endif()
 if(LITE_WITH_ARM AND WITH_TESTING)
     set(lite_model_test_DEPS cxx_api ops kernels)
 
+    if(OHOS)
+    message("test_mobilenetv1_int8 --model_dir=${LITE_MODEL_DIR}/mobilenet_v1_int8")
+    lite_cc_test(test_mobilenetv1_int8 SRCS mobilenetv1_int8_test.cc
+       ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1_int8 SERIAL)
+    add_dependencies(test_mobilenetv1_int8 extern_lite_download_mobilenet_v1_int8_tar_gz)
+    else()
+    message("test_mobilenetv1_int8 --model_dir=${LITE_MODEL_DIR}/MobilenetV1_quant")
     lite_cc_test(test_mobilenetv1_int8 SRCS mobilenetv1_int8_test.cc
        ARGS --model_dir=${LITE_MODEL_DIR}/MobilenetV1_quant SERIAL)
     add_dependencies(test_mobilenetv1_int8 extern_lite_download_MobileNetV1_quant_tar_gz)
+    endif()
 
     lite_cc_test(test_mobilenetv1 SRCS mobilenetv1_test.cc
        ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 SERIAL)
@@ -72,11 +80,18 @@ if(LITE_WITH_ARM AND WITH_TESTING)
        ARGS --model_dir=${LITE_MODEL_DIR}/resnet50 SERIAL)
     add_dependencies(test_resnet50 extern_lite_download_resnet50_tar_gz)
 
+    if(LITE_WITH_OPENCL)
     lite_cc_test(test_inceptionv4 SRCS inceptionv4_test.cc
        ARGS --model_dir=${LITE_MODEL_DIR}/inception_v4 SERIAL)
+    add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_tar_gz)
+    else()
+    lite_cc_test(test_inceptionv4 SRCS inceptionv4_test.cc
+       ARGS --model_dir=${LITE_MODEL_DIR}/inception_v4_simple SERIAL)   
     add_dependencies(test_inceptionv4 extern_lite_download_inception_v4_simple_tar_gz)
-
-    lite_cc_test(test_fast_rcnn SRCS fast_rcnn_test.cc)
+    endif()
+    
+    lite_cc_test(test_fast_rcnn SRCS fast_rcnn_test.cc
+       ARGS --model_dir=${LITE_MODEL_DIR}/fast_rcnn_fluid184 SERIAL)
     add_dependencies(test_fast_rcnn extern_lite_download_fast_rcnn_fluid184_tar_gz)
 
    # brief: we comment ocr_test_ut because we do not supply ocr model to test, it is the reference to infer nlp model

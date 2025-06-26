@@ -96,7 +96,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
         set_target_properties(paddle_light_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
         add_dependencies(paddle_light_api_shared custom_linker_map)
    endif()
-   if(NOT WIN32 AND NOT ARM_TARGET_OS STREQUAL "android" AND WITH_TESTING)
+   if(NOT WIN32 AND ((NOT ARM_TARGET_OS STREQUAL "android") OR (NOT ARM_TARGET_OS STREQUAL "ohos")) AND WITH_TESTING)
         # check symbol hidden
         FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/check_symbol.cmake
             "execute_process(COMMAND sh -c \"${CMAKE_CURRENT_SOURCE_DIR}/../tools/check_symbol.sh"

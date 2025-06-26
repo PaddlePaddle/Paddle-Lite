@@ -141,7 +141,7 @@ IF (WIN32)
     SET(PROTOBUF_ROOT ${THIRD_PARTY_PATH}/install/protobuf)
 ENDIF(WIN32)
 
-if (NOT "${PROTOBUF_ROOT}" STREQUAL "")
+if (NOT ("${PROTOBUF_ROOT}" STREQUAL "" and OHOS))
     find_path(PROTOBUF_INCLUDE_DIR google/protobuf/message.h PATHS ${PROTOBUF_ROOT}/include NO_DEFAULT_PATH)
     find_library(PROTOBUF_LIBRARY protobuf libprotobuf.lib PATHS ${PROTOBUF_ROOT}/lib NO_DEFAULT_PATH)
     find_library(PROTOBUF_LITE_LIBRARY protobuf-lite libprotobuf-lite.lib PATHS ${PROTOBUF_ROOT}/lib NO_DEFAULT_PATH)
@@ -231,7 +231,9 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             ${TARGET_NAME}
             ${EXTERNAL_PROJECT_LOG_ARGS}
             PREFIX          ${PROTOBUF_SOURCES_DIR}
-            SOURCE_SUBDIR   cmake
+        if (NOT OHOS)
+	    	SOURCE_SUBDIR cmake
+	    endif()
             UPDATE_COMMAND  ""
 	    PATCH_COMMAND   ${PATCH_COMMAND}
             GIT_REPOSITORY  ""
@@ -286,10 +288,26 @@ ENDFUNCTION()
 SET(PROTOBUF_VERSION 3.3.0)
 
 IF(LITE_WITH_ARM)
-    build_protobuf(protobuf_host TRUE)
-    LIST(APPEND external_project_dependencies protobuf_host)
-    SET(PROTOBUF_PROTOC_EXECUTABLE ${protobuf_host_PROTOC_EXECUTABLE}
-        CACHE FILEPATH "protobuf executable." FORCE)
+    IF(OHOS)
+        find_path(PROTOBUF_INCLUDE_DIR google/protobuf/message.h PATHS ${PROTOBUF_ROOT}/include NO_DEFAULT_PATH)
+        find_library(PROTOBUF_LIBRARY protobuf libprotobuf.a PATHS ${PROTOBUF_ROOT}/lib NO_DEFAULT_PATH)
+        find_library(PROTOBUF_LITE_LIBRARY protobuf-lite libprotobuf-lite.a PATHS ${PROTOBUF_ROOT}/lib NO_DEFAULT_PATH)
+        find_library(PROTOBUF_PROTOC_LIBRARY protoc libprotoc.a PATHS ${PROTOBUF_ROOT}/lib NO_DEFAULT_PATH)
+        SET(PROTOBUF_PROTOC_EXECUTABLE ${protobuf_host_PROTOC_EXECUTABLE})
+        IF (PROTOBUF_INCLUDE_DIR AND PROTOBUF_LIBRARY AND PROTOBUF_LITE_LIBRARY AND PROTOBUF_PROTOC_LIBRARY AND PROTOBUF_PROTOC_EXECUTABLE)
+            message(STATUS "Using custom protobuf library in ${PROTOBUF_ROOT}.")
+            SET(PROTOBUF_FOUND true)
+            SET_PROTOBUF_VERSION()
+            PROMPT_PROTOBUF_LIB()
+        ELSE()
+            message(WARNING "Cannot find protobuf library in ${PROTOBUF_ROOT}")
+        ENDIF()
+    ELSE()
+        build_protobuf(protobuf_host TRUE)
+        LIST(APPEND external_project_dependencies protobuf_host)
+        SET(PROTOBUF_PROTOC_EXECUTABLE ${protobuf_host_PROTOC_EXECUTABLE}
+            CACHE FILEPATH "protobuf executable." FORCE)
+    ENDIF()
 ENDIF()
 
 IF(NOT PROTOBUF_FOUND)

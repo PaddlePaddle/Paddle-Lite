@@ -4969,7 +4969,11 @@ void prepackA_m4k2x2_trans_int8(int8_t* out,
   int8x16_t vzero = vdupq_n_s8(0);
   uint8x16_t vmask = vcltq_u8(vld1q_u8(mask_buffer), vdupq_n_u8(x_rem));
 
-  int stride_out = ylen_roundup * MBLOCK_INT8_OTH;
+#ifdef __aarch64__
+  int64_t stride_out = ylen_roundup * MBLOCK_INT8_OTH;
+#else
+  int32_t stride_out = ylen_roundup * MBLOCK_INT8_OTH;
+#endif
 
   int8_t* zerobuf = static_cast<int8_t*>(malloc(xlen_roundup));
   memset(zerobuf, 0, xlen_roundup);
@@ -5290,7 +5294,11 @@ void packb_int8(int8_t* out,
   int kup = ROUNDUP(y_len, KBLOCK_INT8);
   int kcnt = x_len / NBLOCK_INT8_OTH;
   int rem = x_len & (NBLOCK_INT8_OTH - 1);
-  int stride_out = NBLOCK_INT8_OTH * kup;
+#ifdef __aarch64__
+  int64_t stride_out = NBLOCK_INT8_OTH * kup;
+#else
+  int32_t stride_out = NBLOCK_INT8_OTH * kup;
+#endif
 
   int8x16_t vzero = vdupq_n_s8(0);
   uint8x16_t vmask = vcltq_u8(vld1q_u8(mask_buffer), vdupq_n_u8(rem));
