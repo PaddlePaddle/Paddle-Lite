@@ -148,6 +148,15 @@ endif()
 set(LITE_WITH_OPENMP OFF CACHE STRING "Disable OpenMP when cross-compiling for Android and iOS" FORCE)
 set(ARM_TARGET_LANG "clang" CACHE STRING "Force use clang on IOS" FORCE)
 
+# Auto-enable LITE_LAZY_REGISTER on iOS unless the user explicitly sets it to OFF.
+# LITE_LAZY_REGISTER has not been declared by lite_option yet (that runs later in
+# CMakeLists.txt), so DEFINED will be FALSE on a clean configure; we only skip
+# the override when the user passed -DLITE_LAZY_REGISTER=OFF explicitly.
+if(NOT DEFINED LITE_LAZY_REGISTER OR LITE_LAZY_REGISTER)
+  set(LITE_LAZY_REGISTER ON CACHE BOOL
+      "Lazy-register ops/kernels to eliminate pre-main static initializers" FORCE)
+endif()
+
 add_definitions(-DLITE_WITH_IPHONE)
 ## End lite settings
 

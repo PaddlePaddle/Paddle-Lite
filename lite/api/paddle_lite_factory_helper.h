@@ -27,6 +27,21 @@
 #define UNUSED __attribute__((unused))
 #endif
 
+#ifdef LITE_LAZY_REGISTER
+// Lazy version (iOS only): extern declarations only.  No file-scope static
+// initializer is created here.
+// The strong calls that pull each kernel/op .o from the SDK archive at link
+// time live inside the inline RegisterAllKernels() / RegisterAllOps() that
+// parse_kernel_registry.py / parse_op_registry.py appends to the generated
+// paddle_use_kernels.h / paddle_use_ops.h.
+#define USE_LITE_OP(op_type__) extern int touch_op_##op_type__();
+
+#define USE_LITE_KERNEL(op_type__, target__, precision__, layout__, alias__) \
+  extern int touch_##op_type__##target__##precision__##layout__##alias__();
+#else
+// Original: creates a file-scope global whose initializer calls touch_xxx(),
+// which forces the linker to pull in the corresponding .o and triggers the
+// static OpLiteRegistrar / KernelRegistrar constructor.
 #define USE_LITE_OP(op_type__)       \
   extern int touch_op_##op_type__(); \
   int LITE_OP_REGISTER_FAKE(op_type__) UNUSED = touch_op_##op_type__();
@@ -35,6 +50,7 @@
   extern int touch_##op_type__##target__##precision__##layout__##alias__();  \
   int op_type__##target__##precision__##layout__##alias__##__use_lite_kernel \
       UNUSED = touch_##op_type__##target__##precision__##layout__##alias__();
+#endif
 
 #define USE_MIR_PASS(name__)                      \
   extern bool mir_pass_registry##name__##_fake(); \

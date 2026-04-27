@@ -1,8 +1,21 @@
 #----------------------------------------------- NOT CHANGE ---------------------------------------
 find_package(PythonInterp REQUIRED)
-# A trick to generate the paddle_use_kernels.h
+
+# Generate paddle_lite_factory_helper.h based on LITE_LAZY_REGISTER config
+# This resolves the #ifdef LITE_LAZY_REGISTER blocks so APP developers don't
+# need to know how the SDK was compiled.
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -E copy ${PADDLE_SOURCE_DIR}/lite/api/paddle_lite_factory_helper.h ${PADDLE_BINARY_DIR}/lite/api/)
+    COMMAND ${PYTHON_EXECUTABLE} ${PADDLE_SOURCE_DIR}/lite/tools/cmake_tools/generate_factory_helper.py
+    ${PADDLE_SOURCE_DIR}/lite/api/paddle_lite_factory_helper.h
+    ${PADDLE_BINARY_DIR}/lite/api/paddle_lite_factory_helper.h
+    ${LITE_LAZY_REGISTER}
+    RESULT_VARIABLE result
+    ERROR_VARIABLE error)
+if(NOT "${error}" STREQUAL "")
+    message(FATAL_ERROR ${error})
+endif()
+
+# Generate paddle_use_kernels.h and paddle_use_kernels.cc
 execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${PADDLE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
     ${kernels_src_list}
@@ -12,6 +25,18 @@ execute_process(
     ${LITE_BUILD_TAILOR}
     ${LITE_BUILD_EXTRA}
     ${LITE_WITH_ARM82_FP16}
+    RESULT_VARIABLE result
+    ERROR_VARIABLE error)
+if(NOT "${error}" STREQUAL "")
+    message(FATAL_ERROR ${error})
+endif()
+# Resolve #ifdef LITE_LAZY_REGISTER blocks in paddle_use_kernels.h so consumers
+# don't need to define LITE_LAZY_REGISTER themselves.
+execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${PADDLE_SOURCE_DIR}/lite/tools/cmake_tools/generate_factory_helper.py
+    ${PADDLE_BINARY_DIR}/lite/api/paddle_use_kernels.h
+    ${PADDLE_BINARY_DIR}/lite/api/paddle_use_kernels.h
+    ${LITE_LAZY_REGISTER}
     RESULT_VARIABLE result
     ERROR_VARIABLE error)
 if(NOT "${error}" STREQUAL "")
@@ -30,9 +55,28 @@ execute_process(
 if(NOT "${error}" STREQUAL "")
     message(FATAL_ERROR ${error})
 endif()
+# Resolve #ifdef LITE_LAZY_REGISTER blocks in paddle_use_ops.h.
+execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${PADDLE_SOURCE_DIR}/lite/tools/cmake_tools/generate_factory_helper.py
+    ${PADDLE_BINARY_DIR}/lite/api/paddle_use_ops.h
+    ${PADDLE_BINARY_DIR}/lite/api/paddle_use_ops.h
+    ${LITE_LAZY_REGISTER}
+    RESULT_VARIABLE result
+    ERROR_VARIABLE error)
+if(NOT "${error}" STREQUAL "")
+    message(FATAL_ERROR ${error})
+endif()
+
+# Generated source files for lazy registration (compiled as part of light_api)
+set(GENERATED_LAZY_REGISTER_SRC "")
+if(LITE_LAZY_REGISTER)
+    set(GENERATED_LAZY_REGISTER_SRC
+        ${PADDLE_BINARY_DIR}/lite/api/paddle_use_ops.cc
+        ${PADDLE_BINARY_DIR}/lite/api/paddle_use_kernels.cc)
+endif()
 #----------------------------------------------- NOT CHANGE ---------------------------------------
 
-set(LIGHT_API_SRC  light_api.cc paddle_api.cc light_api_impl.cc paddle_place.cc)
+set(LIGHT_API_SRC  light_api.cc paddle_api.cc light_api_impl.cc paddle_place.cc ${GENERATED_LAZY_REGISTER_SRC})
 set(FULL_API_SRC ${LIGHT_API_SRC} cxx_api.cc cxx_api_impl.cc)
 set(light_lib_DEPS utils core kernels model_parser ops CACHE INTERNAL "")
 set(full_lib_DEPS framework_proto core ops utils kernels model_parser CACHE INTERNAL "")
