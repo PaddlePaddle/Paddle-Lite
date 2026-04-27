@@ -30,6 +30,8 @@ IOS_DEPLOYMENT_TARGET=9.0
 BUILD_ARM82_FP16=OFF
 # use Arm DNN library instead of built-in math library, defaults to OFF.
 WITH_ARM_DNN_LIBRARY=OFF
+# lazy register ops/kernels, default is ON for iOS, set to OFF to disable.
+WITH_LAZY_REGISTER=ON
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -88,6 +90,7 @@ function make_ios {
     mkdir -p ./${GEN_CODE_PATH_PREFIX}
     touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
     cmake $workspace $cmake_common_options \
+            -DLITE_LAZY_REGISTER=$WITH_LAZY_REGISTER \
             -DLITE_WITH_METAL=$WITH_METAL \
             -DLITE_WITH_ARM=ON \
             -DLITE_WITH_XCODE=$WITH_XCODE \
@@ -136,6 +139,7 @@ function print_usage {
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
     echo -e "|     --ios_deployment_target: (default: 9.0); Set the minimum compatible system version for ios deployment.                           |"
+    echo -e "|     --with_lazy_register: (ON|OFF); lazy register ops/kernels, default is ON for iOS                                                 |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                              |"
@@ -207,6 +211,11 @@ function main {
             # use Arm DNN library
              --with_arm_dnn_library=*)
                 WITH_ARM_DNN_LIBRARY="${i#*=}"
+                shift
+                ;;
+            # lazy register ops/kernels
+            --with_lazy_register=*)
+                WITH_LAZY_REGISTER="${i#*=}"
                 shift
                 ;;
             help)

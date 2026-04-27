@@ -12,15 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/api/light_api.h"
+#include <memory>
 #include <string>
+#include <vector>
+
+#include "lite/api/light_api.h"
 #include "lite/api/paddle_api.h"
 #include "lite/core/version.h"
 #include "lite/model_parser/model_parser.h"
+#ifdef LITE_LAZY_REGISTER
+#include <mutex>
+
+#include "lite/api/lazy_register_internal.h"  // Internal header for RegisterAllOps/RegisterAllKernels
+#endif
 #ifndef LITE_ON_TINY_PUBLISH
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #endif
+// Note: in LITE_LAZY_REGISTER + LITE_ON_TINY_PUBLISH mode (iOS), these headers
+// are intentionally NOT included here.  Including them would create strong
+// references to all touch_xxx symbols inside the SDK-compiled light_api_impl.o,
+// pulling every kernel .o into the final binary and defeating APP-level
+// dead-code stripping.  RegisterAllOps / RegisterAllKernels are declared via
+// lazy_register_internal.h (included above under #ifdef LITE_LAZY_REGISTER).
 #include "lite/core/parallel_defines.h"
 #include "lite/core/thread_pool.h"
 
@@ -190,6 +204,17 @@ namespace lite_api {
 template <>
 std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(
     const MobileConfig& config) {
+#ifdef LITE_LAZY_REGISTER
+  // Thread-safe one-time registration: all touch_op_xxx() and touch_xxx()
+  // functions are invoked here on the first call, constructing their
+  // function-local static OpLiteRegistrar / KernelRegistrar objects.
+  // Subsequent calls skip the lambda entirely (std::call_once guarantee).
+  static std::once_flag s_register_flag;
+  std::call_once(s_register_flag, [] {
+    lite::detail::RegisterAllOps();
+    lite::detail::RegisterAllKernels();
+  });
+#endif
   auto x = std::make_shared<lite::LightPredictorImpl>();
   x->Init(config);
   return x;

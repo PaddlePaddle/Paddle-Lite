@@ -21,6 +21,7 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+
 #include "lite/api/paddle_lite_factory_helper.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
@@ -235,13 +236,27 @@ class ParamTypeDummyRegistry {
 }  // namespace lite
 }  // namespace paddle
 
-#ifdef LITE_ON_TINY_PUBLISH
+#if defined(LITE_LAZY_REGISTER) && defined(LITE_ON_TINY_PUBLISH)
+// LITE_LAZY_REGISTER + TINY_PUBLISH: constexpr ternary short-circuit.
+// The false branch (NewInstance()...) is never evaluated by the abstract
+// machine when the condition is the constant `true`, so Clang emits zero
+// dynamic initializer. The .BindInput/.BindOutput/.Finalize() chain appended
+// by the call-site becomes part of the unevaluated false branch.
+#define ParamTypeRegistry(                                                \
+    op_type__, target__, precision__, layout__, KernelClass, alias__)     \
+  static constexpr bool                                                   \
+      op_type__##target__##precision__##layout__##alias__##param_register \
+          UNUSED = true ? true                                            \
+                        : paddle::lite::ParamTypeDummyRegistry::NewInstance()
+#elif defined(LITE_ON_TINY_PUBLISH)
+// TINY_PUBLISH only (original behavior): dummy registry, no type info needed.
 #define ParamTypeRegistry(                                                \
     op_type__, target__, precision__, layout__, KernelClass, alias__)     \
   static auto                                                             \
       op_type__##target__##precision__##layout__##alias__##param_register \
           UNUSED = paddle::lite::ParamTypeDummyRegistry::NewInstance()
 #else
+// Full build: real ParamTypeRegistry used by MIR optimizer (unchanged).
 #define ParamTypeRegistry(                                                \
     op_type__, target__, precision__, layout__, KernelClass, alias__)     \
   static auto                                                             \
@@ -253,6 +268,23 @@ class ParamTypeDummyRegistry {
 #endif
 
 // Register an op.
+#ifdef LITE_LAZY_REGISTER
+// Lazy version: OpLiteRegistrar is a function-local static, so it is
+// constructed on the first call to touch_op_xxx() instead of at program
+// start. No __mod_init_func entry is emitted.
+#define REGISTER_LITE_OP(op_type__, OpClass)                          \
+  int touch_op_##op_type__() {                                        \
+    static paddle::lite::OpLiteRegistrar op_type__##__registry(       \
+        #op_type__, []() {                                            \
+          return std::unique_ptr<paddle::lite::OpLite>(               \
+              new OpClass(#op_type__));                               \
+        });                                                           \
+    op_type__##__registry.touch();                                    \
+    OpKernelInfoCollector::Global().AddOp2path(#op_type__, __FILE__); \
+    return 0;                                                         \
+  }
+#else
+// Original: file-scope static, constructed before main().
 #define REGISTER_LITE_OP(op_type__, OpClass)                                   \
   static paddle::lite::OpLiteRegistrar op_type__##__registry(                  \
       #op_type__, []() {                                                       \
@@ -263,8 +295,38 @@ class ParamTypeDummyRegistry {
     OpKernelInfoCollector::Global().AddOp2path(#op_type__, __FILE__);          \
     return 0;                                                                  \
   }
+#endif
 
 // Register a kernel.
+#ifdef LITE_LAZY_REGISTER
+// Lazy version: KernelRegistrar is a function-local static, constructed on
+// the first call to touch_xxx(). No __mod_init_func entry is emitted.
+#define REGISTER_LITE_KERNEL(                                                  \
+    op_type__, target__, precision__, layout__, KernelClass, alias__)          \
+  int touch_##op_type__##target__##precision__##layout__##alias__() {          \
+    static paddle::lite::KernelRegistrar                                       \
+        op_type__##target__##precision__##layout__##alias__##_kernel_registry( \
+            #op_type__,                                                        \
+            TARGET(target__),                                                  \
+            PRECISION(precision__),                                            \
+            DATALAYOUT(layout__),                                              \
+            []() {                                                             \
+              std::unique_ptr<KernelClass> x(new KernelClass);                 \
+              x->set_op_type(#op_type__);                                      \
+              x->set_alias(#alias__);                                          \
+              return x;                                                        \
+            });                                                                \
+    op_type__##target__##precision__##layout__##alias__##_kernel_registry      \
+        .touch();                                                              \
+    OpKernelInfoCollector::Global().AddKernel2path(                            \
+        #op_type__ "," #target__ "," #precision__ "," #layout__ "," #alias__,  \
+        __FILE__);                                                             \
+    return 0;                                                                  \
+  }                                                                            \
+  ParamTypeRegistry(                                                           \
+      op_type__, target__, precision__, layout__, KernelClass, alias__)
+#else
+// Original: file-scope static, constructed before main().
 #define REGISTER_LITE_KERNEL(                                                 \
     op_type__, target__, precision__, layout__, KernelClass, alias__)         \
   static paddle::lite::KernelRegistrar                                        \
@@ -289,3 +351,4 @@ class ParamTypeDummyRegistry {
   }                                                                           \
   ParamTypeRegistry(                                                          \
       op_type__, target__, precision__, layout__, KernelClass, alias__)
+#endif

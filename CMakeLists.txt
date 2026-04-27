@@ -71,6 +71,7 @@ lite_option(LITE_WITH_PRECISION_PROFILE        "Enable precision profile in prof
 lite_option(LITE_WITH_LOG                      "Enable log printing or not."                                          ON)
 lite_option(LITE_WITH_EXCEPTION                "Enable throwing the exception when error occurs in lite"              OFF)
 lite_option(LITE_ON_TINY_PUBLISH               "Publish tiny predictor lib."                                          OFF)
+lite_option(LITE_LAZY_REGISTER                 "Lazy-register ops/kernels to eliminate pre-main static initializers (iOS default: ON)" OFF)
 lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL        "Build the model optimize tool"                                        OFF)
 lite_option(LITE_WITH_BENCHMARK_TEST           "Build benchmark test cases"                                           OFF)
 lite_option(LITE_THREAD_POOL                   "Enable thread pool in lite"                                           OFF)
@@ -140,6 +141,11 @@ endif()
 
 if(LITE_THREAD_POOL)
   add_definitions(-DLITE_USE_THREAD_POOL)
+endif()
+
+if(LITE_LAZY_REGISTER)
+  add_definitions(-DLITE_LAZY_REGISTER)
+  message(STATUS "LITE_LAZY_REGISTER=ON: static initializers will be eliminated via lazy registration")
 endif()
 
 if (LITE_THREAD_POOL OR ((ARM_TARGET_LANG STREQUAL "clang") AND (ARM_TARGET_ARCH_ABI STREQUAL "armv7")))
