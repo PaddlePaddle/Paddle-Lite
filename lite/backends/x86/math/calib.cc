@@ -13,8 +13,11 @@
 // limitations under the License.
 
 #include "lite/backends/x86/math/calib.h"
+
 #include <string.h>
+
 #include <vector>
+
 #include "lite/backends/x86/math/avx/avx_mathfuns.h"
 #include "lite/backends/x86/math/saturate.h"
 
@@ -234,6 +237,26 @@ void int8_to_fp32(const int8_t* in,
     }
     for (int i = 0; i < rem_rem; ++i) {
       dout_c[i] = in_scale * din_c[i];
+    }
+  }
+}
+
+void uint8_to_fp32(const uint8_t* in,
+                   float* out,
+                   const float* scale,
+                   int axis_size,
+                   int64_t outer_size,
+                   int64_t inner_size) {
+  // Scalar reference: out = (u - 128) * scale. Matches int8 path after xor-128.
+  // No speculative overread; safe for exact-sized ShareExternalMemory.
+  int64_t loop_size = axis_size * outer_size;
+#pragma omp parallel for
+  for (int64_t n = 0; n < loop_size; ++n) {
+    float in_scale = scale[n % axis_size];
+    const uint8_t* din_c = in + n * inner_size;
+    float* dout_c = out + n * inner_size;
+    for (int64_t i = 0; i < inner_size; ++i) {
+      dout_c[i] = in_scale * (static_cast<float>(din_c[i]) - 128.f);
     }
   }
 }

@@ -61,6 +61,34 @@ class CalibComputeFp16ToFp32
 
  private:
 };
+
+// Direct int8 → fp16 dequant (alias int8_to_fp16). out = q * scale.
+template <DataLayoutType DLType>
+class CalibComputeInt8ToFp16
+    : public KernelLite<TARGET(kARM), PRECISION(kInt8), DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeInt8ToFp16() override{};
+
+ private:
+};
+
+// Greyscale uint8 → fp16. out = (u - 128) * scale.
+template <DataLayoutType DLType>
+class CalibComputeUint8ToFp16
+    : public KernelLite<TARGET(kARM), PRECISION(kUInt8), DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeUint8ToFp16() override{};
+
+ private:
+};
 #endif
 
 template <DataLayoutType DLType>
@@ -85,6 +113,20 @@ class CalibComputeInt8ToFp32
   void Run() override;
 
   ~CalibComputeInt8ToFp32() override{};
+
+ private:
+};
+
+// Greyscale uint8 → float32. out = (u - 128) * scale (xor-128 equivalent).
+template <DataLayoutType DLType>
+class CalibComputeUint8ToFp32
+    : public KernelLite<TARGET(kARM), PRECISION(kUInt8), DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeUint8ToFp32() override{};
 
  private:
 };
