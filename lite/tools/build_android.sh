@@ -91,9 +91,7 @@ readonly THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for android compiling.
-readonly CMAKE_COMMON_OPTIONS="-DLITE_WITH_ARM=ON \
-                               -DLITE_WITH_X86=OFF \
-                               -DWITH_TESTING=OFF \
+readonly CMAKE_COMMON_OPTIONS="-DWITH_TESTING=OFF \
                                -DARM_TARGET_OS=android"
 # on mac environment, we should expand the maximum file num to compile successfully
 os_name=`uname -s`
@@ -165,7 +163,7 @@ function prepare_thirdparty {
         fi
         tar xzf $THIRDPARTY_TAR
     else
-        git submodule update --init --recursive
+        echo skipping submodules
     fi
 }
 ####################################################################################################
@@ -179,9 +177,17 @@ function prepare_thirdparty {
 ####################################################################################################
 
 # helper function for setting android api level
-function set_android_api_level {
+function set_android_api_level
+  if [ "${ARCH}" == "armv8" ]; then
+      NDK_ABI="arm64-v8a"
+  elif [ "${ARCH}" == "armv7" ]; then
+      NDK_ABI="armeabi-v7a"
+  else
+      NDK_ABI="${ARCH}"
+  fi
+ {
   # android api level for android version
-  if [ "${ARCH}" == "armv7" ]; then
+  if [ "${ARCH}" == "armv7" ] || [ "${ARCH}" == "x86" ]; then
       MIN_ANDROID_API_LEVEL=${MIN_ANDROID_API_LEVEL_ARMV7}
   else
       MIN_ANDROID_API_LEVEL=${MIN_ANDROID_API_LEVEL_ARMV8}
@@ -201,7 +207,7 @@ function set_android_api_level {
 function make_tiny_publish_so {
 
   if [ ! -d third-party ]; then
-     git checkout third-party
+     true # git checkout third-party
   fi
 
   # Step1. Create directory for compiling.
@@ -235,8 +241,26 @@ function make_tiny_publish_so {
 
   # android api level for android version
   set_android_api_level
+  if [ "${ARCH}" == "armv8" ]; then
+      NDK_ABI="arm64-v8a"
+  elif [ "${ARCH}" == "armv7" ]; then
+      NDK_ABI="armeabi-v7a"
+  else
+      NDK_ABI="${ARCH}"
+  fi
+
+
+  if [ "${ARCH}" == "x86_64" ] || [ "${ARCH}" == "x86" ]; then
+      with_arm=OFF
+      with_x86=ON
+  else
+      with_arm=ON
+      with_x86=OFF
+  fi
 
   local cmake_mutable_options="
+      -DLITE_WITH_ARM=$with_arm \
+      -DLITE_WITH_X86=$with_x86 \
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
       -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
@@ -245,6 +269,8 @@ function make_tiny_publish_so {
       -DLITE_WITH_JAVA=$WITH_JAVA \
       -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
       -DLITE_WITH_CV=$WITH_CV \
+      -DWITH_MKL=OFF \
+      -DWITH_AVX=ON \
       -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
       -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
@@ -279,6 +305,11 @@ function make_tiny_publish_so {
       -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY"
 
   cmake $workspace \
+      -DCMAKE_TOOLCHAIN_FILE=$NDK_ROOT/build/cmake/android.toolchain.cmake \
+      -DANDROID_ABI=$NDK_ABI \
+      -DANDROID_PLATFORM=android-21 \
+      -DANDROID_STL=c++_static \
+      -C $workspace/TryRunResults.cmake \
       ${CMAKE_COMMON_OPTIONS} \
       ${cmake_api_level_options} \
       ${cmake_mutable_options}  \
@@ -331,8 +362,26 @@ function make_full_publish_so {
 
   # android api level for android version
   set_android_api_level
+  if [ "${ARCH}" == "armv8" ]; then
+      NDK_ABI="arm64-v8a"
+  elif [ "${ARCH}" == "armv7" ]; then
+      NDK_ABI="armeabi-v7a"
+  else
+      NDK_ABI="${ARCH}"
+  fi
+
+
+  if [ "${ARCH}" == "x86_64" ] || [ "${ARCH}" == "x86" ]; then
+      with_arm=OFF
+      with_x86=ON
+  else
+      with_arm=ON
+      with_x86=OFF
+  fi
 
   local cmake_mutable_options="
+      -DLITE_WITH_ARM=$with_arm \
+      -DLITE_WITH_X86=$with_x86 \
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
       -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
@@ -341,6 +390,8 @@ function make_full_publish_so {
       -DLITE_WITH_JAVA=$WITH_JAVA \
       -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
       -DLITE_WITH_CV=$WITH_CV \
+      -DWITH_MKL=OFF \
+      -DWITH_AVX=ON \
       -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
       -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
@@ -371,12 +422,16 @@ function make_full_publish_so {
       -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
       -DLITE_WITH_PRECISION_PROFILE=$WITH_PRECISION_PROFILE \
-      -DANDROID_STL_TYPE=$ANDROID_STL \
       -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA \
       -DLITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS=$SKIP_SUPPORT_0_DIM_TENSOR_PASS \
       -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY"
 
   cmake $workspace \
+      -DCMAKE_TOOLCHAIN_FILE=$NDK_ROOT/build/cmake/android.toolchain.cmake \
+      -DANDROID_ABI=$NDK_ABI \
+      -DANDROID_PLATFORM=android-21 \
+      -DANDROID_STL=c++_static \
+      -C $workspace/TryRunResults.cmake \
       ${CMAKE_COMMON_OPTIONS} \
       ${cmake_api_level_options} \
       ${cmake_mutable_options}
@@ -456,6 +511,10 @@ function print_usage {
 ####################################################################################################
 function main {
     if [ -z "$1" ]; then
+    if [ "${ARCH}" == "x86_64" ] || [ "${ARCH}" == "x86" ]; then
+        WITH_CV=OFF
+    fi
+
         # compiling result contains light_api lib only, recommanded.
         make_tiny_publish_so $ARCH $TOOLCHAIN $ANDROID_STL
         exit 0
@@ -681,6 +740,10 @@ function main {
                 ;;
         esac
     done
+    if [ "${ARCH}" == "x86_64" ] || [ "${ARCH}" == "x86" ]; then
+        WITH_CV=OFF
+    fi
+
     # compiling result contains light_api lib only, recommanded.
     make_tiny_publish_so
     exit 0

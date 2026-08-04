@@ -13,7 +13,9 @@
  * limitations under the License. */
 
 #include "lite/backends/x86/jit/more/intrinsic/crf_decoding.h"
+
 #include <limits>
+
 #include "lite/backends/x86/cpu_info.h"
 #include "lite/backends/x86/jit/registry.h"
 
@@ -50,7 +52,7 @@ void CRFDecoding(const int seq_len,
     x_content = _mm512_loadu_ps(x + i_offset);
     alpha_content = _mm512_add_ps(w_content, x_content);
     // Save the alpha value.
-    _mm512_storeu_ps(alpha_value + i_offset, alpha_content);
+    _mm512_storeu_ps(alpha + i_offset, alpha_content);
 #else
     // AVX or AVX2
     // weights, input and alpha values.
@@ -133,13 +135,12 @@ void CRFDecoding(const int seq_len,
       }
 /* Update the alpha and track values. */
 #ifdef __AVX512F__
-      __m512 x_content =
-          _mm512_loadu_ps(x + seq_offset + this->num_ + j_offset);
+      __m512 x_content = _mm512_loadu_ps(x + seq_offset + tag_num + j_offset);
       max_score = _mm512_add_ps(max_score, x_content);
-      _mm512_storeu_ps(alpha + seq_offset + this->num_ + j_offset, max_score);
-      _mm512_storeu_si512(reinterpret_cast<__m512i*>(track + seq_offset +
-                                                     this->num_ + j_offset),
-                          max_j);
+      _mm512_storeu_ps(alpha + seq_offset + tag_num + j_offset, max_score);
+      _mm512_storeu_si512(
+          reinterpret_cast<__m512i*>(track + seq_offset + tag_num + j_offset),
+          max_j);
 #else
       __m256 x_content = _mm256_loadu_ps(x + seq_offset + tag_num + j_offset);
       max_score = _mm256_add_ps(max_score, x_content);
