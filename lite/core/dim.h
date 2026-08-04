@@ -21,6 +21,7 @@
 #include <numeric>
 #include <string>
 #include <vector>
+
 #include "lite/utils/replace_stl/stream.h"
 
 namespace paddle {
@@ -33,14 +34,14 @@ class DDimLite {
 
   DDimLite() = default;
 
-  explicit DDimLite(const std::vector<value_type> &x) { ConstructFrom(x); }
+  explicit DDimLite(const std::vector<value_type>& x) { ConstructFrom(x); }
   // DDimLite(std::initializer_list<value_type> init_list) :
   // DDimLite(std::vector<value_type>(init_list)) {}
 
-  void ConstructFrom(const std::vector<value_type> &x) { data_ = x; }
+  void ConstructFrom(const std::vector<value_type>& x) { data_ = x; }
 
   value_type operator[](int offset) const { return data_[offset]; }
-  value_type &operator[](int offset) { return data_[offset]; }
+  value_type& operator[](int offset) { return data_[offset]; }
   std::vector<int64_t> Vectorize() const { return data_; }
 
   size_t size() const { return data_.size(); }
@@ -48,7 +49,7 @@ class DDimLite {
 
   value_type production() const;
 
-  const std::vector<value_type> &data() const { return data_; }
+  const std::vector<value_type>& data() const { return data_; }
   value_type count(int start, int end) const;
 
   DDimLite Slice(int start, int end) const;
@@ -60,12 +61,13 @@ class DDimLite {
 
   std::string repr() const;
 
-  friend STL::ostream &operator<<(STL::ostream &os, const DDimLite &dims) {
+  // For Desktop/Standard C++ environments (Full API / Desktop Linux)
+  friend std::ostream& operator<<(std::ostream& os, const DDimLite& dims) {
     os << dims.repr();
     return os;
   }
 
-  friend bool operator==(const DDimLite &a, const DDimLite &b) {
+  friend bool operator==(const DDimLite& a, const DDimLite& b) {
     if (a.size() != b.size()) return false;
     for (size_t i = 0; i < a.size(); i++) {
       if (a[i] != b[i]) return false;
@@ -73,7 +75,7 @@ class DDimLite {
     return true;
   }
 
-  friend bool operator!=(const DDimLite &a, const DDimLite &b) {
+  friend bool operator!=(const DDimLite& a, const DDimLite& b) {
     if (a.size() != b.size()) return true;
     for (size_t i = 0; i < a.size(); i++) {
       if (a[i] != b[i]) return true;
@@ -88,5 +90,22 @@ class DDimLite {
 using DDim = paddle::lite::DDimLite;
 }  // namespace lite
 }  // namespace paddle
+
+// For Android Mobile environments (Tiny Publish with replace_stl)
+// We ONLY do this if we are using the custom replace_stl engine
+#if defined(LITE_ON_TINY_PUBLISH) && !defined(TARGET_IOS)
+namespace paddle {
+namespace lite {
+namespace replace_stl {
+// If STL is an alias for replace_stl, we need this specialization
+template <>
+inline ostream& ostream::operator<<(const DDimLite& obj) {
+  *this << obj.repr();
+  return *this;
+}
+}  // namespace replace_stl
+}  // namespace lite
+}  // namespace paddle
+#endif
 
 #endif  // LITE_CORE_DIM_H_

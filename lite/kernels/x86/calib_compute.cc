@@ -15,6 +15,7 @@
 #include "lite/kernels/x86/calib_compute.h"
 
 #include <vector>
+
 #include "lite/backends/x86/fluid/float16.h"
 #include "lite/backends/x86/math/calib.h"
 #include "lite/core/op_registry.h"
@@ -82,6 +83,16 @@ void CalibComputeInt8ToFp32<Ptype, DLType>::Run() {
   std::vector<float> scale = {param.scale};
   auto* dout = param.output->template mutable_data<float>();
   lite::x86::math::int8_to_fp32(
+      din, dout, scale.data(), 1, 1, param.input->numel());
+}
+
+template <PrecisionType Ptype, DataLayoutType DLType>
+void CalibComputeUint8ToFp32<Ptype, DLType>::Run() {
+  auto& param = this->template Param<operators::CalibParam>();
+  const auto* din = param.input->template data<uint8_t>();
+  std::vector<float> scale = {param.scale};
+  auto* dout = param.output->template mutable_data<float>();
+  lite::x86::math::uint8_to_fp32(
       din, dout, scale.data(), 1, 1, param.input->numel());
 }
 
@@ -164,6 +175,16 @@ typedef paddle::lite::kernels::x86::CalibComputeInt8ToFp32<PRECISION(kInt8),
     i8_int8_to_fp32;
 REGISTER_LITE_KERNEL(calib, kX86, kInt8, kNCHW, i8_int8_to_fp32, int8_to_fp32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .Finalize();
+
+typedef paddle::lite::kernels::x86::CalibComputeUint8ToFp32<PRECISION(kUInt8),
+                                                            DATALAYOUT(kNCHW)>
+    u8_uint8_to_fp32;
+REGISTER_LITE_KERNEL(
+    calib, kX86, kUInt8, kNCHW, u8_uint8_to_fp32, uint8_to_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kUInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
 

@@ -15,20 +15,23 @@
 #pragma once
 
 #include <time.h>
-#include <cstdio>
-#include <stdexcept>
 
+#include <cstdio>
 #include <memory>
+#include <stdexcept>
 #include <string>
 
 #define GLOG_NO_ABBREVIATED_SEVERITIES  // msvc conflict logging with windows.h
 #include "lite/utils/log/cp_logging.h"
 
 #if !defined(_WIN32)
-#include <dlfcn.h>     //  dladdr
+#include <dlfcn.h>  //  dladdr
+#ifndef LITE_WITH_ANDROID
 #include <execinfo.h>  // backtrace
+#endif
 #include <sys/stat.h>
 #include <sys/time.h>
+
 #include <algorithm>  // std::accumulate
 #else
 #define NOMINMAX  // msvc max/min macro conflict with std::min/max
@@ -40,6 +43,7 @@
 #define NOMINMAX  // msvc max/min macro conflict with std::min/max
 #include <windows.h>
 #include <winsock.h>
+
 #include <numeric>  // std::accumulate in msvc
 #undef min
 #undef max
@@ -47,17 +51,17 @@
 #define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
 #endif  // S_ISDIR
 
-static void *dlsym(void *handle, const char *symbol_name) {
+static void* dlsym(void* handle, const char* symbol_name) {
   FARPROC found_symbol;
   found_symbol = GetProcAddress((HMODULE)handle, symbol_name);
 
   if (found_symbol == NULL) {
     throw std::runtime_error(std::string(symbol_name) + " not found.");
   }
-  return reinterpret_cast<void *>(found_symbol);
+  return reinterpret_cast<void*>(found_symbol);
 }
 
-static void *dlopen(const char *filename, int flag) {
+static void* dlopen(const char* filename, int flag) {
   std::string file_name(filename);
   HMODULE hModule = LoadLibrary(file_name.c_str());
 #ifndef LITE_WITH_OPENCL
@@ -65,12 +69,12 @@ static void *dlopen(const char *filename, int flag) {
     throw std::runtime_error(file_name + " not found.");
   }
 #endif
-  return reinterpret_cast<void *>(hModule);
+  return reinterpret_cast<void*>(hModule);
 }
 
 #endif  // !_WIN32
 
-static void ExecShellCommand(const std::string &cmd, std::string *message) {
+static void ExecShellCommand(const std::string& cmd, std::string* message) {
   char buffer[128];
 #if !defined(_WIN32)
   std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
@@ -88,7 +92,7 @@ static void ExecShellCommand(const std::string &cmd, std::string *message) {
   }
 }
 
-static bool PathExists(const std::string &path) {
+static bool PathExists(const std::string& path) {
 #if !defined(_WIN32)
   struct stat statbuf;
   if (stat(path.c_str(), &statbuf) != -1) {
@@ -115,7 +119,7 @@ constexpr char kSEP = '/';
 constexpr char kSEP = '\\';
 #endif  // _WIN32
 
-static bool FileExists(const std::string &filepath) {
+static bool FileExists(const std::string& filepath) {
 #if !defined(_WIN32)
   struct stat buffer;
   return (stat(filepath.c_str(), &buffer) == 0);
@@ -125,7 +129,7 @@ static bool FileExists(const std::string &filepath) {
 #endif  // !_WIN32
 }
 
-static std::string DirName(const std::string &filepath) {
+static std::string DirName(const std::string& filepath) {
   auto pos = filepath.rfind(kSEP);
   if (pos == std::string::npos) {
     return "";
@@ -133,7 +137,7 @@ static std::string DirName(const std::string &filepath) {
   return filepath.substr(0, pos);
 }
 
-static void MkDir(const char *path) {
+static void MkDir(const char* path) {
   std::string path_error(path);
   path_error += " mkdir failed!";
 #if !defined(_WIN32)
@@ -153,7 +157,7 @@ static void MkDir(const char *path) {
 #endif  // !_WIN32
 }
 
-static void MkDirRecursively(const char *fullpath) {
+static void MkDirRecursively(const char* fullpath) {
   if (*fullpath == '\0') return;  // empty string
   if (FileExists(fullpath)) return;
 
