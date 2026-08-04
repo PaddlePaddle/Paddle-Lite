@@ -71,7 +71,7 @@ NNADAPTER_WITH_INTEL_OPENVINO=OFF
 NNADAPTER_INTEL_OPENVINO_SDK_ROOT=""
 NNADAPTER_INTEL_OPENVINO_SDK_VERSION=""
 NNADAPTER_WITH_GOOGLE_XNNPACK=OFF
-NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG="2ba5867c9555d0e7f0fd82b15a6da9887f9ae8d3"
+NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG="master"
 
 # options of compiling baidu XPU lib.
 WITH_KUNLUNXIN_XPU=OFF
@@ -148,6 +148,7 @@ function init_cmake_mutable_options {
 
     if [ "${ARCH}" == "x86" ]; then
         with_x86=ON
+        arm_arch=$ARCH
         arm_target_os=""
         WITH_TINY_PUBLISH=OFF
     else
@@ -306,7 +307,7 @@ function prepare_thirdparty {
         fi
         tar xzf $THIRDPARTY_TAR
     else
-        git submodule update --init --recursive
+        echo skipping submodules
     fi
     cd -
 }

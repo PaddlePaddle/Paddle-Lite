@@ -1,3 +1,17 @@
+# Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 #----------------------------------------------- NOT CHANGE ---------------------------------------
 find_package(PythonInterp REQUIRED)
 # A trick to generate the paddle_use_kernels.h
@@ -56,6 +70,15 @@ if(NOT LITE_ON_TINY_PUBLISH)
   lite_cc_library(paddle_api_full SRCS ${FULL_API_SRC} DEPS ${full_lib_DEPS} ${external_libs_DEPS})
 endif()
 
+if (LITE_ON_TINY_PUBLISH)
+    if(NOT TARGET paddle_full_api_shared)
+        add_custom_target(paddle_full_api_shared)
+    endif()
+    if(NOT TARGET bundle_full_api)
+        add_custom_target(bundle_full_api)
+    endif()
+endif()
+
 if (NOT LITE_ON_TINY_PUBLISH)
     #dynamic library
     lite_cc_library(paddle_light_api_shared SHARED SRCS ${LIGHT_API_SRC}
@@ -66,7 +89,6 @@ if (NOT LITE_ON_TINY_PUBLISH)
     if(LITE_WITH_METAL)
         target_link_libraries(paddle_full_api_shared ${METAL_LIBRARY} ${MPS_LIBRARY} ${GRAPHIC} ${FOUNDATION_LIBRARY})
     endif()
-
 
     #static library
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
@@ -86,7 +108,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
         add_dependencies(paddle_full_api_shared custom_linker_map)
         set_target_properties(paddle_light_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
         add_dependencies(paddle_light_api_shared custom_linker_map)
-   elseif(NOT WIN32)
+    elseif(NOT WIN32)
         set(LINK_MAP_FILE "${PADDLE_SOURCE_DIR}/lite/core/lite.map")
         set(LINK_FLAGS "-Wl,--version-script ${LINK_MAP_FILE}")
         add_custom_command(OUTPUT ${LINK_MAP_FILE} COMMAND :)
@@ -95,8 +117,8 @@ if (NOT LITE_ON_TINY_PUBLISH)
         add_dependencies(paddle_full_api_shared custom_linker_map)
         set_target_properties(paddle_light_api_shared PROPERTIES LINK_FLAGS ${LINK_FLAGS})
         add_dependencies(paddle_light_api_shared custom_linker_map)
-   endif()
-   if(NOT WIN32 AND NOT ARM_TARGET_OS STREQUAL "android" AND WITH_TESTING)
+    endif()
+    if(NOT WIN32 AND NOT ARM_TARGET_OS STREQUAL "android" AND WITH_TESTING)
         # check symbol hidden
         FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/check_symbol.cmake
             "execute_process(COMMAND sh -c \"${CMAKE_CURRENT_SOURCE_DIR}/../tools/check_symbol.sh"
@@ -117,10 +139,39 @@ if (NOT LITE_ON_TINY_PUBLISH)
         add_dependencies(lite_compile_deps check_symbol)
     endif()
 else()
+    # tiny publish mode
+    if(NOT TARGET paddle_full_api_shared)
+        add_custom_target(paddle_full_api_shared)
+    endif()
+    if(NOT TARGET bundle_full_api)
+        add_custom_target(bundle_full_api)
+    endif()
+
     # Compiling steps in tiny_publish format:
     # 1. compile all source files into .object `PADDLELITE_OBJS`
-    add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files})
+    
+if(LITE_WITH_X86)
+    # The ultimate fix for Paddle's CMake directory scoping bug.
+    # Re-apply AVX2 flags to math kernels in the api directory scope so PADDLELITE_OBJS inherits them.
+    file(GLOB X86_FIX_MATH_SRC "${PADDLE_SOURCE_DIR}/lite/backends/x86/math/*.cc")
+    file(GLOB X86_FIX_AVX_SRC "${PADDLE_SOURCE_DIR}/lite/backends/x86/math/avx/*.cc")
+    set_source_files_properties(${X86_FIX_MATH_SRC} ${X86_FIX_AVX_SRC} PROPERTIES COMPILE_FLAGS "-mavx -mavx2 -mfma -mf16c")
+endif()
+
+add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files})
+
     add_dependencies(PADDLELITE_OBJS fbs_headers)
+    if(LITE_WITH_X86)
+        include_directories(${XBYAK_INC_DIR})
+        include_directories(${XBYAK_INC_DIR}/xbyak)
+        include_directories(${EIGEN_INCLUDE_DIR})
+        include_directories(${XXHASH_INCLUDE_DIR})
+        include_directories(${CBLAS_INC_DIR})
+        add_dependencies(PADDLELITE_OBJS xbyak)
+        add_dependencies(PADDLELITE_OBJS eigen3)
+        add_dependencies(PADDLELITE_OBJS xxhash)
+        add_dependencies(PADDLELITE_OBJS cblas)
+    endif()
     if (IOS)
         # only sttaic lib is produced for IOS platform.
         add_library(paddle_api_light_bundled STATIC ${__lite_cc_files})
@@ -144,19 +195,31 @@ else()
 
         # 2. produce dynamic lib from PADDLELITE_OBJS
         add_library(paddle_light_api_shared SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+        if(LITE_WITH_X86)
+            target_link_libraries(paddle_light_api_shared gflags glog cblas xxhash m log)
+        else()
+            target_link_libraries(paddle_light_api_shared m log)
+        endif()
+
         set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
         #   2.1 link `paddle_light_api_shared` to third-party libs
         if (LITE_WITH_METAL)
             target_link_libraries(paddle_light_api_shared ${METAL_LIBRARY} ${MPS_LIBRARY} ${FOUNDATION_LIBRARY})
         endif()
 
-        if (LITE_WITH_LOG)
-            message(STATUS "link lite with log ${OHOS_LINKED_LIBS} ")
-            target_link_libraries(paddle_light_api_shared ${OHOS_LINKED_LIBS})
-        endif ()
         # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
         if (LITE_WITH_JAVA)
           add_library(paddle_lite_jni SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS> android/jni/native/paddle_lite_jni.cc android/jni/native/tensor_jni.cc)
+          if(LITE_WITH_X86)
+            target_link_libraries(paddle_lite_jni gflags glog cblas xxhash m log)
+          else()
+            target_link_libraries(paddle_lite_jni m log)
+          endif()
+            if(LITE_WITH_X86)
+                add_dependencies(paddle_lite_jni eigen3)
+                add_dependencies(paddle_lite_jni xxhash)
+                add_dependencies(paddle_lite_jni cblas)
+            endif()
           set_target_properties(paddle_lite_jni PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
           set_target_properties(paddle_lite_jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PADDLE_BINARY_DIR}/lite/api/android/jni/native)
         endif()
@@ -169,6 +232,10 @@ else()
             add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
         endif()
     endif()
+    # Define bundle_light_api even in tiny mode
+    if(NOT TARGET bundle_light_api)
+        add_custom_target(bundle_light_api DEPENDS paddle_api_light_bundled)
+    endif()
 endif()
 
 
@@ -178,7 +245,7 @@ if(WITH_TESTING)
 endif()
 
 # java API
-if (LITE_WITH_JAVA AND LITE_WITH_ARM)
+if (LITE_WITH_JAVA AND (LITE_WITH_ARM OR LITE_WITH_X86))
     add_subdirectory(android)
 endif()
 # python API

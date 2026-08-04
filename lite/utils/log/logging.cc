@@ -18,11 +18,14 @@
  */
 
 #include "lite/utils/log/logging.h"
+
 #include <iomanip>
+
 #include "lite/utils/env.h"
 
-#if defined(LITE_WITH_ARM) || defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || \
-    defined(LITE_WITH_PYTHON) || defined(LITE_WITH_XPU)
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86) ||                  \
+    defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_XPU)
 #ifdef LITE_WITH_LOG
 
 namespace paddle {
