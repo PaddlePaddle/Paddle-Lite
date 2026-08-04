@@ -14,11 +14,15 @@ limitations under the License. */
 
 #pragma once
 
+#ifdef LITE_WITH_MKL
 #include <mkl.h>
+#endif
 
+#ifdef LITE_WITH_MKL
 #ifndef LITE_WITH_STATIC_MKL
 
 #include <mutex>  // NOLINT
+
 #include "lite/backends/x86/dynamic_loader.h"
 #include "lite/backends/x86/port.h"
 
@@ -102,3 +106,4 @@ MKLML_ROUTINE_EACH(DECLARE_DYNAMIC_LOAD_MKLML_WRAP);
 }  // namespace paddle
 
 #endif  // LITE_WITH_STATIC_MKL
+#endif  // LITE_WITH_MKL

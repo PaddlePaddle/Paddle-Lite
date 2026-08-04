@@ -20,7 +20,9 @@ if(LITE_WITH_XPU)
   include(backends/xpu)
 endif()
 
-include(backends/x86)
+if(LITE_WITH_X86)
+  include(backends/x86)
+endif()
 
 # Add dependencies
 include(generic)                # simplify cmake module
@@ -38,6 +40,7 @@ if(LITE_WITH_ARM)
     include(external/arm_dnn_library)
   endif()
 else()
+  include(postproject)
   include(coveralls)
   include(external/gflags)      # download, build, install gflags
   include(external/glog)        # download, build, install glog
@@ -48,7 +51,7 @@ else()
   include(ccache)               # set ccache for compilation
   include(util)                 # set unittest and link libs
   include(version)              # set PADDLE_VERSION
-  if(NOT APPLE AND NOT OHOS)
+  if(NOT APPLE)
     include(flags)
   endif()
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
