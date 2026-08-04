@@ -13,7 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/x86/math/im2col.h"
+
 #include <vector>
+
 #include "lite/backends/x86/math/im2col_cfo_cpu.h"
 #include "lite/utils/log/cp_logging.h"
 
@@ -286,6 +288,27 @@ template class Col2ImFunctor<lite::x86::math::ColFormat::kOCF,
                              lite::TargetType::kX86,
                              double>;
 
+}  // namespace math
+}  // namespace x86
+}  // namespace lite
+}  // namespace paddle
+
+namespace paddle {
+namespace lite {
+namespace x86 {
+namespace math {
+template class Im2ColFunctor<lite::x86::math::ColFormat::kCFO,
+                             lite::TargetType::kX86,
+                             signed char>;
+template class Col2ImFunctor<lite::x86::math::ColFormat::kCFO,
+                             lite::TargetType::kX86,
+                             signed char>;
+template class Im2ColFunctor<lite::x86::math::ColFormat::kOCF,
+                             lite::TargetType::kX86,
+                             signed char>;
+template class Col2ImFunctor<lite::x86::math::ColFormat::kOCF,
+                             lite::TargetType::kX86,
+                             signed char>;
 }  // namespace math
 }  // namespace x86
 }  // namespace lite
