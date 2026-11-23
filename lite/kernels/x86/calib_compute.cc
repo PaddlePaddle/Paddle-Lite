@@ -86,6 +86,57 @@ void CalibComputeInt8ToFp32<Ptype, DLType>::Run() {
 }
 
 template <PrecisionType Ptype, DataLayoutType DLType>
+void CalibComputeUint8ToFp32<Ptype, DLType>::Run() {
+  auto& param = this->template Param<operators::CalibParam>();
+  const auto* din = param.input->template data<uint8_t>();
+  std::vector<float> scale = {param.scale};
+  auto* dout = param.output->template mutable_data<float>();
+  lite::x86::math::uint8_to_fp32(
+      din, dout, scale.data(), 1, 1, param.input->numel());
+}
+
+template <PrecisionType Ptype, DataLayoutType DLType>
+void CalibComputeInt8ToFp16<Ptype, DLType>::Run() {
+  auto& param = this->template Param<operators::CalibParam>();
+  const auto* din = param.input->template data<signed char>();
+  const float scale = param.scale;
+  auto* dout = param.output->template mutable_data<float16>();
+  // out = (fp16)(q * scale); q is signed int8 (xor-128 contract)
+  for (auto i = 0; i < param.input->numel(); ++i) {
+    dout[i] = lite::fluid::float16(scale * static_cast<float>(din[i])).x;
+  }
+}
+
+template <PrecisionType Ptype, DataLayoutType DLType>
+void CalibComputeUint8ToFp16<Ptype, DLType>::Run() {
+  auto& param = this->template Param<operators::CalibParam>();
+  const auto* din = param.input->template data<uint8_t>();
+  const float scale = param.scale;
+  auto* dout = param.output->template mutable_data<float16>();
+  // out = (fp16)((u - 128) * scale)  ≡ int8 path after q = (int8_t)(u ^ 128)
+  for (auto i = 0; i < param.input->numel(); ++i) {
+    dout[i] =
+        lite::fluid::float16(scale * (static_cast<float>(din[i]) - 128.f)).x;
+  }
+}
+
+template <PrecisionType Ptype, DataLayoutType DLType>
+void CalibComputeFp32ToUint8<Ptype, DLType>::Run() {
+  auto& param = this->template Param<operators::CalibParam>();
+  const auto* din = param.input->template data<float>();
+  auto* dout = param.output->template mutable_data<uint8_t>();
+  for (auto i = 0; i < param.input->numel(); ++i) {
+    float v = din[i];
+    if (v < 0.f) {
+      v = 0.f;
+    } else if (v > 1.f) {
+      v = 1.f;
+    }
+    dout[i] = static_cast<uint8_t>(v * 255.f + 0.5f);
+  }
+}
+
+template <PrecisionType Ptype, DataLayoutType DLType>
 void CalibComputeInt32ToFp32<Ptype, DLType>::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<int32_t>();
@@ -165,6 +216,53 @@ typedef paddle::lite::kernels::x86::CalibComputeInt8ToFp32<PRECISION(kInt8),
 REGISTER_LITE_KERNEL(calib, kX86, kInt8, kNCHW, i8_int8_to_fp32, int8_to_fp32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .Finalize();
+
+typedef paddle::lite::kernels::x86::CalibComputeUint8ToFp32<PRECISION(kUInt8),
+                                                            DATALAYOUT(kNCHW)>
+    u8_uint8_to_fp32;
+REGISTER_LITE_KERNEL(
+    calib, kX86, kUInt8, kNCHW, u8_uint8_to_fp32, uint8_to_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kUInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .Finalize();
+
+typedef paddle::lite::kernels::x86::CalibComputeInt8ToFp16<PRECISION(kInt8),
+                                                           DATALAYOUT(kNCHW)>
+    i8_int8_to_fp16;
+REGISTER_LITE_KERNEL(calib, kX86, kInt8, kNCHW, i8_int8_to_fp16, int8_to_fp16)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFP16))})
+    .Finalize();
+
+typedef paddle::lite::kernels::x86::CalibComputeUint8ToFp16<PRECISION(kUInt8),
+                                                            DATALAYOUT(kNCHW)>
+    u8_uint8_to_fp16;
+REGISTER_LITE_KERNEL(
+    calib, kX86, kUInt8, kNCHW, u8_uint8_to_fp16, uint8_to_fp16)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kUInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFP16))})
+    .Finalize();
+
+typedef paddle::lite::kernels::x86::CalibComputeFp32ToUint8<PRECISION(kFloat),
+                                                            DATALAYOUT(kNCHW)>
+    fp_fp32_to_uint8;
+REGISTER_LITE_KERNEL(
+    calib, kX86, kFloat, kNCHW, fp_fp32_to_uint8, fp32_to_uint8)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kUInt8))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib_once, kX86, kFloat, kNCHW, fp_fp32_to_uint8, fp32_to_uint8)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kUInt8))})
     .Finalize();
 
 typedef paddle::lite::kernels::x86::CalibComputeInt32ToFp32<PRECISION(kFloat),
@@ -250,6 +348,26 @@ REGISTER_LITE_KERNEL(
     calib_once, kX86, kInt8, kNCHW, i8_int8_to_fp32, int8_to_fp32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib_once, kX86, kInt8, kNCHW, i8_int8_to_fp16, int8_to_fp16)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFP16))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib_once, kX86, kUInt8, kNCHW, u8_uint8_to_fp32, uint8_to_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kUInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib_once, kX86, kUInt8, kNCHW, u8_uint8_to_fp16, uint8_to_fp16)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kUInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFP16))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(

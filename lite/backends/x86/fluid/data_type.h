@@ -15,9 +15,36 @@ limitations under the License. */
 #pragma once
 #include <string>
 #include <typeindex>
+
 #include "lite/backends/x86/fluid/float16.h"
+#ifndef LITE_ON_TINY_PUBLISH
 #include "lite/core/framework.pb.h"
+#endif
 #include "lite/utils/log/cp_logging.h"
+
+#ifdef LITE_ON_TINY_PUBLISH
+namespace paddle {
+namespace framework {
+namespace proto {
+struct VarType {
+  enum Type {
+    BOOL = 0,
+    INT16 = 1,
+    INT32 = 2,
+    INT64 = 3,
+    FP16 = 4,
+    FP32 = 5,
+    FP64 = 6,
+    SIZE_T = 19,
+    UINT8 = 20,
+    INT8 = 21,
+    RAW = 25,
+  };
+};
+}  // namespace proto
+}  // namespace framework
+}  // namespace paddle
+#endif
 
 namespace paddle {
 namespace lite {
@@ -36,15 +63,16 @@ struct DataTypeTrait<void> {
   callback(cpp_type, ::paddle::framework::proto::VarType::proto_type);
 
 #define _ForEachDataType_(callback)                                        \
-  _ForEachDataTypeHelper_(callback, float, FP32);                          \
-  _ForEachDataTypeHelper_(callback, ::paddle::lite::fluid::float16, FP16); \
-  _ForEachDataTypeHelper_(callback, double, FP64);                         \
+  _ForEachDataTypeHelper_(callback, bool, BOOL);                           \
+  _ForEachDataTypeHelper_(callback, int16_t, INT16);                       \
   _ForEachDataTypeHelper_(callback, int, INT32);                           \
   _ForEachDataTypeHelper_(callback, int64_t, INT64);                       \
-  _ForEachDataTypeHelper_(callback, bool, BOOL);                           \
+  _ForEachDataTypeHelper_(callback, ::paddle::lite::fluid::float16, FP16); \
+  _ForEachDataTypeHelper_(callback, float, FP32);                          \
+  _ForEachDataTypeHelper_(callback, double, FP64);                         \
+  _ForEachDataTypeHelper_(callback, size_t, SIZE_T);                       \
   _ForEachDataTypeHelper_(callback, uint8_t, UINT8);                       \
-  _ForEachDataTypeHelper_(callback, int16_t, INT16);                       \
-  _ForEachDataTypeHelper_(callback, int8_t, INT8)
+  _ForEachDataTypeHelper_(callback, int8_t, INT8);
 
 #define DefineDataTypeTrait(cpp_type, proto_type) \
   template <>                                     \
@@ -54,8 +82,6 @@ struct DataTypeTrait<void> {
 
 _ForEachDataType_(DefineDataTypeTrait);
 
-#undef DefineDataTypeTrait
-
 extern framework::proto::VarType::Type ToDataType(std::type_index type);
 extern std::type_index ToTypeIndex(framework::proto::VarType::Type type);
 
@@ -63,24 +89,23 @@ template <typename Visitor>
 inline void VisitDataType(framework::proto::VarType::Type type,
                           Visitor visitor) {
 #define VisitDataTypeCallback(cpp_type, proto_type) \
-  do {                                              \
-    if (type == proto_type) {                       \
-      visitor.template apply<cpp_type>();           \
-      return;                                       \
-    }                                               \
-  } while (0)
+  if (type == proto_type) {                         \
+    visitor.template apply<cpp_type>();             \
+    return;                                         \
+  }
 
   _ForEachDataType_(VisitDataTypeCallback);
 #undef VisitDataTypeCallback
-  LOG(FATAL) << "Not supported " << type;
+  LOG(FATAL) << "Unknown data type: " << static_cast<int>(type);
 }
 
 extern std::string DataTypeToString(const framework::proto::VarType::Type type);
 extern size_t SizeOfType(framework::proto::VarType::Type type);
-inline std::ostream& operator<<(std::ostream& out,
-                                const framework::proto::VarType::Type& type) {
-  out << DataTypeToString(type);
-  return out;
+
+inline void CheckDataType(std::type_index expected,
+                          const framework::proto::VarType::Type& type) {
+  auto actual = ToDataType(expected);
+  CHECK_EQ(actual, type) << "Data type mismatch";
 }
 
 }  // namespace fluid

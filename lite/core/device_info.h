@@ -104,16 +104,23 @@ class DeviceInfo {
 
   int llc_size() const {
     auto size = absolute_l3cache_size_;
+    int idx = 0;
+    if (!active_ids_.empty()) idx = active_ids_[0];
+    const int n3 = static_cast<int>(L3_cache_.size());
+    const int n2 = static_cast<int>(L2_cache_.size());
     switch (l3_cache_method_) {
       // kDeviceL3Cache = 0, use the system L3 Cache size, best performance.
       case L3CacheSetMethod::kDeviceL3Cache:
-        size = L3_cache_[active_ids_[0]] > 0 ? L3_cache_[active_ids_[0]]
-                                             : L2_cache_[active_ids_[0]];
+        if (idx >= 0 && idx < n3 && L3_cache_[idx] > 0) {
+          size = L3_cache_[idx];
+        } else if (idx >= 0 && idx < n2) {
+          size = L2_cache_[idx];
+        }
         break;
       // kDeviceL2Cache = 1, use the system L2 Cache size, trade off performance
       // with less memory consumption.
       case L3CacheSetMethod::kDeviceL2Cache:
-        size = L2_cache_[active_ids_[0]];
+        if (idx >= 0 && idx < n2) size = L2_cache_[idx];
         break;
       // kAbsolute = 2, use the external setting.
       case L3CacheSetMethod::kAbsolute:
@@ -124,50 +131,10 @@ class DeviceInfo {
     return size > 0 ? size : 512 * 1024;
   }
 
-  inline bool has_dot() const {
-#ifdef WITH_ARM_DOTPROD
-    std::vector<ARMArch> int8_arch = {kX1,
-                                      kX2,
-                                      kA55,
-                                      kA76,
-                                      kA77,
-                                      kA78,
-                                      kGold,
-                                      kGold_Prime,
-                                      kSilver,
-                                      kA710,
-                                      kA510};
-    for (int i = 0; i < core_num_; ++i) {
-      auto iter = std::find(int8_arch.begin(), int8_arch.end(), archs_[i]);
-      if (iter == std::end(int8_arch)) {
-        return false;
-      }
-    }
-    return true;
-#else
-    return false;
-#endif
-  }
-  bool has_fp16() const {
-    std::vector<ARMArch> fp16_arch = {kX1,
-                                      kX2,
-                                      kA55,
-                                      kA75,
-                                      kA76,
-                                      kA77,
-                                      kA78,
-                                      kGold,
-                                      kGold_Prime,
-                                      kSilver,
-                                      kA710};
-    for (int i = 0; i < core_num_; ++i) {
-      auto iter = std::find(fp16_arch.begin(), fp16_arch.end(), archs_[i]);
-      if (iter != std::end(fp16_arch)) {
-        return true;
-      }
-    }
-    return false;
-  }
+  // Runtime HWCAP (ASIMDDP / ASIMDHP) on aarch64 Android; CPU-part allow-list
+  // only if getauxval(AT_HWCAP) is 0. Unknown CPU part stays kARMArch_UNKOWN.
+  bool has_dot() const;
+  bool has_fp16() const;
 
   template <typename T>
   T* workspace_data() {
@@ -219,6 +186,7 @@ class DeviceInfo {
   void SetArchInfo(int argc, ...);
   bool SetCPUInfoByName();
   void SetCPUInfoByProb();
+  void EnsureCoreTopology();
   void RequestPowerFullMode(int thread_num);
   void RequestPowerHighMode(int thread_num);
   void RequestPowerLowMode(int thread_num);

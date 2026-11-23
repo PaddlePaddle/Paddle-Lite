@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef LITE_WITH_MKL
 #if defined(PADDLE_WITH_MKLML) && !defined(LITE_WITH_STATIC_MKL)
 #include "lite/backends/x86/mklml.h"
 
@@ -31,3 +32,4 @@ MKLML_ROUTINE_EACH(DEFINE_WRAP);
 }  // namespace paddle
 
 #endif  // LITE_WITH_STATIC_MKL
+#endif  // LITE_WITH_MKL

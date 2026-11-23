@@ -44,12 +44,15 @@ if (LITE_BUILD_TAILOR)
             # If kernel file name is `conv_compute.cc`, need copy conv_depthwise.cc, conv_winograd.cc,
             # conv_direct.cc and conv_gemmlike.cc into build dir, and rename it by adding a suffix.
             if (${filename} STREQUAL "conv_compute")
-                execute_process(
-                    COMMAND ${CMAKE_COMMAND} -E copy "${PADDLE_SOURCE_DIR}/lite/kernels/${target}/conv_depthwise.cc" "${kernel_tailor_src_dir}/conv_depthwise_${target}_${suffix}.cc"
-                    COMMAND ${CMAKE_COMMAND} -E copy "${PADDLE_SOURCE_DIR}/lite/kernels/${target}/conv_winograd.cc" "${kernel_tailor_src_dir}/conv_winograd_${target}_${suffix}.cc"
-                    COMMAND ${CMAKE_COMMAND} -E copy "${PADDLE_SOURCE_DIR}/lite/kernels/${target}/conv_direct.cc" "${kernel_tailor_src_dir}/conv_direct_${target}_${suffix}.cc"
-                    COMMAND ${CMAKE_COMMAND} -E copy "${PADDLE_SOURCE_DIR}/lite/kernels/${target}/conv_gemmlike.cc" "${kernel_tailor_src_dir}/conv_gemmlike_${target}_${suffix}.cc"
-                )
+                # Copy only conv helpers that exist for this target (includes conv_depthwise_common for ARM FP16).
+                foreach(_helper conv_depthwise conv_winograd conv_direct conv_gemmlike conv_depthwise_common)
+                    if(EXISTS "${PADDLE_SOURCE_DIR}/lite/kernels/${target}/${_helper}.cc")
+                        execute_process(
+                            COMMAND ${CMAKE_COMMAND} -E copy
+                                "${PADDLE_SOURCE_DIR}/lite/kernels/${target}/${_helper}.cc"
+                                "${kernel_tailor_src_dir}/${_helper}_${target}_${suffix}.cc")
+                    endif()
+                endforeach()
             endif()
             # parse_tailored_kernel.py is the actual py script to deal with tailor kernel.
             # Note we must distinguish the first time and not.

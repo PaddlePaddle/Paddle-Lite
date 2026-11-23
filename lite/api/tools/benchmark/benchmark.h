@@ -25,9 +25,12 @@
 #include <vector>
 #include "lite/api/paddle_api.h"
 #include "lite/api/tools/benchmark/utils/flags.h"
+#if !(defined(__ANDROID__) && defined(LITE_WITH_X86))
 #include "lite/api/tools/opt_base.h"
+#endif
 #include "lite/core/device_info.h"
 #include "lite/utils/log/cp_logging.h"
+#include "lite/utils/io.h"
 #include "lite/utils/model_util.h"
 #include "lite/utils/string.h"
 
@@ -344,6 +347,23 @@ void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
 }
 
 const std::string OutputOptModel(const std::string& opt_model_file) {
+#if defined(__ANDROID__) && defined(LITE_WITH_X86)
+  bool is_opt_model =
+      (FLAGS_uncombined_model_dir.empty() && FLAGS_model_file.empty() &&
+       FLAGS_param_file.empty() && !FLAGS_optimized_model_file.empty());
+  if (!is_opt_model) {
+    std::cerr << "x86 benchmark_bin supports prebuilt .nb models only"
+              << std::endl;
+    std::abort();
+  }
+  if (!paddle::lite::IsFileExists(opt_model_file)) {
+    std::cerr << lite::string_format("Mode file[%s] not exist!",
+                                     opt_model_file.c_str())
+              << std::endl;
+    std::abort();
+  }
+  return FLAGS_optimized_model_file;
+#else
   auto opt = paddle::lite_api::OptBase();
 
   if (FLAGS_backend != "") {
@@ -423,6 +443,7 @@ const std::string OutputOptModel(const std::string& opt_model_file) {
 
   StoreBenchmarkResult(ss.str());
   return saved_opt_model_file;
+#endif
 }
 
 template <typename T>

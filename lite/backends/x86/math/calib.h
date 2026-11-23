@@ -15,7 +15,9 @@
 #pragma once
 
 #include <stdint.h>
+
 #include <vector>
+
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 
@@ -36,6 +38,14 @@ void int8_to_fp32(const int8_t* in,
                   int axis_size,
                   int64_t outer_size,
                   int64_t inner_size);
+
+// Greyscale uint8 → float: out = (u - 128) * scale (matches int8 xor-128).
+void uint8_to_fp32(const uint8_t* in,
+                   float* out,
+                   const float* scale,
+                   int axis_size,
+                   int64_t outer_size,
+                   int64_t inner_size);
 
 }  // namespace math
 }  // namespace x86

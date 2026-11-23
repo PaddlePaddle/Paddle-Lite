@@ -51,7 +51,10 @@ ExternalProject_Add(
     SOURCE_DIR      ${GLOG_SOURCES_DIR}
     STAMP_DIR       ${THIRD_PARTY_PATH}/install/glog/glog-stamp
     UPDATE_COMMAND  ""
-    CMAKE_ARGS      ${CROSS_COMPILE_CMAKE_ARGS}
+    CMAKE_ARGS      
+                    -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+                    -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+                    ${CROSS_COMPILE_CMAKE_ARGS}
                     ${OPTIONAL_ARGS}
                     -DCMAKE_INSTALL_PREFIX=${GLOG_INSTALL_DIR}
                     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
