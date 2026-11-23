@@ -15,7 +15,9 @@
 #pragma once
 
 #include <stdint.h>
+
 #include <vector>
+
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
 
@@ -29,6 +31,24 @@ typedef __fp16 float16_t;
 void fp16_to_fp32(const float16_t* in, float* out, int size);
 
 void fp32_to_fp16(const float* in, float16_t* out, int size);
+
+// Direct int8 / uint8 → fp16 dequant (no intermediate float32 buffer).
+// int8:  out = q * scale
+// uint8: out = (u - 128) * scale  (matches xor-128 int8 contract)
+// Implementations do not read past numel (safe for exact ShareExternalMemory).
+void int8_to_fp16(const int8_t* in,
+                  float16_t* out,
+                  const float* scale,
+                  int axis_size,
+                  int64_t outer_size,
+                  int64_t inner_size);
+
+void uint8_to_fp16(const uint8_t* in,
+                   float16_t* out,
+                   const float* scale,
+                   int axis_size,
+                   int64_t outer_size,
+                   int64_t inner_size);
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

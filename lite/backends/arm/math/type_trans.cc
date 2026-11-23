@@ -13,9 +13,12 @@
 // limitations under the License.
 
 #include "lite/backends/arm/math/type_trans.h"
+
 #include <arm_neon.h>
 #include <string.h>
+
 #include <vector>
+
 #include "lite/backends/arm/math/saturate.h"
 #include "lite/core/parallel_defines.h"
 
@@ -265,107 +268,100 @@ void fp32_to_int16(const float* din,
   LITE_PARALLEL_END()
 }
 
+// Convert signed int8 → float32 with per-axis scale.
+//
+// IMPORTANT: Do not software-pipeline a speculative load of the *next* 16-byte
+// block inside the last iteration. The old asm did that and SEGV_ACCERR on
+// exact-sized ShareExternalMemory buffers (common for greyscale camera frames).
+// Process load→convert→store per block with NEON intrinsics only.
 void int8_to_fp32(const int8_t* in,
                   float* out,
                   const float* scale,
                   int axis_size,
                   int64_t outer_size,
                   int64_t inner_size) {
-  int cnt = inner_size / 16;
-  int remain = inner_size & 15;
+  int cnt = static_cast<int>(inner_size / 16);
+  int remain = static_cast<int>(inner_size & 15);
   int64_t loop_size = axis_size * outer_size;
 
   LITE_PARALLEL_BEGIN(n, tid, loop_size) {
     float in_scale = scale[n % axis_size];
-    const signed char* din_c = in + n * inner_size;
+    const int8_t* din_c = in + n * inner_size;
     float* dout_c = out + n * inner_size;
     float32x4_t vscale = vdupq_n_f32(in_scale);
-    if (cnt > 0) {
-      int loop = cnt;
-      const signed char* din_ptr = din_c;
-      float* dout_ptr = dout_c;
-#ifdef __aarch64__
-      asm volatile(
-          "ldp     d0, d1, [%[in]], #16               \n" /* load 16 int8*/
-          "0:                                 \n"         /* main loop */
-          "sshll   v2.8h, v0.8b, #0           \n"         /* trans to int16*/
-          "sshll   v3.8h, v1.8b, #0           \n"         /* trans to int16*/
-
-          "sshll   v4.4s, v2.4h, #0           \n" /* trans to int32*/
-          "sshll2  v5.4s, v2.8h, #0           \n" /* trans to int32*/
-          "sshll   v6.4s, v3.4h, #0           \n" /* trans to int32*/
-          "sshll2  v7.4s, v3.8h, #0           \n" /* trans to int32*/
-
-          "ldp     d0, d1, [%[in]], #16       \n" /* load 16 int8*/
-
-          "scvtf   v8.4s, v4.4s               \n" /* trans to fp32*/
-          "scvtf   v9.4s, v5.4s               \n" /* trans to fp32*/
-          "scvtf   v10.4s, v6.4s              \n" /* trans to fp32*/
-          "scvtf   v11.4s, v7.4s              \n" /* trans to fp32*/
-
-          "subs    %[loop], %[loop], #1       \n"
-
-          "fmul    v4.4s, v8.4s, %[scale].4s  \n" /* mul with scale*/
-          "fmul    v5.4s, v9.4s, %[scale].4s  \n" /* mul with scale*/
-          "fmul    v6.4s, v10.4s, %[scale].4s \n" /* mul with scale*/
-          "fmul    v7.4s, v11.4s, %[scale].4s \n" /* mul with scale*/
-
-          "stp     q4, q5, [%[out]], #32      \n" /* write to memory*/
-          "stp     q6, q7, [%[out]], #32      \n" /* write to memory*/
-
-          "bne     0b                         \n"
-          : [loop] "+r"(loop), [in] "+r"(din_ptr), [out] "+r"(dout_ptr)
-          : [scale] "w"(vscale)
-          : "cc",
-            "memory",
-            "v0",
-            "v1",
-            "v2",
-            "v3",
-            "v4",
-            "v5",
-            "v6",
-            "v7",
-            "v8",
-            "v9",
-            "v10",
-            "v11");
-#else
-      asm volatile(
-          "vld1.32    {d0-d1},    [%[in]]!            @ load 16 int8\n"
-          "0:                                 @ main loop\n"
-          "vmovl.s8      q2, d0               @ trans to int16\n"
-          "vmovl.s8      q3, d1               @ trans to int16\n"
-          "vmovl.s16     q4, d4               @ trans to int32\n"
-          "vmovl.s16     q5, d5               @ trans to int32\n"
-          "vmovl.s16     q6, d6               @ trans to int32\n"
-          "vmovl.s16     q7, d7               @ trans to int32\n"
-          "vcvt.f32.s32  q0, q4               @ trans to fp32\n"
-          "vcvt.f32.s32  q1, q5               @ trans to fp32\n"
-          "vcvt.f32.s32  q2, q6               @ trans to fp32\n"
-          "vcvt.f32.s32  q3, q7               @ trans to fp32\n"
-          "vmul.f32      q4, q0, %q[scale]    @ mul with scale\n"
-          "vmul.f32      q5, q1, %q[scale]    @ mul with scale\n"
-          "vmul.f32      q6, q2, %q[scale]    @ mul with scale\n"
-          "vmul.f32      q7, q3, %q[scale]    @ mul with scale\n"
-
-          "vld1.32    {d0-d1},    [%[in]]!    @ load 16 int8\n"
-
-          "subs          %[loop], #1            \n"
-
-          "vst1.f32      {d8-d11}, [%[out]]!  @ write to memory\n"
-          "vst1.f32      {d12-d15}, [%[out]]! @ write to memory\n"
-
-          "bne           0b                     \n"
-          : [loop] "+r"(loop), [in] "+r"(din_ptr), [out] "+r"(dout_ptr)
-          : [scale] "w"(vscale)
-          : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
-#endif  // __aarch64__
+    const int8_t* din_ptr = din_c;
+    float* dout_ptr = dout_c;
+    for (int i = 0; i < cnt; ++i) {
+      int8x16_t vin = vld1q_s8(din_ptr);
+      din_ptr += 16;
+      int16x8_t v16_lo = vmovl_s8(vget_low_s8(vin));
+      int16x8_t v16_hi = vmovl_s8(vget_high_s8(vin));
+      float32x4_t f0 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_low_s16(v16_lo))), vscale);
+      float32x4_t f1 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_high_s16(v16_lo))), vscale);
+      float32x4_t f2 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_low_s16(v16_hi))), vscale);
+      float32x4_t f3 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_high_s16(v16_hi))), vscale);
+      vst1q_f32(dout_ptr, f0);
+      vst1q_f32(dout_ptr + 4, f1);
+      vst1q_f32(dout_ptr + 8, f2);
+      vst1q_f32(dout_ptr + 12, f3);
+      dout_ptr += 16;
     }
-    const signed char* din_r = din_c + 16 * cnt;
-    float* dout_r = dout_c + 16 * cnt;
     for (int i = 0; i < remain; ++i) {
-      dout_r[i] = in_scale * din_r[i];
+      dout_ptr[i] = in_scale * static_cast<float>(din_ptr[i]);
+    }
+  }
+  LITE_PARALLEL_END()
+}
+
+// uint8 greyscale → float32. Matches int8 xor-128 path:
+//   q = (int8_t)(u ^ 128)  ≡  (int)u - 128
+//   out = q * scale
+// so apps can ShareExternalMemory raw luma without a host xor copy buffer.
+void uint8_to_fp32(const uint8_t* in,
+                   float* out,
+                   const float* scale,
+                   int axis_size,
+                   int64_t outer_size,
+                   int64_t inner_size) {
+  int cnt = static_cast<int>(inner_size / 16);
+  int remain = static_cast<int>(inner_size & 15);
+  int64_t loop_size = axis_size * outer_size;
+  const int16x8_t v128 = vdupq_n_s16(128);
+
+  LITE_PARALLEL_BEGIN(n, tid, loop_size) {
+    float in_scale = scale[n % axis_size];
+    const uint8_t* din_c = in + n * inner_size;
+    float* dout_c = out + n * inner_size;
+    float32x4_t vscale = vdupq_n_f32(in_scale);
+    const uint8_t* din_ptr = din_c;
+    float* dout_ptr = dout_c;
+    for (int i = 0; i < cnt; ++i) {
+      uint8x16_t vu = vld1q_u8(din_ptr);
+      din_ptr += 16;
+      int16x8_t s_lo =
+          vsubq_s16(vreinterpretq_s16_u16(vmovl_u8(vget_low_u8(vu))), v128);
+      int16x8_t s_hi =
+          vsubq_s16(vreinterpretq_s16_u16(vmovl_u8(vget_high_u8(vu))), v128);
+      float32x4_t f0 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_low_s16(s_lo))), vscale);
+      float32x4_t f1 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_high_s16(s_lo))), vscale);
+      float32x4_t f2 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_low_s16(s_hi))), vscale);
+      float32x4_t f3 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_high_s16(s_hi))), vscale);
+      vst1q_f32(dout_ptr, f0);
+      vst1q_f32(dout_ptr + 4, f1);
+      vst1q_f32(dout_ptr + 8, f2);
+      vst1q_f32(dout_ptr + 12, f3);
+      dout_ptr += 16;
+    }
+    for (int i = 0; i < remain; ++i) {
+      dout_ptr[i] = in_scale * (static_cast<float>(din_ptr[i]) - 128.f);
     }
   }
   LITE_PARALLEL_END()
