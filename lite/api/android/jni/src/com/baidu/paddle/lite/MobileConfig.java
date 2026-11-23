@@ -100,8 +100,20 @@ public class MobileConfig extends ConfigBase {
         return liteModelBuffer;
     }
 
+    /**
+     * When true, skip runtime DequantizeWeight() for INT8 graphs (keep_quantized_weights).
+     */
+    public void setKeepQuantizedWeights(boolean keep) {
+        this.keepQuantizedWeights = keep;
+    }
+
+    public boolean getKeepQuantizedWeights() {
+        return keepQuantizedWeights;
+    }
+
     private PowerMode powerMode = PowerMode.LITE_POWER_HIGH;
     private int threads = 1;
     private String liteModelFile;
     private String liteModelBuffer;
+    private boolean keepQuantizedWeights = false;
 }

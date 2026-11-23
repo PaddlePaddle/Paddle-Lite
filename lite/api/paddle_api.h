@@ -20,6 +20,7 @@
 #ifndef PADDLE_LITE_API_H_  // NOLINT
 #define PADDLE_LITE_API_H_
 #include <functional>
+#include <limits>
 #include <map>
 #include <memory>
 #include <string>
@@ -473,6 +474,15 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<std::string> passes_internal_{};
   bool quant_model_{false};  // Enable post_quant_dynamic in opt
   QuantType quant_type_{QuantType::QUANT_INT16};
+  // Integer feed + *to_fp* calib. Default false so plain float opt is
+  // unchanged; set true via quant_model path or opt --analytic_input_quant.
+  bool analytic_input_quant_{false};
+  // "int8" (xor-128, default) or "uint8" (raw greyscale).
+  std::string analytic_input_dtype_{"int8"};
+  // Feed normalisation x = (u - mean) / std in pixel units; NaN = unset.
+  float analytic_input_mean_{std::numeric_limits<float>::quiet_NaN()};
+  float analytic_input_std_{std::numeric_limits<float>::quiet_NaN()};
+  std::string output_calib_precision_{};  // "fp16" or "uint8" for fetch calib
   bool sparse_model_{false};  // Enable sparse_conv_detect_pass in opt
   float sparse_threshold_{0.6f};
   std::map<int, std::vector<std::shared_ptr<void>>>
@@ -541,6 +551,24 @@ class LITE_API CxxConfig : public ConfigBase {
   bool quant_model() const { return quant_model_; }
   void set_quant_type(QuantType quant_type) { quant_type_ = quant_type; }
   QuantType quant_type() const { return quant_type_; }
+  void set_analytic_input_quant(bool v) { analytic_input_quant_ = v; }
+  bool analytic_input_quant() const { return analytic_input_quant_; }
+  void set_analytic_input_dtype(const std::string& v) {
+    analytic_input_dtype_ = v;
+  }
+  const std::string& analytic_input_dtype() const {
+    return analytic_input_dtype_;
+  }
+  void set_analytic_input_mean(float v) { analytic_input_mean_ = v; }
+  float analytic_input_mean() const { return analytic_input_mean_; }
+  void set_analytic_input_std(float v) { analytic_input_std_ = v; }
+  float analytic_input_std() const { return analytic_input_std_; }
+  void set_output_calib_precision(const std::string& v) {
+    output_calib_precision_ = v;
+  }
+  const std::string& output_calib_precision() const {
+    return output_calib_precision_;
+  }
 
   void set_sparse_model(bool sparse_model) { sparse_model_ = sparse_model; }
   bool sparse_model() const { return sparse_model_; }
@@ -594,6 +622,7 @@ class LITE_API MobileConfig : public ConfigBase {
   // whether to load data from memory. Model data will be loaded from memory
   // buffer if model_from_memory_ is true.
   bool model_from_memory_{false};
+  bool keep_quantized_weights_{false};
   PrecisionMode precision_mode_{LITE_PRECISION_NORMAL};
 
   // model data readed from file in combined format.
@@ -616,6 +645,8 @@ class LITE_API MobileConfig : public ConfigBase {
   void set_model_from_buffer(const char* buffer, size_t length);
   void set_precision_mode(PrecisionMode mode) { precision_mode_ = mode; }
   PrecisionMode precision_mode() const { return precision_mode_; }
+  void set_keep_quantized_weights(bool v) { keep_quantized_weights_ = v; }
+  bool keep_quantized_weights() const { return keep_quantized_weights_; }
   // return model file path.
   const std::string& lite_model_file() const { return lite_model_file_; }
   // return model buffer data, which is in combined format.

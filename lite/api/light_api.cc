@@ -49,8 +49,10 @@ void LightPredictor::Run() {
 void LightPredictor::Build(const std::string& lite_model_file) {
   LoadModelNaiveFromFile(lite_model_file, scope_.get(), program_desc_.get());
   // For weight quantization of post training, load the int8/16 weights
-  // for optimized model, and dequant it to fp32.
-  DequantizeWeight();
+  // for optimized model, and dequant it to fp32 unless keep_quantized_weights.
+  if (!keep_quantized_weights_) {
+    DequantizeWeight();
+  }
 #ifdef ENABLE_ARM_FP16
   // fp16 Weight convert
   WeightFP32ToFP16();
@@ -66,8 +68,10 @@ void LightPredictor::Build(const char* lite_model_buffer_ptr,
                            scope_.get(),
                            program_desc_.get());
   // For weight quantization of post training, load the int8/16 weights
-  // for optimized model, and dequant it to fp32.
-  DequantizeWeight();
+  // for optimized model, and dequant it to fp32 unless keep_quantized_weights.
+  if (!keep_quantized_weights_) {
+    DequantizeWeight();
+  }
 #ifdef ENABLE_ARM_FP16
   // fp16 Weight convert
   WeightFP32ToFP16();
@@ -100,7 +104,9 @@ void LightPredictor::Build(const std::string& model_dir,
       LOG(FATAL) << "Unknown model type";
   }
 
-  DequantizeWeight();
+  if (!keep_quantized_weights_) {
+    DequantizeWeight();
+  }
 
 #ifdef ENABLE_ARM_FP16
   // fp16 Weight convert

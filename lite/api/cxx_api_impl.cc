@@ -20,6 +20,8 @@
 #include "lite/core/device_info.h"
 #include "lite/core/optimizer/mir/pass_manager.h"
 #include "lite/core/optimizer/mir/post_quant_dynamic_pass.h"
+#include "lite/core/optimizer/mir/analytic_input_quant_pass.h"
+#include "lite/core/optimizer/mir/output_calib_pass.h"
 #include "lite/core/optimizer/mir/sparse_conv_detect_pass.h"
 #include "lite/core/version.h"
 #ifdef LITE_USE_THREAD_POOL
@@ -108,6 +110,35 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
           "post_quant_dynamic_pass");
       CHECK(pass);
       pass->SetQuantType(config.quant_type());
+    }
+    // Int8 *feed* contract is independent of weight quant. Weight quant +
+    // enable_fp16 leaves int8 weights on fp16 kernels and can SEGV; use
+    // analytic alone with --enable_fp16 for int8→fp16-compute→(u8) paths.
+    // (Restored: this block was lost from patches-int8 in 49bc7422.)
+    if (config.analytic_input_quant()) {
+      passes.push_back("analytic_input_quant_pass");
+      auto *aiq_pass =
+          mir::PassManager::Global().LookUp<mir::AnalyticInputQuantPass>(
+              "analytic_input_quant_pass");
+      CHECK(aiq_pass);
+      aiq_pass->SetInputDtype(config.analytic_input_dtype());
+      aiq_pass->SetInputMean(config.analytic_input_mean());
+      aiq_pass->SetInputStd(config.analytic_input_std());
+    }
+
+    if (!config.output_calib_precision().empty()) {
+      passes.push_back("output_calib_pass");
+      auto *oc_pass = mir::PassManager::Global().LookUp<mir::OutputCalibPass>(
+          "output_calib_pass");
+      CHECK(oc_pass);
+      const auto &ocp = config.output_calib_precision();
+      if (ocp == "fp16") {
+        oc_pass->SetOutputPrecision(PRECISION(kFP16));
+      } else if (ocp == "uint8") {
+        oc_pass->SetOutputPrecision(PRECISION(kUInt8));
+      } else {
+        LOG(FATAL) << "unsupported output_calib_precision: " << ocp;
+      }
     }
 
     auto *sparse_detect_pass =

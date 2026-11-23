@@ -160,7 +160,9 @@ const std::string& PrecisionRepr(PrecisionType precision) {
                                                  "kFP16",
                                                  "kBool",
                                                  "kInt64",
-                                                 "kInt16"};
+                                                 "kInt16",
+                                                 "kUInt8",
+                                                 "kFP64"};
   auto x = static_cast<int>(precision);
   CHECK_LT(x, static_cast<int>(PRECISION(NUM)));
   return precision2string[x];

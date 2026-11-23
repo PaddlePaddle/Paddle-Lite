@@ -44,8 +44,10 @@ class LITE_API LightPredictor {
   // model file or buffer,`model_from_memory` refers to whther to load model
   // from memory.
   LightPredictor(const std::string& lite_model_file,
-                 bool use_low_precision = false) {
+                 bool use_low_precision = false,
+                 bool keep_quantized_weights = false) {
     use_low_precision_ = use_low_precision;
+    keep_quantized_weights_ = keep_quantized_weights;
     scope_ = std::make_shared<Scope>();
     program_desc_ = std::make_shared<cpp::ProgramDesc>();
     Build(lite_model_file);
@@ -53,8 +55,10 @@ class LITE_API LightPredictor {
 
   LightPredictor(const char* lite_model_buffer_ptr,
                  size_t lite_model_buffer_size,
-                 bool use_low_precision = false) {
+                 bool use_low_precision = false,
+                 bool keep_quantized_weights = false) {
     use_low_precision_ = use_low_precision;
+    keep_quantized_weights_ = keep_quantized_weights;
     scope_ = std::make_shared<Scope>();
     program_desc_ = std::make_shared<cpp::ProgramDesc>();
     Build(lite_model_buffer_ptr, lite_model_buffer_size);
@@ -83,6 +87,7 @@ class LITE_API LightPredictor {
   /// \return a boolean variable.
   bool TryShrinkMemory();
   bool use_low_precision_ = false;
+  bool keep_quantized_weights_ = false;
 
   // Get offset-th col of feed inputs.
   Tensor* GetInput(size_t offset);
