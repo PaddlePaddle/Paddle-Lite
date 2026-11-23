@@ -91,6 +91,8 @@ namespace lite {
 #include <asm/hwcap.h> /* Get HWCAP bits from asm/hwcap.h */
 #include <sys/auxv.h>
 #define AARCH64_HWCAP_SVE (1UL << 22)
+#define AARCH64_HWCAP_ASIMDHP (1UL << 10)
+#define AARCH64_HWCAP_ASIMDDP (1UL << 20)
 #define AARCH64_HWCAP2_SVE2 (1UL << 1)
 #define AARCH64_HWCAP2_SVEAES (1UL << 2)
 #define AARCH64_HWCAP2_SVEPMULL (1UL << 3)
@@ -122,6 +124,22 @@ bool check_sve2_f32mm_vaild() {
   auto mask = static_cast<uint32_t>(getauxval(AT_HWCAP2));  // Android API >= 18
   if (mask & AARCH64_HWCAP2_SVEF32MM) return true;
   return false;
+}
+
+bool check_asimdhp_valid() {
+  auto mask = static_cast<uint32_t>(getauxval(AT_HWCAP));  // Android API >= 18
+  if (mask == 0) return false;
+  return (mask & AARCH64_HWCAP_ASIMDHP) != 0;
+}
+
+bool check_asimddp_valid() {
+  auto mask = static_cast<uint32_t>(getauxval(AT_HWCAP));  // Android API >= 18
+  if (mask == 0) return false;
+  return (mask & AARCH64_HWCAP_ASIMDDP) != 0;
+}
+
+bool arm64_hwcap_present() {
+  return static_cast<uint32_t>(getauxval(AT_HWCAP)) != 0;
 }
 #endif
 
@@ -578,6 +596,7 @@ int set_sched_affinity(const std::vector<int>& cpu_ids) {
 }
 
 bool bind_threads(const std::vector<int> cpu_ids) {
+  if (cpu_ids.empty()) return false;
 #ifdef ARM_WITH_OMP
   int thread_num = cpu_ids.size();
   omp_set_num_threads(thread_num);
@@ -1093,6 +1112,29 @@ void DeviceInfo::SetCPUInfoByProb() {
 #endif  // LITE_WITH_LINUX
 }
 
+void DeviceInfo::EnsureCoreTopology() {
+  if (core_num_ < 1) core_num_ = 1;
+  if (core_ids_.empty()) {
+    core_ids_.resize(static_cast<size_t>(core_num_));
+    for (int i = 0; i < core_num_; ++i) core_ids_[i] = i;
+  }
+  if (big_core_ids_.empty() && little_core_ids_.empty()) {
+    big_core_ids_ = core_ids_;
+  }
+  if (static_cast<int>(archs_.size()) < core_num_) {
+    archs_.resize(static_cast<size_t>(core_num_), kARMArch_UNKOWN);
+  }
+  if (static_cast<int>(L1_cache_.size()) < core_num_) {
+    L1_cache_.resize(static_cast<size_t>(core_num_), DEFAULT_L1_CACHE_SIZE);
+  }
+  if (static_cast<int>(L2_cache_.size()) < core_num_) {
+    L2_cache_.resize(static_cast<size_t>(core_num_), DEFAULT_L2_CACHE_SIZE);
+  }
+  if (static_cast<int>(L3_cache_.size()) < core_num_) {
+    L3_cache_.resize(static_cast<size_t>(core_num_), DEFAULT_L3_CACHE_SIZE);
+  }
+}
+
 void DeviceInfo::RequestPowerFullMode(int thread_num) {
   int big_core_size = big_core_ids_.size();
   int little_core_size = little_core_ids_.size();
@@ -1123,7 +1165,7 @@ void DeviceInfo::RequestPowerHighMode(int thread_num) {
         active_ids_.push_back(big_core_ids_[big_core_size - 1 - i]);
       }
     }
-  } else {
+  } else if (little_core_size > 0) {
     mode_ = lite_api::PowerMode::LITE_POWER_LOW;
     LOG(ERROR) << "HIGH POWER MODE is not support, switch to little cores.";
     if (thread_num > little_core_size) {
@@ -1131,6 +1173,15 @@ void DeviceInfo::RequestPowerHighMode(int thread_num) {
     } else {
       for (int i = 0; i < thread_num; ++i) {
         active_ids_.push_back(little_core_ids_[i]);
+      }
+    }
+  } else {
+    mode_ = lite_api::PowerMode::LITE_POWER_NO_BIND;
+    if (!core_ids_.empty()) {
+      if (thread_num > static_cast<int>(core_ids_.size())) {
+        active_ids_ = core_ids_;
+      } else {
+        for (int i = 0; i < thread_num; ++i) active_ids_.push_back(core_ids_[i]);
       }
     }
   }
@@ -1167,15 +1218,21 @@ void DeviceInfo::RequestPowerLowMode(int thread_num) {
 
 void DeviceInfo::RequestPowerNoBindMode(int thread_num) {
   active_ids_.clear();
-  if (thread_num > core_ids_.size()) {
+  if (core_ids_.empty() && !big_core_ids_.empty()) {
+    core_ids_ = big_core_ids_;
+  }
+  if (thread_num > static_cast<int>(core_ids_.size()) || core_ids_.empty()) {
     active_ids_ = core_ids_;
   } else {
     active_ids_.resize(thread_num);
-    for (uint32_t i = 0; i < thread_num; ++i) {
-      if (i < big_core_ids_.size()) {
+    for (int i = 0; i < thread_num; ++i) {
+      if (i < static_cast<int>(big_core_ids_.size())) {
         active_ids_[i] = big_core_ids_[i];
-      } else {
+      } else if ((i - static_cast<int>(big_core_ids_.size())) <
+                 static_cast<int>(little_core_ids_.size())) {
         active_ids_[i] = little_core_ids_[i - big_core_ids_.size()];
+      } else {
+        active_ids_[i] = core_ids_[i];
       }
     }
   }
@@ -1249,6 +1306,62 @@ bool DeviceInfo::has_sve2_f32mm() { return has_sve2_f32mm_; }
 
 bool DeviceInfo::has_sve2_i8mm() { return has_sve2_i8mm_; }
 
+bool DeviceInfo::has_dot() const {
+#ifdef WITH_ARM_DOTPROD
+#if defined(LITE_WITH_ANDROID) && defined(__aarch64__)
+  if (arm64_hwcap_present()) {
+    return check_asimddp_valid();
+  }
+#endif
+  std::vector<ARMArch> int8_arch = {kX1,
+                                    kX2,
+                                    kA55,
+                                    kA76,
+                                    kA77,
+                                    kA78,
+                                    kGold,
+                                    kGold_Prime,
+                                    kSilver,
+                                    kA710,
+                                    kA510};
+  for (int i = 0; i < core_num_; ++i) {
+    auto iter = std::find(int8_arch.begin(), int8_arch.end(), archs_[i]);
+    if (iter == std::end(int8_arch)) {
+      return false;
+    }
+  }
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool DeviceInfo::has_fp16() const {
+#if defined(LITE_WITH_ANDROID) && defined(__aarch64__)
+  if (arm64_hwcap_present()) {
+    return check_asimdhp_valid();
+  }
+#endif
+  std::vector<ARMArch> fp16_arch = {kX1,
+                                    kX2,
+                                    kA55,
+                                    kA75,
+                                    kA76,
+                                    kA77,
+                                    kA78,
+                                    kGold,
+                                    kGold_Prime,
+                                    kSilver,
+                                    kA710};
+  for (int i = 0; i < core_num_; ++i) {
+    auto iter = std::find(fp16_arch.begin(), fp16_arch.end(), archs_[i]);
+    if (iter != std::end(fp16_arch)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 int DeviceInfo::Setup() {
   core_num_ = get_cpu_num();
   mem_size_ = get_mem_size();
@@ -1303,6 +1416,7 @@ int DeviceInfo::Setup() {
   } else {
     has_a53_valid_ = true;
   }
+  EnsureCoreTopology();
 
   // SVE2
   has_sve2_ = false;
@@ -1318,11 +1432,18 @@ int DeviceInfo::Setup() {
   LOG(INFO) << "ARM multiprocessors name: " << dev_name_;
   LOG(INFO) << "ARM multiprocessors number: " << core_num_;
   for (int i = 0; i < core_num_; ++i) {
-    LOG(INFO) << "ARM multiprocessors ID: " << core_ids_[i]
-              << ", max freq: " << max_freqs_[i]
-              << ", min freq: " << min_freqs_[i]
-              << ", cluster ID: " << cluster_ids_[core_ids_[i]]
-              << ", CPU ARCH: A" << static_cast<int>(archs_[i]);
+    const int cid = (i < static_cast<int>(core_ids_.size())) ? core_ids_[i] : i;
+    const int cl = (cid >= 0 && cid < static_cast<int>(cluster_ids_.size()))
+                       ? cluster_ids_[cid]
+                       : 0;
+    const int ar = (i < static_cast<int>(archs_.size()))
+                       ? static_cast<int>(archs_[i])
+                       : static_cast<int>(kARMArch_UNKOWN);
+    const int mx = (i < static_cast<int>(max_freqs_.size())) ? max_freqs_[i] : 0;
+    const int mn = (i < static_cast<int>(min_freqs_.size())) ? min_freqs_[i] : 0;
+    LOG(INFO) << "ARM multiprocessors ID: " << cid << ", max freq: " << mx
+              << ", min freq: " << mn << ", cluster ID: " << cl
+              << ", CPU ARCH: A" << ar;
   }
   LOG(INFO) << "L1 DataCache size is: ";
   for (int i = 0; i < core_num_; ++i) {
@@ -1348,17 +1469,23 @@ int DeviceInfo::Setup() {
 
 void DeviceInfo::SetRunMode(lite_api::PowerMode mode, int thread_num) {
 #if defined(ARM_WITH_OMP) || defined(LITE_USE_THREAD_POOL)
-  thread_num = std::min(thread_num, core_num_);
+  thread_num = std::min(thread_num, std::max(1, core_num_));
 #else
   thread_num = 1;  // force thread_num to 1 if OpenMP is disabled
 #endif
 #ifdef LITE_WITH_LINUX
-  int big_core_size = big_core_ids_.size();
-  int little_core_size = little_core_ids_.size();
+  EnsureCoreTopology();
+  int big_core_size = static_cast<int>(big_core_ids_.size());
+  int little_core_size = static_cast<int>(little_core_ids_.size());
   int big_little_core_size = big_core_size + little_core_size;
+  if (big_little_core_size < 1) big_little_core_size = 1;
   thread_num = std::min(thread_num, big_little_core_size);
+  if (thread_num < 1) thread_num = 1;
   count_++;
-  int shift_num = (count_ / 10) % big_core_size;
+  int shift_num = 0;
+  if (big_core_size > 0) {
+    shift_num = (count_ / 10) % big_core_size;
+  }
   switch (mode) {
     case lite_api::LITE_POWER_FULL:
       RequestPowerFullMode(thread_num);
@@ -1379,7 +1506,7 @@ void DeviceInfo::SetRunMode(lite_api::PowerMode mode, int thread_num) {
       RequestPowerRandLowMode(shift_num, thread_num);
       break;
     default:
-      LOG(FATAL) << "Unsupported power mode: " << static_cast<int>(mode);
+      RequestPowerNoBindMode(thread_num);
       break;
   }
   if (active_ids_.empty()) {
@@ -1389,10 +1516,10 @@ void DeviceInfo::SetRunMode(lite_api::PowerMode mode, int thread_num) {
   omp_set_num_threads(active_ids_.size());
 #endif
   if (mode_ != lite_api::LITE_POWER_NO_BIND) {
-    if (check_cpu_online(active_ids_)) {
-      bind_threads(active_ids_);
+    if (check_cpu_online(active_ids_) && bind_threads(active_ids_)) {
+      // affinity applied
     } else {
-      LOG(WARNING) << "Some cores are offline, switch to NO BIND MODE";
+      LOG(WARNING) << "bind failed or cores offline, switch to NO BIND MODE";
       mode_ = lite_api::LITE_POWER_NO_BIND;
     }
   }
@@ -1406,7 +1533,14 @@ void DeviceInfo::SetRunMode(lite_api::PowerMode mode, int thread_num) {
   //! alloc memory for sgemm in this context
   workspace_.Resize({llc_size()});
   workspace_.mutable_data<int8_t>();
-  arch_ = archs_[active_ids_[0]];
+  int aid = active_ids_.empty() ? 0 : active_ids_[0];
+  if (aid >= 0 && aid < static_cast<int>(archs_.size())) {
+    arch_ = archs_[aid];
+  } else if (!archs_.empty()) {
+    arch_ = archs_[0];
+  } else {
+    arch_ = kARMArch_UNKOWN;
+  }
 }
 
 void DeviceInfo::SetCache(int l1size, int l2size, int l3size) {
@@ -1575,6 +1709,8 @@ FMAType device_fma_level() {
 
 #if defined(LITE_WITH_ANDROID) && defined(__aarch64__)
 #undef AARCH64_HWCAP_SVE
+#undef AARCH64_HWCAP_ASIMDHP
+#undef AARCH64_HWCAP_ASIMDDP
 #undef AARCH64_HWCAP2_SVE2
 #undef AARCH64_HWCAP2_SVEAES
 #undef AARCH64_HWCAP2_SVEPMULL

@@ -267,7 +267,7 @@ class ParamTypeDummyRegistry {
 // Register a kernel.
 #define REGISTER_LITE_KERNEL(                                                 \
     op_type__, target__, precision__, layout__, KernelClass, alias__)         \
-  static paddle::lite::KernelRegistrar                                        \
+  static paddle::lite::KernelRegistrar __attribute__((used))                  \
       op_type__##target__##precision__##layout__##alias__##_kernel_registry(  \
           #op_type__,                                                         \
           TARGET(target__),                                                   \

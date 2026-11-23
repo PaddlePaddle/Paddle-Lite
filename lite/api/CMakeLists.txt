@@ -119,6 +119,12 @@ if (NOT LITE_ON_TINY_PUBLISH)
 else()
     # Compiling steps in tiny_publish format:
     # 1. compile all source files into .object `PADDLELITE_OBJS`
+    if(LITE_WITH_ARM8_SVE2)
+        # Keep +sve2 per-TU on sve/*.cc only — never on PADDLELITE_OBJS as a whole.
+        file(GLOB ARM_SVE_FIX_SRC "${PADDLE_SOURCE_DIR}/lite/backends/arm/math/sve/*.cc")
+        set_source_files_properties(${ARM_SVE_FIX_SRC} PROPERTIES COMPILE_FLAGS "-march=armv8.2-a+sve2+fp16+dotprod+i8mm+nolse")
+        message(STATUS "PADDLELITE_OBJS sve/*.cc COMPILE_FLAGS: -march=armv8.2-a+sve2+fp16+dotprod+i8mm+nolse")
+    endif()
     add_library(PADDLELITE_OBJS OBJECT ${__lite_cc_files})
     add_dependencies(PADDLELITE_OBJS fbs_headers)
     if (IOS)
@@ -198,7 +204,9 @@ if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
         CV_DEPS paddle_cv_arm)
 
     # benchmark_bin
-    add_subdirectory(tools/benchmark)
+    if(LITE_WITH_BENCHMARK)
+        add_subdirectory(tools/benchmark)
+    endif()
 endif()
 
 if(ANDROID AND NOT LITE_ON_TINY_PUBLISH)

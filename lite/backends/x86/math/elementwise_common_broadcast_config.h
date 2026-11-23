@@ -172,7 +172,7 @@ __m128 mul_ps_inline<__m128>(__m128 a, __m128 b) {
   return _mm_mul_ps(a, b);
 }
 
-__m128 _mm_relu_ps(const __m128& a) {
+__m128 _mm_relu_ps(const __m128 a) {
   __m128 vec_zero = _mm_set1_ps(0.f);
   return _mm_max_ps(a, vec_zero);
 }
@@ -752,7 +752,7 @@ struct ActiveConfig<ActiveType::SIGMOID, float> {
   constexpr static bool has_active{true};  // NOLINT
 };
 #elif defined(__SSE4_2__)
-__m128 _mm_relu_ps(const __m128& a);
+__m128 _mm_relu_ps(const __m128 a);
 
 template <>
 struct ActiveConfig<ActiveType::RELU, float> {

@@ -60,21 +60,56 @@ class DirectConv : public KernelLite<TARGET(kX86), Ptype> {
     lite::x86::math::conv_trans_weights_numc(
         filter_data, weights_w_data, oc, ic, wh, ww, block);
 
-    auto x_dims = param.x->dims();
-    auto w_dims = param.filter->dims();
-    auto o_dims = param.output->dims();
+    // Weight pack is once. JIT is spatial-dim dependent: first emit here,
+    // then again from Launch → ReInitWhenNeeded when ih/iw/oh/ow hop.
+    last_ih_ = -1;
+    last_iw_ = -1;
+    last_oh_ = -1;
+    last_ow_ = -1;
+    ReInitWhenNeeded();
+  }
 
+  // Rec hops tensor W (e.g. 160→128). x86 DirectConv JIT bakes ih/iw/oh/ow
+  // into the stub; ARM already re-inits. Regen only when spatial dims change.
+  virtual void ReInitWhenNeeded() {
+    auto& param = this->template Param<param_t>();
+    auto x_dims = param.x->dims();
+    auto o_dims = param.output->dims();
+    const int ih = static_cast<int>(x_dims[2]);
+    const int iw = static_cast<int>(x_dims[3]);
+    const int oh = static_cast<int>(o_dims[2]);
+    const int ow = static_cast<int>(o_dims[3]);
+    if (code_ != nullptr && ih == last_ih_ && iw == last_iw_ && oh == last_oh_ &&
+        ow == last_ow_) {
+      return;
+    }
+
+    int ic = param.filter->dims()[1];
+    int oc = param.filter->dims()[0];
+    int wh = param.filter->dims()[2];
+    int ww = param.filter->dims()[3];
     const int ph = (*(param.paddings))[0];
     const int pw = (*(param.paddings))[2];
 
-    int iw = x_dims[3];
-    int ih = x_dims[2];
-    int oh = o_dims[2];
-    int ow = o_dims[3];
+    delete code_;
     code_ = new lite::x86::math::conv_direct();
-    code_->generate_code(
-        ic, ih, iw, oc, oc_expand_, oh, ow, ph, pw, wh, ww, param.strides[1]);
+    code_->generate_code(ic,
+                         ih,
+                         iw,
+                         oc,
+                         oc_expand_,
+                         oh,
+                         ow,
+                         ph,
+                         pw,
+                         wh,
+                         ww,
+                         param.strides[1]);
     code_->ready();
+    last_ih_ = ih;
+    last_iw_ = iw;
+    last_oh_ = oh;
+    last_ow_ = ow;
   }
 
 #ifdef LITE_WITH_PROFILE
@@ -95,7 +130,11 @@ class DirectConv : public KernelLite<TARGET(kX86), Ptype> {
   bool flag_trans_bias_{false};
   std::vector<float> w_scale_;
   int oc_expand_;
-  lite::x86::math::conv_direct* code_;
+  lite::x86::math::conv_direct* code_{nullptr};
+  int last_ih_{-1};
+  int last_iw_{-1};
+  int last_oh_{-1};
+  int last_ow_{-1};
 };
 
 }  // namespace x86

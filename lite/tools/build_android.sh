@@ -75,6 +75,11 @@ WITH_BENCHMARK=OFF
 WITH_CONVERT_TO_SSA=ON
 # use Arm DNN library instead of built-in math library, defaults to OFF.
 WITH_ARM_DNN_LIBRARY=OFF
+# opt-in codegen/packaging controls (upstream defaults preserved)
+WITH_FAST_MATH=ON
+WITH_LTO=ON
+WITH_GC_SECTIONS=ON
+WITH_THIN_JNI=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -91,9 +96,7 @@ readonly THIRDPARTY_TAR=third-party-651c7c4.tar.gz
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for android compiling.
-readonly CMAKE_COMMON_OPTIONS="-DLITE_WITH_ARM=ON \
-                               -DLITE_WITH_X86=OFF \
-                               -DWITH_TESTING=OFF \
+readonly CMAKE_COMMON_OPTIONS="-DWITH_TESTING=OFF \
                                -DARM_TARGET_OS=android"
 # on mac environment, we should expand the maximum file num to compile successfully
 os_name=`uname -s`
@@ -165,7 +168,7 @@ function prepare_thirdparty {
         fi
         tar xzf $THIRDPARTY_TAR
     else
-        git submodule update --init --recursive
+        echo skipping submodules
     fi
 }
 ####################################################################################################
@@ -179,9 +182,17 @@ function prepare_thirdparty {
 ####################################################################################################
 
 # helper function for setting android api level
-function set_android_api_level {
+function set_android_api_level
+  if [ "${ARCH}" == "armv8" ]; then
+      NDK_ABI="arm64-v8a"
+  elif [ "${ARCH}" == "armv7" ]; then
+      NDK_ABI="armeabi-v7a"
+  else
+      NDK_ABI="${ARCH}"
+  fi
+ {
   # android api level for android version
-  if [ "${ARCH}" == "armv7" ]; then
+  if [ "${ARCH}" == "armv7" ] || [ "${ARCH}" == "x86" ]; then
       MIN_ANDROID_API_LEVEL=${MIN_ANDROID_API_LEVEL_ARMV7}
   else
       MIN_ANDROID_API_LEVEL=${MIN_ANDROID_API_LEVEL_ARMV8}
@@ -201,7 +212,7 @@ function set_android_api_level {
 function make_tiny_publish_so {
 
   if [ ! -d third-party ]; then
-     git checkout third-party
+     true # git checkout third-party
   fi
 
   # Step1. Create directory for compiling.
@@ -225,18 +236,40 @@ function make_tiny_publish_so {
       TOOLCHAIN=clang
   fi
 
-  if [ "$NDK_ROOT" ]; then
-      NDK_NAME=$(echo $NDK_ROOT | egrep -o "android-ndk-r[0-9]{2}")
-      NDK_VERSION=$(echo $NDK_NAME | egrep -o "[0-9]{2}")
-      if [ "$NDK_VERSION" -gt 17 ]; then
+  if [ -n "${NDK_ROOT:-}" ]; then
+      export ANDROID_NDK="${ANDROID_NDK:-$NDK_ROOT}"
+      NDK_NAME=$(echo "$NDK_ROOT" | grep -Eo "android-ndk-r[0-9]{2}" || true)
+      NDK_VERSION=$(echo "$NDK_NAME" | grep -Eo "[0-9]{2}" || true)
+      if [ -z "$NDK_VERSION" ] && [ -f "$NDK_ROOT/source.properties" ]; then
+          NDK_VERSION=$(sed -n "s/^Pkg\.Revision *= *\([0-9][0-9]*\).*/\1/p" "$NDK_ROOT/source.properties" | head -n 1)
+      fi
+      if [ -n "$NDK_VERSION" ] && [ "$NDK_VERSION" -gt 17 ]; then
           TOOLCHAIN=clang
       fi
   fi
 
   # android api level for android version
   set_android_api_level
+  if [ "${ARCH}" == "armv8" ]; then
+      NDK_ABI="arm64-v8a"
+  elif [ "${ARCH}" == "armv7" ]; then
+      NDK_ABI="armeabi-v7a"
+  else
+      NDK_ABI="${ARCH}"
+  fi
+
+
+  if [ "${ARCH}" == "x86_64" ] || [ "${ARCH}" == "x86" ]; then
+      with_arm=OFF
+      with_x86=ON
+  else
+      with_arm=ON
+      with_x86=OFF
+  fi
 
   local cmake_mutable_options="
+      -DLITE_WITH_ARM=$with_arm \
+      -DLITE_WITH_X86=$with_x86 \
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
       -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
@@ -245,6 +278,8 @@ function make_tiny_publish_so {
       -DLITE_WITH_JAVA=$WITH_JAVA \
       -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
       -DLITE_WITH_CV=$WITH_CV \
+      -DWITH_MKL=OFF \
+      -DWITH_AVX=ON \
       -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
       -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
@@ -276,9 +311,20 @@ function make_tiny_publish_so {
       -DLITE_THREAD_POOL=$WITH_THREAD_POOL \
       -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA \
       -DLITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS=$SKIP_SUPPORT_0_DIM_TENSOR_PASS \
-      -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY"
+      -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY \
+      -DLITE_WITH_FAST_MATH=$WITH_FAST_MATH \
+      -DLITE_WITH_LTO=$WITH_LTO \
+      -DLITE_WITH_GC_SECTIONS=$WITH_GC_SECTIONS \
+      -DLITE_WITH_BENCHMARK=$WITH_BENCHMARK \
+      -DLITE_ANDROID_THIN_JNI=$WITH_THIN_JNI"
 
   cmake $workspace \
+      -DCMAKE_TOOLCHAIN_FILE=$NDK_ROOT/build/cmake/android.toolchain.cmake \
+      -DANDROID_NDK=$NDK_ROOT \
+      -DANDROID_ABI=$NDK_ABI \
+      -DANDROID_PLATFORM=android-21 \
+      -DANDROID_STL=$ANDROID_STL \
+      -C $workspace/TryRunResults.cmake \
       ${CMAKE_COMMON_OPTIONS} \
       ${cmake_api_level_options} \
       ${cmake_mutable_options}  \
@@ -321,18 +367,40 @@ function make_full_publish_so {
       TOOLCHAIN=clang
   fi
 
-  if [ "$NDK_ROOT" ]; then
-      NDK_NAME=$(echo $NDK_ROOT | egrep -o "android-ndk-r[0-9]{2}")
-      NDK_VERSION=$(echo $NDK_NAME | egrep -o "[0-9]{2}")
-      if [ "$NDK_VERSION" -gt 17 ]; then
+  if [ -n "${NDK_ROOT:-}" ]; then
+      export ANDROID_NDK="${ANDROID_NDK:-$NDK_ROOT}"
+      NDK_NAME=$(echo "$NDK_ROOT" | grep -Eo "android-ndk-r[0-9]{2}" || true)
+      NDK_VERSION=$(echo "$NDK_NAME" | grep -Eo "[0-9]{2}" || true)
+      if [ -z "$NDK_VERSION" ] && [ -f "$NDK_ROOT/source.properties" ]; then
+          NDK_VERSION=$(sed -n "s/^Pkg\.Revision *= *\([0-9][0-9]*\).*/\1/p" "$NDK_ROOT/source.properties" | head -n 1)
+      fi
+      if [ -n "$NDK_VERSION" ] && [ "$NDK_VERSION" -gt 17 ]; then
           TOOLCHAIN=clang
       fi
   fi
 
   # android api level for android version
   set_android_api_level
+  if [ "${ARCH}" == "armv8" ]; then
+      NDK_ABI="arm64-v8a"
+  elif [ "${ARCH}" == "armv7" ]; then
+      NDK_ABI="armeabi-v7a"
+  else
+      NDK_ABI="${ARCH}"
+  fi
+
+
+  if [ "${ARCH}" == "x86_64" ] || [ "${ARCH}" == "x86" ]; then
+      with_arm=OFF
+      with_x86=ON
+  else
+      with_arm=ON
+      with_x86=OFF
+  fi
 
   local cmake_mutable_options="
+      -DLITE_WITH_ARM=$with_arm \
+      -DLITE_WITH_X86=$with_x86 \
       -DLITE_BUILD_EXTRA=$WITH_EXTRA \
       -DLITE_WITH_LOG=$WITH_LOG \
       -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
@@ -341,6 +409,8 @@ function make_full_publish_so {
       -DLITE_WITH_JAVA=$WITH_JAVA \
       -DLITE_WITH_STATIC_LIB=$WITH_STATIC_LIB \
       -DLITE_WITH_CV=$WITH_CV \
+      -DWITH_MKL=OFF \
+      -DWITH_AVX=ON \
       -DLITE_WITH_APU=$WITH_MEDIATEK_APU \
       -DAPU_DDK_ROOT=$MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
@@ -371,12 +441,22 @@ function make_full_publish_so {
       -DLITE_WITH_ARM8_SVE2=$WITH_ARM8_SVE2 \
       -DWITH_ARM_DOTPROD=$WITH_ARM_DOTPROD \
       -DLITE_WITH_PRECISION_PROFILE=$WITH_PRECISION_PROFILE \
-      -DANDROID_STL_TYPE=$ANDROID_STL \
       -DWITH_CONVERT_TO_SSA=$WITH_CONVERT_TO_SSA \
       -DLITE_SKIP_SUPPORT_0_DIM_TENSOR_PASS=$SKIP_SUPPORT_0_DIM_TENSOR_PASS \
-      -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY"
+      -DLITE_WITH_ARM_DNN_LIBRARY=$WITH_ARM_DNN_LIBRARY \
+      -DLITE_WITH_FAST_MATH=$WITH_FAST_MATH \
+      -DLITE_WITH_LTO=$WITH_LTO \
+      -DLITE_WITH_GC_SECTIONS=$WITH_GC_SECTIONS \
+      -DLITE_WITH_BENCHMARK=$WITH_BENCHMARK \
+      -DLITE_ANDROID_THIN_JNI=$WITH_THIN_JNI"
 
   cmake $workspace \
+      -DCMAKE_TOOLCHAIN_FILE=$NDK_ROOT/build/cmake/android.toolchain.cmake \
+      -DANDROID_NDK=$NDK_ROOT \
+      -DANDROID_ABI=$NDK_ABI \
+      -DANDROID_PLATFORM=android-21 \
+      -DANDROID_STL=$ANDROID_STL \
+      -C $workspace/TryRunResults.cmake \
       ${CMAKE_COMMON_OPTIONS} \
       ${cmake_api_level_options} \
       ${cmake_mutable_options}
@@ -456,6 +536,10 @@ function print_usage {
 ####################################################################################################
 function main {
     if [ -z "$1" ]; then
+    if [ "${ARCH}" == "x86_64" ] || [ "${ARCH}" == "x86" ]; then
+        WITH_CV=OFF
+    fi
+
         # compiling result contains light_api lib only, recommanded.
         make_tiny_publish_so $ARCH $TOOLCHAIN $ANDROID_STL
         exit 0
@@ -668,6 +752,22 @@ function main {
                 WITH_ARM_DNN_LIBRARY="${i#*=}"
                 shift
                 ;;
+            --with_fast_math=*)
+                WITH_FAST_MATH="${i#*=}"
+                shift
+                ;;
+            --with_lto=*)
+                WITH_LTO="${i#*=}"
+                shift
+                ;;
+            --with_gc_sections=*)
+                WITH_GC_SECTIONS="${i#*=}"
+                shift
+                ;;
+            --with_thin_jni=*)
+                WITH_THIN_JNI="${i#*=}"
+                shift
+                ;;
             help)
             # print help info
                 print_usage
@@ -681,6 +781,10 @@ function main {
                 ;;
         esac
     done
+    if [ "${ARCH}" == "x86_64" ] || [ "${ARCH}" == "x86" ]; then
+        WITH_CV=OFF
+    fi
+
     # compiling result contains light_api lib only, recommanded.
     make_tiny_publish_so
     exit 0

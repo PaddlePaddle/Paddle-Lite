@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 
-cmake_minimum_required(VERSION 3.0)
+# 3.16: Ubuntu 20.04 baseline; 3.19+ preferred with NDK r23+. CMake 4.x rejects 3.0.
+cmake_minimum_required(VERSION 3.16)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(PADDLE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PADDLE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
@@ -88,6 +89,11 @@ lite_option(LITE_WITH_ARM82_INT8_SDOT          "when compile with arm v8.2 int8,
 lite_option(LITE_WITH_CODE_META_INFO           "include git version in the header file."                              ON)
 lite_option(WITH_NODE_RAW_FS                   "(Only available when compiling by Emscripten) Whether build with NODERAWFS"               OFF)
 lite_option(LITE_WITH_ARM_DNN_LIBRARY          "Use Arm DNN library instead of built-in math library."                OFF)
+lite_option(LITE_WITH_FAST_MATH                "Enable -ffast-math -Ofast in tiny_publish builds"                     ON)
+lite_option(LITE_WITH_LTO                      "Enable LTO in tiny_publish builds"                                    ON)
+lite_option(LITE_WITH_GC_SECTIONS              "Enable -Wl,--gc-sections in tiny_publish builds"                      ON)
+lite_option(LITE_WITH_BENCHMARK                "Build benchmark_bin target"                                           ON)
+lite_option(LITE_ANDROID_THIN_JNI              "Link paddle_lite_jni against paddle_light_api_shared"                 OFF)
 
 find_package(Git REQUIRED)
 find_package(Threads REQUIRED)

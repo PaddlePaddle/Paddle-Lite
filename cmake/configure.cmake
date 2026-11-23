@@ -28,10 +28,21 @@ if(NOT WITH_PROFILER)
     add_definitions(-DPADDLE_DISABLE_PROFILER)
 endif(NOT WITH_PROFILER)
 
-if(WITH_AVX AND AVX_FOUND)
+# x86 SIMD ISA flags only for x86 compile targets.
+# simd.cmake force-sets SSE3_FOUND for cross-compile TryRun; applying -msse3
+# globally breaks NDK r28+ arm/aarch64 (clang: unsupported option '-msse3').
+set(_paddle_x86_simd FALSE)
+if(DEFINED ARM_TARGET_ARCH_ABI AND ARM_TARGET_ARCH_ABI MATCHES "^(x86|x86_64)$")
+  set(_paddle_x86_simd TRUE)
+elseif(NOT ANDROID AND NOT IOS AND NOT LITE_WITH_ARM)
+  set(_paddle_x86_simd TRUE)
+endif()
+if(_paddle_x86_simd)
+  if(WITH_AVX AND AVX_FOUND)
     set(SIMD_FLAG ${AVX_FLAG})
-elseif(SSE3_FOUND)
+  elseif(SSE3_FOUND)
     set(SIMD_FLAG ${SSE3_FLAG})
+  endif()
 endif()
 
 if(WIN32)
