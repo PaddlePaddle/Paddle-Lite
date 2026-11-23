@@ -134,7 +134,12 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
+  // Prefer explicit x86_math_num_threads; if left at default 1, fall back to
+  // config.threads() so set_threads(N) also drives OpenBLAS/MKL (Android x86 emu).
   int num_threads = config.x86_math_num_threads();
+  if (num_threads <= 1 && config.threads() > 1) {
+    num_threads = config.threads();
+  }
   int real_num_threads = num_threads > 1 ? num_threads : 1;
 #ifdef LITE_WITH_STATIC_MKL
   MKL_Set_Num_Threads(real_num_threads);

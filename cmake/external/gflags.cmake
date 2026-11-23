@@ -48,6 +48,9 @@ ExternalProject_Add(
                     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
                     -DBUILD_TESTING=OFF
                     -DCMAKE_BUILD_TYPE=${THIRD_PARTY_BUILD_TYPE}
+                    
+                    -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+                    -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
                     ${CROSS_COMPILE_CMAKE_ARGS}
                     ${OPTIONAL_ARGS}
                     ${EXTERNAL_OPTIONAL_ARGS}

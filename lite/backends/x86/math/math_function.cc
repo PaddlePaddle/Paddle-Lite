@@ -23,6 +23,7 @@ limitations under the License. */
 #endif
 
 #include <vector>
+
 #include "lite/backends/x86/fluid/data_type.h"
 #include "lite/backends/x86/fluid/float16.h"
 #include "lite/backends/x86/math/math_function_impl.h"
@@ -114,7 +115,7 @@ struct RowwiseAdd<lite::TargetType::kX86, T> {
     const auto& in_dims = input.dims();
     auto size = input.numel() / in_dims[0];
     CHECK_EQ(vector.numel(), size);
-    CHECK_EQ(output->dims(), in_dims);
+    CHECK(output->dims() == in_dims);
 
     const T* input_data = input.data<T>();
     const T* vector_data = vector.data<T>();
