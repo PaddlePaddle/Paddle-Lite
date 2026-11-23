@@ -232,6 +232,14 @@ inline MobileConfig jmobileconfig_to_cpp_mobileconfig(JNIEnv *env,
   int power_mode = env->CallIntMethod(jmobileconfig, power_mode_method);
   config.set_power_mode(static_cast<paddle::lite_api::PowerMode>(power_mode));
 
+  jmethodID keep_quant_method = env->GetMethodID(
+      mobileconfig_jclazz, "getKeepQuantizedWeights", "()Z");
+  if (keep_quant_method != nullptr) {
+    jboolean keep_quant =
+        env->CallBooleanMethod(jmobileconfig, keep_quant_method);
+    config.set_keep_quantized_weights(static_cast<bool>(keep_quant));
+  }
+
   return config;
 }
 

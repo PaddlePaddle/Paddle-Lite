@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/model_parser/model_parser.h"
+#include <cstring>
 
 #include <algorithm>
 #include <fstream>
@@ -489,7 +490,14 @@ void SaveModelNaive(const std::string &model_file,
   // Save lite_version(char[16]) into file
   const int paddle_version_length = 16 * sizeof(char);
   std::string paddle_version = version();
-  writer.Write(paddle_version.c_str(), paddle_version_length);
+  // VE patches-opt: write a zero-padded 16-byte field. Upstream wrote 16 bytes
+  // from paddle_version.c_str(), which reads past a short string's terminator and
+  // put uninitialized bytes into the .nb header (nondeterministic output).
+  CHECK_LT(paddle_version.size(), static_cast<size_t>(paddle_version_length))
+      << "lite version string too long for the 16-byte opt_version field";
+  char paddle_version_field[16] = {0};  // VE_ZERO_PADDED_OPT_VERSION
+  memcpy(paddle_version_field, paddle_version.data(), paddle_version.size());
+  writer.Write(paddle_version_field, paddle_version_length);
   VLOG(4) << "paddle_version:" << paddle_version;
 
   /* 1. Get topolygy description from cpp::ProgramDesc */

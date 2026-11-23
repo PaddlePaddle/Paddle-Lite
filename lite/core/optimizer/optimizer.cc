@@ -327,8 +327,11 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
   // lite_quant_dequant_fuse_pass
   const std::string msa_depend_pass{"runtime_context_assign_pass"};
   const std::string pqd_pass{"post_quant_dynamic_pass"};
+  const std::string aiq_pass{"analytic_input_quant_pass"};
   const std::string pqd_depend_pass{"lite_quant_dequant_fuse_pass"};
   const std::string fp16_pass{"fp16_attribute_pass"};
+  const std::string ocp_pass{"output_calib_pass"};
+  bool defer_output_calib_pass = false;
 
   for (const std::string& pass : passes) {
     if (pass == pqd_pass) {
@@ -336,6 +339,25 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
           std::find(passes_local.begin(), passes_local.end(), pqd_depend_pass);
       CHECK(iter != passes_local.end()) << "No find " << pqd_depend_pass;
       passes_local.push_back(pass);
+    } else if (pass == aiq_pass) {
+      // Prefer after post_quant_dynamic when present. Without weight quant, run
+      // before type_precision_cast so enable_fp16 still inserts fp32_to_fp16
+      // after int8_to_fp32 (otherwise float tensors feed fp16 kernels → SEGV).
+      auto pqd_it =
+          std::find(passes_local.begin(), passes_local.end(), pqd_pass);
+      auto tpc = std::find(
+          passes_local.begin(), passes_local.end(), "type_precision_cast_pass");
+      if (pqd_it != passes_local.end()) {
+        passes_local.insert(std::next(pqd_it), pass);
+      } else if (tpc != passes_local.end()) {
+        passes_local.insert(tpc, pass);
+      } else {
+        passes_local.push_back(pass);
+      }
+    } else if (pass == ocp_pass) {
+      // Insert fetch calib after precision/target/layout casts and memory
+      // optimize; kernels are picked explicitly inside output_calib_pass.
+      defer_output_calib_pass = true;
     } else {
       passes_local.push_back(pass);
     }
@@ -348,6 +370,9 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
         break;
       }
     }
+  }
+  if (defer_output_calib_pass) {
+    passes_local.push_back(ocp_pass);
   }
   for (auto& pass_name : passes_local) {
     optim.AddPass(pass_name);

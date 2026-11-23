@@ -160,6 +160,7 @@ class SelectedRows {
  * You can pass ofstream or ostringstream to serilize to file
  * or to a in memory string. GPU tensor will be copied to CPU.
  */
+#ifndef LITE_ON_TINY_PUBLISH
 void SerializeToStream(std::ostream& os,
                        const SelectedRows& selected_rows,
                        const lite::Context<lite::TargetType::kX86>& dev_ctx);
@@ -167,6 +168,7 @@ void DeserializeFromStream(
     std::istream& is,
     SelectedRows* selected_rows,
     const lite::Context<lite::TargetType::kX86>& dev_ctx);
+#endif
 
 }  // namespace fluid
 }  // namespace lite

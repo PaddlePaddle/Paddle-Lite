@@ -58,6 +58,17 @@ void OptBase::SetQuantType(const std::string& quant_type) {
   }
 }
 
+void OptBase::SetOutputCalibPrecision(
+    const std::string& output_calib_precision) {
+  if (output_calib_precision == "fp16" ||
+      output_calib_precision == "uint8") {
+    opt_config_.set_output_calib_precision(output_calib_precision);
+  } else if (!output_calib_precision.empty()) {
+    OPT_LOG_FATAL << "Unsupported output_calib_precision: "
+                  << output_calib_precision << " (use fp16 or uint8)";
+  }
+}
+
 void OptBase::SetSparseModel(bool sparse_model) {
   opt_config_.set_sparse_model(sparse_model);
 }
@@ -173,6 +184,13 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kX86));
       valid_places_.emplace_back(TARGET(kHost));
     } else if (target_repr == "x86") {
+      // enable_fp16: advertise kFP16 so analytic_input_quant can insert
+      // int8_to_fp16 / uint8_to_fp16. Without x86 fp16 conv kernels, type
+      // precision cast will demote backbone to float after the input calib.
+      if (enable_fp16_) {
+        valid_places_.emplace_back(
+            Place{TARGET(kX86), PRECISION(kFP16), DATALAYOUT(kNCHW)});
+      }
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kAny)});
@@ -460,6 +478,13 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--sparse_threshold=(float)`\n"
       "  Arguments of enable_fp16 in opt: \n"
       "        `--enable_fp16=(true|false)`\n"
+      "  Arguments of output calib in opt: \n"
+      "        `--output_calib_precision=(fp16|uint8)`\n"
+      "  Arguments of analytic input quant in opt: \n"
+      "        `--analytic_input_quant=(true|false)`\n"
+      "        `--analytic_input_dtype=(int8|uint8)`\n"
+      "        `--analytic_input_mean=(float, pixel units)`\n"
+      "        `--analytic_input_std=(float, pixel units)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"

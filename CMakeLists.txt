@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 
-cmake_minimum_required(VERSION 3.0)
+# 3.16: Ubuntu 20.04 baseline; 3.19+ preferred with NDK r23+. CMake 4.x rejects 3.0.
+cmake_minimum_required(VERSION 3.16)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(PADDLE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PADDLE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
@@ -33,6 +34,12 @@ include(functions)
 include(os/common)
 # Paddlelite project
 project(paddle CXX C)
+if(ANDROID AND ARM_TARGET_ARCH_ABI STREQUAL "x86_64")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --target=x86_64-none-linux-android21 --sysroot=${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/sysroot -stdlib=libc++ -msse4.1 -msse4.2 -mavx")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --target=x86_64-none-linux-android21 --sysroot=${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/sysroot -msse4.1 -msse4.2 -mavx")
+  add_definitions(-DLITE_WITH_ANDROID -DLITE_WITH_LINUX)
+endif()
+
 message(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER}, version: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "C compiler: ${CMAKE_C_COMPILER}, version: ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 message(STATUS "AR tools: ${CMAKE_AR}")
@@ -88,6 +95,11 @@ lite_option(LITE_WITH_ARM82_INT8_SDOT          "when compile with arm v8.2 int8,
 lite_option(LITE_WITH_CODE_META_INFO           "include git version in the header file."                              ON)
 lite_option(WITH_NODE_RAW_FS                   "(Only available when compiling by Emscripten) Whether build with NODERAWFS"               OFF)
 lite_option(LITE_WITH_ARM_DNN_LIBRARY          "Use Arm DNN library instead of built-in math library."                OFF)
+lite_option(LITE_WITH_FAST_MATH                "Enable -ffast-math -Ofast in tiny_publish builds"                     ON)
+lite_option(LITE_WITH_LTO                      "Enable LTO in tiny_publish builds"                                    ON)
+lite_option(LITE_WITH_GC_SECTIONS              "Enable -Wl,--gc-sections in tiny_publish builds"                      ON)
+lite_option(LITE_WITH_BENCHMARK                "Build benchmark_bin target"                                           ON)
+lite_option(LITE_ANDROID_THIN_JNI              "Link paddle_lite_jni against paddle_light_api_shared"                 OFF)
 
 find_package(Git REQUIRED)
 find_package(Threads REQUIRED)
@@ -109,11 +121,11 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 # check options
 if(LITE_ON_TINY_PUBLISH)
-  if(NOT (LITE_WITH_ARM AND NOT WITH_TESTING))#LITE_WITH_JAVA AND
-    message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with LITE_WITH_ARM=ON LITE_WITH_JAVA=ON WITH_TESTING=OFF")
-    return()
+  if(NOT ((LITE_WITH_ARM OR LITE_WITH_X86) AND NOT WITH_TESTING))
+    message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with (LITE_WITH_ARM=ON or LITE_WITH_X86=ON) WITH_TESTING=OFF")
   endif()
 endif()
+
 
 include_directories("${PADDLE_SOURCE_DIR}")
 # the generated header files.

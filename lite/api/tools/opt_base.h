@@ -49,11 +49,24 @@ class LITE_API OptBase {
   void SetModelFile(const std::string &model_path);
   void SetParamFile(const std::string &param_path);
   void EnableFloat16() { enable_fp16_ = true; }
+  void SetAnalyticInputQuant(bool v) {
+    opt_config_.set_analytic_input_quant(v);
+  }
+  void SetAnalyticInputDtype(const std::string &dtype) {
+    opt_config_.set_analytic_input_dtype(dtype);
+  }
+  void SetAnalyticInputMean(float mean) {
+    opt_config_.set_analytic_input_mean(mean);
+  }
+  void SetAnalyticInputStd(float std_val) {
+    opt_config_.set_analytic_input_std(std_val);
+  }
   void SetValidPlaces(const std::string &valid_places);
   void SetOptimizeOut(const std::string &lite_out_name);
   void RecordModelInfo(bool record_strip_info = true);
   void SetQuantModel(bool quant_model);
   void SetQuantType(const std::string &quant_type);
+  void SetOutputCalibPrecision(const std::string &output_calib_precision);
   void SetSparseModel(bool sparse_model);
   void SetSparseThreshold(const float sparse_threshold = 0.6f);
   void SetNNAdapterMixedPrecisionQuantizationConfigPath(

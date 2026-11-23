@@ -13,6 +13,10 @@
 // limitations under the License.
 #include "lite/backends/arm/math/fp16/type_trans_fp16.h"
 
+#include <arm_neon.h>
+
+#include "lite/core/parallel_defines.h"
+
 namespace paddle {
 namespace lite {
 namespace arm {
@@ -330,6 +334,121 @@ void fp32_to_fp16(const float* in, float16_t* out, int size) {
     in++;
   }
 #endif
+}
+
+// Safe vectorized dequant: load only within numel (no pipelined overread).
+void int8_to_fp16(const int8_t* in,
+                  float16_t* out,
+                  const float* scale,
+                  int axis_size,
+                  int64_t outer_size,
+                  int64_t inner_size) {
+  int cnt = static_cast<int>(inner_size / 16);
+  int remain = static_cast<int>(inner_size & 15);
+  int64_t loop_size = axis_size * outer_size;
+
+  LITE_PARALLEL_BEGIN(n, tid, loop_size) {
+    float in_scale = scale[n % axis_size];
+    const int8_t* din = in + n * inner_size;
+    float16_t* dout = out + n * inner_size;
+    float32x4_t vscale = vdupq_n_f32(in_scale);
+    for (int i = 0; i < cnt; ++i) {
+      int8x16_t vin = vld1q_s8(din);
+      din += 16;
+      int16x8_t v16_lo = vmovl_s8(vget_low_s8(vin));
+      int16x8_t v16_hi = vmovl_s8(vget_high_s8(vin));
+      float32x4_t f0 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_low_s16(v16_lo))), vscale);
+      float32x4_t f1 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_high_s16(v16_lo))), vscale);
+      float32x4_t f2 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_low_s16(v16_hi))), vscale);
+      float32x4_t f3 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_high_s16(v16_hi))), vscale);
+#ifdef __aarch64__
+      float16x4_t h0 = vcvt_f16_f32(f0);
+      float16x4_t h1 = vcvt_f16_f32(f1);
+      float16x4_t h2 = vcvt_f16_f32(f2);
+      float16x4_t h3 = vcvt_f16_f32(f3);
+      vst1_f16(dout, h0);
+      vst1_f16(dout + 4, h1);
+      vst1_f16(dout + 8, h2);
+      vst1_f16(dout + 12, h3);
+#else
+      // ARMv7: no native f16 store helper in all toolchains — scalar tail path
+      // for the 16-wide block via temporary float.
+      float tmp[16];
+      vst1q_f32(tmp, f0);
+      vst1q_f32(tmp + 4, f1);
+      vst1q_f32(tmp + 8, f2);
+      vst1q_f32(tmp + 12, f3);
+      for (int k = 0; k < 16; ++k) {
+        dout[k] = static_cast<float16_t>(tmp[k]);
+      }
+#endif
+      dout += 16;
+    }
+    for (int i = 0; i < remain; ++i) {
+      dout[i] = static_cast<float16_t>(in_scale * static_cast<float>(din[i]));
+    }
+  }
+  LITE_PARALLEL_END()
+}
+
+void uint8_to_fp16(const uint8_t* in,
+                   float16_t* out,
+                   const float* scale,
+                   int axis_size,
+                   int64_t outer_size,
+                   int64_t inner_size) {
+  int cnt = static_cast<int>(inner_size / 16);
+  int remain = static_cast<int>(inner_size & 15);
+  int64_t loop_size = axis_size * outer_size;
+  const int16x8_t v128 = vdupq_n_s16(128);
+
+  LITE_PARALLEL_BEGIN(n, tid, loop_size) {
+    float in_scale = scale[n % axis_size];
+    const uint8_t* din = in + n * inner_size;
+    float16_t* dout = out + n * inner_size;
+    float32x4_t vscale = vdupq_n_f32(in_scale);
+    for (int i = 0; i < cnt; ++i) {
+      uint8x16_t vu = vld1q_u8(din);
+      din += 16;
+      int16x8_t s_lo =
+          vsubq_s16(vreinterpretq_s16_u16(vmovl_u8(vget_low_u8(vu))), v128);
+      int16x8_t s_hi =
+          vsubq_s16(vreinterpretq_s16_u16(vmovl_u8(vget_high_u8(vu))), v128);
+      float32x4_t f0 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_low_s16(s_lo))), vscale);
+      float32x4_t f1 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_high_s16(s_lo))), vscale);
+      float32x4_t f2 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_low_s16(s_hi))), vscale);
+      float32x4_t f3 =
+          vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_high_s16(s_hi))), vscale);
+#ifdef __aarch64__
+      vst1_f16(dout, vcvt_f16_f32(f0));
+      vst1_f16(dout + 4, vcvt_f16_f32(f1));
+      vst1_f16(dout + 8, vcvt_f16_f32(f2));
+      vst1_f16(dout + 12, vcvt_f16_f32(f3));
+#else
+      float tmp[16];
+      vst1q_f32(tmp, f0);
+      vst1q_f32(tmp + 4, f1);
+      vst1q_f32(tmp + 8, f2);
+      vst1q_f32(tmp + 12, f3);
+      for (int k = 0; k < 16; ++k) {
+        dout[k] = static_cast<float16_t>(tmp[k]);
+      }
+#endif
+      dout += 16;
+    }
+    for (int i = 0; i < remain; ++i) {
+      dout[i] = static_cast<float16_t>(in_scale *
+                                       (static_cast<float>(din[i]) - 128.f));
+    }
+  }
+  LITE_PARALLEL_END()
 }
 }  // namespace fp16
 }  // namespace math

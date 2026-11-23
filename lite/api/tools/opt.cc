@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <gflags/gflags.h>
+#include <iostream>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/tools/opt_base.h"
@@ -48,6 +49,26 @@ DEFINE_string(quant_type,
               "Set the quant_type for post_quant_dynamic, "
               "and it should be QUANT_INT8 or QUANT_INT16 for now.");
 DEFINE_bool(enable_fp16, false, "Set kernel_type run in FP16.");
+DEFINE_bool(analytic_input_quant,
+            false,
+            "Insert integer feed + *to_fp16|fp32 calib. Prefers *to_fp16 when "
+            "enable_fp16 places present. Dtype via --analytic_input_dtype.");
+DEFINE_string(analytic_input_dtype,
+              "int8",
+              "Feed dtype for analytic_input_quant: int8 (xor-128) or uint8 "
+              "(raw greyscale, no host xor).");
+DEFINE_double(analytic_input_mean,
+              -1.0,
+              "Required with --analytic_input_quant: feed mean in pixel units "
+              "(x = (u - mean) / std). rec: 127.5; det mono: 128 "
+              "(see convert_mono.py mono_norm.json).");
+DEFINE_double(analytic_input_std,
+              -1.0,
+              "Required with --analytic_input_quant: feed std in pixel units. "
+              "rec: 127.5; det mono: 58.395.");
+DEFINE_string(output_calib_precision,
+              "",
+              "Insert calib before fetch: fp16 or uint8 output tensors.");
 DEFINE_bool(record_tailoring_info,
             false,
             "Record kernels and operators information of the optimized model "
@@ -129,6 +150,27 @@ int main(int argc, char** argv) {
   if (FLAGS_quant_model) {
     opt.SetQuantModel(true);
     opt.SetQuantType(FLAGS_quant_type);
+    // Preserve prior default: weight quant implies analytic int8 feed.
+    opt.SetAnalyticInputQuant(true);
+  }
+  if (FLAGS_analytic_input_quant) {
+    opt.SetAnalyticInputQuant(true);
+  }
+  if (FLAGS_analytic_input_dtype != "") {
+    opt.SetAnalyticInputDtype(FLAGS_analytic_input_dtype);
+  }
+  if (FLAGS_analytic_input_quant || FLAGS_quant_model) {
+    if (FLAGS_analytic_input_mean < 0.0 || FLAGS_analytic_input_std <= 0.0) {
+      std::cerr << "ERROR: --analytic_input_quant needs --analytic_input_mean "
+                   "and --analytic_input_std (pixel units; rec 127.5/127.5, "
+                   "det 128/58.395 from convert_mono.py mono_norm.json)\n";
+      return 1;
+    }
+    opt.SetAnalyticInputMean(static_cast<float>(FLAGS_analytic_input_mean));
+    opt.SetAnalyticInputStd(static_cast<float>(FLAGS_analytic_input_std));
+  }
+  if (FLAGS_output_calib_precision != "") {
+    opt.SetOutputCalibPrecision(FLAGS_output_calib_precision);
   }
   if (FLAGS_sparse_model) {
     opt.SetSparseModel(true);

@@ -66,6 +66,8 @@ USE_MIR_PASS(elementwise_mul_constant_eliminate_pass);
 USE_MIR_PASS(nnadapter_subgraph_pass);
 USE_MIR_PASS(weight_quantization_preprocess_pass);
 USE_MIR_PASS(post_quant_dynamic_pass);
+USE_MIR_PASS(analytic_input_quant_pass);
+USE_MIR_PASS(output_calib_pass);
 USE_MIR_PASS(fp16_attribute_pass);
 USE_MIR_PASS(quantization_parameters_propagation_pass);
 USE_MIR_PASS(quantization_parameters_removal_pass);

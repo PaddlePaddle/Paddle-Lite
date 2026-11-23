@@ -20,6 +20,8 @@
 #include "lite/core/device_info.h"
 #include "lite/core/optimizer/mir/pass_manager.h"
 #include "lite/core/optimizer/mir/post_quant_dynamic_pass.h"
+#include "lite/core/optimizer/mir/analytic_input_quant_pass.h"
+#include "lite/core/optimizer/mir/output_calib_pass.h"
 #include "lite/core/optimizer/mir/sparse_conv_detect_pass.h"
 #include "lite/core/version.h"
 #ifdef LITE_USE_THREAD_POOL
@@ -109,6 +111,35 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       CHECK(pass);
       pass->SetQuantType(config.quant_type());
     }
+    // Int8 *feed* contract is independent of weight quant. Weight quant +
+    // enable_fp16 leaves int8 weights on fp16 kernels and can SEGV; use
+    // analytic alone with --enable_fp16 for int8→fp16-compute→(u8) paths.
+    // (Restored: this block was lost from patches-int8 in 49bc7422.)
+    if (config.analytic_input_quant()) {
+      passes.push_back("analytic_input_quant_pass");
+      auto *aiq_pass =
+          mir::PassManager::Global().LookUp<mir::AnalyticInputQuantPass>(
+              "analytic_input_quant_pass");
+      CHECK(aiq_pass);
+      aiq_pass->SetInputDtype(config.analytic_input_dtype());
+      aiq_pass->SetInputMean(config.analytic_input_mean());
+      aiq_pass->SetInputStd(config.analytic_input_std());
+    }
+
+    if (!config.output_calib_precision().empty()) {
+      passes.push_back("output_calib_pass");
+      auto *oc_pass = mir::PassManager::Global().LookUp<mir::OutputCalibPass>(
+          "output_calib_pass");
+      CHECK(oc_pass);
+      const auto &ocp = config.output_calib_precision();
+      if (ocp == "fp16") {
+        oc_pass->SetOutputPrecision(PRECISION(kFP16));
+      } else if (ocp == "uint8") {
+        oc_pass->SetOutputPrecision(PRECISION(kUInt8));
+      } else {
+        LOG(FATAL) << "unsupported output_calib_precision: " << ocp;
+      }
+    }
 
     auto *sparse_detect_pass =
         mir::PassManager::Global().LookUp<mir::SparseConvDetectPass>(
@@ -134,7 +165,12 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
+  // Prefer explicit x86_math_num_threads; if left at default 1, fall back to
+  // config.threads() so set_threads(N) also drives OpenBLAS/MKL (Android x86 emu).
   int num_threads = config.x86_math_num_threads();
+  if (num_threads <= 1 && config.threads() > 1) {
+    num_threads = config.threads();
+  }
   int real_num_threads = num_threads > 1 ? num_threads : 1;
 #ifdef LITE_WITH_STATIC_MKL
   MKL_Set_Num_Threads(real_num_threads);

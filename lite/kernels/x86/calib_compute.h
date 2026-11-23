@@ -84,6 +84,57 @@ class CalibComputeInt8ToFp32 : public KernelLite<TARGET(kX86), Ptype, DLType> {
 };
 
 template <PrecisionType Ptype, DataLayoutType DLType>
+class CalibComputeUint8ToFp32 : public KernelLite<TARGET(kX86), Ptype, DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeUint8ToFp32() override{};
+
+ private:
+};
+
+// int8 xor-128 feed -> fp16: out = (fp16)(q * scale), scale = 1/(255*std)
+template <PrecisionType Ptype, DataLayoutType DLType>
+class CalibComputeInt8ToFp16 : public KernelLite<TARGET(kX86), Ptype, DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeInt8ToFp16() override{};
+
+ private:
+};
+
+// uint8 greyscale feed -> fp16: out = (fp16)((u - 128) * scale)
+template <PrecisionType Ptype, DataLayoutType DLType>
+class CalibComputeUint8ToFp16 : public KernelLite<TARGET(kX86), Ptype, DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeUint8ToFp16() override{};
+
+ private:
+};
+
+// Heatmap output quant: float32 [0,1] -> uint8 [0,255] (required by outu8 det models).
+template <PrecisionType Ptype, DataLayoutType DLType>
+class CalibComputeFp32ToUint8 : public KernelLite<TARGET(kX86), Ptype, DLType> {
+ public:
+  using param_t = operators::CalibParam;
+
+  void Run() override;
+
+  ~CalibComputeFp32ToUint8() override{};
+
+ private:
+};
+
+template <PrecisionType Ptype, DataLayoutType DLType>
 class CalibComputeInt32ToFp32 : public KernelLite<TARGET(kX86), Ptype, DLType> {
  public:
   using param_t = operators::CalibParam;
