@@ -23,10 +23,11 @@
 #include <string>
 #include <utility>
 #include <vector>
-#ifdef __ANDROID__
+#if defined(__ANDROID__) && !defined(LITE_WITH_X86)
 #include "lite/api/tools/benchmark/precision_evaluation/imagenet_image_classification/prepost_process.h"
+#define BENCHMARK_ANDROID_IMAGENET 1
 #endif
-#ifdef __linux__
+#if defined(__linux__) && !defined(__ANDROID__)
 #include "lite/api/tools/benchmark/profile/resource_usage_monitor.h"
 #endif
 #include "lite/core/version.h"
@@ -44,21 +45,14 @@ int Benchmark(int argc, char** argv) {
   gflags::SetUsageMessage(PrintUsage());
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  // Check flags validation
   if (!CheckFlagsValid()) {
     std::cout << gflags::ProgramUsage();
     exit(0);
   }
 
-  // Get optimized model file if necessary
   auto model_file = OutputOptModel(FLAGS_optimized_model_file);
-
-  // Get input shapes
   auto input_shapes = lite::GetShapes(FLAGS_input_shape);
-
-  // Run
   Run(model_file, input_shapes);
-
   return 0;
 }
 
@@ -68,11 +62,8 @@ std::shared_ptr<PaddlePredictor> CreatePredictor(
   config.set_model_from_file(model_file);
   config.set_threads(FLAGS_threads);
   config.set_power_mode(static_cast<PowerMode>(FLAGS_power_mode));
-
-  // Set backend config info
   SetBackendConfig(config);
   auto predictor = CreatePaddlePredictor(config);
-
   return predictor;
 }
 
@@ -83,7 +74,7 @@ void RunImpl(std::shared_ptr<PaddlePredictor> predictor, PerfData* perf_data) {
   perf_data->set_run_time(timer.Stop());
 }
 
-#ifdef __ANDROID__
+#ifdef BENCHMARK_ANDROID_IMAGENET
 void RunImpl(std::shared_ptr<PaddlePredictor> predictor,
              PerfData* perf_data,
              ImagenetClassification* task,
@@ -105,6 +96,7 @@ void RunImpl(std::shared_ptr<PaddlePredictor> predictor,
   perf_data->set_post_process_time(timer.Stop());
 }
 #endif
+
 template <typename T>
 void outputIdxTensor(const Tensor* output_tensor,
                      std::stringstream& out_ss,
@@ -130,7 +122,6 @@ void outputIdxTensor(const Tensor* output_tensor,
     }
   }
 
-  // TODO(sprouteer): Only support float for now, add more types if needed.
   if (!FLAGS_output_data_path.empty()) {
     std::stringstream out_data;
     auto output_path = lite::Split(FLAGS_output_data_path, ":");
@@ -150,34 +141,31 @@ void outputIdxTensor(const Tensor* output_tensor,
 void Run(const std::string& model_file,
          const std::vector<std::vector<int64_t>>& input_shapes) {
   lite::Timer timer;
-#ifdef __linux__
+#if defined(__linux__) && !defined(__ANDROID__)
   profile::ResourceUsageMonitor resource_monter(FLAGS_memory_check_interval_ms);
   float init_memory_usage = 0;
 #endif
   PerfData perf_data;
   perf_data.init(FLAGS_repeats);
-#ifdef __ANDROID__
+#ifdef BENCHMARK_ANDROID_IMAGENET
   std::unique_ptr<ImagenetClassification> task(new ImagenetClassification());
 #endif
   std::map<std::string, std::string> config;
   std::vector<std::string> image_files;
   std::vector<std::string> word_labels;
 
-  // Create predictor
   timer.Start();
-#ifdef __linux__
+#if defined(__linux__) && !defined(__ANDROID__)
   if (FLAGS_enable_memory_profile) resource_monter.Start();
 #endif
   auto predictor = CreatePredictor(model_file);
-#ifdef __linux__
+#if defined(__linux__) && !defined(__ANDROID__)
   init_memory_usage = resource_monter.GetPeakMemUsageInKB();
 #endif
   perf_data.set_init_time(timer.Stop());
 
-  // Get input types
   auto input_types = lite::Split(FLAGS_input_data_type, ":");
 
-  // Set inputs
   if (FLAGS_validation_set.empty()) {
     auto paths = lite::Split(FLAGS_input_data_path, ":");
     for (size_t i = 0; i < input_shapes.size(); i++) {
@@ -194,12 +182,12 @@ void Run(const std::string& model_file,
         setInputValue<int64_t>(input_tensor, input_shapes[i], path);
       } else if ((i < input_types.size()) && (input_types[i] == "int32")) {
         setInputValue<int32_t>(input_tensor, input_shapes[i], path);
-      } else {  // default input_type float32
+      } else {
         setInputValue<float>(input_tensor, input_shapes[i], path);
       }
     }
   } else {
-#ifdef __ANDROID__
+#ifdef BENCHMARK_ANDROID_IMAGENET
     config = LoadConfigTxt(FLAGS_config_path);
     PrintConfig(config);
     word_labels = lite::ReadLines(config.at("label_path"));
@@ -218,9 +206,8 @@ void Run(const std::string& model_file,
   }
 
   bool has_validation_set = !(FLAGS_validation_set.empty());
-  // Warmup
   for (int i = 0; i < FLAGS_warmup; ++i) {
-#ifdef __ANDROID__
+#ifdef BENCHMARK_ANDROID_IMAGENET
     RunImpl(predictor,
             &perf_data,
             task.get(),
@@ -237,7 +224,7 @@ void Run(const std::string& model_file,
 
   if (has_validation_set) {
     for (int i = 0; i < FLAGS_repeats; ++i) {
-#ifdef __ANDROID__
+#ifdef BENCHMARK_ANDROID_IMAGENET
       RunImpl(predictor,
               &perf_data,
               task.get(),
@@ -258,7 +245,6 @@ void Run(const std::string& model_file,
     }
   }
 
-  // Get output
   size_t output_tensor_num = predictor->GetOutputNames().size();
   std::stringstream out_ss;
   out_ss << "output tensor num: " << output_tensor_num;
@@ -282,7 +268,6 @@ void Run(const std::string& model_file,
     }
   }
 
-  // Save benchmark info
   std::stringstream ss;
   ss.precision(3);
 #ifdef __ANDROID__
@@ -299,7 +284,11 @@ void Run(const std::string& model_file,
       input_data_path = FLAGS_input_data_path;
     }
   } else {
+#ifdef BENCHMARK_ANDROID_IMAGENET
     input_data_path = config.at("ground_truth_images_path");
+#else
+    input_data_path = FLAGS_input_data_path;
+#endif
   }
   ss << "input_data_path: " << input_data_path << std::endl;
   ss << "input_shape: " << FLAGS_input_shape << std::endl;
@@ -326,7 +315,7 @@ void Run(const std::string& model_file,
     ss << "opencl_tuned_file: " << FLAGS_opencl_tuned_file << std::endl;
   }
 
-#ifdef __ANDROID__
+#ifdef BENCHMARK_ANDROID_IMAGENET
   if (!FLAGS_config_path.empty()) {
     ss << "\n======= Accurancy Info =======\n";
     ss << "config: " << FLAGS_config_path << std::endl;
@@ -351,7 +340,7 @@ void Run(const std::string& model_file,
   ss << "min   = " << std::setw(12) << perf_data.min_run_time() << std::endl;
   ss << "max   = " << std::setw(12) << perf_data.max_run_time() << std::endl;
   ss << "avg   = " << std::setw(12) << perf_data.avg_run_time() << std::endl;
-#ifdef __linux__
+#if defined(__linux__) && !defined(__ANDROID__)
   if (FLAGS_enable_memory_profile) {
     ss << "\nMemory Usage(unit: MB):\n";
     ss << "init  = " << std::setw(12) << init_memory_usage / 1024 << std::endl;

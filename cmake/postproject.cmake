@@ -260,13 +260,13 @@ if(ANDROID)
         "-DANDROID_TOOLCHAIN=${ARM_TARGET_LANG}"
         "-DANDROID_STL=${CMAKE_ANDROID_STL_TYPE}"
         "-DCMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}"
-        "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_ANDROID_NDK}/build/cmake/android.toolchain.cmake"
+          "-DCMAKE_SYSROOT=${CMAKE_ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
+          "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_ANDROID_NDK}/build/cmake/android.toolchain.cmake"
         "-DCMAKE_ANDROID_NDK_TOOLCHAIN_VERSION=${CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION}"
         "-DANDROID_PLATFORM=android-${ANDROID_NATIVE_API_LEVEL}"
         "-D__ANDROID_API__=${ANDROID_NATIVE_API_LEVEL}"
         )
-endif()
-  
+endif()  
 if(IOS)
     if(LITE_WITH_ARM82_FP16)
       set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -march=armv8.2-a+fp16+nolse")

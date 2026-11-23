@@ -21,6 +21,7 @@ if(WITH_MKLML AND MKLML_INC_DIR AND (MKLML_LIB OR MKLML_CORE_LIB))
     add_definitions(-DLITE_WITH_STATIC_MKL)
   endif(WITH_STATIC_MKL)
   add_definitions(-DPADDLE_WITH_MKLML)
+  add_definitions(-DLITE_WITH_MKL)
   add_definitions(-DLAPACK_FOUND)
 
   message(STATUS "Found cblas and lapack in MKLML "

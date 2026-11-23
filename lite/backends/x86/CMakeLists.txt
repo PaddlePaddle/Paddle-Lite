@@ -1,3 +1,4 @@
+add_compile_options(-msse4.1 -msse4.2 -mavx -mavx2 -mavx512f -mavx512vl -mavx512bw -mavx512dq)
 if (NOT LITE_WITH_X86)
   return()
 elseif(LITE_ON_MODEL_OPTIMIZE_TOOL)
@@ -8,7 +9,10 @@ configure_file (warpctc_lib_path.h.in ${CMAKE_CURRENT_BINARY_DIR}/warpctc_lib_pa
 
 # source code and dependencies of x86_math static lib
 set(X86_MATH_SRC "" CACHE INTERNAL "")
-set(X86_MATH_DEPS framework_proto eigen3 CACHE INTERNAL "")
+set(X86_MATH_DEPS eigen3 CACHE INTERNAL "")
+if(NOT LITE_ON_TINY_PUBLISH)
+    set(X86_MATH_DEPS ${X86_MATH_DEPS} framework_proto CACHE INTERNAL "")
+endif()
 
 # source code in current directory
 FILE(GLOB X86_BASE_SRC  ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
